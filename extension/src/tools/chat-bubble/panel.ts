@@ -20,12 +20,13 @@ import type {
   RichFeedbackResult,
   MyFeedbackListResult,
   MyFeedbackItem,
-  DismissFeedbackResult,
+  ArchiveFeedbackResult,
   CaptureScreenshotResult,
   FeedbackThread,
   FeedbackThreadReply,
   FeedbackThreadsResult,
   PostReplyResult,
+  AuthStatus,
 } from "../../shared/messages";
 import {
   validateScreenshot,
@@ -78,9 +79,13 @@ type Strings = {
   sendFailed: string;
   captureFailed: string;
   historyEmpty: string;
+  historyEmptyArchived: string;
   historyError: string;
   loading: string;
-  dismiss: string;
+  archive: string;
+  unarchive: string;
+  filterActive: string;
+  filterArchived: string;
   threadRole: string;
   threadUntitled: string;
   threadNewReply: string;
@@ -130,9 +135,13 @@ const STRINGS: Record<Locale, Strings> = {
     sendFailed: "Send failed",
     captureFailed: "Could not capture the page.",
     historyEmpty: "No reports sent from this browser yet.",
+    historyEmptyArchived: "No archived reports.",
     historyError: "Could not load your reports.",
     loading: "Loading...",
-    dismiss: "Dismiss",
+    archive: "Archive",
+    unarchive: "Unarchive",
+    filterActive: "Active",
+    filterArchived: "Archived",
     threadRole: "Support conversation",
     threadUntitled: "Support ticket",
     threadNewReply: "New reply from support",
@@ -180,9 +189,13 @@ const STRINGS: Record<Locale, Strings> = {
     sendFailed: "No se pudo enviar",
     captureFailed: "No se pudo capturar la página.",
     historyEmpty: "Aún no has enviado informes desde este navegador.",
+    historyEmptyArchived: "No hay informes archivados.",
     historyError: "No se pudieron cargar tus informes.",
     loading: "Cargando...",
-    dismiss: "Descartar",
+    archive: "Archivar",
+    unarchive: "Desarchivar",
+    filterActive: "Activos",
+    filterArchived: "Archivados",
     threadRole: "Conversación con soporte",
     threadUntitled: "Ticket de soporte",
     threadNewReply: "Nueva respuesta de soporte",
@@ -230,9 +243,13 @@ const STRINGS: Record<Locale, Strings> = {
     sendFailed: "Échec de l'envoi",
     captureFailed: "Impossible de capturer la page.",
     historyEmpty: "Aucun signalement envoyé depuis ce navigateur pour l'instant.",
+    historyEmptyArchived: "Aucun signalement archivé.",
     historyError: "Impossible de charger vos signalements.",
     loading: "Chargement...",
-    dismiss: "Ignorer",
+    archive: "Archiver",
+    unarchive: "Désarchiver",
+    filterActive: "Actifs",
+    filterArchived: "Archivés",
     threadRole: "Conversation avec l'assistance",
     threadUntitled: "Ticket d'assistance",
     threadNewReply: "Nouvelle réponse de l'assistance",
@@ -354,6 +371,10 @@ const CSS = `
 .history { flex: 1 1 auto; overflow-y: auto; padding: 12px 14px; display: flex;
   flex-direction: column; gap: 8px; min-height: 0; }
 .history[hidden] { display: none; }
+.hfilter { flex: 0 0 auto; display: flex; gap: 6px; }
+.hfilter button { border: 1px solid #e2e5ea; background: #fff; color: #6b7280; cursor: pointer;
+  font-size: 11px; font-weight: 700; border-radius: 999px; padding: 4px 10px; }
+.hfilter button.active { color: #ea580c; border-color: rgba(234,88,12,.4); background: rgba(234,88,12,.08); }
 .hempty { font-size: 12.5px; color: #6b7280; line-height: 1.5; padding: 6px 2px; }
 .hempty[hidden] { display: none; }
 .hitem { border: 1px solid #eceef1; border-radius: 10px; padding: 8px 10px; display: flex;
@@ -446,6 +467,9 @@ class ChatBubble {
   private rbody!: HTMLElement;
   private rfoot!: HTMLElement;
   private historyWrap!: HTMLElement;
+  private filterActiveBtn!: HTMLButtonElement;
+  private filterArchivedBtn!: HTMLButtonElement;
+  private historyFilter: "active" | "archived" = "active";
   private historyEmpty!: HTMLElement;
   private historyList!: HTMLElement;
   private typeSel!: HTMLSelectElement;
@@ -467,6 +491,7 @@ class ChatBubble {
   private currentThreadId: string | null = null;
   private autoOpened = new Set<string>();
   private pollTimer: ReturnType<typeof setInterval> | null = null;
+  private emailPrefillToken = 0;
 
   constructor() {
     this.s = STRINGS[getLocale()] || STRINGS.en;
@@ -657,13 +682,28 @@ class ChatBubble {
 
     this.rbody.append(typeField, titleField, descField, emailField, logsRow, pickRow, shotHint, this.shotsWrap);
 
-    // History view
+    // History view: Active (default) vs. Archived. Archiving hides a report
+    // from the default list without discarding it -- this filter is how the
+    // user sees it again (desktop parity).
     this.historyWrap = el("div", "history");
     this.historyWrap.hidden = true;
+    const hfilter = el("div", "hfilter");
+    hfilter.setAttribute("role", "tablist");
+    this.filterActiveBtn = el("button", "active", s.filterActive);
+    this.filterActiveBtn.type = "button";
+    this.filterActiveBtn.setAttribute("role", "tab");
+    this.filterActiveBtn.setAttribute("aria-selected", "true");
+    this.filterActiveBtn.addEventListener("click", () => this.setHistoryFilter("active"));
+    this.filterArchivedBtn = el("button", undefined, s.filterArchived);
+    this.filterArchivedBtn.type = "button";
+    this.filterArchivedBtn.setAttribute("role", "tab");
+    this.filterArchivedBtn.setAttribute("aria-selected", "false");
+    this.filterArchivedBtn.addEventListener("click", () => this.setHistoryFilter("archived"));
+    hfilter.append(this.filterActiveBtn, this.filterArchivedBtn);
     this.historyEmpty = el("div", "hempty");
     this.historyEmpty.hidden = true;
     this.historyList = el("div", undefined);
-    this.historyWrap.append(this.historyEmpty, this.historyList);
+    this.historyWrap.append(hfilter, this.historyEmpty, this.historyList);
 
     // Footer
     this.rfoot = el("div", "rfoot");
@@ -711,6 +751,28 @@ class ChatBubble {
   openReport(): void {
     this.resetForm();
     this.show("report");
+    void this.prefillEmailFromAuth();
+  }
+
+  // Auto-fill the email field from the signed-in user's auth state, so they
+  // do not have to retype it every time (desktop bubble parity). The address
+  // is masked (e***@gmail.com) -- the server never sends the raw address to a
+  // license-bearer client, since a license key is an account credential and
+  // the connector is not necessarily the account owner (see background/auth.ts).
+  // Never overwrites a value a prefill or the user's own typing already put
+  // there, guarded by a per-open token so a slow lookup from a prior
+  // openReport() can't land on a later one.
+  private async prefillEmailFromAuth(): Promise<void> {
+    const token = (this.emailPrefillToken += 1);
+    try {
+      const auth = await sendToBackground<AuthStatus>({ kind: "GET_AUTH_STATUS" });
+      const email = (auth && auth.email) || "";
+      if (!email) return;
+      if (token !== this.emailPrefillToken) return;
+      if (!this.emailInput.value) this.emailInput.value = email;
+    } catch {
+      /* ignore */
+    }
   }
 
   private setView(view: View): void {
@@ -749,7 +811,26 @@ class ChatBubble {
     this.rbody.hidden = isHistory;
     this.rfoot.hidden = isHistory;
     this.historyWrap.hidden = !isHistory;
-    if (isHistory) void this.loadHistory();
+    if (isHistory) {
+      this.historyFilter = "active";
+      this.renderFilterTabs();
+      void this.loadHistory();
+    }
+  }
+
+  // Active (default) vs. Archived view of "My reports".
+  private renderFilterTabs(): void {
+    const isArchived = this.historyFilter === "archived";
+    this.filterActiveBtn.classList.toggle("active", !isArchived);
+    this.filterArchivedBtn.classList.toggle("active", isArchived);
+    this.filterActiveBtn.setAttribute("aria-selected", isArchived ? "false" : "true");
+    this.filterArchivedBtn.setAttribute("aria-selected", isArchived ? "true" : "false");
+  }
+
+  private setHistoryFilter(filter: "active" | "archived"): void {
+    this.historyFilter = filter;
+    this.renderFilterTabs();
+    void this.loadHistory();
   }
 
   // ---- chat ----
@@ -947,17 +1028,22 @@ class ChatBubble {
     this.historyEmpty.textContent = this.s.loading;
     this.historyEmpty.hidden = false;
     try {
+      const isArchived = this.historyFilter === "archived";
       // Support conversations (support has answered) render first as clickable
-      // rows; the local submissions list follows, de-duped against them.
+      // rows; the local submissions list follows, de-duped against them. There
+      // is no "archived" concept for threads, so the Archived view is
+      // submissions-only.
       let threads: FeedbackThread[] = [];
-      try {
-        const tRes = await sendToBackground<FeedbackThreadsResult>({ kind: "LIST_FEEDBACK_THREADS" });
-        threads = tRes && tRes.ok && Array.isArray(tRes.threads) ? tRes.threads : [];
-      } catch { threads = []; }
+      if (!isArchived) {
+        try {
+          const tRes = await sendToBackground<FeedbackThreadsResult>({ kind: "LIST_FEEDBACK_THREADS" });
+          threads = tRes && tRes.ok && Array.isArray(tRes.threads) ? tRes.threads : [];
+        } catch { threads = []; }
+      }
       const res = await sendToBackground<MyFeedbackListResult>({ kind: "LIST_MY_FEEDBACK" });
       const threadIds = new Set(threads.map((t) => t.id));
       const rows = (res && res.ok && Array.isArray(res.submissions) ? res.submissions : [])
-        .filter((r) => !threadIds.has(r.id));
+        .filter((r) => !threadIds.has(r.id) && (isArchived ? r.archived === true : !r.archived));
       this.bundle = rows;
       this.renderHistory(rows, threads);
     } catch {
@@ -969,8 +1055,9 @@ class ChatBubble {
   private renderHistory(rows: MyFeedbackItem[], threads: FeedbackThread[] = []): void {
     this.historyList.textContent = "";
     this.renderThreadRows(threads);
+    const isArchived = this.historyFilter === "archived";
     if (!rows.length && !threads.length) {
-      this.historyEmpty.textContent = this.s.historyEmpty;
+      this.historyEmpty.textContent = isArchived ? this.s.historyEmptyArchived : this.s.historyEmpty;
       this.historyEmpty.hidden = false;
       return;
     }
@@ -989,19 +1076,30 @@ class ChatBubble {
       let when = "";
       try { when = row.createdAt ? new Date(row.createdAt).toLocaleString() : ""; } catch { when = ""; }
       const whenEl = el("span", "hwhen", row.attachmentCount ? `${when} · 📎 ${row.attachmentCount}` : when);
-      const del = el("button", "hdismiss", this.s.dismiss);
-      del.type = "button";
-      del.addEventListener("click", () => void this.dismiss(row.id));
-      meta.append(whenEl, del);
+      const archiveBtn = el("button", "hdismiss", isArchived ? this.s.unarchive : this.s.archive);
+      archiveBtn.type = "button";
+      archiveBtn.addEventListener("click", () =>
+        void (isArchived ? this.unarchive(row.id) : this.archive(row.id)));
+      meta.append(whenEl, archiveBtn);
       item.append(top, meta);
       this.historyList.append(item);
     }
   }
 
-  private async dismiss(id: string): Promise<void> {
+  private async archive(id: string): Promise<void> {
     if (!id) return;
     try {
-      const res = await sendToBackground<DismissFeedbackResult>({ kind: "DISMISS_MY_FEEDBACK", id });
+      const res = await sendToBackground<ArchiveFeedbackResult>({ kind: "ARCHIVE_MY_FEEDBACK", id });
+      if (res && res.ok) void this.loadHistory();
+    } catch {
+      /* ignore */
+    }
+  }
+
+  private async unarchive(id: string): Promise<void> {
+    if (!id) return;
+    try {
+      const res = await sendToBackground<ArchiveFeedbackResult>({ kind: "UNARCHIVE_MY_FEEDBACK", id });
       if (res && res.ok) void this.loadHistory();
     } catch {
       /* ignore */

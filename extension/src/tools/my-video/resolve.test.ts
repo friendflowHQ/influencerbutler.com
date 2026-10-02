@@ -219,6 +219,49 @@ describe("resolveMyVideos", () => {
     expect(out.matches).toHaveLength(1);
   });
 
+  it("reports verified-missing when a video tagged to this asin is in neither rail on a hydrated page", () => {
+    const own = index([MINE]);
+    own.byContentId.get(MINE)!.asins = ["B0TESTASIN"];
+    const row = video({ contentId: `amzn1.vse.video.${THEIRS}`, sideFrom: "marker" });
+    const out = resolveMyVideos([row], own, [], sides(2, 3), "B0TESTASIN");
+    expect(out).toEqual({ kind: "verified-missing", contentId: MINE, title: "Mine" });
+  });
+
+  it("stays silent (not verified-missing) when the rail has not hydrated yet", () => {
+    const own = index([MINE]);
+    own.byContentId.get(MINE)!.asins = ["B0TESTASIN"];
+    const out = resolveMyVideos([], own, [], sides(0, 0), "B0TESTASIN");
+    expect(out.kind).toBe("silent");
+  });
+
+  it("stays silent (not verified-missing) when the own record is not tagged to this asin", () => {
+    const own = index([MINE]);
+    own.byContentId.get(MINE)!.asins = ["B0OTHERASIN"];
+    const out = resolveMyVideos([], own, [], sides(2, 3), "B0TESTASIN");
+    expect(out.kind).toBe("silent");
+  });
+
+  it("stays silent (not verified-missing) when the own record has no asins at all (unknown source)", () => {
+    const own = index([MINE]); // default record has asins: []
+    const out = resolveMyVideos([], own, [], sides(2, 3), "B0TESTASIN");
+    expect(out.kind).toBe("silent");
+  });
+
+  it("stays silent (not verified-missing) when no asin is passed", () => {
+    const own = index([MINE]);
+    own.byContentId.get(MINE)!.asins = ["B0TESTASIN"];
+    const out = resolveMyVideos([], own, [], sides(2, 3));
+    expect(out.kind).toBe("silent");
+  });
+
+  it("prefers a present match over verified-missing: a demoted-but-found video is not reported missing", () => {
+    const own = index([MINE]);
+    own.byContentId.get(MINE)!.asins = ["B0TESTASIN"];
+    const row = video({ contentId: `amzn1.vse.video.${MINE}`, carousel: "lower", sideFrom: "marker" });
+    const out = resolveMyVideos([row], own, [], sides(2, 3), "B0TESTASIN");
+    expect(out.kind).toBe("present");
+  });
+
   it("marks an unknown-rail card as unstateable rather than guessing", () => {
     const out = resolveMyVideos(
       [],

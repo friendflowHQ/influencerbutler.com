@@ -74,6 +74,12 @@ const REGISTRY: Record<SelectorId, string[]> = {
     "[cel_widget_id*='videos-for-this-product']",
   ],
   videoCards: [
+    // Current related-videos rail layout (verified live 2026-10-02 on
+    // amazon.com/dp/B08BR8WH41): each item is an <a class="bpy-rv-panel-card">
+    // whose own href/data-redirect-url carries the video's real aci content id
+    // (…?ref=dp_vse_rvc_4&aci=amzn1.vse.video.<id>), so extractFromDom classifies
+    // it the same way Strategy 0 does, with no creatorLink/byline guessing.
+    ".bpy-rv-panel-card",
     // 2026 vse-hero layout: hashed CSS-module classes, match on the stable
     // fragment. The profile row carries the creator link, so it classifies
     // best; the widget only renders the current video's row, and the
@@ -83,7 +89,13 @@ const REGISTRY: Record<SelectorId, string[]> = {
     "[class*='vseHeroThumbnail']",
     "li.a-carousel-card [data-video-url]",
     "li.a-carousel-card [data-vdp-url]",
-    "li.a-carousel-card",
+    // :not(...) excludes the widget's own "related PRODUCTS" sponsored-ad
+    // carousel (vftphero-relatedProduct-carousel), which lives inside the same
+    // #va-related-videos-widget_feature_div container and reuses this exact
+    // a-carousel-card class on its own vse-product-carousel-element cards
+    // (verified live 2026-10-02). Without the guard this fallback silently
+    // counted product ads as unclassified "videos" instead of the real rail.
+    "li.a-carousel-card:not(.vse-product-carousel-element)",
   ],
   videoCardCreatorLink: [
     "a[href*='/shop/']",

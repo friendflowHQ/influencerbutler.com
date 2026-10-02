@@ -27,6 +27,8 @@ import type {
   YouTubeStatusResult,
   YouTubeVideoRef,
   ReachItem,
+  AudioSuppressedItem,
+  VideoReloadRef,
 } from "../transport/hud-commands";
 import type {
   IntegrationsState,
@@ -99,6 +101,10 @@ export type RuntimeMessage =
   | { kind: "CAPTURE_AFFILIATE_CODE"; code: string; source: string | null }
   | { kind: "FLUSH_QUEUE" }
   | { kind: "GET_PAGE_STATUS" }
+  // Sent by the background's chrome.action.onClicked handler (only fires on
+  // tabs where the popup has been cleared for a HUD-capable page) to show/hide
+  // the floating panel. The panel otherwise never shows itself.
+  | { kind: "TOGGLE_HUD_PANEL" }
   | { kind: "GET_HUD_STATUS"; force?: boolean }
   | { kind: "SEND_HUD_COMMAND"; command: HudCommand }
   // Ask the running desktop app what the creator earned on a batch of ASINs, so
@@ -197,9 +203,13 @@ export type RuntimeMessage =
   // Capture a PNG of the visible tab for the report (only the background can call
   // chrome.tabs.captureVisibleTab). Uses the sender tab's window.
   | { kind: "CAPTURE_SCREENSHOT" }
-  // Read / dismiss the local "My reports" list backing the bubble's history tab.
+  // Read the local "My reports" list backing the bubble's history tab, and
+  // archive / unarchive a submission within it. Archiving hides a report from
+  // the default "Active" view without discarding it; unarchive brings it back
+  // (desktop parity).
   | { kind: "LIST_MY_FEEDBACK" }
-  | { kind: "DISMISS_MY_FEEDBACK"; id: string }
+  | { kind: "ARCHIVE_MY_FEEDBACK"; id: string }
+  | { kind: "UNARCHIVE_MY_FEEDBACK"; id: string }
   // Support-reply threads: read the support agent's answers to the user's own
   // tickets, reply back in-app, and clear a thread's unread state. Fetched
   // through the background so the license key never reaches the content script.
@@ -452,7 +462,23 @@ export type RuntimeMessage =
   | { kind: "AUTO_ACCEPT_DONE"; accepted: AutoAcceptedItem[]; stoppedReason: AutoAcceptStopReason | null }
   // Options page / content -> background: today's accept ledger plus the
   // robot-check cooldown, for "Today: n of cap" and "Paused until <time>".
-  | { kind: "GET_ACCEPT_LEDGER" };
+  | { kind: "GET_ACCEPT_LEDGER" }
+  // ---- In-browser video bump (no desktop app) --------------------------------
+  // See tools/my-video/bump-badge.ts (content, entry point) and
+  // background/video-bump.ts (the job: open tabs, download, wait out Amazon's
+  // duplicate-detection cooldown via chrome.alarms, reupload). Content ->
+  // background: start a bump job for this own video, in this browser.
+  | { kind: "START_VIDEO_BUMP"; video: VideoReloadRef; mode: "auto" | "assist" }
+  // Content (creator-manage / create-post page) -> background: this tab is
+  // ready to run a bump step. Sent on every such page load (gated by
+  // tools.videoBump); the worker only acts on a tab it opened itself
+  // (correlated by sender.tab.id), everything else is ignored. Mirrors
+  // ACCEPT_TAB_READY.
+  | { kind: "BUMP_TAB_READY"; pageType: "creator-manage" | "creator-upload" | "creator-post" }
+  // Background -> the tab it opened: run this step of the job now. The tab
+  // answers with BUMP_STEP_RESULT (also the reply).
+  | { kind: "RUN_BUMP_STEP"; step: BumpStep }
+  | { kind: "BUMP_STEP_RESULT"; outcome: BumpStepOutcome };
 
 // Who triggered an accept: "manual" is a click by the creator, "auto" is the
 // rule-based pass (settings.autoAccept) that runs from the Last Call poll tab.
@@ -513,6 +539,48 @@ export type AcceptResult = AcceptOutcome & {
   message?: string;
 };
 
+// One step of an in-browser video bump job (background/video-bump.ts), sent to
+// whichever Creator Hub tab the worker opened for it.
+//   "capture": on the video's own /creatorhub/video/<id> edit page, read its
+//     title, tagged asins, marketplace, and the player's resolved (non-blob)
+//     video src (docs/developer/amazon-creator-hub-selectors.md Page 2 in the
+//     desktop repo), so the worker can download the original before anything
+//     is deleted.
+//   "delete": on the Manage videos list, find the row for this contentId (by
+//     its name="<contentId>" attribute - the shared #cp-video-library-
+//     delete-button id always targets row 1, never scope to that) and delete
+//     it.
+//   "reupload": on the fresh (id-less) /create/post upload page: fill the
+//     remembered title and tagged asins, then wait for the creator to attach
+//     the downloaded file themselves (Chrome does not let a content script
+//     set a native file input's FileList - clicking Amazon's own hidden input
+//     from inside the creator's own click is the one step that stays manual)
+//     before submitting. `downloadFilename` is shown to the creator so they
+//     know which file to pick.
+export type BumpStep =
+  | { kind: "capture"; contentId: string }
+  | { kind: "delete"; contentId: string }
+  | { kind: "reupload"; title: string | null; asins: string[]; downloadFilename: string };
+
+// Why a bump step did not go through. "blocked" is a robot-check page;
+// "not-found" means the row / player / upload field never appeared; "no-src"
+// means the player never resolved past a blob url; "cancelled" means the
+// creator closed the tab before finishing the manual attach step.
+export type BumpFailReason =
+  | "blocked"
+  | "not-found"
+  | "no-src"
+  | "timeout"
+  | "cancelled"
+  | "tab"
+  | "error";
+
+export type BumpStepOutcome =
+  | { ok: true; kind: "capture"; title: string | null; asins: string[]; marketplace: string | null; videoSrc: string | null }
+  | { ok: true; kind: "delete" }
+  | { ok: true; kind: "reupload" }
+  | { ok: false; kind: BumpStep["kind"]; reason: BumpFailReason; detail?: string };
+
 export type IgBioLinkResult = { email: string | null };
 
 // Cross-device relay UI state for the popup's Remote devices section: whether
@@ -556,9 +624,14 @@ export type MyFeedbackItem = {
   status: string;
   createdAt: string;
   attachmentCount: number;
+  // Hides the row from the default "Active" view (see ARCHIVE_MY_FEEDBACK /
+  // UNARCHIVE_MY_FEEDBACK) without discarding it. Absent/false = active.
+  archived?: boolean;
 };
 
 export type MyFeedbackListResult = { ok: boolean; submissions: MyFeedbackItem[] };
+
+export type ArchiveFeedbackResult = { ok: boolean; error?: string };
 
 // One message in a support conversation thread (bot / human-support answer, or
 // the user's own reply). Mirrors the desktop bubble's thread shape.
@@ -595,8 +668,6 @@ export type PostReplyResult = { ok: boolean; reply?: FeedbackThreadReply | null;
 export type MarkThreadReadResult = { ok: boolean; unread?: number };
 
 export type CaptureScreenshotResult = { ok: boolean; dataUrl?: string; error?: string };
-
-export type DismissFeedbackResult = { ok: boolean };
 
 export type SignInResult = { ok: boolean; email?: string; error?: string };
 
@@ -1095,6 +1166,8 @@ export type {
   YouTubeStatusResult,
   YouTubeVideoRef,
   ReachItem,
+  AudioSuppressedItem,
+  VideoReloadRef,
 };
 export type { PricePoint };
 export type {

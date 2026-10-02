@@ -297,6 +297,24 @@ counts ("Queued N of M product(s) for Idea List Butler.").
 }
 ```
 
+**`video.reload`** - "Bump it": the product-page chip found one of the
+creator's own videos missing from the listing's carousel (verified against a
+hydrated rail and the video's own tagged asins - never a guess); the creator
+chose to run the fix on the desktop app. `"auto"` deletes the video and
+re-uploads it fresh (Amazon treats a re-upload like a new post); `"assist"`
+only downloads the original and returns its title/tags for the creator to
+re-upload by hand. Real Puppeteer automation on the app's own Chrome, so (like
+`deal.push`) it is machine-independent and may arrive over the cross-device
+relay when no local app is running.
+
+```json
+{
+  "type": "video.reload",
+  "video": { "contentId": "0f404474460a43df9bda886bf88f1959", "asin": "B0016HF5GK", "title": "...", "marketplace": "amazon.com" },
+  "mode": "auto"
+}
+```
+
 ### When the app is not running
 
 Every probe/command fails fast (short timeout). The extension then shows an

@@ -4,7 +4,7 @@ import type {
   CarouselSource,
   CarouselVideo,
 } from "../../amazon/video-carousel";
-import { normalizeOwnId, type OwnVideoIndex } from "./own-videos";
+import { normalizeOwnId, type OwnVideoIndex, type OwnVideoRecord } from "./own-videos";
 
 // Decide which videos on this listing are the creator's own, and which carousel
 // each one is in. Pure: no DOM, no storage, no chrome API, so the rules below
@@ -46,7 +46,18 @@ export type MyVideoMatch = {
   idEvidence: IdEvidence;
 };
 
-export type MyVideoVerdict = { kind: "silent" } | { kind: "present"; matches: MyVideoMatch[] };
+export type MyVideoVerdict =
+  | { kind: "silent" }
+  | { kind: "present"; matches: MyVideoMatch[] }
+  // One of the creator's own videos is tagged to THIS asin (own.asins named it,
+  // not just "unknown"), the rail actually hydrated (sides carries a real
+  // count, not an empty in-flight read), and it is in neither rail. Unlike
+  // "silent" this IS a story we can tell: we know the video was expected here
+  // and have positive evidence the rail doesn't have it, as opposed to simply
+  // never having looked. Only ever raised when there is no "present" match at
+  // all, so a video that is merely demoted (still found, just lower) stays a
+  // "present" story, not this one.
+  | { kind: "verified-missing"; contentId: string; title: string | null };
 
 const SILENT: MyVideoVerdict = { kind: "silent" };
 
@@ -63,6 +74,12 @@ export function resolveMyVideos(
   own: OwnVideoIndex | null,
   cardPlacements: CardPlacement[],
   sides: CarouselBreakdown,
+  // The listing's own asin, when known. Only used for "verified-missing":
+  // own.byContentId entries carry asins from wherever they were captured
+  // (empty means "unknown source", per own-videos.ts), and a record with no
+  // asins here could belong to any other listing, so it must never be read as
+  // missing from this one.
+  asin: string | null = null,
 ): MyVideoVerdict {
   if (!own || !own.usable) return SILENT;
 
@@ -119,7 +136,7 @@ export function resolveMyVideos(
     }
   }
 
-  if (matches.length === 0) return SILENT;
+  if (matches.length === 0) return verifiedMissing(own, asin, sides) ?? SILENT;
   // Upper first: it is the placement that earns, so it leads the readout.
   matches.sort((a, b) => sideRank(a.carousel) - sideRank(b.carousel));
   return { kind: "present", matches };
@@ -138,6 +155,27 @@ export function matchesVideo(match: MyVideoMatch, video: CarouselVideo): boolean
 function videoIds(video: CarouselVideo): string[] {
   const ids = [normalizeOwnId(video?.contentId), normalizeOwnId(video?.url)];
   return [...new Set(ids.filter((id): id is string => !!id))];
+}
+
+// Called only once no "present" match was found for anything. Picks the most
+// recently seen own record that names THIS asin and is not itself "unknown"
+// (empty asins), requiring the rail to have actually hydrated (a real count on
+// either side) so a cold/in-flight read never reads as a removal.
+function verifiedMissing(
+  own: OwnVideoIndex,
+  asin: string | null,
+  sides: CarouselBreakdown,
+): MyVideoVerdict | null {
+  if (!asin) return null;
+  const hydrated = (sides?.upper?.total ?? 0) > 0 || (sides?.lower?.total ?? 0) > 0;
+  if (!hydrated) return null;
+
+  let best: OwnVideoRecord | null = null;
+  for (const rec of own.byContentId.values()) {
+    if (!rec.asins.includes(asin)) continue;
+    if (!best || rec.seenAt > best.seenAt) best = rec;
+  }
+  return best ? { kind: "verified-missing", contentId: best.contentId, title: best.title } : null;
 }
 
 function railSizeFor(carousel: CarouselSource, sides: CarouselBreakdown): number | null {

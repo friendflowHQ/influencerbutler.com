@@ -25,6 +25,10 @@
 .panel.collapsed .body { display: none; }
 .panel.collapsed .quickbar { display: none; }
 
+/* Hidden until the user clicks the toolbar icon (see toggleHudVisibility in
+   ui/components.ts); the panel never shows itself on its own. */
+.panel.hud-hidden { display: none; }
+
 /* The header and the pinned quick-links bar share one sticky region so they
    stay together at the top while the sections scroll beneath them. */
 .topbar {

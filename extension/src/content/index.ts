@@ -51,6 +51,7 @@ import { renderMyVideoBadges } from "../tools/my-video/badge";
 import { readOwnCardPlacements } from "../amazon/my-video-card";
 import { initVideoMoney } from "../tools/video-money/overlay";
 import { initYouTubeStatus } from "../tools/youtube-status/overlay";
+import { initAudioSuppressed } from "../tools/audio-suppressed/overlay";
 import { initSearchOverlay } from "../tools/search-overlay/overlay";
 import { initStoreOverlay } from "../tools/store-overlay/overlay";
 import { initTrendRadar } from "../tools/trend-radar/overlay";
@@ -82,9 +83,11 @@ import { setLocale, t } from "../i18n";
 import { getSettings, patchState } from "../storage/store";
 import type { Settings } from "../storage/schema";
 import { removeHost } from "../ui/host";
+import { toggleHudVisibility } from "../ui/components";
 import {
   sendToBackground,
   type AcceptOutcome,
+  type BumpStepOutcome,
   type PageStatus,
   type RuntimeMessage,
 } from "../shared/messages";
@@ -150,6 +153,14 @@ async function main(): Promise<void> {
       sendResponse(lastStatus);
       return true;
     }
+    // The toolbar icon only reaches onClicked (and this message) on tabs the
+    // background has identified as HUD-capable, so there is no page-type check
+    // to make here; toggleHudVisibility() is a no-op if nothing rendered.
+    if (message.kind === "TOGGLE_HUD_PANEL") {
+      toggleHudVisibility();
+      sendResponse(undefined);
+      return true;
+    }
     // Standalone accept: the background opened this campaign tab and asks us to
     // drive Amazon's Accept button. Re-read settings + remote flags here (not
     // the boot-time copy) so a kill switch flipped after load still holds. The
@@ -177,6 +188,25 @@ async function main(): Promise<void> {
           campaignId: message.campaignId,
           outcome,
         }).catch(() => undefined);
+        sendResponse(outcome);
+      })();
+      return true;
+    }
+    // In-browser video bump: the background opened this Creator Hub tab and
+    // asks it to run one step (capture / delete / reupload). The outcome goes
+    // back both as the reply and as BUMP_STEP_RESULT, which is what the
+    // worker resolves on.
+    if (message.kind === "RUN_BUMP_STEP") {
+      void (async () => {
+        const { runBumpStep } = await import("../tools/my-video/bump-runner");
+        let outcome: BumpStepOutcome;
+        try {
+          outcome = await runBumpStep(message.step);
+        } catch (error) {
+          log("content", "bump runner failed", error);
+          outcome = { ok: false, kind: message.step.kind, reason: "error" };
+        }
+        void sendToBackground({ kind: "BUMP_STEP_RESULT", outcome }).catch(() => undefined);
         sendResponse(outcome);
       })();
       return true;
@@ -543,6 +573,7 @@ async function runForPage(): Promise<void> {
             ownVideoIndex,
             ownVideoIndex.handle ? readOwnCardPlacements(document, ownVideoIndex.handle) : [],
             breakdown,
+            signals.asin,
           )
         : null;
 
@@ -555,6 +586,7 @@ async function runForPage(): Promise<void> {
             settings.tools.videoLandscape,
             videosPending,
             mine,
+            settings.tools.videoBump ? { asin: signals.asin, marketplace: signals.marketplace } : null,
           ),
         );
         // The "Yours" badge on the creator's own card inside Amazon's carousel.
@@ -726,6 +758,14 @@ async function runForPage(): Promise<void> {
     // before the onsite guard below. Non-destructive: fills only an empty handle.
     guard("storefront-detect", () => maybeCaptureStorefrontHandle());
     captureOwnVideoIds("creator-upload", settings);
+    // The video bump's capture step (title/asins/video src, before anything
+    // is deleted) runs on this exact page. Before the onsite guard, same as
+    // ACCEPT_TAB_READY.
+    if (settings.tools.videoBump) {
+      void sendToBackground({ kind: "BUMP_TAB_READY", pageType: "creator-upload" }).catch(
+        () => undefined,
+      );
+    }
     if (!showOnsite) return; // onsite-only page (Creator Hub upload helper)
     guard("upload-helper", () => {
       initUploadHelper({
@@ -742,6 +782,15 @@ async function runForPage(): Promise<void> {
     });
     guard("storefront-detect", () => maybeCaptureStorefrontHandle());
     captureOwnVideoIds("creator-manage", settings);
+    // Tell the background this tab is ready to run a bump step (it only acts
+    // on a tab it opened itself). Before the onsite guard, same as
+    // ACCEPT_TAB_READY: a background bump tab must report regardless of the
+    // creator's channel setting.
+    if (settings.tools.videoBump) {
+      void sendToBackground({ kind: "BUMP_TAB_READY", pageType: "creator-manage" }).catch(
+        () => undefined,
+      );
+    }
     if (!showOnsite) return; // onsite-only page (Creator Hub video-manage list)
     guard("video-money", () => {
       if (settings.tools.videoMoney) {
@@ -755,9 +804,16 @@ async function runForPage(): Promise<void> {
       guard("youtube-status", () => initYouTubeStatus("creator-manage"));
     }
   } else if (pageType === "creator-post") {
-    // The single-video "Edit post" page (/create/post?id=amzn1.vse.video...).
+    // The single-video "Edit post" page (/create/post?id=amzn1.vse.video...),
+    // also reached without an id= for a fresh upload (the in-browser bump's
+    // reupload step).
     guard("storefront-detect", () => maybeCaptureStorefrontHandle());
     captureOwnVideoIds("creator-post", settings);
+    if (settings.tools.videoBump) {
+      void sendToBackground({ kind: "BUMP_TAB_READY", pageType: "creator-post" }).catch(
+        () => undefined,
+      );
+    }
     if (!showOnsite) return; // onsite-only page (the creator's own video edit)
     if (settings.tools.youtubeStatus) {
       guard("youtube-status", () => initYouTubeStatus("creator-post"));
@@ -772,6 +828,10 @@ async function runForPage(): Promise<void> {
       guard("youtube-status", () => initYouTubeStatus("manage-content"));
       lastStatus.toolSummaries.push({ label: t().sumYouTubeStatus, value: t().ready });
     }
+    // Silent background reporter: Amazon's "Audio suppressed" Notifications
+    // badge on this list, reported to the desktop Video Reload Butler. No
+    // chip, no settings toggle; always on for this surface.
+    guard("audio-suppressed", () => initAudioSuppressed());
   } else if (pageType === "search") {
     guard("search-overlay", () => {
       if (settings.tools.searchOverlay) {

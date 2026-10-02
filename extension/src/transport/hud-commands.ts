@@ -113,6 +113,31 @@ export type ReachItem = {
   views?: number | null;
 };
 
+// One Amazon Creator Hub item flagged "Audio suppressed" in the My Content
+// (/manage-content) list's Notifications column, reported to the desktop Video
+// Reload Butler so it can offer a "download this video, add a voiceover,
+// re-upload" queue. Read purely from the page DOM by the audio-suppressed
+// reporter; distinct from ReachItem (a different Amazon badge).
+export type AudioSuppressedItem = {
+  contentId: string;
+  title?: string;
+  marketplace?: string;
+  contentUrl?: string;
+  editUrl?: string;
+};
+
+// One own video the creator wants bumped: deleted and re-uploaded fresh (with
+// its title/tags restored) so Amazon's algorithm treats it like a new post.
+// Same shape as YouTubeVideoRef; contentId is the bare hex id the desktop
+// Video Reload Butler already keys its library on.
+export type VideoReloadRef = {
+  contentId: string;
+  asin?: string;
+  title?: string;
+  marketplace?: string;
+  contentUrl?: string;
+};
+
 // Where a pushed deal should land in the Deals Butler queue, chosen in the
 // extension's own Settings and sent with the push. Same vocabulary as the
 // desktop's persisted "extension push mode" field so both sides speak one
@@ -205,7 +230,21 @@ export type HudCommand =
   // or item page to the desktop Reach Booster workspace. Fire-and-forget upsert
   // keyed by contentId; the desktop stores them for a single "what needs a
   // re-upload" view. No-op when the app is not paired.
-  | { type: "reach.report.batch"; items: ReachItem[] };
+  | { type: "reach.report.batch"; items: ReachItem[] }
+  // Report Amazon Creator Hub items flagged "Audio suppressed" in the My Content
+  // list to the desktop Video Reload Butler, so it can offer a "download, add a
+  // voiceover, re-upload" queue. Fire-and-forget upsert keyed by contentId. No-op
+  // when the app is not paired. Distinct from reach.report.batch (a different
+  // Amazon badge) and from voiceover.push (an unrelated ASIN-script feature).
+  | { type: "audioSuppressed.report.batch"; items: AudioSuppressedItem[] }
+  // "Bump" a video that the creator's product page chip found missing from the
+  // listing's carousel: hand it to the desktop Video Reload Butler to delete
+  // and re-upload fresh. "auto" runs the whole delete -> cooldown -> reupload
+  // -> retag pipeline unattended; "assist" only downloads the original file
+  // (and returns its stored title/tags) so the creator finishes the Amazon
+  // upload by hand. The engine owns its own duplicate-detection cooldown, so
+  // this command does not carry or enforce one itself.
+  | { type: "video.reload"; video: VideoReloadRef; mode: "auto" | "assist" };
 
 export type HudCommandResult = {
   ok: boolean;

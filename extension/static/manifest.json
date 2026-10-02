@@ -3,7 +3,15 @@
   "name": "Influencer Butler",
   "version": "0.1.24",
   "description": "Free tools for Amazon and Walmart Influencers: money signals, video counts, content gaps, Butler Approved seals, storefront checks.",
-  "permissions": ["storage", "alarms", "notifications", "tabs", "scripting", "contextMenus"],
+  "permissions": [
+    "storage",
+    "alarms",
+    "notifications",
+    "tabs",
+    "scripting",
+    "contextMenus",
+    "downloads"
+  ],
   "host_permissions": [
     "https://www.amazon.com/*",
     "https://www.amazon.ca/*",

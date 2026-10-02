@@ -97,12 +97,28 @@ export function classifyCreatorType(raw: string): CreatorClass {
 //   amzn1.vse.video.*         -> influencer (creator "Videos"/"Related videos")
 //   amzn1.ive.influencer.*    -> influencer
 //   *.customer.video/review.* -> customer
+//   amzn1.productreview.*     -> customer (no ".video." segment: a plain
+//                                customer review attached to its review id)
+//   amzn1.ive.ugc.video.*     -> customer (shopper-submitted UGC clip)
 //   anything else             -> unknown (honest; never guessed)
+// The last two namespaces were verified live 2026-10-02 on the bpy-rv-panel
+// related-videos rail (amazon.com/dp/B08BR8WH41): 5 of its 10 cards carried
+// amzn1.productreview.<reviewId> and 1 carried amzn1.ive.ugc.video.*, all of
+// which fell through to "unknown" before this classifier knew them, inflating
+// the unclassified count and hiding the real influencer videos (amzn1.vse.video.*)
+// in the noise.
 export function classifyVideoAci(aci: string): CreatorClass {
   const v = (aci ?? "").trim().toLowerCase();
   if (!v) return "unknown";
   if (v.includes(".ive.seller.")) return "brand";
-  if (v.includes(".customer.video.") || v.includes(".customer.review.")) return "customer";
+  if (
+    v.includes(".customer.video.") ||
+    v.includes(".customer.review.") ||
+    v.includes(".productreview.") ||
+    v.includes(".ive.ugc.")
+  ) {
+    return "customer";
+  }
   if (v.includes(".vse.video.") || v.includes(".ive.influencer.")) return "influencer";
   return "unknown";
 }
@@ -466,6 +482,29 @@ function accumulateFromText(
   }
 }
 
+// A card's own link, whether the card IS the anchor (current bpy-rv-panel
+// layout, verified live 2026-10-02) or wraps one (older carousel layouts).
+// querySelector only searches descendants, so a plain querySelector call here
+// would silently miss the bpy-rv-panel case and leave url/aci null.
+const CARD_LINK_SELECTOR = "a[href], [data-video-url], [data-vdp-url], [data-redirect-url]";
+
+function cardLink(card: Element): HTMLAnchorElement | null {
+  if (card.matches(CARD_LINK_SELECTOR)) return card as HTMLAnchorElement;
+  return card.querySelector<HTMLAnchorElement>(CARD_LINK_SELECTOR);
+}
+
+// The current related-videos rail layout (bpy-rv-panel-card, verified live
+// 2026-10-02) only renders the current product's title and creator name into
+// aria-label, as "<Title> - <Creator>"; older layouts carry a real byline
+// element instead (read by the caller), so this is purely a fallback for when
+// that comes back empty.
+function splitAriaLabel(label: string | null): { title: string | null; creator: string | null } {
+  if (!label) return { title: null, creator: null };
+  const idx = label.lastIndexOf(" - ");
+  if (idx === -1) return { title: label.trim() || null, creator: null };
+  return { title: label.slice(0, idx).trim() || null, creator: label.slice(idx + 3).trim() || null };
+}
+
 function extractFromDom(doc: Document): CarouselResult {
   const widget = query(doc, "videoWidget");
   if (!widget) return { counts: emptyCounts(), videos: [], strategy: "none" };
@@ -477,31 +516,46 @@ function extractFromDom(doc: Document): CarouselResult {
   let cardIndex = 0;
 
   for (const card of cards) {
+    const link = cardLink(card);
+    const href =
+      link?.getAttribute("data-redirect-url") ??
+      link?.getAttribute("href") ??
+      link?.getAttribute("data-video-url") ??
+      link?.getAttribute("data-vdp-url") ??
+      null;
+    // The link's own `aci` query param carries Amazon's content id for this
+    // video (verified live 2026-10-02: "…/vdp/<id>?ref=dp_vse_rvc_4&aci=amzn1.
+    // vse.video.<id>" on every bpy-rv-panel card). It is the SAME identity
+    // Strategy 0 reads from state scripts, so classifyVideoAci is authoritative
+    // here too when present -- no DOM heuristics needed, and no clicking
+    // through cards to reveal a creatorType that only hydrates for the active
+    // player.
+    const aciMatch = (href ?? "").match(/[?&]aci=([^&]+)/);
+    const aci = aciMatch?.[1] ? decodeURIComponent(aciMatch[1]) : null;
+
+    const ariaLabel = card.getAttribute("aria-label");
+    const { title: labelTitle, creator: labelCreator } = splitAriaLabel(ariaLabel);
     const creatorLink = query(card, "videoCardCreatorLink");
     const byline = (query(card, "videoCardByline")?.textContent ?? "").trim();
     const cardText = (card.textContent ?? "").replace(/\s+/g, " ");
-    let kind: CreatorClass = "unknown";
-    if (creatorLink || /earns commissions/i.test(cardText)) {
-      // Amazon's FTC disclosure label only appears on influencer videos.
-      kind = "influencer";
-    } else if (/^brand:/i.test(byline) || (brandName && normalizeBrand(byline) === brandName)) {
-      kind = "brand";
-    } else if (byline.length > 0) {
-      kind = "customer";
+
+    let kind: CreatorClass = aci ? classifyVideoAci(aci) : "unknown";
+    if (kind === "unknown") {
+      // No aci on this card (older layout): fall back to the DOM heuristics.
+      if (creatorLink || /earns commissions/i.test(cardText)) {
+        // Amazon's FTC disclosure label only appears on influencer videos.
+        kind = "influencer";
+      } else if (/^brand:/i.test(byline) || (brandName && normalizeBrand(byline) === brandName)) {
+        kind = "brand";
+      } else if (byline.length > 0) {
+        kind = "customer";
+      }
     }
     counts[kind] += 1;
     counts.total += 1;
-    const videoLink = card.querySelector<HTMLAnchorElement>(
-      "a[href*='/vdp/'], [data-video-url], [data-vdp-url]",
-    );
-    const href =
-      videoLink?.getAttribute("href") ??
-      videoLink?.getAttribute("data-video-url") ??
-      videoLink?.getAttribute("data-vdp-url") ??
-      null;
     videos.push({
-      title: card.getAttribute("aria-label") ?? null,
-      creatorName: byline || null,
+      title: labelTitle ?? ariaLabel ?? null,
+      creatorName: byline || labelCreator || null,
       creatorType: kind,
       url: href,
       // The related-videos widget is the lower rail; the brand hero video lives
@@ -509,8 +563,9 @@ function extractFromDom(doc: Document): CarouselResult {
       // was read out of that widget, so this is a real reading, not a guess.
       carousel: "lower",
       sideFrom: "marker",
-      // DOM cards do not expose the aciContentId; identity falls back downstream.
-      contentId: null,
+      // Real identity when the card's own link carries one (see above); falls
+      // back to a name/title hash downstream otherwise, same as before.
+      contentId: aci,
       position: (cardIndex += 1),
     });
   }

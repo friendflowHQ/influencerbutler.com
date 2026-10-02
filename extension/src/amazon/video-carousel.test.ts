@@ -30,6 +30,15 @@ describe("classifyVideoAci", () => {
     expect(classifyVideoAci("amzn1.customer.review.abc")).toBe("customer");
   });
 
+  it("classifies the bpy-rv-panel rail's review and UGC namespaces as customer", () => {
+    // Verified live 2026-10-02 on the related-videos rail: Amazon tags plain
+    // customer reviews as "amzn1.productreview.<reviewId>" (no ".video."
+    // segment) and shopper UGC clips as "amzn1.ive.ugc.video.*". Both used to
+    // fall through to "unknown", inflating the unclassified count.
+    expect(classifyVideoAci("amzn1.productreview.R38ICJVX71H3QO")).toBe("customer");
+    expect(classifyVideoAci("amzn1.ive.ugc.video.0fab2a94d9514a479a16cca04d091494")).toBe("customer");
+  });
+
   it("reports unrecognized namespaces as unknown instead of guessing", () => {
     expect(classifyVideoAci("amzn1.ive.somethingnew.video.x")).toBe("unknown");
     expect(classifyVideoAci("")).toBe("unknown");

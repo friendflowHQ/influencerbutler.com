@@ -12,6 +12,7 @@ import {
   WATCHLIST_PERIOD_MINUTES,
 } from "../shared/constants";
 import { enqueue, flush, queueDepth } from "../transport/router";
+import { detectRetailerForUrl, isBenableListUrl } from "../content/page-type";
 import { authSnapshot, signIn, signOut } from "./auth";
 import { captureAffiliateReferral } from "./affiliate";
 import { getHudStatus, lookupEarnings, fetchDesktopHistory, fetchOutreachKeywords, fetchMessageTemplates, fetchBrandEnrichment, fetchOwnership, fetchCampaignStatus, fetchYouTubeStatus, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
@@ -22,7 +23,8 @@ import {
   sendFeedback,
   submitFeedbackRich,
   listLocalFeedback,
-  dismissLocalFeedback,
+  archiveLocalFeedback,
+  unarchiveLocalFeedback,
   listFeedbackThreads,
   postFeedbackReply,
   markFeedbackThreadRead,
@@ -111,6 +113,12 @@ import {
   noteAcceptResult,
   noteAcceptTabReady,
 } from "./campaign-accept";
+import {
+  noteBumpStepResult,
+  noteBumpTabReady,
+  resumeVideoBump,
+  startBrowserBump,
+} from "./video-bump";
 import { cleanLinkForRequest } from "./clean-link";
 import {
   buildIntegrationsView,
@@ -262,6 +270,42 @@ chrome.runtime.onUpdateAvailable.addListener((details) => {
   void noteUpdateAvailable(details.version);
 });
 
+// The toolbar icon opens the settings dropdown (action.default_popup) by
+// default. On a page the floating HUD panel can appear on, clear the popup so
+// chrome.action.onClicked fires instead of the dropdown, routing the click to
+// the content script as a panel show/hide toggle; everywhere else the
+// dropdown keeps opening as usual.
+function isHudCapableUrl(url: string | undefined): boolean {
+  if (!url) return false;
+  return detectRetailerForUrl(url) !== null || isBenableListUrl(url);
+}
+
+async function syncActionPopup(tabId: number, url: string | undefined): Promise<void> {
+  try {
+    await chrome.action.setPopup({ tabId, popup: isHudCapableUrl(url) ? "" : "popup.html" });
+  } catch {
+    // The tab may have closed mid-update: nothing to sync.
+  }
+}
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.url === undefined && changeInfo.status !== "complete") return;
+  void syncActionPopup(tabId, changeInfo.url ?? tab.url);
+});
+
+chrome.tabs.onActivated.addListener(({ tabId }) => {
+  void chrome.tabs.get(tabId).then(
+    (tab) => syncActionPopup(tabId, tab.url),
+    () => undefined,
+  );
+});
+
+// Only ever fires on a tab whose popup was just cleared above, i.e. a
+// HUD-capable page: tell the content script to show/hide its panel.
+chrome.action.onClicked.addListener((tab) => {
+  if (tab.id != null) void chrome.tabs.sendMessage(tab.id, { kind: "TOGGLE_HUD_PANEL" }).catch(() => undefined);
+});
+
 async function skipOnAndroid(job: () => Promise<void>): Promise<void> {
   if (await isAndroid()) return;
   await job();
@@ -303,6 +347,8 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     // open the deals page again after granting a site once.
     void syncDealBadgeContentScripts();
   }
+  // One-shot per-job alarm (background/video-bump.ts): the reupload wait.
+  if (alarm.name.startsWith("video-bump:")) void resumeVideoBump(alarm.name);
   handleNudgeAlarm(alarm.name);
 });
 
@@ -523,8 +569,11 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
     case "LIST_MY_FEEDBACK":
       void listLocalFeedback().then(sendResponse);
       return true;
-    case "DISMISS_MY_FEEDBACK":
-      void dismissLocalFeedback(message.id).then(sendResponse);
+    case "ARCHIVE_MY_FEEDBACK":
+      void archiveLocalFeedback(message.id).then(sendResponse);
+      return true;
+    case "UNARCHIVE_MY_FEEDBACK":
+      void unarchiveLocalFeedback(message.id).then(sendResponse);
       return true;
     case "LIST_FEEDBACK_THREADS":
       void listFeedbackThreads().then(sendResponse);
@@ -774,6 +823,18 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
     case "RECORD_ACCEPT":
       void noteAccept(message.campaignId, message.source).then(() => sendResponse(undefined));
       return true;
+    // In-browser video bump (background/video-bump.ts).
+    case "START_VIDEO_BUMP":
+      void startBrowserBump(message.video, message.mode).then(sendResponse);
+      return true;
+    case "BUMP_TAB_READY":
+      noteBumpTabReady(sender.tab?.id);
+      sendResponse(undefined);
+      return false;
+    case "BUMP_STEP_RESULT":
+      noteBumpStepResult(sender.tab?.id, message.outcome);
+      sendResponse(undefined);
+      return false;
     case "GET_PAGE_STATUS":
       return false; // answered by content scripts, not the background
   }

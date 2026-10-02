@@ -457,3 +457,17 @@ export const CAMPAIGN_DETAIL_URL = (campaignId: string): string =>
   `https://affiliate-program.amazon.com/p/connect/request?adId=${encodeURIComponent(
     campaignId,
   )}&campaignId=${encodeURIComponent(campaignId)}&type=affiliate-plus`;
+
+// In-browser video bump (background/video-bump.ts). The capture/delete tabs
+// are quick, single-page DOM reads; the dwell just needs to outlast the edit
+// page's own SPA hydration.
+export const BUMP_TAB_DWELL_MS = 25_000;
+// How long a video download may take before the job gives up and reports a
+// failure rather than deleting the original with nothing saved.
+export const BUMP_DOWNLOAD_TIMEOUT_MS = 10 * 60 * 1000;
+// How long to wait after deleting before reuploading, so Amazon's own
+// duplicate-video detection has cleared (per the creator's own experience;
+// UNVERIFIED exact minimum, kept generous). The desktop Video Reload Butler
+// enforces its own, separately-tuned cooldown for its Puppeteer-driven runs;
+// this is this browser's independent wait.
+export const BUMP_REUPLOAD_WAIT_MS = 15 * 60 * 1000;

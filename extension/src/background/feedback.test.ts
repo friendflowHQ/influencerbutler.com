@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { sendFeedback } from "./feedback";
+import { archiveLocalFeedback, sendFeedback, unarchiveLocalFeedback } from "./feedback";
+import type { MyFeedbackItem } from "../shared/messages";
 
 // Minimal chrome stub: an empty storage.local (so getState migrates a fresh,
 // signed-out state) plus a manifest whose version the submission must report.
@@ -14,6 +15,24 @@ function stubChrome(version: string) {
     },
     runtime: { getManifest: () => ({ version }) },
   });
+}
+
+// A storage.local stub backed by a real in-memory object, keyed the way
+// chrome.storage.local.get/set key a single storage key -- lets a test read
+// back what archiveLocalFeedback/unarchiveLocalFeedback actually wrote.
+function stubChromeStorage(rows: MyFeedbackItem[]) {
+  const backing: Record<string, unknown> = { "ib-my-feedback": rows };
+  vi.stubGlobal("chrome", {
+    storage: {
+      local: {
+        get: vi.fn(async (key: string) => ({ [key]: backing[key] })),
+        set: vi.fn(async (patch: Record<string, unknown>) => {
+          Object.assign(backing, patch);
+        }),
+      },
+    },
+  });
+  return () => backing["ib-my-feedback"] as MyFeedbackItem[];
 }
 
 function okFetch() {
@@ -60,5 +79,50 @@ describe("sendFeedback", () => {
 
     expect(result.ok).toBe(false);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("archiveLocalFeedback / unarchiveLocalFeedback", () => {
+  it("hides a submission from Active without deleting it", async () => {
+    const getBacking = stubChromeStorage([
+      { id: "fb-1", type: "bug", title: "Buttons overlap", status: "sent", createdAt: "2026-01-01", attachmentCount: 0 },
+    ]);
+
+    const result = await archiveLocalFeedback("fb-1");
+
+    expect(result).toEqual({ ok: true });
+    expect(getBacking()).toEqual([
+      expect.objectContaining({ id: "fb-1", archived: true }),
+    ]);
+  });
+
+  it("is idempotent when archiving an already-archived row", async () => {
+    stubChromeStorage([
+      { id: "fb-1", type: "bug", title: "x", status: "sent", createdAt: "2026-01-01", attachmentCount: 0, archived: true },
+    ]);
+
+    const result = await archiveLocalFeedback("fb-1");
+
+    expect(result).toEqual({ ok: true });
+  });
+
+  it("restores an archived submission to Active", async () => {
+    const getBacking = stubChromeStorage([
+      { id: "fb-1", type: "bug", title: "x", status: "sent", createdAt: "2026-01-01", attachmentCount: 0, archived: true },
+    ]);
+
+    const result = await unarchiveLocalFeedback("fb-1");
+
+    expect(result).toEqual({ ok: true });
+    expect(getBacking()).toEqual([
+      expect.objectContaining({ id: "fb-1", archived: false }),
+    ]);
+  });
+
+  it("reports not found for a missing id", async () => {
+    stubChromeStorage([]);
+
+    expect(await archiveLocalFeedback("missing")).toEqual({ ok: false, error: "Not found" });
+    expect(await unarchiveLocalFeedback("missing")).toEqual({ ok: false, error: "Not found" });
   });
 });

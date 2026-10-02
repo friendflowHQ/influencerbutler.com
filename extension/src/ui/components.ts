@@ -15,10 +15,15 @@ let quickBarActions: HTMLElement | null = null;
 let quickBarDealsSlot: HTMLElement | null = null;
 let syncChip: HTMLElement | null = null;
 let syncPollStarted = false;
+// Whether the user has asked (via the toolbar icon) to see the panel on this
+// page. Resets to false whenever a fresh panel is built below, so a new page
+// load or SPA navigation always starts hidden until the icon is clicked again.
+let hudVisible = false;
 
 export function getPanel(title: string): HTMLElement {
   const root = getShadowRoot();
   if (panel && panel.isConnected) return body as HTMLElement;
+  hudVisible = false;
   panel = el("div", "panel");
   // The header plus any pinned bars (the quick-links bar) live in one sticky
   // region so they stay put while the tool sections below scroll.
@@ -47,9 +52,21 @@ export function getPanel(title: string): HTMLElement {
     panel.classList.add("collapsed");
     chev.textContent = t().panelChevronShow;
   }
+  // Hidden until the user clicks the toolbar icon (toggleHudVisibility below);
+  // the extension never pops this open on its own.
+  panel.classList.add("hud-hidden");
   root.append(panel);
   startSyncPolling();
   return body;
+}
+
+// Shows/hides the panel in response to a toolbar-icon click (see the
+// TOGGLE_HUD_PANEL message in content/index.ts). A no-op if nothing has
+// rendered a panel on this page yet.
+export function toggleHudVisibility(): void {
+  if (!panel || !panel.isConnected) return;
+  hudVisible = !hudVisible;
+  panel.classList.toggle("hud-hidden", !hudVisible);
 }
 
 // The green "Synced" chip in the header: at-a-glance confirmation that the

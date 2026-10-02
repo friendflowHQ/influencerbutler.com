@@ -195,6 +195,18 @@ describe("sendCommandPreferLocal", () => {
     expect(res.viaRemote).toBe(true);
   });
 
+  it("relays a video.reload the same way (its own browser profile, machine-independent)", async () => {
+    localResult = { ok: false, message: "The Influencer Butler app is not running." };
+    stubTargets([{ receiverInstanceId: "desk-1", receiverLabel: "Studio PC" }]);
+    const res = await sendCommandPreferLocal({
+      type: "video.reload",
+      video: { contentId: "abc123" },
+      mode: "auto",
+    });
+    expect(res.ok).toBe(true);
+    expect(res.viaRemote).toBe(true);
+  });
+
   it("does NOT relay a non-deal command (e.g. campaign.accept) even when local is down", async () => {
     localResult = { ok: false, message: "The Influencer Butler app is not running." };
     const fetchMock = vi.fn();

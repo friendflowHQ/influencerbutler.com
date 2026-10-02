@@ -21,6 +21,7 @@ import {
   type MyVideoMatch,
   type MyVideoVerdict,
 } from "../my-video/resolve";
+import { renderBumpAdvice } from "../my-video/bump-badge";
 
 // Marketplace host for pool reads, e.g. "amazon.com" / "amazon.co.uk".
 function currentMarketplace(): string {
@@ -46,6 +47,13 @@ export function renderVideoCounts(
   // the My Video Placement tool is off or there is no evidence to judge with,
   // in which case nothing about "your video" renders at all.
   mine: MyVideoVerdict | null = null,
+  // The listing's own asin/marketplace, for the "Bump it" chip's HudCommand
+  // (resolveMyVideos already used the asin to reach "verified-missing"; this
+  // is just carried along so the chip does not have to re-derive it). Null
+  // when tools.videoBump is off, in which case a verified-missing verdict
+  // renders nothing (the detection in resolve.ts has no settings to gate on
+  // itself, so this is where that tool flag actually takes effect).
+  bumpContext: { asin: string | null; marketplace: string | null } | null = null,
 ): void {
   const section = addSection(t().videoCompetition);
 
@@ -75,7 +83,7 @@ export function renderVideoCounts(
   // "Your video: Upper carousel, #2 of 6". The first thing after the heading,
   // because it is the only line on this panel that is about the creator rather
   // than the competition.
-  renderMyVideoHeadline(section, mine, result, pending);
+  renderMyVideoHeadline(section, mine, result, pending, bumpContext);
 
   if (result.strategy === "header") {
     const note = el("p", "note");
@@ -215,7 +223,19 @@ function renderMyVideoHeadline(
   mine: MyVideoVerdict | null,
   result: CarouselResult,
   pending: boolean,
+  bumpContext: { asin: string | null; marketplace: string | null } | null,
 ): void {
+  if (mine?.kind === "verified-missing") {
+    if (bumpContext) {
+      renderBumpAdvice(section, {
+        contentId: mine.contentId,
+        title: mine.title,
+        asin: bumpContext.asin,
+        marketplace: bumpContext.marketplace,
+      });
+    }
+    return;
+  }
   if (!mine || mine.kind !== "present" || mine.matches.length === 0) return;
 
   // The rail total is only worth printing once it has stopped moving. A

@@ -123,6 +123,13 @@ export type Settings = {
   // page writes this whole object at once (never a partial nested patch)
   // because patchSettings shallow-merges.
   deals: DealsSettings;
+  // "Bump" picker remembered after the creator's first use of the chip that
+  // offers to delete + re-upload one of their own videos missing from a
+  // listing's carousel (see tools/my-video/resolve.ts "verified-missing").
+  // Both fields null until the first click, which is when the chip shows the
+  // 2-choice picker instead of running immediately; answering it writes both
+  // at once (never a partial patch) because patchSettings shallow-merges.
+  videoBump: VideoBumpSettings;
   // Marketplace codes (US/CA/UK/AU) whose buy-box availability Campaign Radar
   // checks per campaign product, rendering per-country chips on the grid.
   // Empty (the default) = feature off, zero extra fetches. Top-level rather
@@ -284,6 +291,13 @@ export type Settings = {
     // for anyone we have no evidence for. On by default; backfilled to true for
     // existing users by the tools shallow-merge in migrate().
     myVideoPlacement: boolean;
+    // The "Bump it" chip that follows a verified-missing own video (requires
+    // myVideoPlacement too, since that is what resolves the verdict): offers
+    // to delete + re-upload the video fresh, either in this browser or on the
+    // paired desktop app's Video Reload Butler. The kill-flag key is
+    // "videoBump" in disabledTools. On by default; backfilled to true for
+    // existing users by the tools shallow-merge in migrate().
+    videoBump: boolean;
   };
   syncEnabled: boolean;
   // Opt-in (default OFF): contribute product facts (ASIN, price, best-seller
@@ -690,6 +704,32 @@ export type DealsSettings = {
   cardChip: boolean;
 };
 
+export type VideoBumpRunOn = "browser" | "desktop";
+export type VideoBumpMode = "auto" | "assist";
+
+export type VideoBumpSettings = {
+  // Where the "Bump it" action runs. Null until the creator's first click,
+  // which is exactly when the chip must ask rather than guess.
+  runOn: VideoBumpRunOn | null;
+  // How hands-off it is: "auto" runs delete -> cooldown -> reupload -> retag
+  // unattended; "assist" only downloads the original file (plus its stored
+  // title/tags) and lets the creator finish the Amazon upload by hand.
+  mode: VideoBumpMode | null;
+};
+
+export const VIDEO_BUMP_RUN_ONS: readonly VideoBumpRunOn[] = ["browser", "desktop"] as const;
+export const VIDEO_BUMP_MODES: readonly VideoBumpMode[] = ["auto", "assist"] as const;
+
+// Pure: coerce an untrusted (stored) bump block into a valid one. An unknown
+// or missing value stays null (not a guessed default) so the chip keeps
+// asking until the creator actually answers once.
+export function normalizeVideoBumpSettings(raw: unknown): VideoBumpSettings {
+  const obj = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  const runOn = VIDEO_BUMP_RUN_ONS.find((r) => r === obj.runOn) ?? null;
+  const mode = VIDEO_BUMP_MODES.find((m) => m === obj.mode) ?? null;
+  return { runOn, mode };
+}
+
 export const DEAL_PLACEMENTS: readonly DealPlacement[] = [
   "draft",
   "next",
@@ -719,6 +759,11 @@ const DEFAULT_DEALS: DealsSettings = {
   cardChip: true,
 };
 
+const DEFAULT_VIDEO_BUMP: VideoBumpSettings = {
+  runOn: null,
+  mode: null,
+};
+
 const DEFAULT_AUTO_ACCEPT: AutoAcceptSettings = {
   enabled: false,
   minCommissionPct: 12,
@@ -729,7 +774,7 @@ const DEFAULT_AUTO_ACCEPT: AutoAcceptSettings = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 35,
+  schemaVersion: 36,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -752,6 +797,7 @@ export const DEFAULTS: StorageShape = {
     },
     autoAccept: { ...DEFAULT_AUTO_ACCEPT, bands: [...DEFAULT_AUTO_ACCEPT.bands] },
     deals: { workspace: "default", placement: "end", cardChip: true },
+    videoBump: { ...DEFAULT_VIDEO_BUMP },
     voiceover: {
       tone: "",
       niche: "",
@@ -822,6 +868,7 @@ export const DEFAULTS: StorageShape = {
       dealSignals: true,
       youtubeStatus: true,
       myVideoPlacement: true,
+      videoBump: true,
     },
     syncEnabled: true,
     contributeCatalogue: false,
@@ -979,7 +1026,11 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // feeds it, on by default); the tools shallow-merge backfills it.
   // v34 -> v35 added settings.deals (which Deals Butler workspace the on-page
   // "Send to Deals" chip pushes into, where the deal lands in that queue, and
-  // whether the chip is shown); normalizeDealsSettings backfills it.
+  // whether the chip is shown); normalizeDealsSettings backfills it. v35 ->
+  // v36 added the videoBump tool flag (the "Bump it" chip on a verified-
+  // missing own video, on by default; the tools shallow-merge backfills it)
+  // and settings.videoBump (the remembered run-on/mode picker, both null
+  // until the creator's first click); normalizeVideoBumpSettings backfills it.
   const migratedProviders = { ...(raw.integrations?.providers ?? {}) };
   delete migratedProviders.impact;
   if (migratedProviders.walmartCreator) {
@@ -1047,6 +1098,10 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
         ...DEFAULTS.settings.deals,
         ...(raw.settings?.deals ?? {}),
       }),
+      videoBump: normalizeVideoBumpSettings({
+        ...DEFAULTS.settings.videoBump,
+        ...(raw.settings?.videoBump ?? {}),
+      }),
       availabilityMarkets: Array.isArray(raw.settings?.availabilityMarkets)
         ? raw.settings.availabilityMarkets
         : [],
@@ -1073,7 +1128,7 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
     variantParents:
       raw.variantParents && typeof raw.variantParents === "object" ? raw.variantParents : {},
-    schemaVersion: 35,
+    schemaVersion: 36,
   };
 }
 

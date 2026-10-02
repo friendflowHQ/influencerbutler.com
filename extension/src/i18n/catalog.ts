@@ -262,6 +262,36 @@ export interface Dict {
   myVideoCardBadgeTitle: (position: number) => string;
   myVideoInfo: string;
 
+  // "Bump it" chip: follows a verified-missing own video (resolve.ts
+  // "verified-missing"). Offers to delete + re-upload it fresh, either in
+  // this browser or on the paired desktop app's Video Reload Butler.
+  videoBumpChip: string;
+  videoBumpPanelTitle: string;
+  videoBumpExplain: string;
+  videoBumpRunOnLabel: string;
+  videoBumpRunOnBrowser: string;
+  videoBumpRunOnDesktop: string;
+  videoBumpModeLabel: string;
+  videoBumpModeAuto: string;
+  videoBumpModeAssist: string;
+  videoBumpConfirm: string;
+  videoBumpChangeChoice: string;
+  videoBumpRunning: string;
+  videoBumpConnectApp: string;
+  videoBumpError: string;
+  videoBumpDone: string;
+
+  // In-browser bump reupload banner (tools/my-video/bump-runner.ts): the one
+  // page the creator must act on themselves (Chrome will not let a script
+  // attach a file to a native file input).
+  bumpReuploadTitle: string;
+  bumpReuploadFile: (filename: string) => string;
+  bumpReuploadAttachBtn: string;
+  bumpReuploadAttached: string;
+  bumpReuploadNoFileInput: string;
+  bumpReuploadTagManually: (asins: string) => string;
+  bumpReuploadSubmitting: string;
+
   // Video competition: full video sweep (harvest every video)
   deepScan: string;
   deepScanIntro: string;
@@ -1303,6 +1333,31 @@ const en: Dict = {
   myVideoCardBadgeTitle: (position) => `Your video, #${position} in this carousel`,
   myVideoInfo:
     "The upper carousel sits next to the image gallery and is the best-earning video slot; the lower rail is the Videos for this product section further down. Position is Amazon's own order in that rail when this page loaded, and it rotates.",
+
+  videoBumpChip: "Bump it",
+  videoBumpPanelTitle: "Your video isn't showing here",
+  videoBumpExplain:
+    "It's not in either carousel on this listing. Delete and re-upload it fresh: Amazon treats a re-upload like a new post.",
+  videoBumpRunOnLabel: "Where should this run?",
+  videoBumpRunOnBrowser: "This browser",
+  videoBumpRunOnDesktop: "Desktop app",
+  videoBumpModeLabel: "How hands-off?",
+  videoBumpModeAuto: "Automatic: delete, re-upload, and re-tag for me",
+  videoBumpModeAssist: "Just download it, I'll re-upload manually",
+  videoBumpConfirm: "Bump it",
+  videoBumpChangeChoice: "Change",
+  videoBumpRunning: "Working...",
+  videoBumpConnectApp: "Connect the app first",
+  videoBumpError: "Could not reach the app",
+  videoBumpDone: "Done",
+
+  bumpReuploadTitle: "Reupload your video",
+  bumpReuploadFile: (filename) => `Attach the file we downloaded: ${filename}`,
+  bumpReuploadAttachBtn: "Attach video",
+  bumpReuploadAttached: "Video attached. Filling in the title...",
+  bumpReuploadNoFileInput: "Could not find Amazon's upload field. Attach the file yourself to continue.",
+  bumpReuploadTagManually: (asins) => `Tag these products yourself before submitting: ${asins}`,
+  bumpReuploadSubmitting: "Submitting...",
 
   deepScan: "Sweep every video",
   deepScanIntro:
@@ -2365,6 +2420,31 @@ const es: Dict = {
   myVideoInfo:
     "El carrusel superior está junto a la galería de imágenes y es el espacio de video que más gana; el carril inferior es la sección Videos de este producto, más abajo. La posición es el orden de Amazon en ese carril al cargar la página, y rota.",
 
+  videoBumpChip: "Impulsarlo",
+  videoBumpPanelTitle: "Tu video no aparece aquí",
+  videoBumpExplain:
+    "No está en ningún carrusel de esta ficha. Bórralo y vuelve a subirlo: Amazon trata una nueva subida como una publicación nueva.",
+  videoBumpRunOnLabel: "¿Dónde debería ejecutarse?",
+  videoBumpRunOnBrowser: "Este navegador",
+  videoBumpRunOnDesktop: "App de escritorio",
+  videoBumpModeLabel: "¿Qué tan automático?",
+  videoBumpModeAuto: "Automático: bórralo, vuelve a subirlo y etiquétalo por mí",
+  videoBumpModeAssist: "Solo descárgalo, yo lo vuelvo a subir",
+  videoBumpConfirm: "Impulsarlo",
+  videoBumpChangeChoice: "Cambiar",
+  videoBumpRunning: "Trabajando...",
+  videoBumpConnectApp: "Conecta la app primero",
+  videoBumpError: "No se pudo contactar con la app",
+  videoBumpDone: "Listo",
+
+  bumpReuploadTitle: "Vuelve a subir tu video",
+  bumpReuploadFile: (filename) => `Adjunta el archivo que descargamos: ${filename}`,
+  bumpReuploadAttachBtn: "Adjuntar video",
+  bumpReuploadAttached: "Video adjuntado. Completando el título...",
+  bumpReuploadNoFileInput: "No se encontró el campo de subida de Amazon. Adjunta el archivo tú mismo para continuar.",
+  bumpReuploadTagManually: (asins) => `Etiqueta estos productos tú mismo antes de enviar: ${asins}`,
+  bumpReuploadSubmitting: "Enviando...",
+
   deepScan: "Barrer todos los videos",
   deepScanIntro:
     "Amazon solo carga unos pocos videos en pantalla. Este barrido recorre el propio feed del widget para clasificar todos los videos que entregue, separados por carrusel superior (video de marca) e inferior (relacionados).",
@@ -3426,6 +3506,31 @@ const fr: Dict = {
   myVideoCardBadgeTitle: (position) => `Votre vidéo, n° ${position} de ce carrousel`,
   myVideoInfo:
     "Le carrousel supérieur se trouve à côté de la galerie d'images : c'est l'emplacement vidéo le plus rémunérateur. Le rail inférieur est la section Vidéos de ce produit, plus bas. La position est l'ordre d'Amazon dans ce rail au chargement de la page, et il change.",
+
+  videoBumpChip: "Relancer",
+  videoBumpPanelTitle: "Votre vidéo n'apparaît pas ici",
+  videoBumpExplain:
+    "Elle n'est dans aucun des deux carrousels de cette fiche. Supprimez-la et republiez-la : Amazon traite une republication comme une nouvelle publication.",
+  videoBumpRunOnLabel: "Où cela doit-il s'exécuter ?",
+  videoBumpRunOnBrowser: "Ce navigateur",
+  videoBumpRunOnDesktop: "App de bureau",
+  videoBumpModeLabel: "À quel point automatique ?",
+  videoBumpModeAuto: "Automatique : suppression, republication et retaguage pour moi",
+  videoBumpModeAssist: "Téléchargez-la seulement, je la republie moi-même",
+  videoBumpConfirm: "Relancer",
+  videoBumpChangeChoice: "Changer",
+  videoBumpRunning: "En cours...",
+  videoBumpConnectApp: "Connectez l'app d'abord",
+  videoBumpError: "Impossible de joindre l'app",
+  videoBumpDone: "Terminé",
+
+  bumpReuploadTitle: "Republiez votre vidéo",
+  bumpReuploadFile: (filename) => `Joignez le fichier téléchargé : ${filename}`,
+  bumpReuploadAttachBtn: "Joindre la vidéo",
+  bumpReuploadAttached: "Vidéo jointe. Remplissage du titre...",
+  bumpReuploadNoFileInput: "Impossible de trouver le champ d'envoi d'Amazon. Joignez le fichier vous-même pour continuer.",
+  bumpReuploadTagManually: (asins) => `Taguez ces produits vous-même avant d'envoyer : ${asins}`,
+  bumpReuploadSubmitting: "Envoi en cours...",
 
   deepScan: "Balayer toutes les vidéos",
   deepScanIntro:

@@ -7,7 +7,7 @@ import type {
   RichFeedbackResult,
   MyFeedbackItem,
   MyFeedbackListResult,
-  DismissFeedbackResult,
+  ArchiveFeedbackResult,
   FeedbackThread,
   FeedbackThreadReply,
   FeedbackThreadsResult,
@@ -90,10 +90,34 @@ export async function listLocalFeedback(): Promise<MyFeedbackListResult> {
   return { ok: true, submissions: rows };
 }
 
-export async function dismissLocalFeedback(id: string): Promise<DismissFeedbackResult> {
-  if (!id) return { ok: false };
+// Hide a submission from the default "Active" view without discarding it
+// (unlike the old dismiss, which deleted the row outright). Idempotent --
+// archiving an already-archived row is a no-op success.
+export async function archiveLocalFeedback(id: string): Promise<ArchiveFeedbackResult> {
+  if (!id) return { ok: false, error: "Missing id" };
   const rows = await readLocalFeedback();
-  await writeLocalFeedback(rows.filter((r) => r.id !== id));
+  const idx = rows.findIndex((r) => r.id === id);
+  const row = idx === -1 ? null : rows[idx];
+  if (idx === -1 || !row) return { ok: false, error: "Not found" };
+  if (!row.archived) {
+    rows[idx] = { ...row, archived: true };
+    await writeLocalFeedback(rows);
+  }
+  return { ok: true };
+}
+
+// Restore a submission archived via `archiveLocalFeedback` back to the
+// "Active" view.
+export async function unarchiveLocalFeedback(id: string): Promise<ArchiveFeedbackResult> {
+  if (!id) return { ok: false, error: "Missing id" };
+  const rows = await readLocalFeedback();
+  const idx = rows.findIndex((r) => r.id === id);
+  const row = idx === -1 ? null : rows[idx];
+  if (idx === -1 || !row) return { ok: false, error: "Not found" };
+  if (row.archived) {
+    rows[idx] = { ...row, archived: false };
+    await writeLocalFeedback(rows);
+  }
   return { ok: true };
 }
 
