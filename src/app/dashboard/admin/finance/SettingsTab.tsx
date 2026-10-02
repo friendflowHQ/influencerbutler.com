@@ -9,7 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 type Settings = {
   lsFeePercent: number;
   lsFeeFixedCents: number;
-  lsPayoutDayOfMonth: number;
+  lsPayoutDaysOfMonth: number[];
   lsPayoutNetDelayDays: number;
   refundHoldDays: number;
   taxMode: "passthrough" | "scorp";
@@ -142,6 +142,26 @@ export default function SettingsTab({ onSettingsChanged }: Props) {
     </label>
   );
 
+  const payoutDay = (index: 0 | 1, label: string) => (
+    <label className="text-xs text-slate-600">
+      {label}
+      <input
+        type="number"
+        step="1"
+        min={1}
+        max={28}
+        value={settings.lsPayoutDaysOfMonth[index] ?? ""}
+        onChange={(e) => {
+          const days = [...settings.lsPayoutDaysOfMonth] as [number, number];
+          days[index] = Number(e.target.value);
+          setSettings({ ...settings, lsPayoutDaysOfMonth: days });
+        }}
+        className="mt-1 block w-28 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+      />
+      <span className="mt-0.5 block text-[10px] text-slate-400">1-28</span>
+    </label>
+  );
+
   const text = (key: keyof Settings, label: string, width = "w-48") => (
     <label className="text-xs text-slate-600">
       {label}
@@ -167,7 +187,8 @@ export default function SettingsTab({ onSettingsChanged }: Props) {
         <div className="mt-3 flex flex-wrap gap-4">
           {num("lsFeePercent", "Fee %", "LS's cut of each sale")}
           {num("lsFeeFixedCents", "Fixed fee (cents)", "per order", "1")}
-          {num("lsPayoutDayOfMonth", "Payout day of month", "1-28", "1")}
+          {payoutDay(0, "First payout day")}
+          {payoutDay(1, "Second payout day")}
           {num("lsPayoutNetDelayDays", "Payout delay (days)", "order age to be included", "1")}
         </div>
       </div>

@@ -15,6 +15,7 @@ import { computeMonthlyEarnings } from "@/lib/affiliate-commissions-data";
 import { SEED_SOURCE } from "@/lib/recent-activity";
 import { planForVariantId } from "@/lib/lemonsqueezy";
 import { planMetaFor, PRICE_CENTS } from "@/lib/pricing-constants";
+import { upcomingPayoutDatesMs } from "@/lib/finance-ls-payouts";
 
 export type MetricUnit = "count" | "cents";
 
@@ -56,15 +57,20 @@ export type MetricSnapshot = {
 
 /**
  * One projected-earnings figure: how many trials feed it, the estimated
- * first-payment value of those trials converting, and that value added to
- * this month's secured revenue.
+ * first-payment value of those trials converting, how many already-active
+ * subscribers are due to renew, the estimated value of those renewals, and
+ * all of that added to this month's secured revenue.
  */
 export type ProjectionFigure = {
   /** Trials feeding this figure. */
   trials: number;
   /** Estimated first-payment value of those trials converting, in cents. */
   trialCents: number;
-  /** securedCents + trialCents, or null when secured revenue is unknown. */
+  /** Already-active subscribers due to renew, feeding this figure. */
+  activeRenewals: number;
+  /** Estimated renewal value of those active subscribers, in cents. */
+  activeRenewalCents: number;
+  /** securedCents + trialCents + activeRenewalCents, or null when secured revenue is unknown. */
   totalCents: number | null;
 };
 
@@ -72,16 +78,38 @@ export type ProjectionFigure = {
  * Forward-looking "what could this month total" estimate. A "now" concept, so
  * it is only populated for the current month. It carries two figures over the
  * same secured revenue:
- *   - bestCase:  every trial open right now, valued at its full first payment
- *                (an optimistic ceiling: assumes all convert and none cancel).
- *   - thisMonth: only the trials whose next charge date falls within this
- *                calendar month, i.e. cash that could actually land this month.
+ *   - bestCase:  every trial open right now (valued at its full first
+ *                payment) plus every active subscriber whose next charge
+ *                date falls this month (valued at its renewal price), an
+ *                optimistic ceiling that assumes all convert/renew and none
+ *                cancel.
+ *   - thisMonth: the same two components, but trials are kept only when
+ *                their next charge date also falls within this calendar
+ *                month, i.e. cash that could actually land this month.
  */
 export type EarningsProjection = {
   /** Revenue already paid to us this month, in cents (null if unknowable). */
   securedCents: number | null;
   bestCase: ProjectionFigure;
   thisMonth: ProjectionFigure;
+  /**
+   * "Projected cash this month" split by which upcoming Lemon Squeezy payout
+   * it would land in, given the owner's configured payout cadence. Null when
+   * payout settings were not supplied to computeGrowthSnapshot.
+   */
+  payoutSplit: PayoutBucket[] | null;
+};
+
+/** How much of a projection is expected to land in one upcoming LS payout. */
+export type PayoutBucket = {
+  payoutDateMs: number;
+  cents: number;
+};
+
+/** The two LS payout-cadence settings this module needs, read from Finance settings. */
+export type PayoutSettings = {
+  daysOfMonth: number[];
+  netDelayDays: number;
 };
 
 export type GrowthSnapshot = {
@@ -130,20 +158,20 @@ export function deltaPercent(current: number | null, previous: number | null): n
 }
 
 /**
- * Estimated first-payment value, in cents, of the trials in progress if they
- * all convert. Each on-trial subscription contributes its plan's list price:
- * a monthly plan adds one month, an annual plan adds the full year, since
- * that is what Lemon Squeezy charges on the first renewal after the trial.
- * A row whose variant we cannot map to a known plan falls back to
- * `fallbackCents` so an unrecognised SKU still counts rather than silently
- * reading as $0.
+ * Estimated charge value, in cents, of a list of subscriptions' variants,
+ * each contributing its plan's list price: a monthly plan adds one month, an
+ * annual plan adds the full year. Used both for trials converting (first
+ * payment) and for active subscribers renewing (same price, since Lemon
+ * Squeezy charges the plan's list price on renewal too). A row whose variant
+ * we cannot map to a known plan falls back to `fallbackCents` so an
+ * unrecognised SKU still counts rather than silently reading as $0.
  */
 export function projectedTrialConversionCents(
-  onTrialVariantIds: (string | null | undefined)[],
+  variantIds: (string | null | undefined)[],
   fallbackCents: number,
 ): number {
   let total = 0;
-  for (const variantId of onTrialVariantIds) {
+  for (const variantId of variantIds) {
     const meta = planMetaFor(planForVariantId(variantId));
     total += meta ? meta.priceCents : fallbackCents;
   }
@@ -164,6 +192,61 @@ export function billsWithinWindow(
   if (typeof renewsAt !== "string") return false;
   const t = Date.parse(renewsAt);
   return Number.isFinite(t) && t >= startMs && t < nextMs;
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Splits "projected cash this month" across the next few upcoming Lemon
+ * Squeezy payouts, so the dashboard can show when the cash would actually
+ * hit the bank rather than just that it's expected this month.
+ *
+ * `orderRows` (already-secured revenue) are bucketed by their actual charge
+ * date; `trialRows` and `renewalRows` (still-projected revenue, each priced
+ * via `priceVariant`) are bucketed by their `renews_at`, i.e. the date
+ * they'd be charged if they convert/renew. Each row lands in the earliest
+ * upcoming payout whose eligibility cutoff (`payoutDate - netDelayDays`) is
+ * on or after its charge date; a row newer than every computed cutoff falls
+ * into the last bucket as a "later than that" catch-all.
+ */
+export function splitProjectionByPayout(
+  orderRows: Record<string, unknown>[],
+  trialRows: Record<string, unknown>[],
+  renewalRows: Record<string, unknown>[],
+  fallbackCents: number,
+  payoutSettings: PayoutSettings,
+  nowMs: number,
+  payoutCount = 3,
+): PayoutBucket[] {
+  const payoutDates = upcomingPayoutDatesMs(nowMs, payoutSettings.daysOfMonth, payoutCount);
+  const cutoffsMs = payoutDates.map((d) => d - payoutSettings.netDelayDays * DAY_MS);
+  const buckets: PayoutBucket[] = payoutDates.map((payoutDateMs) => ({ payoutDateMs, cents: 0 }));
+
+  const bucketIndexFor = (chargeMs: number): number => {
+    const i = cutoffsMs.findIndex((cutoff) => chargeMs <= cutoff);
+    return i === -1 ? buckets.length - 1 : i;
+  };
+
+  for (const row of orderRows) {
+    const ms = typeof row.created_at === "string" ? Date.parse(row.created_at) : NaN;
+    if (!Number.isFinite(ms)) continue;
+    const cents = typeof row.total === "number" && Number.isFinite(row.total) ? row.total : 0;
+    buckets[bucketIndexFor(ms)].cents += cents;
+  }
+
+  const priceRow = (row: Record<string, unknown>): number => {
+    const variantId = row.ls_variant_id == null ? null : String(row.ls_variant_id);
+    const meta = planMetaFor(planForVariantId(variantId));
+    return meta ? meta.priceCents : fallbackCents;
+  };
+
+  for (const row of [...trialRows, ...renewalRows]) {
+    const ms = typeof row.renews_at === "string" ? Date.parse(row.renews_at) : NaN;
+    if (!Number.isFinite(ms)) continue;
+    buckets[bucketIndexFor(ms)].cents += priceRow(row);
+  }
+
+  return buckets;
 }
 
 // ---------------------------------------------------------------------------
@@ -303,6 +386,7 @@ const one = () => 1;
 export async function computeGrowthSnapshot(
   supabase: SnapshotClient,
   month: string,
+  payoutSettings?: PayoutSettings,
 ): Promise<GrowthSnapshot | null> {
   const bounds = monthBounds(month);
   if (!bounds) return null;
@@ -482,11 +566,13 @@ export async function computeGrowthSnapshot(
     );
   }
   let onTrialLive: Record<string, unknown>[] = [];
+  let activeLive: Record<string, unknown>[] = [];
   if (activeRows) {
     const live = activeRows.filter((r) => !isAddon(r));
     onTrialLive = live.filter((r) => r.status === "on_trial");
+    activeLive = live.filter((r) => r.status === "active");
     metrics.active_subscriptions = {
-      current: live.filter((r) => r.status === "active").length,
+      current: activeLive.length,
       previous: null,
       series: null,
     };
@@ -544,25 +630,43 @@ export async function computeGrowthSnapshot(
   }
 
   // Projected earnings: secured revenue plus what the open trials would add if
-  // they converted. Two figures over the same secured base (see
-  // EarningsProjection): a best-case ceiling counting every open trial, and a
-  // tighter figure counting only trials that would bill this calendar month.
+  // they converted, plus what the already-active base would add from renewals
+  // due this month. Two figures over the same secured base (see
+  // EarningsProjection): a best-case ceiling counting every open trial and
+  // every active subscriber renewing this month, and a tighter figure
+  // counting only the trials that would also bill this calendar month (active
+  // renewals are already month-scoped in both figures, since an active sub's
+  // `renews_at` only falls in the current window until it actually renews).
   // Only for the current month (see isCurrentMonth), and only when we could
   // read the live subscriptions at all.
   if (isCurrentMonth && activeRows) {
-    // Fall back to the entry (Pro Solo monthly) price for any trial whose
-    // variant we cannot map, so an unrecognised SKU still counts.
+    // Fall back to the entry (Pro Solo monthly) price for any trial or active
+    // renewal whose variant we cannot map, so an unrecognised SKU still counts.
     const fallbackCents = PRICE_CENTS.solo.monthly;
     const toVariant = (r: Record<string, unknown>) =>
       r.ls_variant_id == null ? null : String(r.ls_variant_id);
+
+    const startMs = Date.parse(bounds.startIso);
+    const nextMs = Date.parse(bounds.nextIso);
+
+    // Active subscribers due to renew this month. LS advances `renews_at` to
+    // the next cycle as soon as a charge succeeds, so a sub that already
+    // renewed earlier this month naturally drops out of this window (its
+    // charge already shows up in securedCents via the paid order) and never
+    // gets double-counted here.
+    const renewingThisMonth = activeLive.filter((r) =>
+      billsWithinWindow(r.renews_at, startMs, nextMs),
+    );
+    const activeRenewalCents = projectedTrialConversionCents(
+      renewingThisMonth.map(toVariant),
+      fallbackCents,
+    );
 
     const bestCaseCents = projectedTrialConversionCents(
       onTrialLive.map(toVariant),
       fallbackCents,
     );
 
-    const startMs = Date.parse(bounds.startIso);
-    const nextMs = Date.parse(bounds.nextIso);
     const billingThisMonth = onTrialLive.filter((r) =>
       billsWithinWindow(r.renews_at, startMs, nextMs),
     );
@@ -573,18 +677,37 @@ export async function computeGrowthSnapshot(
 
     const securedCents = metrics.revenue_cents.current;
     const withSecured = (cents: number) => (securedCents === null ? null : securedCents + cents);
+
+    // Optional: when the caller supplied the owner's LS payout cadence, split
+    // "cash this month" by which upcoming payout it would land in.
+    const payoutSplit = payoutSettings
+      ? splitProjectionByPayout(
+          orderRows ?? [],
+          billingThisMonth,
+          renewingThisMonth,
+          fallbackCents,
+          payoutSettings,
+          Date.now(),
+        )
+      : null;
+
     projection = {
       securedCents,
       bestCase: {
         trials: onTrialLive.length,
         trialCents: bestCaseCents,
-        totalCents: withSecured(bestCaseCents),
+        activeRenewals: renewingThisMonth.length,
+        activeRenewalCents,
+        totalCents: withSecured(bestCaseCents + activeRenewalCents),
       },
       thisMonth: {
         trials: billingThisMonth.length,
         trialCents: thisMonthCents,
-        totalCents: withSecured(thisMonthCents),
+        activeRenewals: renewingThisMonth.length,
+        activeRenewalCents,
+        totalCents: withSecured(thisMonthCents + activeRenewalCents),
       },
+      payoutSplit,
     };
   }
 

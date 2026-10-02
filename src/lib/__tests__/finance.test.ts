@@ -5,7 +5,12 @@ import {
   buildRevenueSeries,
   recognitionBaseCents,
 } from "@/lib/finance-revenue";
-import { estimateOrderNetCents, computePayoutForecast, nextPayoutDateMs } from "@/lib/finance-ls-payouts";
+import {
+  estimateOrderNetCents,
+  computePayoutForecast,
+  nextPayoutDateMs,
+  upcomingPayoutDatesMs,
+} from "@/lib/finance-ls-payouts";
 import { computeTaxSetAside, taxQuartersForYear, nextDeadline, daysUntil } from "@/lib/finance-tax";
 import {
   expandRecurring,
@@ -92,11 +97,27 @@ describe("finance-ls-payouts", () => {
     expect(estimateOrderNetCents(o, DEFAULT_FINANCE_SETTINGS)).toBe(-550);
   });
 
-  it("next payout date rolls to next month after the payout day", () => {
-    const before = Date.UTC(2026, 7, 5);
-    expect(new Date(nextPayoutDateMs(before, 10)).toISOString().slice(0, 10)).toBe("2026-08-10");
-    const after = Date.UTC(2026, 7, 26);
-    expect(new Date(nextPayoutDateMs(after, 10)).toISOString().slice(0, 10)).toBe("2026-09-10");
+  it("next payout date rolls across the 14th/28th cadence", () => {
+    const beforeFirst = Date.UTC(2026, 7, 5); // Aug 5
+    expect(new Date(nextPayoutDateMs(beforeFirst, [14, 28])).toISOString().slice(0, 10)).toBe(
+      "2026-08-14",
+    );
+    const betweenBoth = Date.UTC(2026, 7, 20); // Aug 20
+    expect(new Date(nextPayoutDateMs(betweenBoth, [14, 28])).toISOString().slice(0, 10)).toBe(
+      "2026-08-28",
+    );
+    const afterBoth = Date.UTC(2026, 7, 29); // Aug 29, rolls into next month
+    expect(new Date(nextPayoutDateMs(afterBoth, [14, 28])).toISOString().slice(0, 10)).toBe(
+      "2026-09-14",
+    );
+  });
+
+  it("upcomingPayoutDatesMs returns the next N payout dates in order", () => {
+    const now = Date.UTC(2026, 7, 5); // Aug 5
+    const dates = upcomingPayoutDatesMs(now, [14, 28], 3).map((ms) =>
+      new Date(ms).toISOString().slice(0, 10),
+    );
+    expect(dates).toEqual(["2026-08-14", "2026-08-28", "2026-09-14"]);
   });
 
   it("forecast nets recorded payouts and respects the delay window", () => {
@@ -112,9 +133,9 @@ describe("finance-ls-payouts", () => {
     expect(forecast.estimatedNetAllTimeCents).toBe(18900);
     expect(forecast.recordedPayoutsCents).toBe(5000);
     expect(forecast.estimatedUnpaidCents).toBe(13900);
-    // Next payout 2026-09-10, cutoff 08-27: only the old order is eligible,
+    // Next payout 2026-08-28, cutoff 08-14: only the old order is eligible,
     // so the estimate is its net (9450) minus the 5000 already paid out.
-    expect(forecast.nextPayoutDate).toBe("2026-09-10");
+    expect(forecast.nextPayoutDate).toBe("2026-08-28");
     expect(forecast.nextPayoutEstimateCents).toBe(4450);
     expect(forecast.driftCents).not.toBeNull();
   });

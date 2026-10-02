@@ -12,8 +12,8 @@ export type FinanceSettings = {
   lsFeePercent: number;
   /** Lemon Squeezy fixed fee per order, in cents. Estimate. */
   lsFeeFixedCents: number;
-  /** Day of month LS typically sends the payout (their schedule may change). */
-  lsPayoutDayOfMonth: number;
+  /** Days of month LS sends payouts on, e.g. [14, 28] (their schedule may change). */
+  lsPayoutDaysOfMonth: number[];
   /** Orders must be at least this many days old to be included in a payout. */
   lsPayoutNetDelayDays: number;
   /** Earned revenue is only "releasable" once past this refund window. */
@@ -50,7 +50,7 @@ export type FinanceSettings = {
 export const DEFAULT_FINANCE_SETTINGS: FinanceSettings = {
   lsFeePercent: 5,
   lsFeeFixedCents: 50,
-  lsPayoutDayOfMonth: 10,
+  lsPayoutDaysOfMonth: [14, 28],
   lsPayoutNetDelayDays: 14,
   refundHoldDays: 30,
   taxMode: "passthrough",
@@ -89,6 +89,19 @@ function clampNumber(value: unknown, fallback: number, min: number, max: number)
   return Math.min(max, Math.max(min, n));
 }
 
+/** Clamp/dedupe/sort a list of payout days-of-month, falling back if empty or malformed. */
+function clampPayoutDays(value: unknown, fallback: number[]): number[] {
+  if (!Array.isArray(value)) return fallback;
+  const days = Array.from(
+    new Set(
+      value
+        .map((v) => Math.round(clampNumber(v, NaN, 1, 28)))
+        .filter((n) => Number.isFinite(n)),
+    ),
+  ).sort((a, b) => a - b);
+  return days.length > 0 ? days : fallback;
+}
+
 /** Merge an arbitrary stored/patch object over the defaults, clamped sane. */
 export function normalizeFinanceSettings(raw: unknown): FinanceSettings {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
@@ -96,7 +109,7 @@ export function normalizeFinanceSettings(raw: unknown): FinanceSettings {
   return {
     lsFeePercent: clampNumber(r.lsFeePercent, d.lsFeePercent, 0, 50),
     lsFeeFixedCents: Math.round(clampNumber(r.lsFeeFixedCents, d.lsFeeFixedCents, 0, 1000)),
-    lsPayoutDayOfMonth: Math.round(clampNumber(r.lsPayoutDayOfMonth, d.lsPayoutDayOfMonth, 1, 28)),
+    lsPayoutDaysOfMonth: clampPayoutDays(r.lsPayoutDaysOfMonth, d.lsPayoutDaysOfMonth),
     lsPayoutNetDelayDays: Math.round(
       clampNumber(r.lsPayoutNetDelayDays, d.lsPayoutNetDelayDays, 0, 90),
     ),

@@ -23,13 +23,21 @@ export type MetricSnapshot = {
 export type ProjectionFigure = {
   trials: number;
   trialCents: number;
+  activeRenewals: number;
+  activeRenewalCents: number;
   totalCents: number | null;
+};
+
+export type PayoutBucket = {
+  payoutDateMs: number;
+  cents: number;
 };
 
 export type EarningsProjection = {
   securedCents: number | null;
   bestCase: ProjectionFigure;
   thisMonth: ProjectionFigure;
+  payoutSplit: PayoutBucket[] | null;
 };
 
 export function formatUsdFromCents(cents: number): string {

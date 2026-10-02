@@ -8,10 +8,49 @@
 //     calendar month, i.e. money that could actually land this month.
 // Only rendered for the current month; the projection is a "now" concept.
 
-import { formatUsdFromCents, type EarningsProjection, type ProjectionFigure } from "./format";
+import {
+  formatUsdFromCents,
+  type EarningsProjection,
+  type PayoutBucket,
+  type ProjectionFigure,
+} from "./format";
 
 function trialWord(n: number): string {
   return n === 1 ? "trial" : "trials";
+}
+
+function subscriberWord(n: number): string {
+  return n === 1 ? "subscriber" : "subscribers";
+}
+
+function formatPayoutDate(ms: number): string {
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(
+    new Date(ms),
+  );
+}
+
+function PayoutBreakdown({ buckets }: { buckets: PayoutBucket[] }) {
+  const funded = buckets.filter((b) => b.cents > 0);
+  if (funded.length === 0) return null;
+  return (
+    <div className="mt-3 border-t border-sky-100 pt-3">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-sky-700">
+        Expected by Lemon Squeezy payout
+      </p>
+      <ul className="mt-1 space-y-0.5 text-xs text-slate-600">
+        {funded.map((bucket) => (
+          <li key={bucket.payoutDateMs}>
+            Around {formatPayoutDate(bucket.payoutDateMs)}:{" "}
+            <strong className="text-slate-800">{formatUsdFromCents(bucket.cents)}</strong>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-1 text-[11px] leading-snug text-slate-400">
+        Lemon Squeezy pays out on a fixed cadence, net of a holdback on recent orders. A payout date
+        can land in the following calendar month for revenue collected near month-end.
+      </p>
+    </div>
+  );
 }
 
 function ProjectionCard({
@@ -21,6 +60,7 @@ function ProjectionCard({
   trialsNoun,
   caption,
   accent,
+  payoutSplit,
 }: {
   figure: ProjectionFigure;
   securedCents: number | null;
@@ -29,6 +69,7 @@ function ProjectionCard({
   trialsNoun: string;
   caption: string;
   accent: "emerald" | "sky";
+  payoutSplit?: PayoutBucket[] | null;
 }) {
   const tone =
     accent === "emerald"
@@ -48,18 +89,26 @@ function ProjectionCard({
           <>
             {figure.trials.toLocaleString("en-US")} {trialWord(figure.trials)} {trialsNoun} could add
             about{" "}
-            <strong className="text-slate-800">{formatUsdFromCents(figure.trialCents)}</strong>.
+            <strong className="text-slate-800">{formatUsdFromCents(figure.trialCents)}</strong>, plus
+            about{" "}
+            <strong className="text-slate-800">{formatUsdFromCents(figure.activeRenewalCents)}</strong>{" "}
+            from {figure.activeRenewals.toLocaleString("en-US")} active{" "}
+            {subscriberWord(figure.activeRenewals)} renewing this month.
           </>
         ) : (
           <>
             <strong className="text-slate-800">{formatUsdFromCents(securedCents)}</strong> already
             secured, plus about{" "}
             <strong className="text-slate-800">{formatUsdFromCents(figure.trialCents)}</strong> from{" "}
-            {figure.trials.toLocaleString("en-US")} {trialWord(figure.trials)} {trialsNoun}.
+            {figure.trials.toLocaleString("en-US")} {trialWord(figure.trials)} {trialsNoun}, plus about{" "}
+            <strong className="text-slate-800">{formatUsdFromCents(figure.activeRenewalCents)}</strong>{" "}
+            from {figure.activeRenewals.toLocaleString("en-US")} active{" "}
+            {subscriberWord(figure.activeRenewals)} renewing this month.
           </>
         )}
       </p>
       <p className="mt-1 text-[11px] leading-snug text-slate-400">{caption}</p>
+      {payoutSplit ? <PayoutBreakdown buckets={payoutSplit} /> : null}
     </div>
   );
 }
@@ -84,7 +133,7 @@ export default function ProjectedEarnings({
   // nothing so the page just falls through to the normal tiles.
   if (!projection) return null;
 
-  const { securedCents, bestCase, thisMonth } = projection;
+  const { securedCents, bestCase, thisMonth, payoutSplit } = projection;
 
   return (
     <section className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -94,7 +143,7 @@ export default function ProjectedEarnings({
         eyebrow="Projected month total (best case)"
         trialsNoun="in progress"
         accent="emerald"
-        caption="Best-case ceiling: assumes every trial in progress converts to paid and none cancel. Each trial is valued at its plan's first payment (a monthly plan adds one month, an annual plan adds the full year). Some trials will not bill until next month, so this is an upper bound, not guaranteed cash this month."
+        caption="Best-case ceiling: assumes every trial in progress converts to paid, and every active subscriber due to renew this month actually renews, with none cancelling or failing payment. Each trial and renewal is valued at the plan's list price (a monthly plan adds one month, an annual plan adds the full year). Some trials will not bill until next month, so this is an upper bound, not guaranteed cash this month."
       />
       <ProjectionCard
         figure={thisMonth}
@@ -102,7 +151,8 @@ export default function ProjectedEarnings({
         eyebrow="Projected cash this month"
         trialsNoun="billing this month"
         accent="sky"
-        caption="Tighter view: secured revenue plus only the trials whose next charge date falls within this calendar month, so it reflects cash that could actually land this month. Near month-end most trials bill next month, so this reads close to secured revenue. Still assumes those trials convert and none cancel."
+        caption="Tighter view: secured revenue plus only the trials whose next charge date falls within this calendar month, plus active subscribers due to renew this month, so it reflects cash that could actually land this month. Near month-end most trials bill next month, so this reads closer to secured revenue. Still assumes those trials convert and those renewals go through, with none cancelling or failing payment."
+        payoutSplit={payoutSplit}
       />
     </section>
   );

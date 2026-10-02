@@ -9,6 +9,8 @@
  */
 import { NextResponse } from "next/server";
 import { requirePermission, createAdminClient } from "@/lib/admin";
+import { createAdminClient as createFinanceAdminClient } from "@/lib/supabase/admin";
+import { loadFinanceSettings } from "@/lib/finance-settings";
 import {
   computeGrowthSnapshot,
   monthKey,
@@ -33,7 +35,13 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const month = url.searchParams.get("month") ?? monthKey(new Date());
 
-  const snapshot = await computeGrowthSnapshot(supabase, month);
+  // Best-effort: the payout-timing breakdown is a nice-to-have, so a failed
+  // Finance settings read just leaves it out rather than failing the page.
+  const payoutSettings = await loadFinanceSettings(createFinanceAdminClient())
+    .then((s) => ({ daysOfMonth: s.lsPayoutDaysOfMonth, netDelayDays: s.lsPayoutNetDelayDays }))
+    .catch(() => undefined);
+
+  const snapshot = await computeGrowthSnapshot(supabase, month, payoutSettings);
   if (!snapshot) {
     return NextResponse.json({ error: "Invalid month" }, { status: 400 });
   }

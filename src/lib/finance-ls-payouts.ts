@@ -41,7 +41,7 @@ export type PayoutForecast = {
   recordedPayoutsCents: number;
   /** Estimated balance still sitting at LS (net minus recorded payouts). */
   estimatedUnpaidCents: number;
-  /** Next expected payout date (from lsPayoutDayOfMonth), YYYY-MM-DD. */
+  /** Next expected payout date (from lsPayoutDaysOfMonth), YYYY-MM-DD. */
   nextPayoutDate: string;
   /** Estimated amount of that payout (orders old enough to be included). */
   nextPayoutEstimateCents: number;
@@ -57,12 +57,29 @@ function isoDate(ms: number): string {
   return new Date(ms).toISOString().slice(0, 10);
 }
 
-/** Next occurrence of `dayOfMonth` strictly after `nowMs` (UTC). */
-export function nextPayoutDateMs(nowMs: number, dayOfMonth: number): number {
+/** Next occurrence of a single `dayOfMonth` strictly after `nowMs` (UTC). */
+function nextOccurrenceMs(nowMs: number, dayOfMonth: number): number {
   const d = new Date(nowMs);
   const thisMonth = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), dayOfMonth);
   if (thisMonth > nowMs) return thisMonth;
   return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, dayOfMonth);
+}
+
+/** Next occurrence of any of `daysOfMonth` strictly after `nowMs` (UTC). */
+export function nextPayoutDateMs(nowMs: number, daysOfMonth: number[]): number {
+  return Math.min(...daysOfMonth.map((day) => nextOccurrenceMs(nowMs, day)));
+}
+
+/** The next `count` payout dates, in order, each strictly after the previous. */
+export function upcomingPayoutDatesMs(nowMs: number, daysOfMonth: number[], count: number): number[] {
+  const dates: number[] = [];
+  let cursor = nowMs;
+  for (let i = 0; i < count; i++) {
+    const next = nextPayoutDateMs(cursor, daysOfMonth);
+    dates.push(next);
+    cursor = next;
+  }
+  return dates;
 }
 
 export function computePayoutForecast(
@@ -83,7 +100,7 @@ export function computePayoutForecast(
 
   const recordedTotal = recorded.reduce((sum, p) => sum + p.amountCents, 0);
 
-  const nextMs = nextPayoutDateMs(nowMs, settings.lsPayoutDayOfMonth);
+  const nextMs = nextPayoutDateMs(nowMs, settings.lsPayoutDaysOfMonth);
   const eligibleCutoffMs = nextMs - settings.lsPayoutNetDelayDays * DAY_MS;
   let eligibleNet = 0;
   for (const order of orders) {
