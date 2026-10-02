@@ -92,7 +92,7 @@ function ProjectionCard({
             <strong className="text-slate-800">{formatUsdFromCents(figure.trialCents)}</strong>, plus
             about{" "}
             <strong className="text-slate-800">{formatUsdFromCents(figure.activeRenewalCents)}</strong>{" "}
-            from {figure.activeRenewals.toLocaleString("en-US")} active{" "}
+            from {figure.activeRenewals.toLocaleString("en-US")} of your active{" "}
             {subscriberWord(figure.activeRenewals)} renewing this month.
           </>
         ) : (
@@ -102,7 +102,7 @@ function ProjectionCard({
             <strong className="text-slate-800">{formatUsdFromCents(figure.trialCents)}</strong> from{" "}
             {figure.trials.toLocaleString("en-US")} {trialWord(figure.trials)} {trialsNoun}, plus about{" "}
             <strong className="text-slate-800">{formatUsdFromCents(figure.activeRenewalCents)}</strong>{" "}
-            from {figure.activeRenewals.toLocaleString("en-US")} active{" "}
+            from {figure.activeRenewals.toLocaleString("en-US")} of your active{" "}
             {subscriberWord(figure.activeRenewals)} renewing this month.
           </>
         )}
