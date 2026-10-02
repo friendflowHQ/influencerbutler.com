@@ -13,6 +13,7 @@ import ExpensesTab from "./ExpensesTab";
 import TaxesTab from "./TaxesTab";
 import FilingsTab from "./FilingsTab";
 import ReportTab from "./ReportTab";
+import ValuationTab from "./ValuationTab";
 import SettingsTab from "./SettingsTab";
 import { usd, shortDate } from "./format";
 
@@ -62,6 +63,7 @@ const TABS = [
   { key: "taxes", label: "Taxes" },
   { key: "filings", label: "1099s" },
   { key: "report", label: "Report" },
+  { key: "valuation", label: "Valuation" },
   { key: "settings", label: "Settings" },
 ] as const;
 
@@ -295,6 +297,7 @@ export default function AdminFinancePage() {
       {tab === "taxes" ? <TaxesTab /> : null}
       {tab === "filings" ? <FilingsTab /> : null}
       {tab === "report" ? <ReportTab /> : null}
+      {tab === "valuation" ? <ValuationTab /> : null}
       {tab === "settings" ? <SettingsTab onSettingsChanged={() => void loadOverview()} /> : null}
     </div>
   );
