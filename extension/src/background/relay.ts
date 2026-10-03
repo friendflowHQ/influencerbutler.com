@@ -80,7 +80,7 @@ export async function relayClaimLink(code: string, label?: string): Promise<Rela
 // List the desktop apps (on other computers) this extension is linked to.
 export async function relayListTargets(): Promise<RelayTargetsResult> {
   const key = await licenseKey();
-  if (!key) return { ok: false, targets: [], error: "not-signed-in" };
+  if (!key) return { ok: false, targets: [], error: "Sign in with your license key in the extension first." };
   const senderId = await getClientId();
   try {
     const url = `${IB_RELAY_ENDPOINTS.targets}?senderId=${encodeURIComponent(senderId)}`;
@@ -93,7 +93,7 @@ export async function relayListTargets(): Promise<RelayTargetsResult> {
     }
     return { ok: false, targets: [], error: friendly(json?.error) };
   } catch {
-    return { ok: false, targets: [], error: "network" };
+    return { ok: false, targets: [], error: "Network error. Are you online?" };
   }
 }
 
@@ -117,7 +117,7 @@ export async function relaySend(command: HudCommand, targetInstanceId: string): 
     if (json && json.ok) return { ok: true, id: json.id };
     return { ok: false, error: friendly(json?.error) };
   } catch {
-    return { ok: false, error: "network" };
+    return { ok: false, error: "Network error. Are you online?" };
   }
 }
 
