@@ -9,8 +9,8 @@ export const dynamic = "force-dynamic";
  * Per-recipient delivery/open/click drill-down for one send. Proxies to the
  * links Worker's GET /api/foyer/newsletter/sends/:id/recipients.
  */
-export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
-  const resolved = await requireMyLicenseKey();
+export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
+  const resolved = await requireMyLicenseKey(request);
   if ("response" in resolved) return resolved.response;
 
   const { id } = await context.params;

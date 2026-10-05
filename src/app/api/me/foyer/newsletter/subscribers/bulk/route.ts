@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
  * Proxies to the links Worker's POST /api/foyer/newsletter/subscribers/bulk.
  */
 export async function POST(request: Request) {
-  const resolved = await requireMyLicenseKey();
+  const resolved = await requireMyLicenseKey(request);
   if ("response" in resolved) return resolved.response;
 
   let body: unknown;

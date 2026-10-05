@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireMyLicenseKey, callLinksWorkerAsUser } from "@/lib/links-worker";
+import { requireMyLicenseKey, callLinksWorkerAsUser, forwardQuery } from "@/lib/links-worker";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,10 +11,9 @@ export const dynamic = "force-dynamic";
  * GET /api/foyer/newsletter/sends.
  */
 export async function GET(request: Request) {
-  const resolved = await requireMyLicenseKey();
+  const resolved = await requireMyLicenseKey(request);
   if ("response" in resolved) return resolved.response;
 
-  const { search } = new URL(request.url);
-  const result = await callLinksWorkerAsUser(`/api/foyer/newsletter/sends${search}`, resolved.licenseKey);
+  const result = await callLinksWorkerAsUser(`/api/foyer/newsletter/sends${forwardQuery(request)}`, resolved.licenseKey);
   return NextResponse.json(result.ok ? result.data : { ok: false, error: result.error }, { status: result.status });
 }

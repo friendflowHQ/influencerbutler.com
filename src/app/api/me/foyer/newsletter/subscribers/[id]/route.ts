@@ -9,8 +9,8 @@ export const dynamic = "force-dynamic";
  * One subscriber plus their full send history. Proxies to the links Worker's
  * GET /api/foyer/newsletter/subscribers/:id.
  */
-export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
-  const resolved = await requireMyLicenseKey();
+export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
+  const resolved = await requireMyLicenseKey(request);
   if ("response" in resolved) return resolved.response;
 
   const { id } = await context.params;
@@ -24,7 +24,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
  * PATCH /api/foyer/newsletter/subscribers/:id.
  */
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
-  const resolved = await requireMyLicenseKey();
+  const resolved = await requireMyLicenseKey(request);
   if ("response" in resolved) return resolved.response;
 
   let body: unknown;

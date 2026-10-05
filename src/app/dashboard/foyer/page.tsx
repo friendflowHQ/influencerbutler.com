@@ -26,6 +26,23 @@ type SendSummary = {
   createdAt: number;
 };
 
+type KeyOption = {
+  id: string;
+  label: string;
+  status: string;
+  activeSubscribers: number | null;
+  createdAt: string | null;
+};
+
+const KEY_STORAGE = "foyer-subscribers-key";
+
+function errorMessage(status: number, error?: string): string {
+  if (status === 401) return "Your session expired. Sign in again to see your subscribers.";
+  if (status === 0) return "We could not reach the server. Check your connection and try again.";
+  if (status >= 500) return "Your subscribers could not be loaded right now. Please try again in a moment.";
+  return error ? `Something went wrong: ${error}` : "Something went wrong. Please try again.";
+}
+
 type SendRecipient = {
   email: string;
   status: "sent" | "failed";
@@ -62,10 +79,18 @@ export default function FoyerSubscribersPage() {
   const [tab, setTab] = useState<"contacts" | "sends">("contacts");
   const [noLicense, setNoLicense] = useState(false);
 
+  // Foyer data is stored per license key, so a creator with several keys picks
+  // which list to view. keysReady gates the first load until the key is known.
+  const [keys, setKeys] = useState<KeyOption[]>([]);
+  const [keyId, setKeyId] = useState("");
+  const [keysReady, setKeysReady] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+
   // Contacts tab state.
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [subsCursor, setSubsCursor] = useState<number | null>(null);
   const [subsLoading, setSubsLoading] = useState(true);
+  const [subsError, setSubsError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [tagFilter, setTagFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
@@ -76,21 +101,32 @@ export default function FoyerSubscribersPage() {
   const [sends, setSends] = useState<SendSummary[]>([]);
   const [sendsCursor, setSendsCursor] = useState<number | null>(null);
   const [sendsLoading, setSendsLoading] = useState(true);
+  const [sendsError, setSendsError] = useState<string | null>(null);
   const [openSend, setOpenSend] = useState<SendSummary | null>(null);
   const [recipients, setRecipients] = useState<SendRecipient[]>([]);
+
+  const withKey = useCallback(
+    (url: string) => {
+      if (!keyId) return url;
+      return `${url}${url.includes("?") ? "&" : "?"}keyId=${encodeURIComponent(keyId)}`;
+    },
+    [keyId],
+  );
 
   const loadSubscribers = useCallback(
     async (reset: boolean) => {
       setSubsLoading(true);
+      setSubsError(null);
       const params = new URLSearchParams();
       if (search) params.set("search", search);
       if (tagFilter) params.set("tag", tagFilter);
       if (statusFilter) params.set("status", statusFilter);
       if (!reset && subsCursor) params.set("cursor", String(subsCursor));
       const res = await fetchJson<{ subscribers: Subscriber[]; nextCursor: number | null }>(
-        `/api/me/foyer/newsletter/subscribers?${params.toString()}`,
+        withKey(`/api/me/foyer/newsletter/subscribers?${params.toString()}`),
       );
       if (res.status === 404) setNoLicense(true);
+      else if (!res.ok) setSubsError(errorMessage(res.status, res.error));
       if (res.ok && res.data) {
         setSubscribers((prev) => (reset ? res.data!.subscribers : [...prev, ...res.data!.subscribers]));
         setSubsCursor(res.data.nextCursor);
@@ -98,37 +134,77 @@ export default function FoyerSubscribersPage() {
       }
       setSubsLoading(false);
     },
-    [search, tagFilter, statusFilter, subsCursor],
+    [search, tagFilter, statusFilter, subsCursor, withKey],
   );
 
   const loadSends = useCallback(
     async (reset: boolean) => {
       setSendsLoading(true);
+      setSendsError(null);
       const params = new URLSearchParams();
       if (!reset && sendsCursor) params.set("cursor", String(sendsCursor));
-      const res = await fetchJson<{ sends: SendSummary[]; nextCursor: number | null }>(`/api/me/foyer/newsletter/sends?${params.toString()}`);
+      const res = await fetchJson<{ sends: SendSummary[]; nextCursor: number | null }>(withKey(`/api/me/foyer/newsletter/sends?${params.toString()}`));
       if (res.status === 404) setNoLicense(true);
+      else if (!res.ok) setSendsError(errorMessage(res.status, res.error));
       if (res.ok && res.data) {
         setSends((prev) => (reset ? res.data!.sends : [...prev, ...res.data!.sends]));
         setSendsCursor(res.data.nextCursor);
       }
       setSendsLoading(false);
     },
-    [sendsCursor],
+    [sendsCursor, withKey],
   );
 
+  // Work out which license key to show before the first load. The server picks
+  // the key that actually holds subscribers; a choice remembered in this browser
+  // wins when it is still one of the account's keys.
   useEffect(() => {
-    void loadSubscribers(true);
-    void loadSends(true);
-    // Only on mount -- filter changes are re-triggered explicitly below.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    let cancelled = false;
+    void (async () => {
+      const res = await fetchJson<{ selectedId: string; keys: KeyOption[] }>("/api/me/foyer/newsletter/keys");
+      if (cancelled) return;
+      if (res.status === 404) setNoLicense(true);
+      if (res.ok && res.data) {
+        let saved = "";
+        try {
+          saved = window.localStorage.getItem(KEY_STORAGE) || "";
+        } catch {
+          saved = "";
+        }
+        setKeys(res.data.keys);
+        setKeyId(res.data.keys.some((k) => k.id === saved) ? saved : res.data.selectedId);
+      }
+      setKeysReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
+  const pickKey = (id: string) => {
+    setKeyId(id);
+    setOpenSend(null);
+    setRecipients([]);
+    setSelected(new Set());
+    try {
+      window.localStorage.setItem(KEY_STORAGE, id);
+    } catch {
+      // Remembering the choice is a convenience only.
+    }
+  };
+
   useEffect(() => {
+    if (!keysReady) return;
     const timer = setTimeout(() => void loadSubscribers(true), 300);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, tagFilter, statusFilter]);
+  }, [keysReady, keyId, search, tagFilter, statusFilter]);
+
+  useEffect(() => {
+    if (!keysReady) return;
+    void loadSends(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keysReady, keyId]);
 
   const toggleSelected = (id: number) => {
     setSelected((prev) => {
@@ -142,29 +218,35 @@ export default function FoyerSubscribersPage() {
   const bulkAction = async (action: "tag" | "untag" | "unsubscribe") => {
     if (!selected.size) return;
     if ((action === "tag" || action === "untag") && !bulkTag.trim()) return;
-    await fetchJson("/api/me/foyer/newsletter/subscribers/bulk", {
+    setActionError(null);
+    const res = await fetchJson(withKey("/api/me/foyer/newsletter/subscribers/bulk"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ids: [...selected], action, tag: bulkTag.trim() || undefined }),
     });
+    if (!res.ok) setActionError(errorMessage(res.status, res.error));
     setBulkTag("");
     void loadSubscribers(true);
   };
 
   const unsubscribeOne = async (id: number) => {
-    await fetchJson(`/api/me/foyer/newsletter/subscribers/${id}`, {
+    setActionError(null);
+    const res = await fetchJson(withKey(`/api/me/foyer/newsletter/subscribers/${id}`), {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: "unsubscribed" }),
     });
+    if (!res.ok) setActionError(errorMessage(res.status, res.error));
     void loadSubscribers(true);
   };
 
   const openRecipients = async (send: SendSummary) => {
     setOpenSend(send);
     setRecipients([]);
-    const res = await fetchJson<{ recipients: SendRecipient[] }>(`/api/me/foyer/newsletter/sends/${send.id}/recipients`);
+    setActionError(null);
+    const res = await fetchJson<{ recipients: SendRecipient[] }>(withKey(`/api/me/foyer/newsletter/sends/${send.id}/recipients`));
     if (res.ok && res.data) setRecipients(res.data.recipients);
+    else setActionError(errorMessage(res.status, res.error));
   };
 
   if (noLicense) {
@@ -189,6 +271,36 @@ export default function FoyerSubscribersPage() {
           Everyone who has signed up on your Foyer page, who you&apos;ve emailed and when, who opened it, and your tags.
         </p>
       </header>
+
+      {keys.length > 1 ? (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-3 text-sm shadow-sm">
+          <label htmlFor="foyer-key" className="font-medium text-slate-700">
+            Showing subscribers for
+          </label>
+          <select
+            id="foyer-key"
+            value={keyId}
+            onChange={(e) => pickKey(e.target.value)}
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-200"
+          >
+            {keys.map((k) => (
+              <option key={k.id} value={k.id}>
+                {k.label} ({k.status}
+                {k.activeSubscribers === null ? "" : `, ${k.activeSubscribers} active`})
+              </option>
+            ))}
+          </select>
+          <span className="text-xs text-slate-500">
+            Each license key has its own Foyer list. Pick the key your desktop app is signed in with.
+          </span>
+        </div>
+      ) : null}
+
+      {actionError ? (
+        <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          {actionError}
+        </div>
+      ) : null}
 
       <div className="flex gap-2 border-b border-slate-200">
         {(["contacts", "sends"] as const).map((key) => (
@@ -316,7 +428,17 @@ export default function FoyerSubscribersPage() {
                     </td>
                   </tr>
                 ))}
-                {!subsLoading && subscribers.length === 0 ? (
+                {!subsLoading && subsError ? (
+                  <tr>
+                    <td colSpan={8} className="px-3 py-6 text-center text-sm text-red-700" role="alert">
+                      {subsError}{" "}
+                      <button type="button" onClick={() => void loadSubscribers(true)} className="underline hover:text-red-900">
+                        Try again
+                      </button>
+                    </td>
+                  </tr>
+                ) : null}
+                {!subsLoading && !subsError && subscribers.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-3 py-6 text-center text-sm text-slate-500">
                       No subscribers match.
@@ -362,7 +484,17 @@ export default function FoyerSubscribersPage() {
                     <td className="px-3 py-2 text-slate-500">{s.clickedCount}</td>
                   </tr>
                 ))}
-                {!sendsLoading && sends.length === 0 ? (
+                {!sendsLoading && sendsError ? (
+                  <tr>
+                    <td colSpan={6} className="px-3 py-6 text-center text-sm text-red-700" role="alert">
+                      {sendsError}{" "}
+                      <button type="button" onClick={() => void loadSends(true)} className="underline hover:text-red-900">
+                        Try again
+                      </button>
+                    </td>
+                  </tr>
+                ) : null}
+                {!sendsLoading && !sendsError && sends.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-3 py-6 text-center text-sm text-slate-500">
                       No sends yet.

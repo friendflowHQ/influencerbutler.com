@@ -23,28 +23,84 @@ function workerBaseUrl(): string {
   return (process.env.LINKS_WORKER_URL || DEFAULT_WORKER_URL).replace(/\/+$/, "");
 }
 
-type LicenseKeyRow = { key?: string | null; status?: string | null };
+type LicenseKeyRow = { id: string; key: string; status: string | null; created_at: string | null };
+
+export type FoyerKeyOption = {
+  id: string;
+  /** Masked to the last 4 characters. The full key never reaches the browser. */
+  label: string;
+  status: string;
+  activeSubscribers: number | null;
+  createdAt: string | null;
+};
+
+/** Query parameter the dashboard uses to say which of the creator's keys to read. */
+export const FOYER_KEY_PARAM = "keyId";
 
 /**
- * Resolves the signed-in user's own license key, preferring an active one and
- * falling back to their most recently created key otherwise. Unlike the fuller
- * resolution chain in /api/me/subscription-details (which also falls back to a
- * live Lemon Squeezy lookup for a brand-new account), this only reads the local
- * license_keys table: a user who has never activated the desktop app has no
- * Foyer data to show yet regardless, so the extra LS round trip buys nothing
- * here.
+ * The account's usable license keys, newest first, active ones before inactive,
+ * de-duplicated by key string. Foyer data is stored per key (the Worker hashes
+ * the key into the owner id), so an account with several keys has several
+ * separate subscriber lists.
  */
-export async function resolveMyLicenseKey(userId: string): Promise<string | null> {
+async function listMyLicenseKeyRows(userId: string): Promise<LicenseKeyRow[]> {
   const admin = createAdminClient();
   const { data } = await admin
     .from("license_keys")
-    .select("key,status")
+    .select("id,key,status,created_at")
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(10);
-  const rows = (data ?? []) as LicenseKeyRow[];
-  const best = rows.find((r) => r.status === "active" && r.key) ?? rows.find((r) => r.key) ?? null;
-  return best?.key ?? null;
+  const seen = new Set<string>();
+  const rows: LicenseKeyRow[] = [];
+  for (const r of (data ?? []) as Partial<LicenseKeyRow>[]) {
+    if (!r.id || !r.key || seen.has(r.key)) continue;
+    seen.add(r.key);
+    rows.push({ id: r.id, key: r.key, status: r.status ?? null, created_at: r.created_at ?? null });
+  }
+  return [...rows.filter((r) => r.status === "active"), ...rows.filter((r) => r.status !== "active")];
+}
+
+async function countActiveSubscribers(licenseKey: string): Promise<number | null> {
+  const res = await callLinksWorkerAsUser<{ count?: number }>("/api/foyer/newsletter/subscribers", licenseKey);
+  return res.ok ? Number(res.data.count) || 0 : null;
+}
+
+/**
+ * Works out which of the user's keys to read. An explicit `requestedId` (a
+ * license_keys.id the user picked) wins when it belongs to them. Otherwise, with
+ * more than one key, the one that actually holds the most subscribers wins, so
+ * the website lands on the same list the desktop app shows instead of an empty
+ * one. Ties and failures fall back to the newest active key.
+ */
+export async function resolveMyFoyerKey(
+  userId: string,
+  requestedId?: string | null,
+): Promise<{ chosen: LicenseKeyRow | null; keys: FoyerKeyOption[] }> {
+  const rows = await listMyLicenseKeyRows(userId);
+  if (rows.length === 0) return { chosen: null, keys: [] };
+
+  const counts = new Map<string, number | null>();
+  if (rows.length > 1) {
+    await Promise.all(rows.map(async (r) => counts.set(r.id, await countActiveSubscribers(r.key))));
+  }
+
+  let chosen = requestedId ? rows.find((r) => r.id === requestedId) ?? null : null;
+  if (!chosen) {
+    chosen = rows[0];
+    for (const r of rows) {
+      if ((counts.get(r.id) ?? 0) > (counts.get(chosen.id) ?? 0)) chosen = r;
+    }
+  }
+
+  const keys = rows.map((r) => ({
+    id: r.id,
+    label: `Key ending ${r.key.slice(-4)}`,
+    status: r.status ?? "unknown",
+    activeSubscribers: counts.get(r.id) ?? null,
+    createdAt: r.created_at,
+  }));
+  return { chosen, keys };
 }
 
 /**
@@ -98,15 +154,26 @@ export async function callLinksWorkerAsUser<T = unknown>(
  * route can return immediately (401 signed out, 404 no license on the account
  * yet -- e.g. never activated the desktop app).
  */
-export async function requireMyLicenseKey(): Promise<{ licenseKey: string } | { response: NextResponse }> {
+export async function requireMyLicenseKey(
+  request?: Request,
+): Promise<{ licenseKey: string; keyId: string; keys: FoyerKeyOption[] } | { response: NextResponse }> {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) {
     return { response: NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 }) };
   }
-  const licenseKey = await resolveMyLicenseKey(data.user.id);
-  if (!licenseKey) {
+  const requestedId = request ? new URL(request.url).searchParams.get(FOYER_KEY_PARAM) : null;
+  const { chosen, keys } = await resolveMyFoyerKey(data.user.id, requestedId);
+  if (!chosen) {
     return { response: NextResponse.json({ ok: false, error: "no_license" }, { status: 404 }) };
   }
-  return { licenseKey };
+  return { licenseKey: chosen.key, keyId: chosen.id, keys };
+}
+
+/** The request's query string minus the dashboard-only key picker, ready to forward to the Worker. */
+export function forwardQuery(request: Request): string {
+  const params = new URL(request.url).searchParams;
+  params.delete(FOYER_KEY_PARAM);
+  const qs = params.toString();
+  return qs ? `?${qs}` : "";
 }
