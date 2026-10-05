@@ -20,12 +20,13 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/admin";
 import {
   computeGrowthSnapshot,
-  monthKey,
+  currentMonthKey,
   prevMonthKey,
   deltaPercent,
   type SnapshotClient,
   type MetricSnapshot,
 } from "@/lib/growth-metrics";
+import { localParts, DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { fetchGaSummary } from "@/lib/ga4";
 import { loadAffiliateCommissions } from "@/lib/affiliate-commissions-data";
 import { sendEmail } from "@/lib/email-send";
@@ -90,11 +91,13 @@ export async function GET(request: Request) {
   const to = url.searchParams.get("to") || process.env.FOUNDER_SNAPSHOT_TO || DEFAULT_TO;
 
   const now = new Date();
-  const thisMonth = monthKey(now);
+  const thisMonth = currentMonthKey(now);
   // On the 1st (or first week) the current month has no data yet, so report the
-  // month that just ended; otherwise report the current month to date.
+  // month that just ended; otherwise report the current month to date. "1st
+  // week" is the business's local day-of-month, not UTC's.
+  const localDay = localParts(now, DEFAULT_TIMEZONE).day;
   const reportMonth =
-    url.searchParams.get("month") || (now.getUTCDate() <= 7 ? prevMonthKey(thisMonth) : thisMonth);
+    url.searchParams.get("month") || (localDay <= 7 ? prevMonthKey(thisMonth) : thisMonth);
   const isMonthToDate = reportMonth === thisMonth;
   const periodLabel = `${monthLongLabel(reportMonth)}${isMonthToDate ? " (month to date)" : ""}`;
   const generatedLabel = now.toLocaleString("en-US", {

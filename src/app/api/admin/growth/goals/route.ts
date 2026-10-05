@@ -15,7 +15,7 @@
  */
 import { NextResponse } from "next/server";
 import { requirePermission, createAdminClient } from "@/lib/admin";
-import { computeGrowthSnapshot, monthKey, type SnapshotClient } from "@/lib/growth-metrics";
+import { computeGrowthSnapshot, currentMonthKey, type SnapshotClient } from "@/lib/growth-metrics";
 import {
   ensureSuggestions,
   loadGoalsWithAchievements,
@@ -40,7 +40,7 @@ export async function GET(request: Request) {
   const goalsClient = supabase as unknown as GoalsClient;
 
   const url = new URL(request.url);
-  const currentMonth = monthKey(new Date());
+  const currentMonth = currentMonthKey(new Date());
   const month = url.searchParams.get("month") ?? currentMonth;
 
   const snapshot = await computeGrowthSnapshot(snapClient, month);

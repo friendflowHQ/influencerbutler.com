@@ -123,7 +123,9 @@ export default function SchedulingAdminPage() {
 
   const [googleMsg, setGoogleMsg] = useState("");
   useEffect(() => { loadList(); }, [loadList]);
-  useEffect(() => { if (tab === "settings") loadSettings(); }, [tab, loadSettings]);
+  // Loaded on mount (not just when the Settings tab opens) so the connected
+  // Google account email is already on hand for the prep sheet's Join line.
+  useEffect(() => { loadSettings(); }, [loadSettings]);
   useEffect(() => {
     const p = new URLSearchParams(window.location.search).get("google");
     if (!p) return;
@@ -390,7 +392,7 @@ export default function SchedulingAdminPage() {
               <div><dt className="text-slate-400">Customer</dt><dd className="text-slate-700">{prep.displayName || prep.booking.user_name || "—"} &lt;{prep.booking.user_email}&gt;</dd></div>
               <div><dt className="text-slate-400">Subscription</dt><dd>{prep.subscription ? <span className={`rounded px-1.5 py-0.5 text-xs ${prep.subscription.badge.className}`}>{prep.subscription.badge.label}</span> : <span className="text-slate-400">none</span>}{prep.subscription?.plan_name ? ` · ${prep.subscription.plan_name}` : ""}</dd></div>
               <div><dt className="text-slate-400">Status</dt><dd className="text-slate-700">{prep.booking.status}</dd></div>
-              <div><dt className="text-slate-400">Join</dt><dd>{prep.booking.join_url ? <a className="text-[#f97316] hover:underline" href={prep.booking.join_url} target="_blank" rel="noreferrer">link ↗</a> : <span className="text-slate-400">none</span>}</dd></div>
+              <div><dt className="text-slate-400">Join</dt><dd>{prep.booking.join_url ? <a className="text-[#f97316] hover:underline" href={prep.booking.join_url} target="_blank" rel="noreferrer">link ↗</a> : <span className="text-slate-400">none</span>}{prep.booking.join_url && prep.booking.meeting_provider === "google_meet" && settings?.googleEmail ? <span className="ml-1 text-xs text-slate-400">({settings.googleEmail})</span> : null}</dd></div>
             </dl>
 
             {prep.booking.topic && <section className="mt-3"><h3 className="text-xs font-semibold uppercase text-slate-500">What they want to cover</h3><p className="mt-1 rounded-lg bg-slate-50 p-2 text-sm text-slate-700">{prep.booking.topic}</p></section>}

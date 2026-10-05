@@ -1,6 +1,18 @@
 {
-  "lastUpdated": "2026-09-30",
+  "lastUpdated": "2026-10-05",
   "releases": [
+    {
+      "version": "0.1.25",
+      "date": "October 5, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "Send to Deals now carries the extra coupon and the regular price from deal cards, like \"40% off Code: ABC123 + 10% Coupon\" and \"(Reg.24.99)\", so the posted deal shows the right savings"
+          ]
+        }
+      ]
+    },
     {
       "version": "0.1.24",
       "date": "September 30, 2026",

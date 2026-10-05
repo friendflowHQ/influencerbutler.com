@@ -14,7 +14,7 @@
  */
 import { NextResponse } from "next/server";
 import { requirePermission, createAdminClient } from "@/lib/admin";
-import { monthKey } from "@/lib/growth-metrics";
+import { currentMonthKey } from "@/lib/growth-metrics";
 import {
   readMonthMarker,
   writeMonthMarker,
@@ -96,7 +96,7 @@ async function listItems(
 }
 
 function monthParam(value: string | null): string | null {
-  if (value === null) return monthKey(new Date());
+  if (value === null) return currentMonthKey(new Date());
   return /^\d{4}-\d{2}$/.test(value) ? value : null;
 }
 
@@ -113,7 +113,7 @@ export async function GET(request: Request) {
   if (!month) return NextResponse.json({ error: "Invalid month" }, { status: 400 });
 
   let migrationPending = false;
-  if (month === monthKey(new Date())) {
+  if (month === currentMonthKey(new Date())) {
     const seeded = await seedChecklist(markerDb, month);
     migrationPending = migrationPending || seeded.migrationPending;
   }

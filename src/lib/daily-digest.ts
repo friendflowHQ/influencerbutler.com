@@ -19,14 +19,25 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import {
   computeGrowthSnapshot,
   deltaPercent,
-  monthKey,
+  currentMonthKey,
   type SnapshotClient,
 } from "@/lib/growth-metrics";
 import { listCancellations, countUnsurveyedEndedSubs, reasonLabel } from "@/lib/cancel-reasons";
 import { SEED_SOURCE } from "@/lib/recent-activity";
 import { maskEmail } from "@/lib/mask-email";
+import {
+  DEFAULT_TIMEZONE,
+  localParts,
+  localDateStr,
+  zonedTimeToUtc,
+  type LocalParts,
+} from "@/lib/timezone";
 
-export const DEFAULT_DIGEST_TIMEZONE = "America/Denver";
+// Re-exported so existing importers (cron routes, tests) keep working; this
+// module's own timezone math now lives in src/lib/timezone.ts, shared with
+// src/lib/growth-metrics.ts.
+export { localParts, zonedTimeToUtc };
+export const DEFAULT_DIGEST_TIMEZONE = DEFAULT_TIMEZONE;
 const TREND_DAYS = 14;
 const ROW_LIMIT = 10000;
 
@@ -99,79 +110,9 @@ export type DigestData = {
 };
 
 // ---------------------------------------------------------------------------
-// Timezone helpers (no date library; Intl only)
+// Timezone helpers: localParts/zonedTimeToUtc now live in src/lib/timezone.ts
+// (imported above) and are re-exported for existing callers.
 // ---------------------------------------------------------------------------
-
-type LocalParts = { year: number; month: number; day: number; hour: number };
-
-/** Wall-clock Y/M/D/H in a timezone for a given instant. */
-export function localParts(date: Date, tz: string): LocalParts {
-  const dtf = new Intl.DateTimeFormat("en-US", {
-    timeZone: tz,
-    hourCycle: "h23",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-  });
-  const map: Record<string, string> = {};
-  for (const p of dtf.formatToParts(date)) map[p.type] = p.value;
-  return {
-    year: Number(map.year),
-    month: Number(map.month),
-    day: Number(map.day),
-    hour: Number(map.hour),
-  };
-}
-
-/** "YYYY-MM-DD" wall-clock date in a timezone. */
-function localDateStr(date: Date, tz: string): string {
-  const p = localParts(date, tz);
-  return `${p.year}-${String(p.month).padStart(2, "0")}-${String(p.day).padStart(2, "0")}`;
-}
-
-/** Offset (localWall - UTC) in ms for an instant in a timezone. */
-function tzOffsetMs(date: Date, tz: string): number {
-  const dtf = new Intl.DateTimeFormat("en-US", {
-    timeZone: tz,
-    hourCycle: "h23",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-  const map: Record<string, string> = {};
-  for (const p of dtf.formatToParts(date)) map[p.type] = p.value;
-  const asUtc = Date.UTC(
-    Number(map.year),
-    Number(map.month) - 1,
-    Number(map.day),
-    Number(map.hour),
-    Number(map.minute),
-    Number(map.second),
-  );
-  return asUtc - date.getTime();
-}
-
-/** The UTC instant of a wall-clock time (y,m,d,h:00) in a timezone. */
-export function zonedTimeToUtc(
-  y: number,
-  m: number,
-  d: number,
-  h: number,
-  tz: string,
-): Date {
-  const guess = Date.UTC(y, m - 1, d, h, 0, 0);
-  const offset = tzOffsetMs(new Date(guess), tz);
-  let instant = guess - offset;
-  // One refinement handles the DST transition where the first guess landed in
-  // the wrong offset.
-  const offset2 = tzOffsetMs(new Date(instant), tz);
-  if (offset2 !== offset) instant = guess - offset2;
-  return new Date(instant);
-}
 
 /** Short, friendly date label like "Sat Aug 2" in the given timezone. */
 function friendlyDate(date: Date, tz: string): string {
@@ -258,7 +199,7 @@ export async function computeDigest(opts: {
   const isAddon = (row: Row) =>
     addonVariant !== "" && String(row.ls_variant_id ?? "") === addonVariant;
 
-  const monthStr = monthKey(new Date(zonedTimeToUtc(nowParts.year, nowParts.month, 1, 0, tz)));
+  const monthStr = currentMonthKey(now, tz);
   const monthLabel = new Intl.DateTimeFormat("en-US", {
     timeZone: tz,
     month: "long",

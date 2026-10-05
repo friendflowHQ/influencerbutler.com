@@ -82,9 +82,20 @@ export function monthLabel(month: string): string {
   }).format(new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, 1)));
 }
 
+// The business runs on Mountain Time regardless of the admin's own browser
+// timezone, so "current month" must match the server's (growth-metrics.ts),
+// not whatever UTC or local-to-the-viewer would say.
+const GROWTH_TIMEZONE = "America/Denver";
+
 export function currentMonthKey(): string {
-  const d = new Date();
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: GROWTH_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(new Date());
+  const year = parts.find((p) => p.type === "year")?.value ?? "";
+  const month = parts.find((p) => p.type === "month")?.value ?? "";
+  return `${year}-${month}`;
 }
 
 export function shiftMonth(month: string, delta: number): string {

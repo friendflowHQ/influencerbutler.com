@@ -17,6 +17,7 @@ export type Audience =
   | { kind: "all_contacts" }
   | { kind: "segment"; segment: AudienceSegment }
   | { kind: "engaged"; minOpens: number; withinDays?: number }
+  | { kind: "opened_nonpaid"; minOpens: number; withinDays?: number }
   | { kind: "pasted"; emails: string[] };
 
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -37,6 +38,9 @@ const MAX_WITHIN_DAYS = 3650;
 
 /** Statuses that mean a user currently has live access. Mirrors winback. */
 const LIVE_STATUSES = ["active", "on_trial", "past_due", "paused"];
+
+/** Statuses that count as a paid subscription. Mirrors tierForSubscriptionStatus's "pro" case. */
+const PAID_STATUSES = ["active", "past_due", "paused"];
 
 /** Lowercase/trim a raw tag and clamp to the allowed shape. Null if unusable. */
 export function normalizeTag(raw: string): string | null {
@@ -98,6 +102,22 @@ export function parseAudience(input: unknown): Audience | null {
       return withinDays
         ? { kind: "engaged", minOpens, withinDays }
         : { kind: "engaged", minOpens };
+    }
+    case "opened_nonpaid": {
+      // Inclusive threshold ("opened at least this many"), unlike "engaged"'s
+      // strictly-more-than: the point of this audience is simply "has opened
+      // one of our emails", so the default is 1, not 2.
+      const minOpens =
+        typeof raw.minOpens === "number" && Number.isFinite(raw.minOpens)
+          ? Math.max(1, Math.min(MAX_MIN_OPENS, Math.floor(raw.minOpens)))
+          : 1;
+      const withinDays =
+        typeof raw.withinDays === "number" && Number.isFinite(raw.withinDays)
+          ? Math.max(1, Math.min(MAX_WITHIN_DAYS, Math.floor(raw.withinDays)))
+          : undefined;
+      return withinDays
+        ? { kind: "opened_nonpaid", minOpens, withinDays }
+        : { kind: "opened_nonpaid", minOpens };
     }
     case "pasted": {
       if (!Array.isArray(raw.emails)) return null;
@@ -234,18 +254,16 @@ async function collectOptedOut(
 }
 
 /**
- * Pages email_sends for delivered opens, tallies opens per recipient, and keeps
- * anyone who opened STRICTLY MORE than minOpens of our emails, then drops
- * opted-out addresses. opened_at is stamped first-open-only (one row per send),
- * so a row count is an opened-email count. Returns false on a query error so
- * the caller can surface the migration/setup banner.
+ * Pages email_sends for delivered opens and tallies opens per recipient.
+ * opened_at is stamped first-open-only (one row per send), so a row count is
+ * an opened-email count. Returns null on a query error so callers can surface
+ * the migration/setup banner. Shared by every audience that starts from open
+ * history (engaged, opened_nonpaid).
  */
-async function collectEngagedOpeners(
+async function scanOpenCounts(
   db: SupabaseClient,
-  minOpens: number,
   withinDays: number | undefined,
-  into: Set<string>,
-): Promise<boolean> {
+): Promise<Map<string, number> | null> {
   const counts = new Map<string, number>();
   const sinceIso =
     withinDays && withinDays > 0
@@ -262,7 +280,7 @@ async function collectEngagedOpeners(
       .range(offset, offset + PAGE - 1);
     if (sinceIso) q = q.gte("created_at", sinceIso);
     const { data, error } = await q;
-    if (error) return false;
+    if (error) return null;
     const rows = data ?? [];
     for (const row of rows) {
       const email = typeof row.recipient === "string" ? row.recipient.trim().toLowerCase() : "";
@@ -272,6 +290,22 @@ async function collectEngagedOpeners(
     if (rows.length < PAGE || scanned >= OPEN_SCAN_CAP) break;
     offset += PAGE;
   }
+  return counts;
+}
+
+/**
+ * Tallies opens per recipient and keeps anyone who opened STRICTLY MORE than
+ * minOpens of our emails, then drops opted-out addresses. Returns false on a
+ * query error so the caller can surface the migration/setup banner.
+ */
+async function collectEngagedOpeners(
+  db: SupabaseClient,
+  minOpens: number,
+  withinDays: number | undefined,
+  into: Set<string>,
+): Promise<boolean> {
+  const counts = await scanOpenCounts(db, withinDays);
+  if (!counts) return false;
 
   const candidates: string[] = [];
   for (const [email, n] of counts) {
@@ -282,6 +316,54 @@ async function collectEngagedOpeners(
   await collectOptedOut(db, candidates, optedOut);
   for (const email of candidates) {
     if (!optedOut.has(email) && into.size < MAX_AUDIENCE) into.add(email);
+  }
+  return true;
+}
+
+/**
+ * Tallies opens per recipient and keeps anyone who opened at least minOpens
+ * of our emails, drops opted-out addresses (same as "engaged"), then drops
+ * anyone with a currently-paid subscription. A candidate with no matching
+ * profiles row (extension-only leads, cold-outreach contacts) has no app
+ * account and so trivially counts as "not paying". Returns false on a query
+ * error so the caller can surface the migration/setup banner.
+ */
+async function collectOpenedNonPaid(
+  db: SupabaseClient,
+  minOpens: number,
+  withinDays: number | undefined,
+  into: Set<string>,
+): Promise<boolean> {
+  const counts = await scanOpenCounts(db, withinDays);
+  if (!counts) return false;
+
+  const candidates: string[] = [];
+  for (const [email, n] of counts) {
+    if (n >= minOpens) candidates.push(email);
+  }
+
+  const optedOut = new Set<string>();
+  await collectOptedOut(db, candidates, optedOut);
+  const remaining = candidates.filter((email) => !optedOut.has(email));
+  if (remaining.length === 0) return true;
+
+  const emailToUserId = new Map<string, string>();
+  for (const slice of chunk(remaining, CHUNK)) {
+    const { data, error } = await db.from("profiles").select("id,email").in("email", slice);
+    if (error) continue;
+    for (const row of data ?? []) {
+      const email = typeof row.email === "string" ? row.email.trim().toLowerCase() : "";
+      const id = typeof row.id === "string" ? row.id : "";
+      if (email && id) emailToUserId.set(email, id);
+    }
+  }
+
+  const paidIds = await collectUserIdsByStatus(db, PAID_STATUSES);
+
+  for (const email of remaining) {
+    const userId = emailToUserId.get(email);
+    const isPaid = userId !== undefined && paidIds !== null && paidIds.has(userId);
+    if (!isPaid && into.size < MAX_AUDIENCE) into.add(email);
   }
   return true;
 }
@@ -313,6 +395,11 @@ export async function resolveAudience(
 
     case "engaged": {
       const ok = await collectEngagedOpeners(db, audience.minOpens, audience.withinDays, into);
+      return { emails: [...into], migrationPending: !ok };
+    }
+
+    case "opened_nonpaid": {
+      const ok = await collectOpenedNonPaid(db, audience.minOpens, audience.withinDays, into);
       return { emails: [...into], migrationPending: !ok };
     }
 

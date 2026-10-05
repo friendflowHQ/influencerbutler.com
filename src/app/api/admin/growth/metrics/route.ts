@@ -4,8 +4,8 @@
  * One month of growth numbers (current vs previous month + daily series)
  * from our own tables: trial clicks, trials, subscriptions, revenue,
  * affiliate activity, testimonials, newsletter signups. Defaults to the
- * current UTC month. Each metric is best-effort; a failed query nulls the
- * metric instead of failing the page.
+ * current month in the business's local timezone. Each metric is
+ * best-effort; a failed query nulls the metric instead of failing the page.
  */
 import { NextResponse } from "next/server";
 import { requirePermission, createAdminClient } from "@/lib/admin";
@@ -13,7 +13,7 @@ import { createAdminClient as createFinanceAdminClient } from "@/lib/supabase/ad
 import { loadFinanceSettings } from "@/lib/finance-settings";
 import {
   computeGrowthSnapshot,
-  monthKey,
+  currentMonthKey,
   GROWTH_METRICS,
   type SnapshotClient,
 } from "@/lib/growth-metrics";
@@ -33,7 +33,7 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
-  const month = url.searchParams.get("month") ?? monthKey(new Date());
+  const month = url.searchParams.get("month") ?? currentMonthKey(new Date());
 
   // Best-effort: the payout-timing breakdown is a nice-to-have, so a failed
   // Finance settings read just leaves it out rather than failing the page.

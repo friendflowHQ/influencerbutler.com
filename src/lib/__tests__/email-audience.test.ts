@@ -123,6 +123,54 @@ describe("parseAudience", () => {
     expect(parseAudience({ kind: "engaged", withinDays: "recent" })).toEqual({ kind: "engaged", minOpens: 2 });
   });
 
+  it("parses an opened_nonpaid audience, defaulting minOpens to 1 (inclusive) and omitting withinDays", () => {
+    expect(parseAudience({ kind: "opened_nonpaid" })).toEqual({ kind: "opened_nonpaid", minOpens: 1 });
+    expect(parseAudience({ kind: "opened_nonpaid", minOpens: 4 })).toEqual({
+      kind: "opened_nonpaid",
+      minOpens: 4,
+    });
+    expect(parseAudience({ kind: "opened_nonpaid", minOpens: 3, withinDays: 90 })).toEqual({
+      kind: "opened_nonpaid",
+      minOpens: 3,
+      withinDays: 90,
+    });
+  });
+
+  it("clamps and sanitizes opened_nonpaid parameters", () => {
+    expect(parseAudience({ kind: "opened_nonpaid", minOpens: 0 })).toEqual({
+      kind: "opened_nonpaid",
+      minOpens: 1,
+    });
+    expect(parseAudience({ kind: "opened_nonpaid", minOpens: 999 })).toEqual({
+      kind: "opened_nonpaid",
+      minOpens: 50,
+    });
+    expect(parseAudience({ kind: "opened_nonpaid", minOpens: 2.9 })).toEqual({
+      kind: "opened_nonpaid",
+      minOpens: 2,
+    });
+    // A non-numeric or non-finite minOpens falls back to the default of 1.
+    expect(parseAudience({ kind: "opened_nonpaid", minOpens: "lots" })).toEqual({
+      kind: "opened_nonpaid",
+      minOpens: 1,
+    });
+    // withinDays is dropped when garbage, clamped when out of range.
+    expect(parseAudience({ kind: "opened_nonpaid", withinDays: 0 })).toEqual({
+      kind: "opened_nonpaid",
+      minOpens: 1,
+      withinDays: 1,
+    });
+    expect(parseAudience({ kind: "opened_nonpaid", withinDays: 999999 })).toEqual({
+      kind: "opened_nonpaid",
+      minOpens: 1,
+      withinDays: 3650,
+    });
+    expect(parseAudience({ kind: "opened_nonpaid", withinDays: "recent" })).toEqual({
+      kind: "opened_nonpaid",
+      minOpens: 1,
+    });
+  });
+
   it("rejects unknown or malformed shapes", () => {
     expect(parseAudience(null)).toBeNull();
     expect(parseAudience("all_contacts")).toBeNull();

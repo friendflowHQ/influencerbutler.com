@@ -64,6 +64,7 @@ type Audience =
   | { kind: "all_contacts" }
   | { kind: "tag"; tag: string }
   | { kind: "segment"; segment: "trial" | "pro" | "churned" | "newsletter" }
+  | { kind: "opened_nonpaid" }
   | { kind: "pasted"; emails: string[] };
 
 type CampaignCounts = { queued: number; sent: number; skipped: number; failed: number };
@@ -136,6 +137,7 @@ function audienceLabel(a: Audience): string {
   if (a.kind === "all_contacts") return "All contacts";
   if (a.kind === "tag") return `Tag: ${a.tag}`;
   if (a.kind === "segment") return `Segment: ${SEGMENT_LABELS[a.segment] ?? a.segment}`;
+  if (a.kind === "opened_nonpaid") return "Opened an email, not a paying customer";
   return `Pasted list (${a.emails.length})`;
 }
 
@@ -212,6 +214,7 @@ export default function CampaignsSection({
   function buildAudience(): Audience {
     if (audienceKind === "tag") return { kind: "tag", tag: audienceTag.trim() };
     if (audienceKind === "segment") return { kind: "segment", segment: audienceSegment };
+    if (audienceKind === "opened_nonpaid") return { kind: "opened_nonpaid" };
     if (audienceKind === "pasted") return { kind: "pasted", emails: parseEmails(pastedText) };
     return { kind: "all_contacts" };
   }
@@ -307,9 +310,11 @@ export default function CampaignsSection({
         ? { kind: "tag", tag: audienceTag.trim() }
         : audienceKind === "segment"
           ? { kind: "segment", segment: audienceSegment }
-          : audienceKind === "pasted"
-            ? { kind: "pasted", emails: parseEmails(pastedText) }
-            : { kind: "all_contacts" };
+          : audienceKind === "opened_nonpaid"
+            ? { kind: "opened_nonpaid" }
+            : audienceKind === "pasted"
+              ? { kind: "pasted", emails: parseEmails(pastedText) }
+              : { kind: "all_contacts" };
     previewTimer.current = setTimeout(() => {
       void (async () => {
         try {
@@ -643,6 +648,7 @@ export default function CampaignsSection({
                 <option value="all_contacts">All contacts</option>
                 <option value="tag">Tag</option>
                 <option value="segment">Customer segment</option>
+                <option value="opened_nonpaid">Opened an email, not paying</option>
                 <option value="pasted">Pasted list</option>
               </select>
             </div>

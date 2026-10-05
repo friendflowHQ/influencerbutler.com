@@ -15,7 +15,10 @@ import { computeMonthlyEarnings } from "@/lib/affiliate-commissions-data";
 import { SEED_SOURCE } from "@/lib/recent-activity";
 import { planForVariantId } from "@/lib/lemonsqueezy";
 import { planMetaFor, PRICE_CENTS } from "@/lib/pricing-constants";
+import { DEFAULT_TIMEZONE, localDateStr, zonedTimeToUtc, currentMonthKey } from "@/lib/timezone";
 import { upcomingPayoutDatesMs } from "@/lib/finance-ls-payouts";
+
+export { currentMonthKey } from "@/lib/timezone";
 
 export type MetricUnit = "count" | "cents";
 
@@ -137,16 +140,28 @@ export function prevMonthKey(month: string): string {
   return monthKey(d);
 }
 
-/** Parses 'YYYY-MM' into UTC start/next-month-start ISO strings, or null. */
-export function monthBounds(month: string): { startIso: string; nextIso: string; days: number } | null {
+/**
+ * Parses 'YYYY-MM' into the UTC instants bounding that LOCAL calendar month
+ * in `tz` (default the business timezone), plus the number of calendar days
+ * it has. `startIso`/`nextIso` are what a `created_at` query should use so a
+ * row near midnight local time lands in the right month; `days` sizes the
+ * per-day series and is calendar-day count, not elapsed-ms/86400000 (a DST
+ * transition inside the month would make that off by an hour's worth of ms).
+ */
+export function monthBounds(
+  month: string,
+  tz: string = DEFAULT_TIMEZONE,
+): { startIso: string; nextIso: string; days: number } | null {
   const match = /^(\d{4})-(\d{2})$/.exec(month);
   if (!match) return null;
   const y = Number(match[1]);
   const m = Number(match[2]);
   if (m < 1 || m > 12) return null;
-  const start = new Date(Date.UTC(y, m - 1, 1));
-  const next = new Date(Date.UTC(y, m, 1));
-  const days = Math.round((next.getTime() - start.getTime()) / 86400000);
+  const nextY = m === 12 ? y + 1 : y;
+  const nextM = m === 12 ? 1 : m + 1;
+  const start = zonedTimeToUtc(y, m, 1, 0, tz);
+  const next = zonedTimeToUtc(nextY, nextM, 1, 0, tz);
+  const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
   return { startIso: start.toISOString(), nextIso: next.toISOString(), days };
 }
 
@@ -279,15 +294,19 @@ function emptySnapshotMetric(): MetricSnapshot {
 /**
  * Buckets timestamp rows into {previous, current, series} for the window
  * [prevStart, nextStart). `value` extracts the amount each row contributes
- * (1 for counts, cents for revenue).
+ * (1 for counts, cents for revenue). Each row is bucketed by its LOCAL
+ * calendar date in `tz`, not the raw UTC date in its timestamp string, so an
+ * event in the last few hours of a local day/month is not misattributed to
+ * the next one (the business runs on `tz`, not UTC).
  */
-function bucketRows(
+export function bucketRows(
   rows: Record<string, unknown>[],
   tsCol: string,
   prevMonth: string,
   month: string,
   days: number,
   value: (row: Record<string, unknown>) => number,
+  tz: string = DEFAULT_TIMEZONE,
 ): MetricSnapshot {
   let current = 0;
   let previous = 0;
@@ -295,11 +314,14 @@ function bucketRows(
   for (const row of rows) {
     const ts = row[tsCol];
     if (typeof ts !== "string" || ts.length < 10) continue;
-    const rowMonth = ts.slice(0, 7);
+    const parsed = new Date(ts);
+    if (Number.isNaN(parsed.getTime())) continue;
+    const localDate = localDateStr(parsed, tz);
+    const rowMonth = localDate.slice(0, 7);
     const v = value(row);
     if (rowMonth === month) {
       current += v;
-      const day = Number(ts.slice(8, 10));
+      const day = Number(localDate.slice(8, 10));
       if (day >= 1 && day <= days) series[day - 1] += v;
     } else if (rowMonth === prevMonth) {
       previous += v;
@@ -399,8 +421,9 @@ export async function computeGrowthSnapshot(
   let migrationPending = false;
   let projection: EarningsProjection | null = null;
   // The projection blends this month's secured revenue with the trials open
-  // right now, so it only makes sense for the current month.
-  const isCurrentMonth = month === monthKey(new Date());
+  // right now, so it only makes sense for the current month. "Current" means
+  // the business's local calendar month (DEFAULT_TIMEZONE), not UTC's.
+  const isCurrentMonth = month === currentMonthKey(new Date());
 
   /** Two-month window fetch; returns rows or null on error. */
   async function windowRows(

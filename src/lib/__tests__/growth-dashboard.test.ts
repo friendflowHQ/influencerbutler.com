@@ -15,8 +15,10 @@ import {
 import {
   deltaPercent,
   monthKey,
+  currentMonthKey,
   prevMonthKey,
   monthBounds,
+  bucketRows,
   bucketLevelRows,
   projectedTrialConversionCents,
   billsWithinWindow,
@@ -101,14 +103,32 @@ describe("date + delta helpers", () => {
     expect(prevMonthKey("2026-01")).toBe("2025-12");
   });
 
-  it("monthBounds spans the month and counts days", () => {
-    const b = monthBounds("2026-02");
+  it("monthBounds spans the UTC month and counts days when given UTC", () => {
+    const b = monthBounds("2026-02", "UTC");
     expect(b?.startIso).toBe("2026-02-01T00:00:00.000Z");
     expect(b?.nextIso).toBe("2026-03-01T00:00:00.000Z");
     expect(b?.days).toBe(28);
-    expect(monthBounds("2024-02")?.days).toBe(29);
+    expect(monthBounds("2024-02", "UTC")?.days).toBe(29);
     expect(monthBounds("nope")).toBeNull();
     expect(monthBounds("2026-13")).toBeNull();
+  });
+
+  it("monthBounds defaults to the business timezone (America/Denver), not UTC", () => {
+    // Denver is MST (UTC-7) in February, so local midnight Feb 1 is 07:00 UTC -
+    // the window must start there, not at UTC midnight, or the last ~7 hours
+    // of Jan 31 local time would be miscounted as February.
+    const b = monthBounds("2026-02");
+    expect(b?.startIso).toBe("2026-02-01T07:00:00.000Z");
+    expect(b?.nextIso).toBe("2026-03-01T07:00:00.000Z");
+    expect(b?.days).toBe(28);
+  });
+
+  it("currentMonthKey uses the business timezone, not UTC", () => {
+    // 2026-09-30T23:38 local (MDT, UTC-6) is 2026-10-01T05:38Z - still
+    // September locally even though UTC has already rolled into October.
+    const sept30Evening = new Date("2026-10-01T05:38:00.000Z");
+    expect(currentMonthKey(sept30Evening)).toBe("2026-09");
+    expect(currentMonthKey(sept30Evening, "UTC")).toBe("2026-10");
   });
 
   it("deltaPercent handles zero and unknown baselines", () => {
@@ -212,6 +232,52 @@ describe("buildJwtParts", () => {
     expect(claims.aud).toBe("https://oauth2.googleapis.com/token");
     expect(claims.iat).toBe(now);
     expect(claims.exp).toBe(now + 3600);
+  });
+});
+
+describe("bucketRows", () => {
+  it("buckets by UTC date when given UTC (legacy behavior, for contrast)", () => {
+    // 11:38pm Sept 30 Denver time = 05:38am Oct 1 UTC.
+    const rows = [{ created_at: "2026-10-01T05:38:00.000Z" }];
+    const utc = bucketRows(rows, "created_at", "2026-09", "2026-10", 31, () => 1, "UTC");
+    expect(utc.current).toBe(1);
+    expect(utc.previous).toBe(0);
+  });
+
+  it("buckets a late-evening local event into the local day/month it actually happened in", () => {
+    // Same instant as above, but bucketed in the business's local timezone:
+    // it's still September 30th in Denver, so it must land in September, not
+    // get swallowed into an empty October.
+    const rows = [{ created_at: "2026-10-01T05:38:00.000Z" }];
+    const denver = bucketRows(rows, "created_at", "2026-09", "2026-10", 31, () => 1, "America/Denver");
+    expect(denver.current).toBe(0);
+    expect(denver.previous).toBe(1);
+  });
+
+  it("defaults to the business timezone (America/Denver)", () => {
+    const rows = [{ created_at: "2026-10-01T05:38:00.000Z" }];
+    const snap = bucketRows(rows, "created_at", "2026-09", "2026-10", 31, () => 1);
+    expect(snap.current).toBe(0);
+    expect(snap.previous).toBe(1);
+  });
+
+  it("sums same-month rows and indexes the sparkline by local day", () => {
+    const rows = [
+      { created_at: "2026-09-05T18:00:00.000Z", total: 100 }, // local Sept 5
+      { created_at: "2026-09-16T01:30:00.000Z", total: 50 }, // local Sept 15 (7:30pm MDT)
+    ];
+    const snap = bucketRows(
+      rows,
+      "created_at",
+      "2026-08",
+      "2026-09",
+      30,
+      (r) => Number(r.total),
+      "America/Denver",
+    );
+    expect(snap.current).toBe(150);
+    expect(snap.series?.[4]).toBe(100); // day 5
+    expect(snap.series?.[14]).toBe(50); // day 15
   });
 });
 

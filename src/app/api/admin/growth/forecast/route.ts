@@ -10,7 +10,7 @@
  */
 import { NextResponse } from "next/server";
 import { requirePermission, createAdminClient } from "@/lib/admin";
-import { monthKey, type SnapshotClient } from "@/lib/growth-metrics";
+import { currentMonthKey, type SnapshotClient } from "@/lib/growth-metrics";
 import {
   computeForecastInputs,
   defaultAssumptions,
@@ -31,7 +31,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
   }
 
-  const currentMonth = monthKey(new Date());
+  const currentMonth = currentMonthKey(new Date());
   const baseline = await computeForecastInputs(supabase, currentMonth);
 
   return NextResponse.json({
