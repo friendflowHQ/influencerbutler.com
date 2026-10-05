@@ -42,6 +42,17 @@ export type ProductRef = {
   promoPercentOff?: number | null;
   startDate?: string | null;
   endDate?: string | null;
+  // Coupon and price facts read off the card's own text. Omitted when absent
+  // (never null or 0). The desktop combines them; older desktops ignore them.
+  //   couponPercentOff / couponAmountOff: the clip coupon ("+ 10% Coupon", "$5 coupon").
+  //   couponClip: the card mentions a coupon at all.
+  //   originalPrice: the "Reg." price in dollars (low end of a range).
+  //   cardText: the card's raw visible text, the desktop's parsing fallback.
+  couponPercentOff?: number;
+  couponAmountOff?: number;
+  couponClip?: boolean;
+  originalPrice?: number;
+  cardText?: string;
 };
 
 // One Instagram Goldmine creator, sent in a batch to the desktop Pitch / Group

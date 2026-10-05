@@ -11,6 +11,7 @@ import {
   UI_PREFIX,
 } from "../shared/constants";
 import { askBackground, sendToBackground } from "../shared/messages";
+import { cardDealFacts } from "./card-text";
 import type { HudCommandResult, ProductRef } from "../transport/hud-commands";
 import { allProductAnchors, countProductLinksByAncestor, resolveCardHost } from "./card-scope";
 import { canonicalProductUrl } from "../integrations/url";
@@ -125,6 +126,9 @@ function injectCardChips(
         "",
         /walmart/.test(hit.marketplace) ? "walmart" : "amazon",
       ),
+      // Promo code, coupon and Reg price printed on the card, read at click
+      // time of the scan. Each field is omitted when the card lacks it.
+      ...cardDealFacts(card.innerText || card.textContent || ""),
     };
     // resolveCardHost falls back to the anchor itself when the page has no card
     // around the link, which is what an article-style deal blog looks like.
