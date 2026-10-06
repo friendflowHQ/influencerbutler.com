@@ -22,7 +22,7 @@ Recopilacion de correos del grupo de Facebook abre la pagina de **Solicitudes de
 2. **URL de solicitudes de participantes del grupo**: pega la URL de solicitudes de participantes de tu grupo, por ejemplo `https://www.facebook.com/groups/tugrupo/participant_requests`. Tambien puedes pegar la URL principal del grupo y Butler la ajusta por ti.
 3. **Cuenta de Facebook**: elige que cuenta con sesion iniciada lee las solicitudes.
 4. **Aprobar solicitudes despues de capturar el correo**: activado por defecto. Despues de leer el correo de cada solicitud, Butler hace clic en Aprobar para admitir a la persona. Desactivalo para solo leer correos y dejar las solicitudes pendientes.
-5. **Enviar a Pitch Butler automaticamente**: activado por defecto. Al final de cada ejecucion, los correos recien capturados se agregan a Pitch Butler.
+5. **Enviar a Pitch Butler automaticamente**: desactivado por defecto, porque los miembros de tu grupo no son marcas a las que ofrecer colaboraciones. Actívalo si lo quieres. Al final de cada ejecucion, los correos recien capturados se agregan a Pitch Butler.
 6. Manten **Verlo en accion** activado para ver el navegador trabajar y luego haz clic en **Iniciar**.
 
 Se abre una ventana de Chrome en la pagina de Solicitudes de participantes de tu grupo. Butler lee el nombre y el correo de cada solicitud, lo guarda en la tabla y (si esta activado) aprueba la solicitud antes de pasar a la siguiente.
@@ -53,17 +53,17 @@ Los correos capturados se convierten en registros de marca o creador en Pitch Bu
 
 Si usas Foyer Butler, puedes añadir a las personas que captures a la lista de tu boletín de Foyer, para que tu próximo boletín les llegue.
 
-1. En la tarjeta **Boletín de Foyer**, activa **Estas personas me dieron su correo para unirse a mi grupo**. Con eso confirmas que aceptaron saber de ti, y no se añade nada hasta activarlo.
-2. Revisa **Cómo dieron su consentimiento**. Se guarda con tu lista como registro de consentimiento, así que sé veraz. Por defecto dice "Dieron su correo para unirse a mi grupo de Facebook".
+1. En la tarjeta **Boletín de Foyer**, activa **Estas personas aceptaron recibir correos míos cuando me dieron su correo**. Actívalo solo si las preguntas de ingreso de tu grupo dicen que su correo se usará para tu boletín. No se añade nada hasta activarlo, y se te pedirá confirmar de nuevo cada 30 días.
+2. Revisa **Cómo dieron su consentimiento**. Se guarda con tu lista como registro de consentimiento, así que sé veraz. Por defecto dice "Dieron su correo en las preguntas de ingreso de mi grupo, que decían que se usaría para mi boletín".
 3. Haz clic en **Añadir al boletín de Foyer** en la barra de la tabla. Añade las filas seleccionadas, o todas si no hay ninguna seleccionada.
 
 ¿Quieres que sea automático? Activa **Añadir correos nuevos después de cada ejecución** para añadir los correos nuevos en cuanto termine una ejecución. Para que todo corra solo, activa **Recopilar según una programación** y elige la frecuencia, desde cada 3 horas hasta cada 3 días. Cada ejecución programada recopila (y aprueba, si está activado) y después añade los correos nuevos al boletín.
 
-La columna **Boletín** muestra en qué punto está cada persona: **Añadido**, **En revisión** (las listas grandes se revisan antes de poder recibir correos) o **Sin suscripción**. Los correos a estos contactos dicen que los reciben porque se unieron a tu grupo de Facebook, y cada correo incluye un enlace para cancelar la suscripción.
+La columna **Boletín** muestra en qué punto está cada persona: **Añadido**, **Revisando** (las listas grandes se revisan automáticamente antes de poder recibir correos, y termina solo) o **Sin suscripción**. Cada ejecución añade como máximo 500 correos nuevos; el resto se añade en la siguiente. Los correos a estos contactos dicen que los reciben porque se unieron a tu grupo de Facebook, el primero empieza con una nota breve sobre quién eres y por qué lo reciben, y cada correo incluye un enlace para cancelar la suscripción.
 
 ### Cuando alguien cancela su suscripción
 
-Su dirección pasa a una lista de no contactar compartida en todo Influencer Butler. Se omite al añadir correos al boletín, y **Pitch Butler tampoco les enviará correos ni los añadirá desde esta tabla**. Si algún día se vuelven a suscribir desde tu página de Foyer, salen de la lista automáticamente.
+Su dirección pasa a una lista de no contactar compartida en todo Influencer Butler. Se omite al añadir correos al boletín, y **Pitch Butler tampoco les enviará correos ni los añadirá desde esta tabla**. Si alguien que se dio de baja vuelve a suscribirse desde tu página de Foyer y lo confirma por correo, sale de la lista. Quien tuvo un rebote o marcó un mensaje como spam no sale nunca.
 
 ## Problemas comunes
 
