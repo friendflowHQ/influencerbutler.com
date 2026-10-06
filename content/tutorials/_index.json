@@ -672,6 +672,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "walmart-collection-builder",
+      "title": "Collection Builder: turn an Amazon list into a Walmart collection",
+      "category": "Other",
+      "summary": "Paste one of your Amazon lists and Collection Builder creates a matching Walmart collection with a similar name, a similar description and Walmart products picked to match, after you review everything.",
+      "order": 342.4,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "group-invite-butler",
       "title": "Group Invite Butler: grow your Facebook group from a list of creator emails",
       "category": "Other",
