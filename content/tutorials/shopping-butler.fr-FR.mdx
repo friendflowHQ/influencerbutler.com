@@ -6,7 +6,7 @@ category: Amazon
 
 ## Ce que fait Shopping Butler
 
-Shopping Butler se trouve dans **Deals Butler › Shopping Butler**. C'est un outil pour acheter, pas pour publier : écrivez ce que vous cherchez et il cherche sur **Amazon et Walmart** à la fois, en classant tout ce qu'il trouve selon quatre critères en même temps :
+Shopping Butler se trouve dans **Deals Butler › Shopping Butler**. C'est un outil pour acheter, pas pour publier : écrivez ce que vous cherchez et il cherche sur **Amazon, Walmart ou les deux** à la fois, dans les pays que vous choisissez, en classant tout ce qu'il trouve selon quatre critères en même temps :
 
 - **Prix** : lequel est le moins cher ou la meilleure offre du moment.
 - **Qualité du produit** : le produit le plus performant, d'après sa note en étoiles et son nombre d'avis.
@@ -19,14 +19,26 @@ C'est un espace de travail uniquement d'interface. Il n'y a aucun processus à l
 
 ## Avant de commencer
 
-- **Connectez vos clés Amazon** dans **Clés d'IA et de données** pour inclure Amazon dans la recherche. Sans elles, les résultats proviennent uniquement de Walmart, et le panneau vous le signale.
-- **Walmart** fonctionne une fois que vous êtes connecté à votre compte Walmart Creator ; aucune clé n'est nécessaire.
+- **Shopping Butler est gratuit.** Il suffit d'être connecté à Influencer Butler. Les résultats Amazon US et Walmart ne demandent aucune clé de votre part.
+- **Les autres pays Amazon** (Royaume-Uni, Allemagne, Canada et plus) utilisent vos propres clés Amazon. Connectez les clés de cette région dans **Clés d'IA et de données** pour les débloquer.
+- **Liens d'affilié :** les liens des résultats Amazon US et Walmart portent l'identifiant d'affilié d'Influencer Butler, et le panneau l'indique chaque fois qu'ils sont à l'écran. Les liens des autres pays portent votre propre identifiant pour ce pays.
+
+## Choisir où acheter
+
+La carte **Où acheter** se trouve au-dessus de la zone de recherche. Vos choix sont enregistrés pour la prochaine fois.
+
+- **Boutiques** : cochez **Amazon**, **Walmart** ou les deux. Les deux sont activées par défaut et il en reste toujours au moins une.
+- **Pays** : cochez les pays Amazon où acheter. **US est activé par défaut.** Chaque pays affiche ce que vend son propre site Amazon, dans sa propre devise, et ses lignes portent un petit drapeau pour les distinguer. Amazon n'a pas de réglage pour le pays de livraison, choisissez donc le pays dont vous voulez utiliser le site.
+- **Pays verrouillés** : un pays reste grisé tant que vous n'avez pas connecté les clés Amazon de cette région dans **Clés d'IA et de données**. Survolez-le pour voir quelle région il demande.
+- **Walmart est réservé aux États-Unis.** Il est interrogé sur son site américain, il est donc ignoré si US n'est pas coché, et le panneau vous le dit.
+
+Si un pays que vous avez coché n'a pas pu être interrogé, le panneau le nomme au-dessus des résultats au lieu d'afficher autre chose en silence.
 
 ## Rechercher
 
 1. Ouvrez **Deals Butler › Shopping Butler**.
 2. Écrivez ce que vous cherchez à acheter avec des mots simples, par exemple `un ordinateur portable pour mon fils`, puis appuyez sur Entrée ou cliquez sur **Rechercher**.
-3. Le tableau des résultats se remplit tout de suite avec des produits des deux boutiques, chacun affichant son prix, sa note, la commission que vous gagneriez et un score.
+3. Le tableau des résultats se remplit tout de suite avec des produits des boutiques et des pays que vous avez choisis, chacun affichant son prix, sa note, la commission que vous gagneriez et un score.
 
 Quand le même produit est vendu dans les deux boutiques, les deux lignes se regroupent en une seule, avec une note « aussi moins cher chez » pour que vous voyiez le meilleur prix d'un coup d'œil.
 
@@ -60,7 +72,10 @@ Vous pouvez regarder cela s'exécuter et l'annuler à tout moment. Si Amazon met
 
 ## Problèmes fréquents
 
-- **Les résultats Amazon sont absents** : vos clés Amazon ne sont pas connectées. Ouvrez Clés d'IA et de données et ajoutez-les.
+- **Un pays est grisé ou indique qu'il n'a pas été interrogé** : les clés Amazon de cette région ne sont pas connectées. Ouvrez Clés d'IA et de données et ajoutez-les.
+- **Les résultats Walmart sont absents** : Walmart n'est interrogé que si US est coché, et seulement si Walmart est coché.
+- **Les prix semblent différents d'un pays à l'autre** : chaque pays s'affiche dans sa propre devise, et les produits ne sont comparés qu'à d'autres de la même devise.
+- **Vidéos de créateurs affiche N/D sur certaines lignes** : ce compte n'existe que pour les produits Amazon US, donc Walmart et les autres pays affichent N/D.
 - **Toutes les vidéos de créateurs affichent « non vérifié »** : cette colonne ne se remplit qu'après un clic sur Vérifier la saturation.
 - **La saturation ne se lançait pas** : Amazon met votre compte au repos un moment. Elle reprend d'elle-même, alors réessayez la vérification plus tard.
 

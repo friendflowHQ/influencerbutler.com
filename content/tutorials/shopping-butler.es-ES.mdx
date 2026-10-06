@@ -6,7 +6,7 @@ category: Amazon
 
 ## Qué hace Shopping Butler
 
-Shopping Butler está en **Deals Butler › Shopping Butler**. Es una herramienta para comprar, no para publicar: escribe qué estás buscando y busca en **Amazon y Walmart** a la vez, ordenando todo lo que encuentra por cuatro cosas al mismo tiempo:
+Shopping Butler está en **Deals Butler › Shopping Butler**. Es una herramienta para comprar, no para publicar: escribe qué estás buscando y busca en **Amazon, Walmart o ambas** a la vez, en los países que elijas, ordenando todo lo que encuentra por cuatro cosas al mismo tiempo:
 
 - **Precio**: cuál es el más barato o la mejor oferta ahora mismo.
 - **Calidad del producto**: el producto con mejor rendimiento, según su valoración en estrellas y su número de reseñas.
@@ -19,14 +19,26 @@ Es un espacio de trabajo solo de interfaz. No hay ningún proceso que iniciar y 
 
 ## Antes de empezar
 
-- **Conecta tus claves de Amazon** en **Claves de IA y datos** para incluir Amazon en la búsqueda. Sin ellas, los resultados son solo de Walmart, y el panel te lo indica.
-- **Walmart** funciona una vez que has iniciado sesión en tu cuenta de Walmart Creator; no hacen falta claves.
+- **Shopping Butler es gratis.** Solo necesita que hayas iniciado sesión en Influencer Butler. Los resultados de Amazon US y de Walmart no requieren claves tuyas.
+- **Otros países de Amazon** (Reino Unido, Alemania, Canadá y más) usan tus propias claves de Amazon. Conecta las claves de esa región en **Claves de IA y datos** para desbloquearlos.
+- **Enlaces de afiliado:** los enlaces de los resultados de Amazon US y de Walmart llevan la etiqueta de afiliado de Influencer Butler, y el panel lo indica siempre que aparecen en pantalla. Los enlaces de otros países llevan tu propia etiqueta para ese país.
+
+## Elige dónde comprar
+
+La tarjeta **Dónde comprar** está encima del cuadro de búsqueda. Tus elecciones se guardan para la próxima vez.
+
+- **Tiendas**: marca **Amazon**, **Walmart** o ambas. Vienen las dos activadas y siempre queda al menos una.
+- **Países**: marca los países de Amazon en los que comprar. **US viene activado por defecto.** Cada país muestra lo que vende su propio sitio de Amazon, en su propia moneda, y sus filas llevan una pequeña bandera para distinguirlas. Amazon no tiene un ajuste para el destino de envío, así que elige el país cuyo sitio quieres usar.
+- **Países bloqueados**: un país aparece en gris hasta que conectes las claves de Amazon de esa región en **Claves de IA y datos**. Pasa el cursor por encima para ver qué región necesita.
+- **Walmart es solo de EE. UU.** Se busca en su sitio de EE. UU., así que se omite si no marcas US, y el panel te lo dice.
+
+Si no se pudo buscar en un país que marcaste, el panel lo nombra encima de los resultados en lugar de mostrar otra cosa en silencio.
 
 ## Buscar
 
 1. Abre **Deals Butler › Shopping Butler**.
 2. Escribe qué estás buscando comprar con palabras normales, por ejemplo `un portátil para mi hijo`, y pulsa Intro o haz clic en **Buscar**.
-3. La tabla de resultados se rellena de inmediato con productos de ambas tiendas, cada uno mostrando su precio, valoración, la comisión que ganarías y una puntuación.
+3. La tabla de resultados se rellena de inmediato con productos de las tiendas y los países que elegiste, cada uno mostrando su precio, valoración, la comisión que ganarías y una puntuación.
 
 Cuando el mismo producto se vende en ambas tiendas, las dos filas se combinan en una, con una nota de "también más barato en" para que veas de un vistazo el mejor precio.
 
@@ -60,7 +72,10 @@ Puedes ver cómo se ejecuta y cancelarlo en cualquier momento. Si Amazon está d
 
 ## Problemas frecuentes
 
-- **Faltan los resultados de Amazon**: tus claves de Amazon no están conectadas. Abre Claves de IA y datos y añádelas.
+- **Un país aparece en gris o indica que no se buscó**: las claves de Amazon de esa región no están conectadas. Abre Claves de IA y datos y añádelas.
+- **Faltan los resultados de Walmart**: Walmart solo se busca cuando US está marcado, y solo cuando Walmart está marcado.
+- **Los precios se ven distintos entre países**: cada país se muestra en su propia moneda, y los productos solo se comparan con otros de la misma moneda.
+- **Vídeos de creadores dice N/D en algunas filas**: ese recuento solo existe para productos de Amazon US, así que Walmart y los demás países muestran N/D.
 - **Todos los vídeos de creadores dicen "sin comprobar"**: esa columna solo se rellena después de que hagas clic en Comprobar saturación.
 - **La saturación no se ejecutaba**: Amazon está dejando descansar tu cuenta un rato. Se reanuda por sí sola, así que vuelve a intentar la comprobación más tarde.
 

@@ -6,7 +6,7 @@ category: Amazon
 
 ## What Shopping Butler does
 
-Shopping Butler lives under **Deals Butler › Shopping Butler**. It is a shopper's tool, not a poster: type what you are looking for, and it searches **Amazon and Walmart** at once and ranks everything it finds by four things at the same time:
+Shopping Butler lives under **Deals Butler › Shopping Butler**. It is a shopper's tool, not a poster: type what you are looking for, and it searches **Amazon, Walmart, or both** at once, in the countries you choose, and ranks everything it finds by four things at the same time:
 
 - **Price**: which is the cheapest or the best deal right now.
 - **Product quality**: the best-performing product, from its star rating and review count.
@@ -19,14 +19,26 @@ It is a UI-only workspace. There is no runner to start and nothing schedules. Yo
 
 ## Before you start
 
-- **Connect your Amazon keys** in **AI & Data Keys** to include Amazon in the search. Without them, results are Walmart only, and the panel tells you so.
-- **Walmart** works once you are signed in to your Walmart Creator account; no keys are needed.
+- **Shopping Butler is free.** Being signed in to Influencer Butler is all it needs. US Amazon and Walmart results need no keys of your own.
+- **Other Amazon countries** (UK, Germany, Canada and more) use your own Amazon keys. Connect that region's keys in **AI & Data Keys** to unlock them.
+- **Affiliate links:** links on US Amazon and Walmart results carry Influencer Butler's own affiliate tag, and the panel says so whenever they are on screen. Links from other countries carry your own tag for that country.
+
+## Choose where to shop
+
+The **Where to shop** card sits above the search box. Your choices are saved for next time.
+
+- **Stores**: tick **Amazon**, **Walmart**, or both. Both are on by default, and at least one always stays on.
+- **Countries**: tick the Amazon countries to shop. **US is on by default.** Each country shows what its own Amazon site sells, in its own currency, and its rows get a small flag so you can tell them apart. Amazon has no setting for where an item ships to, so pick the country whose site you want to shop.
+- **Locked countries**: a country is greyed out until you connect that region's Amazon keys in **AI & Data Keys**. Hover it to see which region it needs.
+- **Walmart is US only.** It is searched on its US site, so it is skipped unless US is ticked, and the panel says so.
+
+If a country you ticked could not be searched, the panel names it above the results instead of quietly showing something else.
 
 ## Searching
 
 1. Open **Deals Butler › Shopping Butler**.
 2. Type what you are shopping for in plain words, for example `laptop for my son`, and press Enter or click **Search**.
-3. The results table fills in right away with products from both stores, each showing its price, rating, the commission you would earn, and a score.
+3. The results table fills in right away with products from the stores and countries you picked, each showing its price, rating, the commission you would earn, and a score.
 
 When the same product is sold in both stores, the two rows collapse into one, with an "also cheaper at" note so you can see the better price at a glance.
 
@@ -60,7 +72,10 @@ You can watch this run and cancel it at any time. If Amazon is resting your acco
 
 ## Common gotchas
 
-- **Amazon results are missing**: your Amazon keys are not connected. Open AI & Data Keys and add them.
+- **A country is greyed out or says it was not searched**: that region's Amazon keys are not connected. Open AI & Data Keys and add them.
+- **Walmart results are missing**: Walmart is only searched when US is ticked, and only when Walmart is ticked.
+- **Prices look different between countries**: each country is shown in its own currency, and products are only compared with others in the same currency.
+- **Creator videos say N/A on some rows**: that count only exists for US Amazon products, so Walmart and other countries show N/A.
 - **Creator videos all say "not checked"**: that column only fills in after you click Check saturation.
 - **Saturation would not run**: Amazon is resting your account for a bit. It resumes on its own, so try the check again later.
 
