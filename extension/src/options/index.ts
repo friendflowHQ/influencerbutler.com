@@ -74,6 +74,11 @@ async function init(): Promise<void> {
   // Nav depends on the sections above already being in the DOM.
   renderSideNav();
   setupScrollSpy();
+  // A deep link (e.g. the Walmart "Set up affiliate links" prompt) names its
+  // section in the URL fragment. The sections are built after load, so the
+  // browser's own fragment scroll has nothing to land on; do it here.
+  const target = location.hash ? document.getElementById(location.hash.slice(1)) : null;
+  target?.scrollIntoView();
 }
 
 // Build the left section nav from the sections rendered above and wire scroll-to

@@ -618,7 +618,8 @@ async function wireQuickLink(locale: Settings["locale"]): Promise<void> {
         setup.className = "link-inline";
         setup.type = "button";
         setup.textContent = dict.setup;
-        setup.onclick = () => void sendToBackground({ kind: "OPEN_OPTIONS" });
+        setup.onclick = () =>
+          void sendToBackground({ kind: "OPEN_OPTIONS", section: "sec-cat-walmartLink" });
         const note = document.createElement("p");
         note.className = "muted small";
         note.append(document.createTextNode(`${dict.notTracked} `), setup);

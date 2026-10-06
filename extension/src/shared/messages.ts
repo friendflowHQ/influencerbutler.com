@@ -219,7 +219,8 @@ export type RuntimeMessage =
   | { kind: "OPEN_URL"; url: string }
   // Opens the extension's options/settings page. Content scripts cannot call
   // chrome.runtime.openOptionsPage directly, so the on-page gear routes here.
-  | { kind: "OPEN_OPTIONS" }
+  // `section` is an options-page anchor id (e.g. "sec-cat-walmartLink") to jump to.
+  | { kind: "OPEN_OPTIONS"; section?: string }
   // Records first actual use so the background can schedule the re-engagement
   // nudge alarms. Idempotent: only the first one sets the clock.
   | { kind: "MARK_FIRST_USE" }

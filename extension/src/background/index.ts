@@ -699,9 +699,19 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       // this to an arbitrary URL.
       void openAllowedUrl(message.url).then(() => sendResponse(undefined));
       return true;
-    case "OPEN_OPTIONS":
-      void chrome.runtime.openOptionsPage(() => sendResponse(undefined));
+    case "OPEN_OPTIONS": {
+      // A section anchor (our own ids only) opens the settings page scrolled to
+      // that section; openOptionsPage cannot carry a fragment.
+      const section = message.section && /^sec-[\w-]+$/.test(message.section) ? message.section : null;
+      if (section) {
+        void chrome.tabs
+          .create({ url: `${chrome.runtime.getURL("options.html")}#${section}` })
+          .then(() => sendResponse(undefined));
+      } else {
+        void chrome.runtime.openOptionsPage(() => sendResponse(undefined));
+      }
       return true;
+    }
     case "MARK_FIRST_USE":
       void markFirstUse().then(() => sendResponse(undefined));
       return true;

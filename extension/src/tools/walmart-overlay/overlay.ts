@@ -61,6 +61,31 @@ function revenueCents(market: MarketProduct | null, priceCents: number | null): 
   return Math.round(market.estMonthlySales * priceCents);
 }
 
+// Copy text to the clipboard, tolerating a lapsed user gesture. Resolves true
+// when the text was copied.
+async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    // fall through to the selection-based copy
+  }
+  try {
+    const area = document.createElement("textarea");
+    area.value = text;
+    area.setAttribute("readonly", "");
+    area.style.position = "fixed";
+    area.style.opacity = "0";
+    document.body.append(area);
+    area.select();
+    const ok = document.execCommand("copy");
+    area.remove();
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
 export function initWalmartProduct(signals: ProductSignals, product: WalmartProduct | null): void {
   const itemId = signals.asin;
   if (!itemId) return;
@@ -72,8 +97,16 @@ export function initWalmartProduct(signals: ProductSignals, product: WalmartProd
   const btn = el("button", "btn wm-link-btn") as HTMLButtonElement;
   btn.type = "button";
   btn.textContent = "Copy Walmart link";
+  // The label to restore after a click; flips to "Copy Walmart affiliate link"
+  // once a link provider is connected (see the GET_INTEGRATIONS check below).
+  let idleLabel = btn.textContent;
   btn.addEventListener("click", () => {
     btn.disabled = true;
+    // A tracked link is minted from the creator's signed-in Mavely / Walmart
+    // Creator session, which can take a few seconds; say so instead of leaving
+    // a dead-looking button.
+    btn.textContent = "Creating link...";
+    status.textContent = "";
     void sendToBackground<GenerateLinkResult>({
       kind: "GENERATE_AFFILIATE_LINK",
       asin: itemId,
@@ -81,23 +114,28 @@ export function initWalmartProduct(signals: ProductSignals, product: WalmartProd
       url: location.href,
       retailer: "walmart",
     })
-      .then((res) => {
+      .then(async (res) => {
         btn.disabled = false;
+        btn.textContent = idleLabel;
         if (!res.ok || !res.url) {
           status.textContent = "Could not build a link.";
           return;
         }
-        void navigator.clipboard?.writeText(res.url).then(() => {
-          status.textContent =
-            res.notice === "signInRequired"
-              ? "Copied plain link. Sign in to your Walmart link provider to get tracked links."
-              : res.notice
-                ? "Copied (plain link)."
-                : "Copied!";
-        });
+        // The mint can outlast the click's user activation, which makes the
+        // async clipboard API reject; fall back to a selection copy, and show
+        // the link itself if both fail so the creator is never left empty-handed.
+        const copied = await copyText(res.url);
+        status.textContent = !copied
+          ? res.url
+          : res.notice === "signInRequired"
+            ? "Copied plain link. Sign in to your Walmart link provider to get tracked links."
+            : res.notice
+              ? "Copied (plain link)."
+              : "Copied!";
       })
       .catch(() => {
         btn.disabled = false;
+        btn.textContent = idleLabel;
         status.textContent = "Could not build a link.";
       });
   });
@@ -112,13 +150,17 @@ export function initWalmartProduct(signals: ProductSignals, product: WalmartProd
       const providerId = view.global.walmartLinkProvider;
       const configured = Boolean(providerId && view.providers.find((p) => p.id === providerId)?.configured);
       if (configured) {
-        btn.textContent = "Copy Walmart affiliate link";
+        idleLabel = "Copy Walmart affiliate link";
+        if (!btn.disabled) btn.textContent = idleLabel;
         return;
       }
       const setup = el("button", "link-inline") as HTMLButtonElement;
       setup.type = "button";
       setup.textContent = "Set up Walmart affiliate links";
-      setup.addEventListener("click", () => void sendToBackground({ kind: "OPEN_OPTIONS" }));
+      setup.addEventListener(
+        "click",
+        () => void sendToBackground({ kind: "OPEN_OPTIONS", section: "sec-cat-walmartLink" }),
+      );
       const note = el("div", "muted small");
       note.append(document.createTextNode("Links are not commission-tracked yet. "), setup);
       section.append(note);
