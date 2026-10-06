@@ -21,6 +21,7 @@ describe("readExtensionFlags", () => {
       disabledTools: [],
       selectorOverrides: {},
       notice: null,
+      events: [],
     }));
   });
 

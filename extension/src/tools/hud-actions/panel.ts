@@ -3,7 +3,10 @@ import { t } from "../../i18n";
 import { sendToBackground } from "../../shared/messages";
 import { getSettings } from "../../storage/store";
 import { APP_TRIAL_URL, DEAL_WORKSPACES } from "../../shared/constants";
-import type { AuthStatus, HudStatus } from "../../shared/messages";
+import type { AuthStatus, HudCommandResult, HudStatus } from "../../shared/messages";
+import { getFlags } from "../../flags/cache";
+import { activeDealEvent, findPrimeDayWorkspace, retailerOfMarketplace } from "../../deals/events";
+import { showToast } from "../../ui/toast";
 import type { ProductRef } from "../../transport/hud-commands";
 import type { ProductSignals } from "../../amazon/product-signals";
 import { makeCommandRunner, toProductRef } from "./runner";
@@ -184,11 +187,51 @@ function renderConnected(
 
   const run = makeCommandRunner(body, status, [dealBtn]);
 
+  // Event days (Prime Day, Walmart Deals): also send to the Prime Day Deals
+  // workspace. Resolved asynchronously; until then (and whenever no event is
+  // open, the setting is off, or the app does not offer that workspace) the row
+  // is exactly the plain push it always was.
+  let primeDay: { key: string; mode: "ask" | "always"; box: HTMLInputElement | null } | null = null;
+  void (async () => {
+    const [settings, flags] = await Promise.all([getSettings(), getFlags()]);
+    const mode = settings.deals.eventAlsoSend;
+    if (mode === "off") return;
+    if (!activeDealEvent(flags?.events, retailerOfMarketplace(product.marketplace))) return;
+    const target = findPrimeDayWorkspace(hud.dealWorkspaces ?? []);
+    if (!target) return;
+    let box: HTMLInputElement | null = null;
+    if (mode === "ask") {
+      const label = el("label", "quickbar-event");
+      box = el("input") as HTMLInputElement;
+      box.type = "checkbox";
+      label.append(box, document.createTextNode(" " + t().alsoSendPrimeDay));
+      dealRow.append(label);
+    }
+    primeDay = { key: target.key, mode, box };
+  })().catch(() => {});
+
   dealBtn.addEventListener("click", async () => {
     // Honour the "When a deal arrives" placement from Settings > Deals, so this
     // button lands the deal where the creator chose rather than the desktop's
     // own fallback default (read at click time so a Settings change is picked up).
     const placement = (await getSettings()).deals.placement;
+    const extra = primeDay;
+    if (extra && picker.value !== extra.key && (extra.mode === "always" || extra.box?.checked)) {
+      void sendToBackground<HudCommandResult>({
+        kind: "SEND_HUD_COMMAND",
+        command: { type: "deal.push", workspace: extra.key, product, placement },
+      })
+        .then((result) => {
+          if (!result.ok) {
+            showToast({
+              title: t().actionFailedTitle,
+              message: result.message ?? t().couldNotReachApp,
+              closeLabel: t().nudgeCloseLabel,
+            });
+          }
+        })
+        .catch(() => {});
+    }
     run({ type: "deal.push", workspace: picker.value, product, placement }, t().pushingDeals);
   });
 

@@ -702,7 +702,14 @@ export type DealsSettings = {
   // The on-page chip itself. On out of the box; turning it off leaves the
   // page-level badge (and the harvester) working.
   cardChip: boolean;
+  // On event days (Prime Day, Walmart Deals) a second send to the Prime Day
+  // Deals workspace: "off" never offers it, "ask" shows it as an extra option
+  // on each send, "always" sends to both automatically.
+  eventAlsoSend: EventAlsoSend;
 };
+
+export type EventAlsoSend = "off" | "ask" | "always";
+export const EVENT_ALSO_SEND_MODES: readonly EventAlsoSend[] = ["off", "ask", "always"] as const;
 
 export type VideoBumpRunOn = "browser" | "desktop";
 export type VideoBumpMode = "auto" | "assist";
@@ -750,6 +757,8 @@ export function normalizeDealsSettings(raw: unknown): DealsSettings {
     workspace: workspace || DEFAULT_DEALS.workspace,
     placement: placement ?? DEFAULT_DEALS.placement,
     cardChip: obj.cardChip !== false,
+    eventAlsoSend:
+      EVENT_ALSO_SEND_MODES.find((m) => m === obj.eventAlsoSend) ?? DEFAULT_DEALS.eventAlsoSend,
   };
 }
 
@@ -757,6 +766,7 @@ const DEFAULT_DEALS: DealsSettings = {
   workspace: "default",
   placement: "end",
   cardChip: true,
+  eventAlsoSend: "ask",
 };
 
 const DEFAULT_VIDEO_BUMP: VideoBumpSettings = {
@@ -796,7 +806,7 @@ export const DEFAULTS: StorageShape = {
       alertAtPct: 90,
     },
     autoAccept: { ...DEFAULT_AUTO_ACCEPT, bands: [...DEFAULT_AUTO_ACCEPT.bands] },
-    deals: { workspace: "default", placement: "end", cardChip: true },
+    deals: { workspace: "default", placement: "end", cardChip: true, eventAlsoSend: "ask" },
     videoBump: { ...DEFAULT_VIDEO_BUMP },
     voiceover: {
       tone: "",

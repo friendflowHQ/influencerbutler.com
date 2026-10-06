@@ -9,7 +9,7 @@ import type { IntegrationAdapter, IntegrationCategory } from "../integrations/ty
 import { OPTIONS_CATALOG, type OptionsDict } from "./strings";
 import { resolveLocale } from "../i18n";
 import { getSettings, patchSettings } from "../storage/store";
-import { DEAL_PLACEMENTS } from "../storage/schema";
+import { DEAL_PLACEMENTS, EVENT_ALSO_SEND_MODES, type EventAlsoSend } from "../storage/schema";
 import { DEAL_WORKSPACES } from "../shared/constants";
 import type { DealPlacement } from "../transport/hud-commands";
 import type {
@@ -810,6 +810,22 @@ function renderDeals(): void {
   card.append(toggle);
   hint(D.dealsChipHint);
 
+  const eventSelect = document.createElement("select");
+  const eventLabels: Record<EventAlsoSend, string> = {
+    off: D.dealsEventOff,
+    ask: D.dealsEventAsk,
+    always: D.dealsEventAlways,
+  };
+  for (const mode of EVENT_ALSO_SEND_MODES) {
+    const option = document.createElement("option");
+    option.value = mode;
+    option.textContent = eventLabels[mode];
+    eventSelect.append(option);
+  }
+  eventSelect.value = current.eventAlsoSend;
+  field(D.dealsEventLabel, eventSelect);
+  hint(D.dealsEventHint);
+
   const actions = document.createElement("div");
   actions.className = "actions";
   const saveBtn = document.createElement("button");
@@ -825,6 +841,7 @@ function renderDeals(): void {
       workspace: workspaceSelect.value || "default",
       placement: placementSelect.value as DealPlacement,
       cardChip: chipBox.checked,
+      eventAlsoSend: eventSelect.value as EventAlsoSend,
     };
     settings = await patchSettings({ deals });
     saveBtn.disabled = false;

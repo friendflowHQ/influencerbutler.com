@@ -19,7 +19,15 @@ export type SendQueueDeps = {
   send: Sender;
   // Read per flush rather than per click, so a workspace or placement changed
   // in the options page takes effect without reloading the deal site.
-  target: () => Promise<{ workspace: string; placement: DealPlacement }>;
+  // `alsoWorkspace` is the event-day "always send to both" second target: the
+  // same products also go there, but its outcome never changes a chip, so a
+  // failure there cannot make a send that landed in the main workspace look
+  // failed.
+  target: () => Promise<{
+    workspace: string;
+    placement: DealPlacement;
+    alsoWorkspace?: string | null;
+  }>;
   dict: DealsDict;
   debounceMs?: number;
   maxWaitMs?: number;
@@ -28,7 +36,9 @@ export type SendQueueDeps = {
 export const SEND_DEBOUNCE_MS = 250;
 export const SEND_MAX_WAIT_MS = 800;
 
-type Entry = { product: ProductRef; chips: ChipHandle[] };
+// `workspace` is set when one click targets a specific workspace (the event-day
+// "+ Prime Day Deals" chip); otherwise the flush uses the configured target.
+type Entry = { product: ProductRef; chips: ChipHandle[]; workspace?: string };
 
 // Pure: what a chip should say about one bridge reply. `null` is the
 // askBackground "nothing answered" case, which is a dead worker or an orphaned
@@ -53,15 +63,15 @@ export function createSendQueue(deps: SendQueueDeps) {
   // does not know deal.push.batch, so we stop paying for the failed probe.
   let useSinglePush = false;
 
-  function enqueue(product: ProductRef, chip: ChipHandle): void {
+  function enqueue(product: ProductRef, chip: ChipHandle, workspace?: string): void {
     // Feedback must not wait on the flush: the chip reacts to the click itself.
     chip.setState("pending");
-    const key = `${product.marketplace}:${product.asin}`;
+    const key = `${workspace ?? ""}|${product.marketplace}:${product.asin}`;
     const existing = pending.get(key);
     if (existing) {
       existing.chips.push(chip);
     } else {
-      pending.set(key, { product, chips: [chip] });
+      pending.set(key, { product, chips: [chip], workspace });
       if (firstQueuedAt === 0) firstQueuedAt = Date.now();
     }
     schedule();
@@ -84,9 +94,23 @@ export function createSendQueue(deps: SendQueueDeps) {
     firstQueuedAt = 0;
     if (entries.length === 0) return;
 
-    const { workspace, placement } = await deps.target();
-    for (let i = 0; i < entries.length; i += DEAL_PUSH_CHUNK) {
-      await sendChunk(entries.slice(i, i + DEAL_PUSH_CHUNK), workspace, placement);
+    const { workspace, placement, alsoWorkspace } = await deps.target();
+    const byWorkspace = new Map<string, Entry[]>();
+    for (const entry of entries) {
+      const ws = entry.workspace ?? workspace;
+      byWorkspace.set(ws, [...(byWorkspace.get(ws) ?? []), entry]);
+    }
+    for (const [ws, group] of byWorkspace) {
+      for (let i = 0; i < group.length; i += DEAL_PUSH_CHUNK) {
+        await sendChunk(group.slice(i, i + DEAL_PUSH_CHUNK), ws, placement, true);
+      }
+    }
+    // Event-day "always both": a quiet second send of what went to the main one.
+    if (alsoWorkspace && alsoWorkspace !== workspace) {
+      const mirrored = entries.filter((e) => e.workspace === undefined);
+      for (let i = 0; i < mirrored.length; i += DEAL_PUSH_CHUNK) {
+        await sendChunk(mirrored.slice(i, i + DEAL_PUSH_CHUNK), alsoWorkspace, placement, false);
+      }
     }
   }
 
@@ -94,7 +118,11 @@ export function createSendQueue(deps: SendQueueDeps) {
     chunk: Entry[],
     workspace: string,
     placement: DealPlacement,
+    reportToChips: boolean,
   ): Promise<void> {
+    const report = (entries: Entry[], result: HudCommandResult | null): void => {
+      if (reportToChips) reportOutcome(entries, result);
+    };
     const single = chunk[0];
     if (chunk.length === 1 && single) {
       const result = await deps.send({
@@ -139,7 +167,7 @@ export function createSendQueue(deps: SendQueueDeps) {
   // A batch is one reply for the whole frame, so every chip in it hears the
   // same outcome. That is why the queue carries chip handles and not just
   // products.
-  function report(entries: Entry[], result: HudCommandResult | null): void {
+  function reportOutcome(entries: Entry[], result: HudCommandResult | null): void {
     const outcome = chipStateFor(result, deps.dict);
     for (const entry of entries) {
       for (const chip of entry.chips) chip.setState(outcome.state, outcome.detail);

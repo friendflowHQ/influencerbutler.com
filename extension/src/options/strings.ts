@@ -181,6 +181,11 @@ export interface OptionsDict {
   dealsPlaceNow: string;
   dealsChipLabel: string;
   dealsChipHint: string;
+  dealsEventLabel: string;
+  dealsEventHint: string;
+  dealsEventOff: string;
+  dealsEventAsk: string;
+  dealsEventAlways: string;
   // Settings shell + left-hand section nav
   navGeneral: string;
   navApiIntegrations: string;
@@ -385,6 +390,12 @@ const en: OptionsDict = {
   dealsPlaceNow: "Post it right now",
   dealsChipLabel: "Show the Send to Deals button on deal sites",
   dealsChipHint: "Turn this off to keep the page counter and the harvester without the per-product button.",
+  dealsEventLabel: "On event days (Prime Day, Walmart Deals)",
+  dealsEventHint:
+    "Needs the Prime Day Deals butler turned on in the app. The extra option only appears while an event is running.",
+  dealsEventOff: "Only send to my chosen workspace",
+  dealsEventAsk: "Offer an extra button to also send to Prime Day Deals",
+  dealsEventAlways: "Always send to both automatically",
   navGeneral: "General",
   navApiIntegrations: "API Integrations",
   navAffiliateRouting: "Affiliate Routing",
@@ -588,6 +599,12 @@ const es: OptionsDict = {
   dealsPlaceNow: "Publicarla ahora mismo",
   dealsChipLabel: "Mostrar el boton Enviar a Ofertas en los sitios de ofertas",
   dealsChipHint: "Desactivalo para conservar el contador de la pagina y el recolector sin el boton por producto.",
+  dealsEventLabel: "En dias de evento (Prime Day, Ofertas de Walmart)",
+  dealsEventHint:
+    "Requiere tener activado el butler de Ofertas Prime Day en la app. La opcion extra solo aparece mientras hay un evento.",
+  dealsEventOff: "Enviar solo a mi espacio elegido",
+  dealsEventAsk: "Ofrecer un boton extra para enviar tambien a Ofertas Prime Day",
+  dealsEventAlways: "Enviar siempre a ambos automaticamente",
   navGeneral: "General",
   navApiIntegrations: "Integraciones de API",
   navAffiliateRouting: "Enrutado de afiliados",
@@ -791,6 +808,12 @@ const fr: OptionsDict = {
   dealsPlaceNow: "La publier tout de suite",
   dealsChipLabel: "Afficher le bouton Envoyer aux offres sur les sites d'offres",
   dealsChipHint: "Desactivez pour garder le compteur de page et le collecteur sans le bouton par produit.",
+  dealsEventLabel: "Les jours d'evenement (Prime Day, Walmart Deals)",
+  dealsEventHint:
+    "Necessite le butler Offres Prime Day active dans l'application. L'option supplementaire n'apparait que pendant un evenement.",
+  dealsEventOff: "Envoyer uniquement vers mon espace choisi",
+  dealsEventAsk: "Proposer un bouton supplementaire pour envoyer aussi vers Offres Prime Day",
+  dealsEventAlways: "Toujours envoyer vers les deux automatiquement",
   navGeneral: "Général",
   navApiIntegrations: "Intégrations API",
   navAffiliateRouting: "Routage d'affiliation",

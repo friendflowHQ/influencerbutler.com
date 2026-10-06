@@ -73,7 +73,8 @@
 /* Deals Butler workspace picker + push, pinned next to Scrub link. Empty (and
    invisible) until the desktop app is connected. */
 .quickbar-deals:empty { display: none; }
-.quickbar-deals-row { display: flex; align-items: center; gap: 6px; }
+.quickbar-deals-row { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.quickbar-event { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; cursor: pointer; }
 .quickbar-select {
   padding: 5px 6px;
   font-size: 12px;

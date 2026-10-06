@@ -26,7 +26,11 @@ export function mountChip(
   // to pin to (a blog post links one product from inside a sentence), so the
   // chip sits inline after the link instead of floating over the prose.
   placement: "corner" | "inline" = "corner",
-): ChipHandle | null {
+  // Event days: a second chip beside the first that sends to the Prime Day
+  // Deals workspace instead. Has its own state, so each destination reports on
+  // its own.
+  extra?: { onSend: () => void },
+): (ChipHandle & { extra?: ChipHandle }) | null {
   if (card.querySelector(`:scope > .${CHIP_HOST_CLASS}`)) return null;
 
   const host = document.createElement("div");
@@ -48,7 +52,26 @@ export function mountChip(
     onSend();
   };
 
-  root.append(style, btn);
+  const wrap = document.createElement("div");
+  wrap.className = "wrap";
+  wrap.append(btn);
+
+  let extraBtn: HTMLButtonElement | null = null;
+  if (extra) {
+    extraBtn = document.createElement("button");
+    extraBtn.type = "button";
+    extraBtn.className = "chip";
+    extraBtn.onclick = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const state = extraBtn?.dataset.state;
+      if (state === "pending" || state === "sent") return;
+      extra.onSend();
+    };
+    wrap.append(extraBtn);
+  }
+
+  root.append(style, wrap);
 
   if (placement === "inline") {
     host.dataset.ibChipInline = "1";
@@ -72,7 +95,22 @@ export function mountChip(
   };
   setState("idle");
 
-  return { setState };
+  let extraHandle: ChipHandle | undefined;
+  if (extraBtn) {
+    const eb = extraBtn;
+    const setExtra: ChipHandle["setState"] = (state, detail) => {
+      eb.dataset.state = state;
+      eb.textContent = state === "idle" ? dict.cardAlsoPrimeDay : labelFor(state, dict);
+      eb.disabled = state === "pending" || state === "sent";
+      const tooltip = detail ?? "";
+      eb.title = tooltip;
+      eb.setAttribute("aria-label", tooltip ? `${eb.textContent}: ${tooltip}` : eb.textContent);
+    };
+    setExtra("idle");
+    extraHandle = { setState: setExtra };
+  }
+
+  return { setState, extra: extraHandle };
 }
 
 function labelFor(state: ChipState, dict: DealsDict): string {
@@ -88,12 +126,18 @@ function labelFor(state: ChipState, dict: DealsDict): string {
 const CHIP_CSS = `
 :host { all: initial; }
 :host([data-ib-chip-inline]) { display: inline-block; vertical-align: middle; }
-:host([data-ib-chip-inline]) .chip { position: static; margin-left: 6px; }
-.chip {
+:host([data-ib-chip-inline]) .wrap { position: static; margin-left: 6px; display: inline-flex; flex-direction: row; gap: 4px; }
+.wrap {
   position: absolute;
   top: 8px;
   right: 8px;
   z-index: 2147483000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+.chip {
   font: 11.5px/1 ${FONT_STACK};
   font-weight: 700;
   letter-spacing: -0.01em;

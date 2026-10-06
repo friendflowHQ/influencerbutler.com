@@ -8,6 +8,7 @@ describe("sanitizeFlags", () => {
       version: "",
       disableAll: false,
       disabledTools: [],
+      events: [],
       selectorOverrides: {},
       notice: null,
     });

@@ -31,6 +31,42 @@ describe("createSendQueue", () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
+  it("sends an event-day chip click to its own workspace and reports only that chip", async () => {
+    const sent: HudCommand[] = [];
+    const queue = queueWith(async (command) => {
+      sent.push(command);
+      return { ok: true } as HudCommandResult;
+    });
+    const main = fakeChip();
+    const extra = fakeChip();
+    queue.enqueue(product("B0000000X1"), extra, "prime-day");
+    await vi.runAllTimersAsync();
+    expect(sent).toHaveLength(1);
+    expect(sent[0]).toMatchObject({ type: "deal.push", workspace: "prime-day" });
+    expect(extra.states.at(-1)?.[0]).toBe("sent");
+    expect(main.states).toEqual([]);
+  });
+
+  it("mirrors to the also-workspace quietly without touching chip state", async () => {
+    const sent: HudCommand[] = [];
+    const queue = createSendQueue({
+      send: async (command) => {
+        sent.push(command);
+        // The mirror fails; the chip must still read as sent.
+        return (command as { workspace: string }).workspace === "prime-day"
+          ? ({ ok: false, message: "nope" } as HudCommandResult)
+          : ({ ok: true } as HudCommandResult);
+      },
+      target: async () => ({ workspace: "deals", placement: "end" as const, alsoWorkspace: "prime-day" }),
+      dict: D,
+    });
+    const chip = fakeChip();
+    queue.enqueue(product("B0000000X2"), chip);
+    await vi.runAllTimersAsync();
+    expect(sent.map((c) => (c as { workspace: string }).workspace)).toEqual(["deals", "prime-day"]);
+    expect(chip.states.at(-1)?.[0]).toBe("sent");
+  });
+
   it("coalesces a burst of clicks into one batch", async () => {
     const sent: HudCommand[] = [];
     const send = vi.fn(async (command: HudCommand) => {

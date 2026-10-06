@@ -1,6 +1,27 @@
 {
-  "lastUpdated": "2026-10-05",
+  "lastUpdated": "2026-10-06",
   "releases": [
+    {
+      "version": "0.1.26",
+      "date": "October 6, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "On event days like Prime Big Deal Days and Walmart Deals, sending a deal can also drop it into your Prime Day Deals workspace. Pick Off, Ask each time, or Always in Settings > Deals",
+            "Walmart deals you send to Deals Butler now carry the strikethrough regular price, so the posted deal shows the was price and the percent off instead of just the sale price"
+          ]
+        },
+        {
+          "heading": "Other notable changes",
+          "items": [
+            "The Copy Walmart link button now says Creating link while it builds your tracked Mavely or Walmart Creator link, and the link is copied reliably even when the build takes a few seconds. If the copy is ever blocked, the link is shown so you can copy it by hand",
+            "Set up Walmart affiliate links now opens Settings right at the Walmart affiliate links section",
+            "When the desktop app is open but slow to answer, the extension now says the app is busy instead of saying it is not running, and gives a sent deal more time to finish"
+          ]
+        }
+      ]
+    },
     {
       "version": "0.1.25",
       "date": "October 5, 2026",

@@ -263,7 +263,7 @@ describe("migrate: v35 deals settings", () => {
     const v34 = { schemaVersion: 34, settings } as unknown as Partial<StorageShape>;
     const out = migrate(v34);
     expect(out.schemaVersion).toBe(DEFAULTS.schemaVersion);
-    expect(out.settings.deals).toEqual({ workspace: "default", placement: "end", cardChip: true });
+    expect(out.settings.deals).toEqual({ workspace: "default", placement: "end", cardChip: true, eventAlsoSend: "ask" });
   });
 
   it("normalizes a placement the desktop would not understand", () => {
@@ -293,6 +293,7 @@ describe("migrate: v35 deals settings", () => {
       workspace: "garden-bargains",
       placement: "end",
       cardChip: false,
+      eventAlsoSend: "ask",
     });
   });
 

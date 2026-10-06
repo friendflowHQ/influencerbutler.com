@@ -1,6 +1,8 @@
 import { extractDeals } from "../tools/deal-harvester/extract";
 import { getSettings } from "../storage/store";
 import { getFlags } from "../flags/cache";
+import { activeDealEvent, findPrimeDayWorkspace, retailerOfMarketplace } from "../deals/events";
+import type { HudStatus } from "../transport/hud-commands";
 import { resolveLocale } from "../i18n";
 import { DEALS_CATALOG, type DealsDict } from "../deals/strings";
 import {
@@ -75,18 +77,41 @@ async function init(): Promise<void> {
   const killed = flags?.disableAll === true || (flags?.disabledTools.includes("dealChip") ?? false);
   if (killed || !settings.deals.cardChip) return;
 
+  // Event days: resolve the Prime Day Deals workspace once, and only when an
+  // event is open and the creator has not turned the option off. Null leaves
+  // every chip exactly as it was.
+  let primeDayKey: string | null = null;
+  const mode = settings.deals.eventAlsoSend;
+  const eventOpen =
+    activeDealEvent(flags?.events, "amazon") !== null ||
+    activeDealEvent(flags?.events, "walmart") !== null;
+  if (mode !== "off" && eventOpen) {
+    const hud = await askBackground<HudStatus>({ kind: "GET_HUD_STATUS", force: false }).catch(
+      () => null,
+    );
+    primeDayKey = findPrimeDayWorkspace(hud?.dealWorkspaces ?? [])?.key ?? null;
+  }
+  const eventFor = (marketplace: string): { key: string } | null =>
+    primeDayKey && activeDealEvent(flags?.events, retailerOfMarketplace(marketplace))
+      ? { key: primeDayKey }
+      : null;
+
   const queue = createSendQueue({
     send: (command) => askBackground<HudCommandResult>({ kind: "SEND_HUD_COMMAND", command }),
     // Read per flush so a workspace or placement changed in the options page
     // takes effect without reloading the deal site.
     target: async () => {
       const current = await getSettings();
-      return { workspace: current.deals.workspace, placement: current.deals.placement };
+      return {
+        workspace: current.deals.workspace,
+        placement: current.deals.placement,
+        alsoWorkspace: current.deals.eventAlsoSend === "always" ? primeDayKey : null,
+      };
     },
     dict: D,
   });
 
-  const scan = () => injectCardChips(D, queue.enqueue);
+  const scan = () => injectCardChips(D, queue.enqueue, mode === "ask" ? eventFor : () => null);
   scan();
   watchForRerenders(scan);
 }
@@ -96,7 +121,8 @@ async function init(): Promise<void> {
 // re-scanning a settled page costs one querySelectorAll and nothing else.
 function injectCardChips(
   D: DealsDict,
-  enqueue: (product: ProductRef, chip: ChipHandle) => void,
+  enqueue: (product: ProductRef, chip: ChipHandle, workspace?: string) => void,
+  eventFor: (marketplace: string) => { key: string } | null,
 ): void {
   if (mounted >= DEAL_CHIP_MAX_PER_PAGE) return;
 
@@ -132,11 +158,15 @@ function injectCardChips(
     };
     // resolveCardHost falls back to the anchor itself when the page has no card
     // around the link, which is what an article-style deal blog looks like.
+    const event = eventFor(hit.marketplace);
     const chip = mountChip(
       card,
       D,
       () => enqueue(product, handle),
       card === (hit.anchor as HTMLElement) ? "inline" : "corner",
+      event
+        ? { onSend: () => chip?.extra && enqueue(product, chip.extra, event.key) }
+        : undefined,
     );
     if (!chip) continue;
     const handle = chip;

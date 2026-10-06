@@ -1,3 +1,5 @@
+import { sanitizeDealEvents, type DealEvent } from "../deals/events";
+
 // Remotely-served operational flags: a kill switch the site can flip to turn
 // off any single tool (or the whole extension) on users' browsers without a
 // Chrome Web Store review, plus optional selector-list overrides so a broken
@@ -27,6 +29,9 @@ export type RemoteFlags = {
   // Optional short message surfaced in the popup (for example, "We paused the
   // storefront check while Amazon settles a layout change"). Admin-authored.
   notice: string | null;
+  // Event-day windows (Prime Day, Walmart Deals). While one is open the deal
+  // send surfaces offer to also send to the Prime Day Deals workspace.
+  events: DealEvent[];
 };
 
 export type StoredFlags = RemoteFlags & { fetchedAt: number };
@@ -81,6 +86,7 @@ export function sanitizeFlags(raw: unknown): RemoteFlags {
     disabledTools: cleanStringArray(obj.disabledTools, MAX_DISABLED_TOOLS, MAX_TOOL_KEY_LEN),
     selectorOverrides,
     notice,
+    events: sanitizeDealEvents(obj.events),
   };
 }
 

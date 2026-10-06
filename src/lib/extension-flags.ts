@@ -17,7 +17,9 @@
  *     "disableAll": false,
  *     "disabledTools": ["storefront", "searchOverlay"],
  *     "selectorOverrides": { "searchResultTile": ["div.s-result-item[data-asin]"] },
- *     "notice": "We paused the storefront check while Amazon settles a change."
+ *     "notice": "We paused the storefront check while Amazon settles a change.",
+ *     "events": [{ "id": "prime-big-deal-days-2026", "retailers": ["amazon"],
+ *                  "startsAt": "2026-10-06T07:00:00Z", "endsAt": "2026-10-09T07:00:00Z" }]
  *   }
  *
  * `disabledTools` entries are Settings["tools"] keys in the extension. Unknown
@@ -34,7 +36,30 @@ export type ExtensionFlags = {
   disabledTools: string[];
   selectorOverrides: Record<string, string[]>;
   notice: string | null;
+  // Event-day windows; ISO dates. See extension/src/deals/events.ts.
+  events: Array<{ id: string; retailers: ("amazon" | "walmart")[]; startsAt: string; endsAt: string }>;
 };
+
+const MAX_EVENTS = 12;
+
+function normalizeEvents(value: unknown): ExtensionFlags["events"] {
+  if (!Array.isArray(value)) return [];
+  const out: ExtensionFlags["events"] = [];
+  for (const item of value) {
+    if (out.length >= MAX_EVENTS) break;
+    if (!item || typeof item !== "object") continue;
+    const o = item as Record<string, unknown>;
+    const id = typeof o.id === "string" ? o.id.trim().slice(0, 60) : "";
+    const start = typeof o.startsAt === "string" ? Date.parse(o.startsAt) : NaN;
+    const end = typeof o.endsAt === "string" ? Date.parse(o.endsAt) : NaN;
+    const retailers = (Array.isArray(o.retailers) ? o.retailers : []).filter(
+      (r): r is "amazon" | "walmart" => r === "amazon" || r === "walmart",
+    );
+    if (!id || Number.isNaN(start) || Number.isNaN(end) || end <= start || retailers.length === 0) continue;
+    out.push({ id, retailers: [...new Set(retailers)], startsAt: o.startsAt as string, endsAt: o.endsAt as string });
+  }
+  return out;
+}
 
 // Defensive caps mirroring the client sanitizer, so the served payload stays
 // bounded even if the env var is set to something huge by mistake.
@@ -82,6 +107,7 @@ function normalize(raw: unknown): Omit<ExtensionFlags, "version"> {
     disabledTools: cleanStringArray(obj.disabledTools, MAX_DISABLED_TOOLS, MAX_KEY_LEN),
     selectorOverrides,
     notice,
+    events: normalizeEvents(obj.events),
   };
 }
 

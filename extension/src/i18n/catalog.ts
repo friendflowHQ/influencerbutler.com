@@ -863,6 +863,7 @@ export interface Dict {
   // Send to app (HUD) panel
   sendToApp: string;
   pushToDailyDeals: string;
+  alsoSendPrimeDay: string;
   // Search/deals toolbar: batch-send the page's discounted tiles to the desktop
   // Deals Butler.
   searchSendDeals: string;
@@ -1941,6 +1942,7 @@ const en: Dict = {
 
   sendToApp: "Send to your butler app",
   pushToDailyDeals: "Push to Deals Butler",
+  alsoSendPrimeDay: "Also send to Prime Day Deals",
   searchSendDeals: "Send deals to app",
   searchNoDeals: "No discounted deals on this page.",
   searchSendingDeals: (n) => `Sending ${n} deal(s) to your app...`,
@@ -3028,6 +3030,7 @@ const es: Dict = {
 
   sendToApp: "Enviar a tu app butler",
   pushToDailyDeals: "Enviar a Deals Butler",
+  alsoSendPrimeDay: "Enviar tambien a Ofertas Prime Day",
   searchSendDeals: "Enviar ofertas a la app",
   searchNoDeals: "No hay ofertas con descuento en esta página.",
   searchSendingDeals: (n) => `Enviando ${n} oferta(s) a tu app...`,
@@ -4115,6 +4118,7 @@ const fr: Dict = {
 
   sendToApp: "Envoyer à votre app butler",
   pushToDailyDeals: "Envoyer vers Deals Butler",
+  alsoSendPrimeDay: "Envoyer aussi vers les offres Prime Day",
   searchSendDeals: "Envoyer les deals vers l'app",
   searchNoDeals: "Aucune promo sur cette page.",
   searchSendingDeals: (n) => `Envoi de ${n} deal(s) vers votre app...`,

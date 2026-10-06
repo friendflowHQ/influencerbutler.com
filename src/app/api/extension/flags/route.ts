@@ -35,7 +35,7 @@ export async function GET(request: Request) {
     // swallows JSON errors), so surface it in logs if it somehow does.
     console.error("extension/flags: read failed", error);
     return jsonWithCors(
-      { version: "", disableAll: false, disabledTools: [], selectorOverrides: {}, notice: null },
+      { version: "", disableAll: false, disabledTools: [], selectorOverrides: {}, notice: null, events: [] },
       200,
     );
   }
