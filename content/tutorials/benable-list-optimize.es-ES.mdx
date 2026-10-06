@@ -83,6 +83,15 @@ Después de **Analizar todas**, una línea te dice si tu perfil se apoya demasia
 
 De dónde vienen las recomendaciones: con tu clave de **OpenAI** conectada, los lugares locales, los tutoriales, los artículos web y las apps funcionan desde el primer momento, y cada sugerencia se verifica antes de aparecer en tu lista (los vídeos con YouTube, los lugares con OpenStreetMap, los artículos abriendo el enlace). Añadir una clave de **Google Places** (para lugares locales) o de **YouTube** (para vídeos) en IA y claves de datos da resultados más frescos y de mayor calidad, pero es opcional. Una lista puramente sin productos nunca se marca como anuncio, porque no hay nada de afiliación que declarar.
 
+## Prioriza los minoristas que mejor pagan
+
+La tarjeta **Preferencias de pago** tiene dos interruptores, ambos desactivados por defecto: **Priorizar los minoristas que mejor pagan** y **Priorizar las ventanas de cookie más largas**. Cuando uno está activado, el optimizador hace dos cosas más:
+
+- **Completar**: al añadir productos también puede ofrecer un par de opciones verificadas de los mejores minoristas socios (requiere OpenAI conectado) y ordena los candidatos por pago.
+- **Cambiar**: puede sustituir un producto de un minorista socio conocido por uno comparable de un minorista claramente mejor. El producto nuevo se añade primero y el anterior se elimina solo cuando se puede identificar con exactitud, así que en el peor caso queda un producto de más, nunca se pierde uno. Hace como máximo dos cambios por lista.
+
+Los productos de Amazon, las recomendaciones que no son productos y los productos cuyo minorista no se puede leer nunca se cambian. Las tarifas son las cifras "hasta" que anuncia Benable, y un minorista sin tarifa ni ventana de cookie publicada cuenta como promedio.
+
 ## Limitaciones honestas
 
 - **En tus propias listas, las notas de cada producto no se pueden leer.** Benable muestra tu propia lista en una vista editable que no nos expone las tarjetas de los productos. Cuando eso ocurre, la herramienta marca la cobertura de notas como **no determinada** y deja la puntuación de Notas de productos como **N/D** en lugar de inventar un veredicto de "0 de N tienen notas". Las notas siguen siendo una de las partes más importantes de una lista bien curada, así que el análisis te recuerda que las mejores aunque no pueda medirlas.

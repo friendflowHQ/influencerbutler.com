@@ -83,6 +83,15 @@ After **Scan all**, a one-line read tells you whether your profile leans too hea
 
 Where the recommendations come from: with your **OpenAI key** connected, local places, tutorials, web articles, and apps all work out of the box, and every suggestion is verified before it lands on your list (videos against YouTube, places against OpenStreetMap, articles by opening the link). Adding a **Google Places** key (for local) or a **YouTube** key (for videos) in AI & Data Keys gives fresher, higher-quality results, but is optional. A purely non-product list is never labeled as an ad, because there is nothing affiliate to disclose.
 
+## Favor better-paying retailers
+
+The **Payout preferences** card has two switches, both off by default: **Favor the highest-paying retailers** and **Favor the longest cookie windows**. When either is on, the optimizer does two extra things:
+
+- **Top-up**: when it adds products it can also offer a couple of verified picks from the best partner retailers (needs OpenAI connected) and ranks candidates by payout.
+- **Swap**: it can replace an item from a known partner retailer with a comparable item from a clearly better one. The new item is added first, and the old one is removed only when it can be matched exactly, so the worst case is one extra item, never a lost one. It does at most two swaps per list.
+
+Amazon items, non-product recommendations, and items whose retailer cannot be read are never swapped. Rates are Benable's advertised "up to" figures, and a retailer with no published rate or cookie window counts as average.
+
 ## Honest limitations
 
 - **On your own lists, individual product notes are not readable.** Benable renders your own list in an editable view that does not expose the item cards to us. When that happens, the tool marks note coverage as **undetermined** and leaves the Product notes score as **N/A** rather than inventing a "0 of N have notes" verdict. Notes are still one of the biggest parts of a well-curated list, so the audit reminds you to strengthen them even when it cannot measure them.

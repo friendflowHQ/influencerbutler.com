@@ -83,6 +83,15 @@ Après **Analyser toutes**, une ligne vous indique si votre profil s'appuie trop
 
 D'où viennent les recommandations : avec votre clé **OpenAI** connectée, les lieux locaux, les tutoriels, les articles web et les applis fonctionnent d'emblée, et chaque suggestion est vérifiée avant d'apparaître sur votre liste (les vidéos via YouTube, les lieux via OpenStreetMap, les articles en ouvrant le lien). Ajouter une clé **Google Places** (pour les lieux) ou **YouTube** (pour les vidéos) dans IA et clés de données donne des résultats plus récents et de meilleure qualité, mais reste facultatif. Une liste entièrement hors produits n'est jamais signalée comme une publicité, car il n'y a aucune affiliation à divulguer.
 
+## Privilégier les enseignes les mieux rémunérées
+
+La carte **Préférences de rémunération** propose deux options, désactivées par défaut : **Privilégier les enseignes les mieux rémunérées** et **Privilégier les fenêtres de cookie les plus longues**. Lorsque l'une est activée, l'optimiseur fait deux choses de plus :
+
+- **Complément** : en ajoutant des produits, il peut aussi proposer quelques choix vérifiés issus des meilleures enseignes partenaires (nécessite OpenAI connecté) et classe les candidats selon la rémunération.
+- **Remplacement** : il peut remplacer un produit d'une enseigne partenaire connue par un produit comparable d'une enseigne nettement meilleure. Le nouveau produit est ajouté d'abord, et l'ancien n'est retiré que s'il peut être identifié avec exactitude : au pire il reste un produit de trop, jamais un produit perdu. Il fait au plus deux remplacements par liste.
+
+Les produits Amazon, les recommandations qui ne sont pas des produits et les produits dont l'enseigne est illisible ne sont jamais remplacés. Les taux sont les maximums ("jusqu'à") annoncés par Benable, et une enseigne sans taux ni fenêtre de cookie publiés compte comme moyenne.
+
 ## Limites honnêtes
 
 - **Sur vos propres listes, les notes de chaque produit ne sont pas lisibles.** Benable affiche votre propre liste dans une vue modifiable qui ne nous expose pas les cartes des produits. Dans ce cas, l'outil marque la couverture des notes comme **indéterminée** et laisse le score des Notes de produits en **S.O.** au lieu d'inventer un verdict de "0 sur N ont des notes". Les notes restent l'une des plus grandes parties d'une liste bien organisée, donc l'analyse vous rappelle de les renforcer même quand elle ne peut pas les mesurer.

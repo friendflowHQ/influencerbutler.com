@@ -89,6 +89,19 @@ Benable Butler can announce each list it publishes: a Pinterest pin, a Facebook 
 
 Prefer to share by hand? Leave auto-share off and click **Share** next to any list in the output card after a run.
 
+## Favor the highest-paying retailers and longest cookie windows
+
+Benable partner retailers pay different commission rates and keep tracking a click for different lengths of time (the cookie window). Two switches in **Advanced settings > Publishing and covers** let you lean on that. Both are off by default and you can use them together.
+
+- **Favor the highest-paying retailers**: items from partner retailers with a higher advertised commission rank higher in each list, so the lowest payers are trimmed first when a list is over its maximum.
+- **Favor the longest cookie windows**: items from retailers whose tracking lasts longer rank higher, so a purchase made days after the click still counts for you.
+
+A few things to know:
+
+- Amazon stays the backbone. Your SPCC and Creator Connections products still lead each list, and Amazon items are never pushed down for a lower-paying retailer.
+- A retailer with no published rate or cookie window counts as average, and the rates are Benable's advertised "up to" figures, not guarantees.
+- With either switch on, Butler can also offer a few partner retailers (for example Kohl's or Ulta) as extras on lists where they genuinely fit. This needs OpenAI connected, every link is checked before it is added, and it only works when **Publish only Amazon SPCC or Creator Connections products** is turned off.
+
 ## Where the data goes
 
 Generated collections are logged per-run in the preseed cache (JSON + HTML report). The Benable side of things - the actual published collection - lives in your Benable account.
