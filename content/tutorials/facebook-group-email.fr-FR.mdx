@@ -1,6 +1,6 @@
 ---
 title: "Collecte des e-mails du groupe Facebook: capturez les e-mails des demandes d'adhesion"
-summary: Lisez les demandes d'adhesion a votre groupe Facebook, capturez l'e-mail que chaque personne indique, approuvez-les au besoin et transmettez la liste a Pitch Butler.
+summary: Lisez les demandes d'adhesion a votre groupe Facebook, capturez l'e-mail que chaque personne indique, approuvez-les au besoin et transmettez la liste à Pitch Butler ou à votre newsletter Foyer.
 category: Other
 ---
 
@@ -49,14 +49,34 @@ Boutons de la barre superieure:
 
 Les e-mails captures deviennent des fiches de marque ou de createur dans Pitch Butler, avec une pastille de source **Facebook**, pour les demarcher a cote de vos autres contacts et filtrer selon leur origine. L'envoi automatique n'ajoute que les contacts qui ne sont pas deja dans Pitch Butler, donc relancer ne cree jamais de doublons.
 
+## Ajouter des e-mails à votre newsletter Foyer
+
+Si vous utilisez Foyer Butler, vous pouvez ajouter les personnes collectées à la liste de votre newsletter Foyer, pour que votre prochaine newsletter leur parvienne.
+
+1. Dans la carte **Newsletter Foyer**, activez **Ces personnes m'ont donné leur e-mail pour rejoindre mon groupe**. Vous confirmez qu'elles ont accepté d'être contactées, et rien n'est ajouté tant que ce n'est pas activé.
+2. Vérifiez **Comment elles ont accepté**. C'est enregistré avec votre liste comme preuve de consentement, restez donc fidèle à la réalité. Par défaut : "Ont fourni leur e-mail pour rejoindre mon groupe Facebook".
+3. Cliquez sur **Ajouter à la newsletter Foyer** dans la barre d'outils du tableau. Cela ajoute les lignes sélectionnées, ou toutes les lignes si aucune n'est sélectionnée.
+
+Envie d'automatiser ? Activez **Ajouter les nouveaux e-mails après chaque exécution** pour ajouter les nouveaux e-mails dès qu'une exécution se termine. Pour tout lancer seul, activez **Collecter selon un planning** et choisissez la fréquence, de toutes les 3 heures à tous les 3 jours. Chaque exécution planifiée collecte (et approuve, si c'est activé) puis ajoute les nouveaux e-mails à la newsletter.
+
+La colonne **Newsletter** indique où en est chaque personne : **Ajouté**, **En vérification** (les grandes listes sont vérifiées avant de pouvoir recevoir des e-mails) ou **Désabonné**. Les e-mails envoyés à ces contacts indiquent qu'ils les reçoivent parce qu'ils ont rejoint votre groupe Facebook, et chaque e-mail contient un lien de désabonnement.
+
+### Quand quelqu'un se désabonne
+
+Son adresse est placée sur une liste de non-contact partagée dans tout Influencer Butler. Elle est ignorée quand vous ajoutez des e-mails à la newsletter, et **Pitch Butler ne lui écrira pas et ne l'ajoutera pas non plus depuis ce tableau**. Si la personne se réinscrit depuis votre page Foyer, elle sort automatiquement de la liste.
+
 ## Problemes courants
 
 - **Aucun e-mail trouve**: le formulaire d'adhesion de votre groupe n'a pas de question d'e-mail, ou les demandes ne contiennent pas d'e-mail en texte dans la reponse.
 - **Invite de connexion ou verification en cours d'execution**: gardez Regarder l'execution active, terminez la connexion dans la fenetre Chrome, puis relancez.
 - **Les personnes approuvees quittent la file**: avec Approuver active, chaque demande capturee est admise et retiree de la liste en attente, donc une nouvelle execution ne voit que les nouvelles demandes.
+- **Le bouton Ajouter à la newsletter Foyer est grisé** : activez la confirmation que ces personnes vous ont donné leur e-mail et vérifiez que **Comment elles ont accepté** n'est pas vide.
+- **"Connectez-vous pour ajouter des e-mails" ou "Configurez d'abord votre page Foyer"** : la newsletter demande un compte Influencer Butler connecté et une page Foyer. Configurez Foyer Butler, puis réessayez.
+- **"En vérification"** : un lot de plus de 500 nouveaux e-mails est vérifié avant de pouvoir recevoir des e-mails. Contactez le support si vous avez besoin d'aide pour débloquer une grande liste.
 
 ## En lien
 
 - [Tutoriel Pitch Butler](/help/tutorials/pitchbutler) - le CRM de marques unifie vers lequel ces e-mails arrivent.
 - [Tutoriel Group Invite Butler](/help/tutorials/group-invite-butler) - invitez une liste d'e-mails dans votre groupe Facebook.
 - [Tutoriel Collecte des e-mails Instagram](/help/tutorials/instagram-email) - le jumeau Instagram de cet espace.
+- [Tutoriel Foyer Butler](/help/tutorials/foyer-butler) - la page et la newsletter que ces e-mails peuvent rejoindre.
