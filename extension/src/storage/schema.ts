@@ -123,6 +123,9 @@ export type Settings = {
   // page writes this whole object at once (never a partial nested patch)
   // because patchSettings shallow-merges.
   deals: DealsSettings;
+  // Floating panel text-size multiplier (1 = normal), set with the A- / A+
+  // buttons in the panel header and applied to the whole on-page panel.
+  panelZoom: number;
   // "Bump" picker remembered after the creator's first use of the chip that
   // offers to delete + re-upload one of their own videos missing from a
   // listing's carousel (see tools/my-video/resolve.ts "verified-missing").
@@ -807,6 +810,7 @@ export const DEFAULTS: StorageShape = {
     },
     autoAccept: { ...DEFAULT_AUTO_ACCEPT, bands: [...DEFAULT_AUTO_ACCEPT.bands] },
     deals: { workspace: "default", placement: "end", cardChip: true, eventAlsoSend: "ask" },
+    panelZoom: 1,
     videoBump: { ...DEFAULT_VIDEO_BUMP },
     voiceover: {
       tone: "",

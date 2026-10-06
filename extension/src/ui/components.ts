@@ -3,6 +3,7 @@ import { t } from "../i18n";
 import { sendToBackground } from "../shared/messages";
 import type { HudStatus } from "../shared/messages";
 import { isMobileUserAgent } from "../shared/platform";
+import { getSettings, patchSettings } from "../storage/store";
 import logoUrl from "../../static/icons/icon-48.png";
 
 // The floating panel is shared by every tool on a page: each tool adds a
@@ -19,6 +20,27 @@ let syncPollStarted = false;
 // page. Resets to false whenever a fresh panel is built below, so a new page
 // load or SPA navigation always starts hidden until the icon is clicked again.
 let hudVisible = false;
+
+// Text-size steps for the A- / A+ header buttons. The chosen step is saved in
+// settings.panelZoom so the panel keeps the reader's size on every page.
+const ZOOM_STEPS = [0.9, 1, 1.15, 1.3, 1.5];
+let zoom = 1;
+
+function stepAt(index: number): number {
+  return ZOOM_STEPS[index] ?? 1;
+}
+
+function nearestZoomIndex(value: number): number {
+  let best = 1;
+  for (let i = 0; i < ZOOM_STEPS.length; i++) {
+    if (Math.abs(stepAt(i) - value) < Math.abs(stepAt(best) - value)) best = i;
+  }
+  return best;
+}
+
+function applyZoom(): void {
+  panel?.style.setProperty("--ib-zoom", String(zoom));
+}
 
 export function getPanel(title: string): HTMLElement {
   const root = getShadowRoot();
@@ -38,9 +60,11 @@ export function getPanel(title: string): HTMLElement {
   const gear = gearButton();
   const chev = el("span", "chev");
   chev.textContent = t().panelChevronHide;
-  header.append(dot, titleEl, syncChip, gear, chev);
+  header.append(dot, titleEl, syncChip, viewTools(), gear, chev);
   header.addEventListener("click", () => {
     panel?.classList.toggle("collapsed");
+    // A collapsed panel is just the header pill, so it can't stay expanded.
+    if (panel?.classList.contains("collapsed")) panel.classList.remove("expanded");
     chev.textContent = panel?.classList.contains("collapsed") ? t().panelChevronShow : t().panelChevronHide;
   });
   topbar.append(header);
@@ -56,6 +80,14 @@ export function getPanel(title: string): HTMLElement {
   // the extension never pops this open on its own.
   panel.classList.add("hud-hidden");
   root.append(panel);
+  applyZoom();
+  // Restore the saved text size; until the read lands the panel shows at 1x.
+  void getSettings()
+    .then((s) => {
+      zoom = stepAt(nearestZoomIndex(Number(s.panelZoom) || 1));
+      applyZoom();
+    })
+    .catch(() => {});
   startSyncPolling();
   return body;
 }
@@ -179,6 +211,66 @@ function gearButton(): HTMLButtonElement {
     void sendToBackground({ kind: "OPEN_OPTIONS" });
   });
   return btn;
+}
+
+// Header controls for readability: A- / A+ scale the whole panel, and the
+// expand button opens it as a larger centered dialog (Escape or the same
+// button puts it back). Each stops propagation so a click never collapses
+// the panel the way a click on the header row does.
+function viewTools(): HTMLElement {
+  const group = el("span", "view-tools");
+  const mk = (label: string, content: string, onClick: () => void): HTMLButtonElement => {
+    const btn = el("button", "hbtn") as HTMLButtonElement;
+    btn.type = "button";
+    btn.title = label;
+    btn.setAttribute("aria-label", label);
+    btn.innerHTML = content;
+    btn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+      onClick();
+    });
+    return btn;
+  };
+  const step = (delta: number): void => {
+    const next = Math.min(ZOOM_STEPS.length - 1, Math.max(0, nearestZoomIndex(zoom) + delta));
+    zoom = stepAt(next);
+    applyZoom();
+    void patchSettings({ panelZoom: zoom }).catch(() => {});
+  };
+  const svg = (d: string): string =>
+    '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    d +
+    "</svg>";
+  const EXPAND = svg('<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path>');
+  const RESTORE = svg('<path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"></path>');
+  const expandBtn = mk(t().panelExpand, EXPAND, () => {
+    if (!panel) return;
+    const on = panel.classList.toggle("expanded");
+    if (on) panel.classList.remove("collapsed");
+    syncExpandBtn();
+  });
+  const syncExpandBtn = (): void => {
+    const on = Boolean(panel?.classList.contains("expanded"));
+    const label = on ? t().panelRestore : t().panelExpand;
+    expandBtn.title = label;
+    expandBtn.setAttribute("aria-label", label);
+    expandBtn.innerHTML = on ? RESTORE : EXPAND;
+  };
+  group.append(
+    mk(t().panelZoomOut, "A-", () => step(-1)),
+    mk(t().panelZoomIn, "A+", () => step(1)),
+    expandBtn,
+  );
+  // Escape closes the expanded dialog. Listens on the page; the panel lives in a
+  // closed shadow root, so a keydown inside it still bubbles to the document.
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && panel?.classList.contains("expanded")) {
+      panel.classList.remove("expanded");
+      syncExpandBtn();
+    }
+  });
+  return group;
 }
 
 export function addSection(heading: string, info?: string): HTMLElement {

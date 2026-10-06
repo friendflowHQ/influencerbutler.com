@@ -13,6 +13,10 @@ export interface Dict {
   panelChevronHide: string;
   panelChevronShow: string;
   panelSettings: string;
+  panelZoomOut: string;
+  panelZoomIn: string;
+  panelExpand: string;
+  panelRestore: string;
   // Shown in place of a section body when the background service worker did
   // not answer (a dead worker, or a content script orphaned by a reload).
   panelOffline: string;
@@ -1099,6 +1103,10 @@ const en: Dict = {
   panelChevronHide: "hide",
   panelChevronShow: "show",
   panelSettings: "Settings",
+  panelZoomOut: "Smaller text",
+  panelZoomIn: "Larger text",
+  panelExpand: "Open larger",
+  panelRestore: "Restore size",
   panelOffline: "Butler could not reach the extension. Reload this page and try again.",
   copy: "Copy",
   copied: "Copied",
@@ -2187,6 +2195,10 @@ const es: Dict = {
   panelChevronHide: "ocultar",
   panelChevronShow: "mostrar",
   panelSettings: "Ajustes",
+  panelZoomOut: "Texto más pequeño",
+  panelZoomIn: "Texto más grande",
+  panelExpand: "Abrir en grande",
+  panelRestore: "Restaurar tamaño",
   panelOffline: "Butler no pudo conectar con la extensión. Recarga esta página e inténtalo de nuevo.",
   copy: "Copiar",
   copied: "Copiado",
@@ -3276,6 +3288,10 @@ const fr: Dict = {
   panelChevronHide: "masquer",
   panelChevronShow: "afficher",
   panelSettings: "Paramètres",
+  panelZoomOut: "Texte plus petit",
+  panelZoomIn: "Texte plus grand",
+  panelExpand: "Agrandir",
+  panelRestore: "Taille normale",
   panelOffline: "Butler n'a pas pu joindre l'extension. Rechargez cette page et réessayez.",
   copy: "Copier",
   copied: "Copié",

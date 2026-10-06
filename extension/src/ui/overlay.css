@@ -10,9 +10,12 @@
   bottom: 16px;
   z-index: 2147483000;
   width: 360px;
-  max-width: calc(100vw - 32px);
-  max-height: 80vh;
+  max-width: calc((100vw - 32px) / var(--ib-zoom, 1));
+  max-height: calc(80vh / var(--ib-zoom, 1));
   overflow: auto;
+  /* Text-size step from the header A- / A+ buttons (see ui/components.ts). */
+  --ib-zoom: 1;
+  zoom: var(--ib-zoom);
   font: 14px/1.5 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   color: #0f172a;
   background: #fff;
@@ -22,6 +25,20 @@
 }
 
 .panel.collapsed { width: auto; max-height: none; overflow: visible; }
+.panel.collapsed .view-tools { display: none; }
+
+/* Expanded: a large centered dialog over a dimmed page, for easier reading. */
+.panel.expanded {
+  top: 50%;
+  left: 50%;
+  right: auto;
+  bottom: auto;
+  transform: translate(-50%, -50%);
+  width: calc(min(960px, 94vw) / var(--ib-zoom, 1));
+  max-width: none;
+  max-height: calc(90vh / var(--ib-zoom, 1));
+  box-shadow: 0 0 0 100vmax rgba(15, 23, 42, 0.45), 0 18px 44px rgba(15, 23, 42, 0.3);
+}
 .panel.collapsed .body { display: none; }
 .panel.collapsed .quickbar { display: none; }
 
@@ -112,6 +129,9 @@
 .header .title {
   font-weight: 800;
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
   letter-spacing: -0.01em;
   background: linear-gradient(90deg, #ea580c, #f59e0b);
@@ -171,6 +191,28 @@
 }
 
 .header .chev { color: #94a3b8; font-size: 12px; font-weight: 600; }
+
+/* Text-size and expand buttons in the header (see viewTools in ui/components.ts). */
+.header .view-tools { flex: none; display: inline-flex; align-items: center; gap: 2px; }
+.header .hbtn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 4px;
+  margin: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #64748b;
+  font: 700 12px/1 "Inter", system-ui, sans-serif;
+  cursor: pointer;
+  transition: color 0.12s ease, background 0.12s ease;
+}
+.header .hbtn:hover { color: #ea580c; background: #fff2e8; }
+.header .hbtn:focus-visible { outline: 2px solid #f59e0b; outline-offset: 1px; }
 
 /* Sections stack with clear separators so tools read as distinct blocks. */
 .body { padding: 4px 0 8px; display: block; }
@@ -1742,6 +1784,7 @@ a.tile-chip:hover { filter: brightness(0.97); }
    does not. */
 @media (pointer: coarse) {
   .header .gear { width: 36px; height: 36px; }
+  .header .hbtn { min-width: 34px; height: 34px; }
   .infotip-mark { width: 22px; height: 22px; }
   .toggle input[type="checkbox"],
   .search-check input { width: 22px; height: 22px; }
