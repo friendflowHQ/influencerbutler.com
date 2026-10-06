@@ -1,6 +1,6 @@
 ---
 title: Chrome Extension: money intel while you browse
-summary: Install the free Influencer Butler Chrome extension: Butler Scores, price and video intel, Campaign Radar and SPCC scoring on Creator Connections, Video Money on Creator Hub, deals and idea-list signals, Walmart and Benable support, deep links, Global Maximizer, and settings that sync to your dashboard.
+summary: Install the free Influencer Butler Chrome extension: Butler Scores, price and video intel, Campaign Radar and SPCC scoring on Creator Connections, Video Money on Creator Hub, deals and idea-list signals, Walmart support (send Walmart products to your Deals Butler, tracked Walmart links), Benable support, deep links, Global Maximizer, and settings that sync to your dashboard.
 category: Amazon
 ---
 
@@ -132,9 +132,24 @@ This sends the deals your extension finds. Live actions like accepting a campaig
 
 ## Walmart
 
-1. On a Walmart product page (walmart.com/ip/...), the panel shows the price, the rating, an estimated commission, a Butler Score, and the Butler Approved checklist read from that page
-1. Click **Copy Walmart link** for your affiliate link through Walmart Creator or Mavely; if your Walmart affiliate link is not set up yet, the panel says so and links you to set it up in Settings
+1. On a Walmart product page (walmart.com/ip/...), click the extension icon in your browser toolbar to open the panel; it stays hidden until you do. It shows the price, the rating, an estimated commission, a Butler Score, and the Butler Approved checklist read from that page
 1. Walmart search and category pages pick up the same money-first read where available
+1. On Walmart's Rollback and savings pages, discounted tiles show their markdown, and a **Send deals to app** button in the toolbar sends all the discounted tiles to the Deals Butler in one click
+
+### Send a Walmart product to the Deals Butler
+
+1. Open the desktop app and pair it with the extension (see "Accept a campaign from the extension" above)
+1. On the product page, open the panel. At the top, leave the picker on your main Deals Butler and click **Push to Deals Butler**. The app files a Walmart item into your Walmart Deals butler by itself, so a Walmart product never lands in your Amazon queue by mistake
+1. Where the deal lands follows **Settings > Deals > When a deal arrives**: choose **Draft** to review it first, or a queue position to post it automatically
+1. Open the Walmart Deals butler and go to the **Deals** tab. That page shows your combined queue, so Amazon deals can appear beside Walmart ones; use the store filter (**All stores**, **Amazon**, **Walmart**) to show only Walmart
+1. The tracked Walmart link is made when the deal posts, using the Walmart link provider connected in the desktop app
+
+### Copy a tracked Walmart link
+
+1. In the extension **Settings**, open **Walmart affiliate links** and choose **Mavely** (recommended) or **Walmart Creator**
+1. Open creators.joinmavely.com (or creator.walmart.com) in the same browser and sign in, then click **Test** on that provider's card and allow the browser's access prompt
+1. Reload the Walmart page. The button now reads **Copy Walmart affiliate link** and the "not commission-tracked" note is gone
+1. Mavely creates the link in the background with no extra tab. Walmart Creator opens a hidden background tab for a few seconds and its sign-in check can occasionally block it. If anything fails you still get the plain Walmart link, with a note
 
 ## Benable
 
@@ -185,6 +200,7 @@ One polite request at a time. Every scan runs through a single serialized fetche
 ## Troubleshooting
 
 - **The panel does not appear.** It only shows on pages the extension covers (product, search, Best Sellers, deals, idea lists, brand stores, Creator Connections, Creator Hub, your storefront, Walmart, and Benable), not on the Amazon home page. Reload the page, and confirm the extension is pinned and enabled.
+- **Push to Deals Butler says the app is not running, but it is open.** Use the extension from the Chrome Web Store: the app does not accept a copy loaded from a folder in developer mode. Check that it is paired (the panel shows the Deals Butler picker only when it is), then click again.
 - **A grid shows no badges after the page changed.** Amazon and Walmart redesign their pages often. When a retailer moves things, an overlay can stop matching until the extension is updated. Update the extension from the popup or the Chrome Web Store, and if it persists, use **Feedback Butler** in the popup to report the page so it can be fixed.
 - **Earnings, ownership, or Video Money dollars are blank.** Those tools read from the desktop app. Open the Influencer Butler desktop app and pair it (see the "Accept a campaign from the extension" section above); the rest of each panel works without it.
 - **Branded links or dashboard sync are missing.** Those need your license key. Paste it under **Account** in the popup and click **Connect**.

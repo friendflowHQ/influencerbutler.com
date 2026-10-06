@@ -1,6 +1,6 @@
 ---
 title: Extensión de Chrome: inteligencia de ingresos mientras navegas
-summary: Instala la extensión gratuita de Influencer Butler para Chrome: Butler Scores, inteligencia de precios y videos, Campaign Radar y puntuación de SPCC en Creator Connections, Video Money en el Creator Hub, señales de ofertas e idea lists, soporte de Walmart y Benable, deep links, Global Maximizer y sincronización con tu panel.
+summary: Instala la extensión gratuita de Influencer Butler para Chrome: Butler Scores, inteligencia de precios y videos, Campaign Radar y puntuación de SPCC en Creator Connections, Video Money en el Creator Hub, señales de ofertas e idea lists, soporte de Walmart (enviar productos de Walmart a tu Deals Butler, enlaces de Walmart con seguimiento), soporte de Benable, deep links, Global Maximizer y sincronización con tu panel.
 category: Amazon
 ---
 
@@ -132,9 +132,24 @@ Esto envía las ofertas que encuentra tu extensión. Las acciones en directo, co
 
 ## Walmart
 
-1. En una página de producto de Walmart (walmart.com/ip/...), el panel muestra el precio, la valoración, una comisión estimada, un Butler Score y la lista Butler Approved leída de esa página
-1. Haz clic en **Copiar enlace de Walmart** para tu enlace de afiliado a través de Walmart Creator o Mavely; si tu enlace de afiliado de Walmart aún no está configurado, el panel lo indica y te lleva a configurarlo en Ajustes
+1. En una página de producto de Walmart (walmart.com/ip/...), haz clic en el icono de la extensión en la barra de herramientas del navegador para abrir el panel; permanece oculto hasta que lo haces. Muestra el precio, la valoración, una comisión estimada, un Butler Score y la lista Butler Approved leída de esa página
 1. Las páginas de búsqueda y categoría de Walmart reciben la misma lectura centrada en los ingresos donde está disponible
+1. En las páginas de Rollback y ahorros de Walmart, los productos rebajados muestran su rebaja, y un botón **Enviar ofertas a la app** en la barra de herramientas envía todos los productos rebajados al Deals Butler con un clic
+
+### Enviar un producto de Walmart al Deals Butler
+
+1. Abre la app de escritorio y vincúlala con la extensión (consulta "Aceptar una campaña desde la extensión" más arriba)
+1. En la página del producto, abre el panel. Arriba, deja el selector en tu Deals Butler principal y haz clic en **Enviar a Deals Butler**. La app archiva por sí sola un artículo de Walmart en tu Deals Butler de Walmart, así que un producto de Walmart nunca cae en tu cola de Amazon por error
+1. Dónde queda la oferta depende de **Ajustes > Ofertas > Cuando llega una oferta**: elige **Borrador** para revisarla primero, o una posición en la cola para publicarla automáticamente
+1. Abre el Deals Butler de Walmart y ve a la pestaña **Deals**. Esa página muestra tu cola combinada, así que pueden aparecer ofertas de Amazon junto a las de Walmart; usa el filtro de tienda (**Todas las tiendas**, **Amazon**, **Walmart**) para ver solo Walmart
+1. El enlace de Walmart con seguimiento se crea cuando se publica la oferta, con el proveedor de enlaces de Walmart conectado en la app de escritorio
+
+### Copiar un enlace de Walmart con seguimiento
+
+1. En **Ajustes** de la extensión, abre **Enlaces de afiliado de Walmart** y elige **Mavely** (recomendado) o **Walmart Creator**
+1. Abre creators.joinmavely.com (o creator.walmart.com) en el mismo navegador e inicia sesión; luego haz clic en **Probar** en la tarjeta de ese proveedor y acepta la solicitud de acceso del navegador
+1. Recarga la página de Walmart. El botón ahora dice **Copiar enlace de afiliado de Walmart** y el aviso "sin seguimiento de comisiones" desaparece
+1. Mavely crea el enlace en segundo plano sin abrir otra pestaña. Walmart Creator abre una pestaña oculta unos segundos y su verificación de inicio de sesión puede bloquearlo a veces. Si algo falla, igual obtienes el enlace normal de Walmart, con un aviso
 
 ## Benable
 
@@ -185,6 +200,7 @@ Una petición educada a la vez. Cada escaneo pasa por un único descargador en s
 ## Solución de problemas
 
 - **El panel no aparece.** Solo se muestra en las páginas que la extensión cubre (producto, búsqueda, Más vendidos, ofertas, idea lists, tiendas de marca, Creator Connections, Creator Hub, tu storefront, Walmart y Benable), no en la página de inicio de Amazon. Recarga la página y confirma que la extensión está fijada y activada.
+- **Enviar a Deals Butler dice que la app no está en ejecución, pero está abierta.** Usa la extensión de la Chrome Web Store: la app no acepta una copia cargada desde una carpeta en modo desarrollador. Comprueba que esté vinculada (el panel solo muestra el selector de Deals Butler cuando lo está) y vuelve a hacer clic.
 - **Una cuadrícula no muestra insignias después de que la página cambiara.** Amazon y Walmart rediseñan sus páginas a menudo. Cuando una tienda mueve cosas, una capa puede dejar de coincidir hasta que se actualice la extensión. Actualiza la extensión desde el popup o la Chrome Web Store y, si persiste, usa **Feedback Butler** en el popup para reportar la página y que se corrija.
 - **Las ganancias, la propiedad o los dólares de Video Money están en blanco.** Esas herramientas leen de la app de escritorio. Abre la app de escritorio de Influencer Butler y vincúlala (consulta la sección "Aceptar una campaña desde la extensión" más arriba); el resto de cada panel funciona sin ella.
 - **Faltan los enlaces de marca o la sincronización con el panel.** Esos necesitan tu clave de licencia. Pégala en **Cuenta** en el popup y haz clic en **Conectar**.
