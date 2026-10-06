@@ -4,6 +4,8 @@ summary: Générez des scripts de voix off conformes Amazon Shorts pour n'import
 category: Amazon
 ---
 
+> **À savoir :** Ce butler utilise votre propre clé API OpenAI (vous payez OpenAI directement, généralement quelques centimes ; un abonnement ChatGPT ne fonctionne pas). [Configurez-la en 5 minutes](/help/tutorials/openai-api-setup).
+
 ## Ce que fait Voiceover Butler
 
 Voiceover Butler écrit des scripts de voix off pour les vidéos Amazon Shoppable et Live Shoppable. Vous collez des ASIN, choisissez les paramètres du script (durée, type de vidéo, accroche d'ouverture, rythme, divulgation), et il tire les détails produit de la Creators API et produit des scripts qui collent - validés contre les directives vidéo d'Amazon et les règles de divulgation FTC avant de vous être rendus.
@@ -13,7 +15,7 @@ L'objectif est de zapper l'étape "écrire 30 scripts à la main". La plupart de
 ## Avant de commencer
 
 - **Clé Creators API** dans **API Integrations** - Voiceover Butler lit titres produit, prix et puces de fonctionnalités via l'API pour écrire des scripts justes.
-- **Clé d'API OpenAI** dans API Integrations - le modèle qui produit les scripts. Sans elle, pas de génération.
+- **Clé d'API OpenAI** dans API Integrations ([comment l'obtenir](/help/tutorials/openai-api-setup)) - le modèle qui produit les scripts. Sans elle, pas de génération.
 - Une idée générale de votre voix de créateur : ton (par ex. "punchy + pratique"), niche (par ex. "gadgets de cuisine pour petits appartements"), audience (par ex. "locataires de moins de 30 ans"). Vous les semez une fois dans **Profil de créateur et valeurs par défaut** et chaque script s'y adapte.
 
 ## Configuration initiale

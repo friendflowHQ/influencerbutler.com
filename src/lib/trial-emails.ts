@@ -36,6 +36,10 @@ export type TrialVars = {
 const FROM_ADDRESS = lifecycleFrom();
 const COMMUNITY_LINE = `Join our creator community on Facebook: ${FACEBOOK_GROUP_URL}`;
 
+// Canonical "AI butlers use your own OpenAI key" setup note.
+const OPENAI_SETUP_URL = "https://www.influencerbutler.com/help/tutorials/openai-api-setup";
+const OPENAI_KEY_NOTE = `One setup note: the AI butlers use your own OpenAI API key. You pay OpenAI directly for what you use (usually pennies), not Influencer Butler. A ChatGPT subscription does not work. The AI Assistant is included free. Setup guide: ${OPENAI_SETUP_URL}`;
+
 function monthlyCheckoutUrl(base: string, code: string | null): string {
   if (!code) return base;
   return `${base}?code=${encodeURIComponent(code)}`;
@@ -64,6 +68,8 @@ export const TRIAL_COPY: Record<TrialTier, TierCopy> = {
         ``,
         `Prefer to start in your browser? The free Chrome extension works on every account: https://www.influencerbutler.com/extension`,
         ``,
+        OPENAI_KEY_NOTE,
+        ``,
         v.monthlyCode
           ? `When your trial ends, use code ${v.monthlyCode} for ${v.monthlyPercent}% off your first month. It's unique to you and expires shortly after your trial.`
           : `We'll follow up with a discount code before your trial ends.`,
@@ -89,6 +95,8 @@ export const TRIAL_COPY: Record<TrialTier, TierCopy> = {
         `  1. Run Orders Butler to sync your real Amazon order history. It gives every other butler accurate signal on what you actually sell.`,
         `  2. Turn on Daily Commission Butler so it auto-accepts the right Creator Connections campaigns based on yesterday's sales.`,
         `  3. Set up the Deals Butler to find deals in your niche and post them automatically.`,
+        ``,
+        `Heads up: the AI butlers (like the Deals Butler's caption voice) run on your own OpenAI API key. You pay OpenAI directly (usually pennies), and a ChatGPT subscription does not work. Two-minute setup: ${OPENAI_SETUP_URL}`,
         ``,
         `Step-by-step tutorials for every butler: https://www.influencerbutler.com/help`,
         ``,

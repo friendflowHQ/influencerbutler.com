@@ -4,6 +4,8 @@ summary: Sube toda tu tienda de Amazon a YouTube con una configuración guiada, 
 category: Amazon
 ---
 
+> **Ten en cuenta:** Las funciones de IA de este butler (los títulos y descripciones con IA, y la traducción) usan tu propia clave de API de OpenAI (pagas a OpenAI directamente, normalmente céntimos; una suscripción a ChatGPT no funciona). El resto funciona sin ella. [Configúrala en 5 minutos](/help/tutorials/openai-api-setup).
+
 ## Qué hace YouTube Butler
 
 YouTube Butler toma los vídeos de tu tienda de Amazon (sincronizados por Storefront Butler) y los sube a tu canal de YouTube como vídeos normales o Shorts. Cada subida lleva:
@@ -28,6 +30,7 @@ Elige **Vía rápida** para responder unas cuatro preguntas y quedarte con la co
 - **Storefront Butler ha sincronizado tus vídeos al menos una vez**: YouTube Butler lee de ese inventario.
 - **Sesión iniciada en YouTube en tu navegador**: es lo único que hace falta para subir vídeos. Butler sube al canal en el que tu navegador tiene la sesión iniciada. Conectar la API de YouTube (pestaña **Conectar API**) es opcional, solo para elegir canal cuando gestionas más de uno o para la pestaña Copia de mis vídeos.
 - **Tu tag de afiliado de Amazon** en Ajustes → Amazon, para que los enlaces vayan etiquetados.
+- **Opcional: una clave de API de OpenAI** en API Integrations, para los títulos, descripciones, etiquetas y la traducción con IA. Sin ella, las subidas usan tus plantillas. [Cómo conseguir una clave](/help/tutorials/openai-api-setup).
 
 ## Primera configuración
 

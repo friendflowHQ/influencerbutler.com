@@ -127,6 +127,9 @@ export const CREATOR_API_CREDENTIALS_URLS = {
 } as const;
 export const CREATOR_API_CREDENTIALS_URL = CREATOR_API_CREDENTIALS_URLS.NA;
 export const API_INTEGRATIONS_TUTORIAL_URL = `${API_BASE}/help/tutorials/api-integrations`;
+// Plain-language walkthrough of getting an OpenAI API key (and why a ChatGPT
+// subscription does not work). Linked from every spot that asks for a key.
+export const OPENAI_SETUP_TUTORIAL_URL = `${API_BASE}/help/tutorials/openai-api-setup`;
 
 // "Show me where" destinations for the deeplink and affiliate-network
 // providers, matching the desktop app's API Integrations screen. Each points at

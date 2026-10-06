@@ -17,6 +17,45 @@ const MODEL_OPTIONS = [
   { value: "gpt-5" },
 ];
 
+// Plain-language messages for the failures a creator can actually fix. These
+// surface verbatim in the extension (caption/voiceover output, Butler's Brief,
+// scheduling), so they say what to do next rather than just echoing a status.
+export const OPENAI_KEY_INVALID_MESSAGE =
+  "OpenAI rejected your API key (it may be invalid or revoked). Create a new key at platform.openai.com/api-keys and paste it in Settings.";
+export const OPENAI_OUT_OF_CREDIT_MESSAGE =
+  "Your OpenAI account is out of credit. Add billing at platform.openai.com/settings/organization/billing. A ChatGPT Plus subscription does not count: the API is billed separately.";
+export const OPENAI_RATE_LIMIT_MESSAGE =
+  "OpenAI is rate limiting this key right now. Wait a minute and try again. If it keeps happening, check your billing at platform.openai.com/settings/organization/billing.";
+
+// Pull the machine-readable code/type out of an OpenAI error body, e.g.
+// {"error":{"message":"...","type":"insufficient_quota","code":"insufficient_quota"}}.
+// Tolerates a missing, non-JSON, or unexpected body.
+async function readErrorCode(res: Response): Promise<string> {
+  try {
+    const data = (await res.json()) as { error?: { code?: unknown; type?: unknown } };
+    const code = typeof data?.error?.code === "string" ? data.error.code : "";
+    const type = typeof data?.error?.type === "string" ? data.error.type : "";
+    return `${code} ${type}`.trim().toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
+// Map a failed OpenAI response to a message a creator can act on. `codes` is
+// the lowercased "code type" string from the error body (may be empty).
+export function describeOpenAiFailure(status: number, codes: string): string {
+  if (status === 401 || codes.includes("invalid_api_key")) return OPENAI_KEY_INVALID_MESSAGE;
+  if (codes.includes("insufficient_quota") || codes.includes("billing")) {
+    return OPENAI_OUT_OF_CREDIT_MESSAGE;
+  }
+  if (status === 429) {
+    // A genuine burst limit names itself; a bare 429 on a fresh key is almost
+    // always the account having no credit.
+    return codes.includes("rate_limit") ? OPENAI_RATE_LIMIT_MESSAGE : OPENAI_OUT_OF_CREDIT_MESSAGE;
+  }
+  return `OpenAI returned ${status}. Try again shortly.`;
+}
+
 async function test(creds: Record<string, string>): Promise<TestResult> {
   const apiKey = (creds.apiKey ?? "").trim();
   if (!apiKey) return { ok: false, message: "Paste your OpenAI API key first." };
@@ -25,13 +64,7 @@ async function test(creds: Record<string, string>): Promise<TestResult> {
       headers: { Authorization: `Bearer ${apiKey}` },
     });
     if (res.ok) return { ok: true, message: "Connected to OpenAI." };
-    if (res.status === 401) {
-      return { ok: false, message: "OpenAI rejected that key. Check it in your OpenAI dashboard." };
-    }
-    if (res.status === 429) {
-      return { ok: false, message: "Key looks valid but OpenAI is rate limiting. Check billing/quota." };
-    }
-    return { ok: false, message: `OpenAI returned ${res.status}. Try again shortly.` };
+    return { ok: false, message: describeOpenAiFailure(res.status, await readErrorCode(res)) };
   } catch {
     return { ok: false, message: "Could not reach OpenAI. Are you online?" };
   }
@@ -50,7 +83,7 @@ async function complete(prompt: string, creds: Record<string, string>): Promise<
       temperature: 0.7,
     }),
   });
-  if (!res.ok) throw new Error(`OpenAI returned ${res.status}`);
+  if (!res.ok) throw new Error(describeOpenAiFailure(res.status, await readErrorCode(res)));
   const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
   const text = data.choices?.[0]?.message?.content?.trim();
   if (!text) throw new Error("OpenAI returned no content.");

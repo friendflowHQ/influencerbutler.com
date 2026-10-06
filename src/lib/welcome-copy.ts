@@ -7,7 +7,7 @@ export type WelcomeCopy = {
   eyebrow: string;
   headline: string;
   subhead: string;
-  steps: ReadonlyArray<{ title: string; body: string }>;
+  steps: ReadonlyArray<{ title: string; body: string; href?: string; hrefLabel?: string }>;
   /** Optional tier-specific callout shown below the steps. */
   callout?: {
     title: string;
@@ -35,6 +35,12 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
       {
         title: "Import and organize",
         body: "Pull your full Amazon order history with Orders Butler and audit your photo & video coverage with Storefront Butler.",
+      },
+      {
+        title: "Connect your own OpenAI key for the AI butlers (optional)",
+        body: "AI butlers use your own OpenAI API key, billed by OpenAI directly (usually pennies). A ChatGPT subscription does not work.",
+        href: "/help/tutorials/openai-api-setup",
+        hrefLabel: "How to set up your key",
       },
       {
         title: "Upgrade when you're ready",
@@ -67,6 +73,12 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
         body: "Sign in with the creator account you want to automate - it only takes a minute.",
       },
       {
+        title: "Connect your own OpenAI key for the AI butlers (optional)",
+        body: "AI butlers use your own OpenAI API key, billed by OpenAI directly (usually pennies). A ChatGPT subscription does not work.",
+        href: "/help/tutorials/openai-api-setup",
+        hrefLabel: "How to set up your key",
+      },
+      {
         title: "Watch for a 20% discount code",
         body: "We'll email you a unique 20% off code (and a 30% annual-switch offer) so you can keep going after day 14.",
       },
@@ -96,6 +108,12 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
         title: "Connect your accounts and schedule",
         body: "Link the creator accounts you want to automate and queue up your first batch of posts.",
       },
+      {
+        title: "Connect your own OpenAI key for the AI butlers (optional)",
+        body: "AI butlers use your own OpenAI API key, billed by OpenAI directly (usually pennies). A ChatGPT subscription does not work.",
+        href: "/help/tutorials/openai-api-setup",
+        hrefLabel: "How to set up your key",
+      },
     ],
     callout: {
       title: "Switch to annual and save ~17%",
@@ -117,6 +135,12 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
       {
         title: "Activate with your license key",
         body: "Paste the key shown on this page into the app when it first opens.",
+      },
+      {
+        title: "Connect your own OpenAI key for the AI butlers (optional)",
+        body: "AI butlers use your own OpenAI API key, billed by OpenAI directly (usually pennies). A ChatGPT subscription does not work.",
+        href: "/help/tutorials/openai-api-setup",
+        hrefLabel: "How to set up your key",
       },
       {
         title: "Invite a teammate or refer a friend",

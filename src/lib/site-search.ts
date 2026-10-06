@@ -77,7 +77,7 @@ const CURATED_PAGES: Array<{
     summary: "Plans and pricing for Influencer Butler, including the free plan and the 14-day Pro trial.",
     category: "Pages",
     url: "/pricing",
-    keywords: "pricing plans cost price subscription pro trial free tier billing how much",
+    keywords: "pricing plans cost price subscription pro trial free tier billing how much openai api key byok chatgpt ai butlers own key",
   },
   {
     id: "page:extension",

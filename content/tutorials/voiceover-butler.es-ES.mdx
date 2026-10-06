@@ -4,6 +4,8 @@ summary: Genera guiones de voz en off compatibles con Amazon Shorts para cualqui
 category: Amazon
 ---
 
+> **Ten en cuenta:** Este butler usa tu propia clave de API de OpenAI (pagas a OpenAI directamente, normalmente céntimos; una suscripción a ChatGPT no funciona). [Configúrala en 5 minutos](/help/tutorials/openai-api-setup).
+
 ## Qué hace Voiceover Butler
 
 Voiceover Butler escribe guiones de voz en off para vídeos Shoppable y Live Shoppable de Amazon. Pegas ASIN, eliges los parámetros del guion (duración, tipo de vídeo, gancho de apertura, ritmo, divulgación), y el sistema saca los detalles del producto de la Creators API y produce guiones que encajan - validados contra las pautas de vídeo de Amazon y las reglas de divulgación de la FTC antes de devolvértelos.
@@ -13,7 +15,7 @@ El objetivo es saltarte el paso "escribir 30 guiones a mano". La mayoría de cre
 ## Antes de empezar
 
 - **Clave de Creators API** en **API Integrations** - Voiceover Butler lee títulos de producto, precios y viñetas de características desde la API para escribir guiones precisos.
-- **Clave de API de OpenAI** en API Integrations - el modelo que produce los guiones. Sin ella, no hay generación.
+- **Clave de API de OpenAI** en API Integrations ([cómo conseguirla](/help/tutorials/openai-api-setup)) - el modelo que produce los guiones. Sin ella, no hay generación.
 - Una idea general de tu voz creadora: tono (p. ej. "punzante + práctica"), nicho (p. ej. "gadgets de cocina para pisos pequeños"), audiencia (p. ej. "inquilinos menores de 30"). Las sembrarás una vez en **Perfil de creador y valores por defecto** y cada guion se adapta a ellas.
 
 ## Configuración inicial

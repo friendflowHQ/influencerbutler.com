@@ -3,6 +3,7 @@ import LicenseKeyLoader from "@/components/dashboard/LicenseKeyLoader";
 import WindowsSmartScreenGuide from "@/components/welcome/WindowsSmartScreenGuide";
 import MacInstallGuide from "@/components/welcome/MacInstallGuide";
 import DownloadButtons from "@/components/welcome/DownloadButtons";
+import AiKeyNote from "@/components/AiKeyNote";
 import { WELCOME_COPY, type WelcomeTier } from "@/lib/welcome-copy";
 
 type Props = {
@@ -71,12 +72,28 @@ export default function WelcomeTierContent({ tier }: Props) {
               <span className="mt-0.5 font-semibold text-[#f97316]">{i + 1}.</span>
               <div>
                 <p className="text-sm font-semibold text-slate-900">{step.title}</p>
-                <p className="mt-1 text-sm text-slate-600">{step.body}</p>
+                <p className="mt-1 text-sm text-slate-600">
+                  {step.body}
+                  {step.href ? (
+                    <>
+                      {" "}
+                      <Link
+                        href={step.href}
+                        className="font-semibold text-[#c2410c] underline hover:text-[#9a3412]"
+                      >
+                        {step.hrefLabel ?? "Learn more"}
+                      </Link>
+                      .
+                    </>
+                  ) : null}
+                </p>
               </div>
             </li>
           ))}
         </ol>
       </div>
+
+      <AiKeyNote className="mt-8" />
 
       {copy.callout ? (
         <aside className="mt-8 rounded-xl border border-[#f97316]/30 bg-[#f97316]/5 p-5">

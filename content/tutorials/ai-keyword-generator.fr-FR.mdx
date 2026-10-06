@@ -4,6 +4,8 @@ summary: Configurez au même endroit les filtres de mots-clés et de marques de 
 category: Amazon
 ---
 
+> **À savoir :** Les fonctions IA de ce butler (le générateur de mots-clés par IA) utilisent votre propre clé API OpenAI (vous payez OpenAI directement, généralement quelques centimes ; un abonnement ChatGPT ne fonctionne pas). Le reste fonctionne sans elle. [Configurez-la en 5 minutes](/help/tutorials/openai-api-setup).
+
 ## Ce que fait Mots-clés et filtres
 
 Mots-clés et filtres se trouve sous **Amazon Butler › Contacter les marques › Mots-clés et filtres**. C'est deux outils dans un seul panneau :
@@ -36,7 +38,7 @@ Les doublons sont supprimés automatiquement et la modification est enregistrée
 
 ## Avant de commencer
 
-- **Connectez votre clé API OpenAI** dans **Intégrations API**. Tant que ce n'est pas fait, le générateur par IA reste verrouillé et affiche une invite « Connecter OpenAI ». (Les filtres ci-dessus fonctionnent sans clé.)
+- **Connectez votre clé API OpenAI** dans **Intégrations API** (pas encore de clé ? [Configurez l'API OpenAI](/help/tutorials/openai-api-setup)). Tant que ce n'est pas fait, le générateur par IA reste verrouillé et affiche une invite « Connecter OpenAI ». (Les filtres ci-dessus fonctionnent sans clé.)
 - **Lancez une actualisation SPCC** (CC Check / Data Refresh Butler) pour que votre catalogue soit rempli. Le classement SPCC ne vaut que ce que vaut le catalogue qui le sous-tend.
 
 ## Générer des mots-clés

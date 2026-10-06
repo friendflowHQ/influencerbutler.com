@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import CancelFunnel from "@/components/dashboard/CancelFunnel";
 import LicenseKeyDisplay, { type LicenseKey } from "@/components/dashboard/LicenseKeyDisplay";
 import DiscountCodesCard from "@/components/dashboard/DiscountCodesCard";
+import AiKeyNote from "@/components/AiKeyNote";
 import { getStatusBadge } from "@/lib/subscription-status";
 import {
   PRICE_CENTS,
@@ -210,6 +211,7 @@ export default function SubscriptionPage() {
             Your free-forever butlers and the Chrome extension keep working no matter what. Start a
             14-day Pro trial to unlock all 50+ automation tools. Cancel anytime.
           </p>
+          <AiKeyNote compact className="mt-4" />
         </section>
 
         {error ? (
@@ -468,6 +470,8 @@ function SwitchPlanSection({ subscriptionId, currentPlan, status }: SwitchPlanSe
       <div className="mt-4">
         <BillingToggle value={cadence} onChange={setCadence} />
       </div>
+
+      <AiKeyNote compact className="mt-4" />
 
       <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         {TIER_ORDER.map((tier) => {

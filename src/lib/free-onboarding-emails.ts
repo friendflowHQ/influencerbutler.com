@@ -44,6 +44,9 @@ const COMMUNITY_LINE = `Join our creator community on Facebook: ${FACEBOOK_GROUP
 const FREE_BUTLERS =
   "Like Butler, Benable Like Butler, Instagram Like Butler, CC Check, Orders Butler, and Storefront Butler";
 
+// Canonical "AI butlers use your own OpenAI key" setup note.
+const OPENAI_SETUP_URL = "https://www.influencerbutler.com/help/tutorials/openai-api-setup";
+
 export const ONBOARDING_COPY: Record<OnboardingTier, TierCopy> = {
   day0: {
     subject: "Your Influencer Butler setup guide (3 minutes)",
@@ -59,6 +62,8 @@ export const ONBOARDING_COPY: Record<OnboardingTier, TierCopy> = {
         `  3. Turn on Like Butler to auto-like the posts that keep your account active.`,
         ``,
         `All of that is on the free-forever plan: ${FREE_BUTLERS}. No card, no expiry.`,
+        ``,
+        `One setup note for later: the AI butlers use your own OpenAI API key. You pay OpenAI directly for what you use (usually pennies), not Influencer Butler. A ChatGPT subscription does not work. The AI Assistant is included free. Setup guide: ${OPENAI_SETUP_URL}`,
         ``,
         `Prefer to start in your browser? The free Chrome extension works on every account: ${v.extensionUrl}`,
         ``,

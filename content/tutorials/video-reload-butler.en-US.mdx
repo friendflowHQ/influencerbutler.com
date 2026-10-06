@@ -4,6 +4,8 @@ summary: Convert, re-encode, and re-upload your existing Amazon storefront video
 category: Amazon
 ---
 
+> **Heads up:** The AI features in this butler (AI translation and dubbing, and rewriting flagged titles) use your own OpenAI API key (you pay OpenAI directly, usually pennies; a ChatGPT subscription does not work). The rest works without it. [Set it up in 5 minutes](/help/tutorials/openai-api-setup).
+
 ## What Video Reload Butler does
 
 Video Reload Butler is the closest thing in InfluencerButler to a "free engagement boost." It takes the shoppable videos already on your Amazon Creator storefront and re-uploads them with refreshed metadata - new titles, new descriptions, new affiliate links, optional watermark/caption overlays. Amazon's algorithm treats a re-upload like a fresh post, so a 6-month-old video can get a second wind without you having to film anything new.
@@ -16,6 +18,7 @@ You can also use it to **prune low-performing videos** (the engine has a built-i
 - **Signed-in Amazon Creator Hub session** in Chrome.
 - **FFmpeg staged**: happens automatically on app install. If you ever see a "ffmpeg not found" error, run `npm run stage:ffmpeg` from the repo root.
 - Optional: a watermark image and/or caption font ready, if you want overlays.
+- **Optional: an OpenAI API key** in API Integrations, for AI translation and dubbing and for rewriting flagged titles. The AI style of **Refresh the title on reload** uses an Anthropic key instead. [How to get an OpenAI key](/help/tutorials/openai-api-setup).
 
 ## Running your first conversion + re-upload
 

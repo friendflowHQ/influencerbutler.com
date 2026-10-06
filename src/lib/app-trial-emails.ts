@@ -63,6 +63,11 @@ const COMMUNITY_LINE = `Join our creator community on Facebook: ${FACEBOOK_GROUP
 const FREE_BUTLERS =
   "Like Butler, Benable Like Butler, Instagram Like Butler, CC Check, Orders Butler, and Storefront Butler";
 
+// Canonical "AI butlers use your own OpenAI key" setup note. Absolute URL on
+// purpose: this drip's vars only carry pricing/help links.
+const OPENAI_SETUP_URL = "https://www.influencerbutler.com/help/tutorials/openai-api-setup";
+const OPENAI_KEY_NOTE = `One setup note: the AI butlers use your own OpenAI API key. You pay OpenAI directly for what you use (usually pennies), not Influencer Butler. A ChatGPT subscription does not work. The AI Assistant is included free. Two-minute setup guide: ${OPENAI_SETUP_URL}`;
+
 export const APP_TRIAL_COPY: Record<AppTrialTier, TierCopy> = {
   day0: {
     subject: "You're in. Here's the one thing to do first.",
@@ -77,6 +82,8 @@ export const APP_TRIAL_COPY: Record<AppTrialTier, TierCopy> = {
         `So I built butlers to do the boring parts for me. That's what you just installed.`,
         ``,
         `The fastest way to get it is to run one butler today. Open the app and start with Daily Commission Butler. It pulls your Amazon commissions automatically so you can see your real numbers without touching a spreadsheet. Two minutes, and you'll understand the whole product.`,
+        ``,
+        OPENAI_KEY_NOTE,
         ``,
         `One favor: hit reply and tell me what you're hoping this saves you from. I read every one, and it shapes what I build next.`,
         ``,
@@ -94,6 +101,8 @@ export const APP_TRIAL_COPY: Record<AppTrialTier, TierCopy> = {
         `If you haven't run it yet, open the app and hit start on Daily Commission Butler. It does the boring part. You watch.`,
         ``,
         `If something looked off, reply to this email and tell me what you saw. I'll help you sort it.`,
+        ``,
+        `If you're trying any of the AI butlers today, remember they run on your own OpenAI API key (you pay OpenAI directly, usually pennies, and a ChatGPT subscription does not work). The two-minute setup is here: ${OPENAI_SETUP_URL}`,
         ``,
         `Step-by-step tutorials for every butler: ${v.helpUrl}`,
         ``,
@@ -131,7 +140,7 @@ export const APP_TRIAL_COPY: Record<AppTrialTier, TierCopy> = {
         ``,
         `If you've ever felt like you're leaving brand money on the table just because outreach is exhausting, this is the one to try today. Open the app, go to Amazon Butler, and let it run.`,
         ``,
-        `Bonus: it has an AI keyword generator built in, so your outreach and campaigns target the right products instead of guessing. More on that one later.`,
+        `Bonus: the AI Keyword Generator helps your outreach and campaigns target the right products instead of guessing. It runs on your own OpenAI API key (you pay OpenAI directly, usually pennies, and a ChatGPT subscription does not work), so set that up first: ${OPENAI_SETUP_URL}`,
         ``,
         `- Liz`,
       ].join("\n"),

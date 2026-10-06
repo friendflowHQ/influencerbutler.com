@@ -4,6 +4,8 @@ summary: Convierte, re-codifica y vuelve a subir tus vídeos de tienda existente
 category: Amazon
 ---
 
+> **Ten en cuenta:** Las funciones de IA de este butler (la traducción y el doblaje con IA, y la reescritura de títulos señalados) usan tu propia clave de API de OpenAI (pagas a OpenAI directamente, normalmente céntimos; una suscripción a ChatGPT no funciona). El resto funciona sin ella. [Configúrala en 5 minutos](/help/tutorials/openai-api-setup).
+
 ## Qué hace Video Reload Butler
 
 Video Reload Butler es lo más parecido en InfluencerButler a un "empujón gratis de engagement". Coge los vídeos comprables que ya tienes en tu tienda de Amazon Creator y los vuelve a subir con metadatos frescos - títulos nuevos, descripciones nuevas, enlaces de afiliado nuevos, overlays de marca de agua/subtítulos opcionales. El algoritmo de Amazon trata una re-subida como un post nuevo, así que un vídeo de 6 meses puede tener una segunda vida sin necesidad de filmar nada.
@@ -16,6 +18,7 @@ También sirve para **podar vídeos de bajo rendimiento** (el motor incluye un p
 - **Sesión de Creator Hub iniciada** en Chrome.
 - **FFmpeg preparado**: sucede automático al instalar la app. Si ves "ffmpeg not found", ejecuta `npm run stage:ffmpeg` desde la raíz del repo.
 - Opcional: una imagen de marca de agua y/o una fuente para subtítulos, si quieres overlays.
+- **Opcional: una clave de API de OpenAI** en API Integrations, para la traducción y el doblaje con IA y para reescribir títulos señalados. El estilo con IA de **Refrescar el título al recargar** usa una clave de Anthropic. [Cómo conseguir una clave de OpenAI](/help/tutorials/openai-api-setup).
 
 ## Tu primera conversión + re-subida
 

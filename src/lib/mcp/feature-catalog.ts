@@ -7,13 +7,38 @@ export type FeatureEntry = {
   url: string;
   /** "free" = free forever on any account; "pro" = trial and Pro only. */
   tier: "free" | "pro";
+  /**
+   * True when this butler's AI features run on the user's own OpenAI API key
+   * (they pay OpenAI directly; a ChatGPT subscription does not work). The AI
+   * Assistant and the extension's free caption engine are included and do not
+   * need a key. Setup guide: /help/tutorials/openai-api-setup
+   */
+  needsOwnAiKey?: boolean;
 };
 
 const BASE = "https://www.influencerbutler.com";
 
+/** Slugs whose AI features use the customer's own OpenAI key (see the Help tutorials). */
+const NEEDS_OWN_AI_KEY = new Set<string>([
+  "benable-butler",
+  "deals-butler",
+  "video-reload-butler",
+  "voiceover-butler",
+  "youtube-butler",
+]);
+
 function entry(slug: string, title: string, description: string): FeatureEntry {
-  return { slug, title, description, url: `${BASE}/features/${slug}`, tier: butlerTier(slug) };
+  const base: FeatureEntry = {
+    slug,
+    title,
+    description,
+    url: `${BASE}/features/${slug}`,
+    tier: butlerTier(slug),
+  };
+  return NEEDS_OWN_AI_KEY.has(slug) ? { ...base, needsOwnAiKey: true } : base;
 }
+
+const AI_KEY_HIGHLIGHT = `AI butlers use your own OpenAI API key: you pay OpenAI directly for what you use (usually pennies), not Influencer Butler, and a ChatGPT subscription does not work. The AI Assistant and the extension's free caption engine are included. Setup: ${BASE}/help/tutorials/openai-api-setup`;
 
 export const FEATURE_CATALOG: FeatureEntry[] = [
   entry("action-queue", "Action Queue: Everything running, in one place", "Action Queue manages and runs your pending tasks across all Influencer Butler tools in the background."),
@@ -79,6 +104,7 @@ export const PRICING_TIERS: PricingTier[] = [
       "The whole Chrome extension, no login: video counts, content gaps, Butler Approved seals, storefront checks",
       "Desktop free butlers: Like Butler, Benable Like Butler, Instagram Like Butler, CC Check, Orders Butler, Storefront Butler",
       "No card, no expiry",
+      "Optional AI butlers need your own OpenAI API key (you pay OpenAI directly); the AI Assistant and free caption engine need no key",
     ],
     signupUrl: `${BASE}/extension`,
   },
@@ -92,6 +118,7 @@ export const PRICING_TIERS: PricingTier[] = [
       "Full Pro Solo access for 14 days",
       "All 50+ butlers unlocked",
       "Cancel anytime before day 14",
+      AI_KEY_HIGHLIGHT,
     ],
     signupUrl: `${BASE}/pricing`,
   },
@@ -101,7 +128,7 @@ export const PRICING_TIERS: PricingTier[] = [
     priceUsd: 39,
     cadence: "monthly",
     seats: 1,
-    highlights: ["All 50+ butlers unlocked", "1 activated device", "Cancel anytime"],
+    highlights: ["All 50+ butlers unlocked", "1 activated device", "Cancel anytime", AI_KEY_HIGHLIGHT],
     signupUrl: `${BASE}/welcome/monthly`,
   },
   {
@@ -110,7 +137,7 @@ export const PRICING_TIERS: PricingTier[] = [
     priceUsd: 390,
     cadence: "annual",
     seats: 1,
-    highlights: ["All 50+ butlers unlocked", "Save 17% vs monthly", "1 activated device"],
+    highlights: ["All 50+ butlers unlocked", "Save 17% vs monthly", "1 activated device", AI_KEY_HIGHLIGHT],
     signupUrl: `${BASE}/welcome/annual`,
   },
   {

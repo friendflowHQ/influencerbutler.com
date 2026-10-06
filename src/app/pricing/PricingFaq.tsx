@@ -1,4 +1,26 @@
-const FAQ = [
+import type { ReactNode } from "react";
+import Link from "next/link";
+
+const FAQ: { q: string; a: ReactNode }[] = [
+  {
+    q: "Is AI included in my plan?",
+    a: (
+      <>
+        Partly. The AI Assistant and the Chrome extension&apos;s free caption engine are included
+        and run on our servers, no key needed. The AI butlers (like Voiceover Butler, Benable
+        Butler, and the AI Keyword Generator) use your own OpenAI API key. You pay OpenAI directly
+        for what you use, usually pennies, not Influencer Butler. A ChatGPT subscription does not
+        work for this.{" "}
+        <Link
+          href="/help/tutorials/openai-api-setup"
+          className="font-semibold text-[#c2410c] underline hover:text-[#9a3412]"
+        >
+          See how to set up your OpenAI key
+        </Link>
+        .
+      </>
+    ),
+  },
   {
     q: "What's free forever?",
     a: "The whole Chrome extension (video counts, content gaps, Butler Approved seals, storefront checks) works with no login. On the desktop app, six See & Organize butlers stay free on every account, even after a trial expires or a subscription is cancelled: Like Butler, Benable Like Butler, Instagram Like Butler, CC Check, Orders Butler, and Storefront Butler. No card required.",

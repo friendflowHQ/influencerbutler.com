@@ -17,12 +17,13 @@ import PricingFaq from "./PricingFaq";
 import PricingFeatures from "./PricingFeatures";
 import FacebookGroupIconLink from "@/components/FacebookGroupIconLink";
 
+import AiKeyNote from "@/components/AiKeyNote";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Pricing - Influencer Butler",
   description:
-    "Pick your plan. All 50+ butlers included. Cancel anytime. Special discount for first-time visitors.",
+    "Pick your plan. All 50+ butlers included (AI butlers use your own OpenAI key). Cancel anytime. Special discount for first-time visitors.",
   robots: {
     index: false,
     follow: false,
@@ -146,6 +147,7 @@ export default async function PricingPage({
                 Butler &amp; Storefront Butler - on every account, even after trial expiry or
                 cancellation.
               </span>
+          <AiKeyNote compact className="mx-auto mt-4 max-w-2xl" />
             </span>
           </div>
         </div>

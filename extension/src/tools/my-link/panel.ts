@@ -35,6 +35,10 @@ type Strings = {
   voiceover: string;
   voiceoverGating: string;
   voiceoverFailed: string;
+  // Visible helper under the AI buttons while OpenAI is not connected (a tooltip
+  // on a disabled button is easy to never see).
+  aiNeedsKey: string;
+  aiConnectOpenai: string;
   copyScript: string;
   // {brand} is replaced with the offending brand name at render time.
   denylistWarning: string;
@@ -63,6 +67,9 @@ const EN: Strings = {
   voiceover: "Draft voiceover (AI)",
   voiceoverGating: "Connect OpenAI in Settings to draft voiceover scripts.",
   voiceoverFailed: "Voiceover failed",
+  aiNeedsKey:
+    "Needs your own OpenAI key. You pay OpenAI directly (usually pennies). A ChatGPT subscription does not work.",
+  aiConnectOpenai: "Connect OpenAI",
   copyScript: "Copy script",
   denylistWarning:
     'Heads up: this script mentions "{brand}", which is on your never-mention list. Edit it out before you use the script.',
@@ -96,6 +103,9 @@ const CATALOG: Record<string, Strings> = {
     voiceover: "Redactar guion de voz (IA)",
     voiceoverGating: "Conecta OpenAI en Ajustes para redactar guiones de voz.",
     voiceoverFailed: "Fallo al generar el guion",
+    aiNeedsKey:
+      "Necesita tu propia clave de OpenAI. Pagas a OpenAI directamente (normalmente centavos). Una suscripción a ChatGPT no sirve.",
+    aiConnectOpenai: "Conectar OpenAI",
     copyScript: "Copiar guion",
     denylistWarning:
       'Atención: este guion menciona "{brand}", que está en tu lista de marcas prohibidas. Elimínala antes de usar el guion.',
@@ -126,6 +136,9 @@ const CATALOG: Record<string, Strings> = {
     voiceover: "Rédiger un script voix off (IA)",
     voiceoverGating: "Connectez OpenAI dans les Réglages pour rédiger des scripts voix off.",
     voiceoverFailed: "Échec du script",
+    aiNeedsKey:
+      "Nécessite votre propre clé OpenAI. Vous payez OpenAI directement (généralement quelques centimes). Un abonnement ChatGPT ne fonctionne pas.",
+    aiConnectOpenai: "Connecter OpenAI",
     copyScript: "Copier le script",
     denylistWarning:
       'Attention : ce script mentionne "{brand}", qui figure dans votre liste de marques à ne jamais citer. Retirez-la avant d\'utiliser le script.',
@@ -309,6 +322,24 @@ export async function renderMyLink(signals: ProductSignals): Promise<void> {
   });
   row.append(captionBtn);
 
+  // Visible explanation (not just a tooltip) for why the two AI buttons are
+  // greyed out, with a real link to the settings page where the key goes. Same
+  // OPEN_OPTIONS route as the Butler's Brief "Connect OpenAI" button. Wired to
+  // both buttons with aria-describedby so screen readers hear it too.
+  const aiHelp = el("p", "affiliate-note");
+  aiHelp.id = "ib-ai-needs-key";
+  aiHelp.hidden = openaiReady;
+  const aiHelpText = el("span", "", `${s.aiNeedsKey} `);
+  const aiConnect = el("a", "inline-connect") as HTMLAnchorElement;
+  aiConnect.href = "#";
+  aiConnect.textContent = s.aiConnectOpenai;
+  aiConnect.addEventListener("click", (event) => {
+    event.preventDefault();
+    void sendToBackground({ kind: "OPEN_OPTIONS" });
+  });
+  aiHelp.append(aiHelpText, aiConnect);
+  if (!openaiReady) captionBtn.setAttribute("aria-describedby", aiHelp.id);
+
   // Voiceover Butler, extension edition: one spoken script for this product,
   // shaped by the Voiceover section of the options page (creator profile,
   // script defaults, About Me, brand denylist). Same OpenAI gating as the
@@ -364,11 +395,12 @@ export async function renderMyLink(signals: ProductSignals): Promise<void> {
     });
   });
   row.append(voBtn);
+  if (!openaiReady) voBtn.setAttribute("aria-describedby", aiHelp.id);
 
   const disclosure = el("p", "affiliate-note");
   disclosure.textContent = s.disclosure;
 
-  section.append(row, notice, appOpensNote, connect, connectError, openSettings, out, voOut, disclosure);
+  section.append(row, aiHelp, notice, appOpensNote, connect, connectError, openSettings, out, voOut, disclosure);
   if (showBrandedHint) section.append(brandedHint(s));
 }
 

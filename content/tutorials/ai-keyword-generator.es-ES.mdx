@@ -4,6 +4,8 @@ summary: Configura en un solo lugar los filtros de palabras clave y marcas de tu
 category: Amazon
 ---
 
+> **Ten en cuenta:** Las funciones de IA de este butler (el generador de palabras clave con IA) usan tu propia clave de API de OpenAI (pagas a OpenAI directamente, normalmente céntimos; una suscripción a ChatGPT no funciona). El resto funciona sin ella. [Configúrala en 5 minutos](/help/tutorials/openai-api-setup).
+
 ## Qué hace Palabras clave y filtros
 
 Palabras clave y filtros está en **Amazon Butler › Mensajear a Marcas › Palabras clave y filtros**. Son dos herramientas en un solo panel:
@@ -36,7 +38,7 @@ Los duplicados se eliminan automáticamente y el cambio se guarda al instante. N
 
 ## Antes de empezar
 
-- **Conecta tu clave de API de OpenAI** en **Integraciones de API**. Hasta que lo hagas, el generador con IA permanece bloqueado y muestra un aviso de "Conectar OpenAI". (Los filtros de arriba funcionan sin clave.)
+- **Conecta tu clave de API de OpenAI** en **Integraciones de API** (¿aún no tienes clave? [Configura la API de OpenAI](/help/tutorials/openai-api-setup)). Hasta que lo hagas, el generador con IA permanece bloqueado y muestra un aviso de "Conectar OpenAI". (Los filtros de arriba funcionan sin clave.)
 - **Ejecuta una actualización de SPCC** (CC Check / Data Refresh Butler) para que tu catálogo esté poblado. La clasificación SPCC es tan buena como el catálogo que la respalda.
 
 ## Generar palabras clave

@@ -34,7 +34,11 @@ import {
   type IntegrationTestOutcome,
   type IntegrationView,
 } from "../shared/messages";
-import { ONBOARDING_VIDEO_ID, API_INTEGRATIONS_TUTORIAL_URL } from "../shared/constants";
+import {
+  ONBOARDING_VIDEO_ID,
+  API_INTEGRATIONS_TUTORIAL_URL,
+  OPENAI_SETUP_TUTORIAL_URL,
+} from "../shared/constants";
 import { INCOMPLETE_CREDS_MESSAGE } from "../integrations/adapters/creators-api";
 
 // The API Integrations options page. All credentials are handled by the
@@ -452,10 +456,26 @@ function renderCategories(): void {
     section.append(heading);
     const card = document.createElement("section");
     card.className = "card";
+    // The AI card says up front that a key is optional, who bills for it, and
+    // that a ChatGPT subscription is not an API key, before anyone pastes one.
+    if (category === "ai") card.append(renderAiIntro());
     for (const adapter of adapters) card.append(renderProvider(adapter));
     section.append(card);
     root.append(section);
   }
+}
+
+function renderAiIntro(): HTMLElement {
+  const intro = document.createElement("p");
+  intro.className = "muted small";
+  intro.append(document.createTextNode(`${D.catAiIntro} `));
+  const guide = document.createElement("a");
+  guide.href = OPENAI_SETUP_TUTORIAL_URL;
+  guide.target = "_blank";
+  guide.rel = "noopener noreferrer";
+  guide.textContent = D.catAiGuideLink;
+  intro.append(guide);
+  return intro;
 }
 
 function categoryLabel(category: IntegrationCategory): string {

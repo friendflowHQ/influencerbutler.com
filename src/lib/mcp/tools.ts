@@ -135,7 +135,7 @@ export const TOOL_REGISTRY: Record<string, { def: ToolDefinition; handler: ToolH
   list_features: {
     def: {
       name: "list_features",
-      description: "List all Influencer Butler product features with slugs, titles and descriptions.",
+      description: "List all Influencer Butler product features with slugs, titles and descriptions. Features flagged needsOwnAiKey use the customer's own OpenAI API key (billed by OpenAI directly, a ChatGPT subscription does not work); setup guide at /help/tutorials/openai-api-setup.",
       inputSchema: { type: "object", properties: {}, additionalProperties: false },
       authRequired: false,
     },

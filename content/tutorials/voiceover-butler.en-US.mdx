@@ -4,6 +4,8 @@ summary: Generate Amazon-Shorts-compliant voiceover scripts for any ASIN, with b
 category: Amazon
 ---
 
+> **Heads up:** This butler uses your own OpenAI API key (you pay OpenAI directly, usually pennies; a ChatGPT subscription does not work). [Set it up in 5 minutes](/help/tutorials/openai-api-setup).
+
 ## What Voiceover Butler does
 
 Voiceover Butler writes voiceover scripts for Amazon Shoppable and Live Shoppable videos. You paste ASINs, pick the script parameters (length, video type, opening hook, pacing, disclosure), and it pulls product details from the Creators API and produces scripts that match - vetted against both Amazon's video guidelines and FTC disclosure rules before they're handed back to you.
@@ -13,7 +15,7 @@ The point is to skip the "write 30 scripts manually" step. Most creators using s
 ## Before you start
 
 - **Creators API key** in **API Integrations** - Voiceover Butler reads product titles, prices, and feature bullets from the API to write accurate scripts.
-- **OpenAI API key** in API Integrations - the model that produces the scripts. Without it, no generation happens.
+- **OpenAI API key** in API Integrations ([how to get one](/help/tutorials/openai-api-setup)) - the model that produces the scripts. Without it, no generation happens.
 - A general sense of your creator voice: tone (e.g. "punchy + practical"), niche (e.g. "kitchen gadgets for small apartments"), audience (e.g. "renters under 30"). You'll seed these once in **Creator profile & defaults** and every script adapts to them.
 
 ## First-time setup

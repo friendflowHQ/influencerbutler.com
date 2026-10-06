@@ -405,13 +405,18 @@ function renderBody(body: HTMLElement, opts: CampaignBriefOpen, res: CampaignBri
     note.style.margin = "12px 0 10px";
     body.append(note, scoreBreakdown(opts.score));
     body.append(connectPrompt(res.openaiConnected === true));
-    // Surface the server's reason code (e.g. "groq-400", "no-provider") in small
-    // muted text so an empty brief is diagnosable in the wild, not a blank miss.
+    // The server's reason code (e.g. "groq-400", "no-provider") stays available
+    // so an empty brief is diagnosable in the wild, but tucked behind a small
+    // disclosure: it means nothing to a creator and read like an error on
+    // first sight.
     if (res.diag) {
-      const diag = el("div", "", `Reason: ${res.diag}`);
+      const diag = el("details");
       diag.style.fontSize = "11px";
-      diag.style.color = "#9ca3af";
+      diag.style.color = "#6b7280";
       diag.style.marginTop = "8px";
+      const summary = el("summary", "", t().campaignBriefDetails);
+      summary.style.cursor = "pointer";
+      diag.append(summary, el("div", "", `Reason: ${res.diag}`));
       body.append(diag);
     }
     return;

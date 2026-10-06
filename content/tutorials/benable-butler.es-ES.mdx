@@ -6,6 +6,8 @@ category: Partnerships
 
 > **Espacio en beta.** Benable Butler se está lanzando a usuarios tempranos y puede mostrar bugs en casos límite. Usa **Dry run** o **Preview** antes de pulsar Publicar hasta que hayas visto al espacio manejar tu nicho con limpieza unas cuantas veces. Reporta cualquier cosa rara desde el espacio de Feedback.
 
+> **Ten en cuenta:** Este butler usa tu propia clave de API de OpenAI (pagas a OpenAI directamente, normalmente céntimos; una suscripción a ChatGPT no funciona). [Configúrala en 5 minutos](/help/tutorials/openai-api-setup).
+
 ## Qué hace Benable Butler
 
 Benable es una plataforma de "listas comprables" donde los creadores publican colecciones curadas de productos. Construir una colección de Benable a mano es un proceso largo: investigar productos en un nicho → elegir ASIN que encajan → escribir títulos + descripciones → publicar en Benable, lista por lista. Benable Butler ejecuta todo ese pipeline desde una única palabra clave.
@@ -15,7 +17,7 @@ La salida es una colección completa de Benable: cabecera, sub-listas, productos
 ## Antes de empezar
 
 - **Una cuenta de Benable** con tu enlace de referido guardado en **API Integrations**.
-- **Clave de API de OpenAI** en API Integrations - el modelo que elige productos y escribe el copy.
+- **Clave de API de OpenAI** en API Integrations ([cómo conseguirla](/help/tutorials/openai-api-setup)) - el modelo que elige productos y escribe el copy.
 - **Tag de afiliado de Amazon** para el marketplace de Amazon al que apuntas (amazon.com, amazon.co.uk, amazon.ca, etc.). Para **Walmart** no hace falta tag: los usuarios con sesión iniciada resuelven productos de Walmart a través del servicio de búsqueda compartido, y Benable atribuye los enlaces publicados a tu cuenta de creador.
 - **La primera Publicación** también necesita que inicies sesión en Benable en la ventana de Chrome que Butler abre - un sign-in manual una vez y tu sesión persiste para ejecuciones futuras.
 

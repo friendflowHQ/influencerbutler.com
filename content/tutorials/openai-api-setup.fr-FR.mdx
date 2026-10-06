@@ -15,6 +15,31 @@ Influencer Butler est l'une de ces "autres applications." Il a besoin d'une clé
 
 > Un abonnement ChatGPT Plus **ne** fonctionne **pas** ici, et ne vous donne pas de clé API. ChatGPT et l'API OpenAI sont facturés séparément, donc payer l'un ne paie pas l'autre.
 
+## Quels outils ont besoin de votre clé
+
+Ces outils utilisent votre propre clé API OpenAI. Vous payez OpenAI directement pour ce que vous utilisez (généralement quelques centimes), pas Influencer Butler :
+
+- [Mots-clés et filtres : générateur de mots-clés par IA](/help/tutorials/ai-keyword-generator)
+- [Voiceover Butler](/help/tutorials/voiceover-butler) : scripts de voix off par IA
+- [Benable Butler](/help/tutorials/benable-butler)
+- [Benable Comment Butler](/help/tutorials/benable-comment-butler)
+- [Benable List Optimize](/help/tutorials/benable-list-optimize) : le texte de Générer des améliorations IA
+- [Facebook Group Builder](/help/tutorials/facebook-group-builder) : textes du groupe et illustrations IA
+- [Social Posting Butler](/help/tutorials/social-posting-butler) : images générées par IA
+- [Deals Butler](/help/tutorials/deals) : ma voix de légende et Raccourcir les titres avec l'IA
+- [Orders Butler](/help/tutorials/ordersbutler) : scripts de voix off dans la checklist PDF
+- [YouTube Butler](/help/tutorials/youtube-butler) et [Video Reload Butler](/help/tutorials/video-reload-butler) : titres par IA, traduction et doublage
+- [Pinterest Butler](/help/tutorials/pinterest-butler) : textes SEO pour les épingles
+- [Supprimer publications et commentaires](/help/tutorials/delete-posts-comments) : l'analyse optionnelle des images
+- L'[extension Chrome](/help/tutorials/extension) gratuite : les boutons Rédiger une légende et Rédiger un script de voix off (IA)
+
+Deux choses sont à part d'OpenAI : le style de titre par IA de Photo Reload et Video Reload utilise une clé Anthropic, et Keepa, Fal.ai et Ideogram utilisent chacun leur propre clé. Vous les ajoutez toutes dans [API Integrations](/help/tutorials/api-integrations).
+
+## Ce qui est inclus sans clé
+
+- L'**AI Assistant** (Butler AI, voyez [Parler à Butler AI](/help/tutorials/ai-concierge)) est inclus. Il tourne sur nos serveurs sans coût supplémentaire, sans clé OpenAI.
+- Le moteur de légendes gratuit **Influencer Butler AI (free)** de l'extension Chrome tourne aussi sur nos serveurs sans coût supplémentaire, vous pouvez donc y rédiger des légendes sans clé.
+
 ## Pourquoi Influencer Butler a besoin de l'API, pas de l'app de chat
 
 Les butlers IA (Générateur de mots-clés IA, Voiceover Butler, Benable Butler, Comment Butler, Facebook Group Builder et la rédaction des textes de deals) génèrent du texte et des images pour vous automatiquement, en arrière-plan, pendant que vous faites autre chose. Pour cela, ils appellent OpenAI de façon programmatique, et OpenAI ne l'autorise qu'avec une clé API.
@@ -70,3 +95,4 @@ L'**[extension Chrome](/help/tutorials/extension)** gratuite possède le même p
 - [Mots-clés et filtres : créez des listes de mots-clés avec l'IA](/help/tutorials/ai-keyword-generator) : l'un des butlers qui a besoin de cette clé.
 - [Voiceover Butler](/help/tutorials/voiceover-butler) : scripts de voix off par IA, également alimentés par votre clé OpenAI.
 - [Facebook Group Builder](/help/tutorials/facebook-group-builder) : utilise votre clé pour le texte comme pour les images de couverture.
+- [ChatGPT vs l'API OpenAI : pourquoi vos butlers IA ont besoin d'une clé](/blog/openai-api-key-vs-chatgpt) : la version en langage simple de ce guide (en anglais).

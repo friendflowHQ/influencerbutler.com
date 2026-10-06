@@ -679,6 +679,7 @@ export interface Dict {
   campaignBriefKeyErrorHint: string;
   campaignBriefConnectBtn: string;
   campaignBriefOpenSettingsBtn: string;
+  campaignBriefDetails: string;
   campaignBriefVerdictHot: string;
   campaignBriefVerdictWarm: string;
   campaignBriefVerdictCool: string;
@@ -1739,11 +1740,12 @@ const en: Dict = {
   campaignBriefCopy: "Copy brief",
   campaignBriefCopied: "Copied",
   campaignBriefClose: "Close",
-  campaignBriefError: "The Butler couldn't write a full brief right now. Here's the score breakdown.",
-  campaignBriefConnectHint: "Connect your own OpenAI API key and the Butler writes a full brief every time.",
+  campaignBriefError: "The Butler's server brief wasn't available right now, so here's the score breakdown instead. Try again in a moment.",
+  campaignBriefConnectHint: "Connecting your own OpenAI key makes the brief work reliably. You pay OpenAI directly (usually pennies). A ChatGPT subscription does not work.",
   campaignBriefKeyErrorHint: "Your connected OpenAI key couldn't finish this brief. Check the key in Settings.",
   campaignBriefConnectBtn: "Connect OpenAI",
   campaignBriefOpenSettingsBtn: "Open settings",
+  campaignBriefDetails: "Details",
   campaignBriefVerdictHot: "Worth accepting",
   campaignBriefVerdictWarm: "Worth a look",
   campaignBriefVerdictCool: "Probably pass",
@@ -2827,11 +2829,12 @@ const es: Dict = {
   campaignBriefCopy: "Copiar informe",
   campaignBriefCopied: "Copiado",
   campaignBriefClose: "Cerrar",
-  campaignBriefError: "El Butler no pudo redactar un informe completo ahora mismo. Aquí tienes el desglose de la puntuación.",
-  campaignBriefConnectHint: "Conecta tu propia clave de API de OpenAI y el Butler redactará un informe completo cada vez.",
+  campaignBriefError: "El informe del servidor del Butler no estaba disponible ahora mismo, así que aquí tienes el desglose de la puntuación. Inténtalo de nuevo en un momento.",
+  campaignBriefConnectHint: "Si conectas tu propia clave de OpenAI, el informe funciona de forma fiable. Pagas a OpenAI directamente (normalmente centavos). Una suscripción a ChatGPT no sirve.",
   campaignBriefKeyErrorHint: "Tu clave de OpenAI conectada no pudo terminar este informe. Revísala en Ajustes.",
   campaignBriefConnectBtn: "Conectar OpenAI",
   campaignBriefOpenSettingsBtn: "Abrir ajustes",
+  campaignBriefDetails: "Detalles",
   campaignBriefVerdictHot: "Vale la pena aceptar",
   campaignBriefVerdictWarm: "Merece un vistazo",
   campaignBriefVerdictCool: "Probablemente no",
@@ -3915,11 +3918,12 @@ const fr: Dict = {
   campaignBriefCopy: "Copier la fiche",
   campaignBriefCopied: "Copié",
   campaignBriefClose: "Fermer",
-  campaignBriefError: "Le Butler n'a pas pu rédiger une fiche complète pour le moment. Voici le détail du score.",
-  campaignBriefConnectHint: "Connectez votre propre clé d'API OpenAI et le Butler rédigera une fiche complète à chaque fois.",
+  campaignBriefError: "La fiche du serveur du Butler n'était pas disponible pour le moment, voici donc le détail du score. Réessayez dans un instant.",
+  campaignBriefConnectHint: "En connectant votre propre clé OpenAI, la fiche fonctionne de façon fiable. Vous payez OpenAI directement (généralement quelques centimes). Un abonnement ChatGPT ne fonctionne pas.",
   campaignBriefKeyErrorHint: "Votre clé OpenAI connectée n'a pas pu terminer cette fiche. Vérifiez-la dans les Réglages.",
   campaignBriefConnectBtn: "Connecter OpenAI",
   campaignBriefOpenSettingsBtn: "Ouvrir les réglages",
+  campaignBriefDetails: "Détails",
   campaignBriefVerdictHot: "À accepter",
   campaignBriefVerdictWarm: "Vaut un coup d'oeil",
   campaignBriefVerdictCool: "Plutôt à laisser",

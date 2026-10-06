@@ -32,6 +32,7 @@ const HELP_URL = "https://www.influencerbutler.com/help";
 const AFFILIATE_URL = "https://www.influencerbutler.com/dashboard/affiliates";
 // Chooser page so Mac recipients get the right build, not the Windows .exe.
 const DOWNLOAD_URL = "https://www.influencerbutler.com/download";
+const OPENAI_SETUP_URL = "https://www.influencerbutler.com/help/tutorials/openai-api-setup";
 const COMMUNITY_LINE = `Join our creator community on Facebook: ${FACEBOOK_GROUP_URL}`;
 
 export const PRO_COPY: Record<ProTier, TierCopy> = {
@@ -49,6 +50,8 @@ export const PRO_COPY: Record<ProTier, TierCopy> = {
         `  3. Log in to Amazon inside the app and run Orders Butler to sync your history`,
         ``,
         `Prefer to start in your browser? The free Chrome extension works on every account: https://www.influencerbutler.com/extension`,
+        ``,
+        `One setup note: the AI butlers use your own OpenAI API key. You pay OpenAI directly for what you use (usually pennies), not Influencer Butler. A ChatGPT subscription does not work. The AI Assistant is included free. Setup guide: ${OPENAI_SETUP_URL}`,
         ``,
         `Manage your plan anytime: ${v.subscriptionUrl}`,
         ``,

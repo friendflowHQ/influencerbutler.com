@@ -47,6 +47,8 @@ export interface OptionsDict {
   permissionDenied: string;
   // Category headings
   catAi: string;
+  catAiIntro: string;
+  catAiGuideLink: string;
   catProductData: string;
   catAffiliateTag: string;
   catDeeplink: string;
@@ -247,6 +249,9 @@ const en: OptionsDict = {
   statusUntested: "Not tested",
   permissionDenied: "Permission to reach that provider was declined.",
   catAi: "AI",
+  catAiIntro:
+    "Optional. AI features here (like drafting captions and voiceover scripts) use your own OpenAI API key. You pay OpenAI directly, usually pennies. A ChatGPT subscription does not work. The Influencer Butler AI (free) caption engine in the composer and the AI Assistant are included and need no key.",
+  catAiGuideLink: "How to get an OpenAI API key",
   catProductData: "Product data",
   catAffiliateTag: "Affiliate tags",
   catDeeplink: "Deeplink providers",
@@ -456,6 +461,9 @@ const es: OptionsDict = {
   statusUntested: "Sin probar",
   permissionDenied: "Se rechazó el permiso para acceder a ese proveedor.",
   catAi: "IA",
+  catAiIntro:
+    "Opcional. Las funciones de IA de aquí (como redactar pies de foto y guiones de voz) usan tu propia clave de API de OpenAI. Pagas a OpenAI directamente, normalmente centavos. Una suscripción a ChatGPT no sirve. El motor de pies de foto Influencer Butler AI (gratis) del compositor y el Asistente de IA están incluidos y no necesitan clave.",
+  catAiGuideLink: "Cómo obtener una clave de API de OpenAI",
   catProductData: "Datos de producto",
   catAffiliateTag: "Etiquetas de afiliado",
   catDeeplink: "Proveedores de deeplink",
@@ -665,6 +673,9 @@ const fr: OptionsDict = {
   statusUntested: "Non testé",
   permissionDenied: "L'autorisation d'accès à ce fournisseur a été refusée.",
   catAi: "IA",
+  catAiIntro:
+    "Facultatif. Les fonctions d'IA ici (comme la rédaction de légendes et de scripts voix off) utilisent votre propre clé d'API OpenAI. Vous payez OpenAI directement, généralement quelques centimes. Un abonnement ChatGPT ne fonctionne pas. Le moteur de légendes Influencer Butler AI (gratuit) du compositeur et l'Assistant IA sont inclus et n'ont pas besoin de clé.",
+  catAiGuideLink: "Comment obtenir une clé d'API OpenAI",
   catProductData: "Données produit",
   catAffiliateTag: "Balises d'affiliation",
   catDeeplink: "Fournisseurs de deeplink",

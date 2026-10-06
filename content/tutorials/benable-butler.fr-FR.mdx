@@ -6,6 +6,8 @@ category: Partnerships
 
 > **Espace en beta.** Benable Butler est en cours de déploiement auprès des utilisateurs avancés et peut faire surface à des bugs dans les cas limites. Utilisez **Dry run** ou **Preview** avant de cliquer Publier tant que vous n'avez pas vu l'espace traiter votre niche proprement quelques fois. Remontez tout ce qui paraît bizarre depuis l'espace Feedback.
 
+> **À savoir :** Ce butler utilise votre propre clé API OpenAI (vous payez OpenAI directement, généralement quelques centimes ; un abonnement ChatGPT ne fonctionne pas). [Configurez-la en 5 minutes](/help/tutorials/openai-api-setup).
+
 ## Ce que fait Benable Butler
 
 Benable est une plateforme de "listes achetables" où les créateurs publient des collections de produits curatées. Construire une collection Benable à la main est un long process : rechercher des produits dans une niche → choisir les ASIN qui collent → écrire titres + descriptions → publier sur Benable, liste par liste. Benable Butler exécute tout ce pipeline depuis un seul mot-clé de niche.
@@ -15,7 +17,7 @@ La sortie est une collection Benable complète : header, sous-listes, produits s
 ## Avant de commencer
 
 - **Un compte Benable** avec votre lien d'affiliation sauvegardé dans **API Integrations**.
-- **Clé d'API OpenAI** dans API Integrations - le modèle qui choisit les produits et écrit le copy.
+- **Clé d'API OpenAI** dans API Integrations ([comment l'obtenir](/help/tutorials/openai-api-setup)) - le modèle qui choisit les produits et écrit le copy.
 - **Tag d'affiliation Amazon** pour le marketplace Amazon ciblé (amazon.com, amazon.co.uk, amazon.ca, etc.). Pour **Walmart**, aucun tag n'est nécessaire : les utilisateurs connectés résolvent les produits Walmart via le service de recherche partagé, et Benable attribue les liens publiés à votre compte créateur.
 - **Le premier Publish** vous demande aussi de vous connecter à Benable dans la fenêtre Chrome que Butler ouvre - connexion manuelle une fois, ensuite la session persiste pour les runs suivants.
 

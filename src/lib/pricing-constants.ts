@@ -91,6 +91,7 @@ export const TIER_FEATURES: Record<Tier, readonly string[]> = {
     "Unlimited Instagram DMs",
     "Commission harvesting",
     "Deep link & affiliate integrations",
+    "AI butlers use your own OpenAI key (you pay OpenAI directly, usually pennies)",
     "1 activated device",
   ],
   duo: [
@@ -126,6 +127,7 @@ export const FREE_TIER_FEATURES: readonly string[] = [
   "Orders Butler: pull your full Amazon order history",
   "Storefront Butler: audit your photo & video coverage",
   "Influencer Butler branded deep links + Link Performance click dashboard",
+  "Optional AI butlers need your own OpenAI key (you pay OpenAI directly)",
 ];
 
 // Plan-string canonical form used by /api/checkout + /api/checkout/guest
