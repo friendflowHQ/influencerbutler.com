@@ -197,10 +197,12 @@ export async function sendHudCommand(command: HudCommand): Promise<HudCommandRes
     return { ok: false, needsPairing: true, message: "Connect the app to the extension first." };
   }
   let sawApp = false;
+  let sawBusy = false;
   for (const port of BRIDGE_PORTS) {
     const result = await sendToPort(port, command, token);
     if (result) {
       if (result.needsPairing) sawApp = true; // app answered but rejected the token
+      else if (result === BUSY_RESULT) sawBusy = true; // socket opened, no answer in time
       else return result;
     }
   }
@@ -208,13 +210,27 @@ export async function sendHudCommand(command: HudCommand): Promise<HudCommandRes
   if (sawApp) {
     return { ok: false, needsPairing: true, message: "The app no longer recognizes this extension. Reconnect it." };
   }
+  // The app accepted our socket, so it IS running: it was just too busy (or the
+  // command too slow) to answer in time. Saying "not running" here contradicted
+  // the "Connected" status line and, worse, made relay.ts treat a live local app
+  // as absent and re-send the deal to another computer. This wording must stay
+  // clear of /not running/ for that reason.
+  if (sawBusy) return { ok: false, message: BUSY_MESSAGE };
   return { ok: false, message: "The Influencer Butler app is not running." };
 }
 
+// Reply for "the app opened the socket but never answered the command".
+const BUSY_MESSAGE =
+  "The Influencer Butler app is busy and did not answer in time. Give it a few seconds and try again.";
+const BUSY_RESULT: HudCommandResult = { ok: false, message: BUSY_MESSAGE };
+// Once the app has accepted our token it owns the command; real work (image
+// fetch, queueing a post) can take longer than the connect/auth handshake.
+const COMMAND_RESULT_TIMEOUT_MS = 20_000;
+
 // Command socket: authenticate with the stored token, then send the command.
 // Resolves null when nothing is listening on this port (so the caller tries the
-// next), a result on a real answer, or { needsPairing } when the app answered
-// but rejected the token.
+// next), a result on a real answer, { needsPairing } when the app answered but
+// rejected the token, or BUSY_RESULT when the socket opened but no answer came.
 function sendToPort(
   port: number,
   command: HudCommand,
@@ -228,17 +244,24 @@ function sendToPort(
       resolve(null);
       return;
     }
+    let opened = false;
+    let settled = false;
     const done = (value: HudCommandResult | null) => {
+      if (settled) return;
+      settled = true;
       clearTimeout(timer);
       try {
         socket.close();
       } catch {
         // ignore
       }
-      resolve(value);
+      // A socket that connected but never produced a result is a busy app, not
+      // an absent one. A refused connection never fires onopen, so stays null.
+      resolve(value === null && opened ? BUSY_RESULT : value);
     };
-    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 3);
+    let timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 3);
     socket.onopen = () => {
+      opened = true;
       try {
         socket.send(JSON.stringify({ type: "auth", token }));
       } catch {
@@ -254,6 +277,8 @@ function sendToPort(
           needsPairing?: boolean;
         };
         if (frame.type === "authed") {
+          clearTimeout(timer);
+          timer = setTimeout(() => done(null), COMMAND_RESULT_TIMEOUT_MS);
           socket.send(JSON.stringify({ type: "command", command }));
           return;
         }
