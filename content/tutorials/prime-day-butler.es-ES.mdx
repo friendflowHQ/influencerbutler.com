@@ -53,7 +53,7 @@ Si falta alguna fuente, el espacio de trabajo sigue funcionando. Solo muestra me
 ## Primera ejecución
 
 1. Primero activa el espacio de trabajo. Viene oculto y solo se desbloquea cerca de un evento, así que no está en la navegación por defecto. Abre **Ajustes**, luego **Mostrar / Ocultar Butlers**, y activa **Prime Day Butler**.
-2. Abre **Prime Day Butler** en la navegación izquierda, dentro de **Amazon Butler**.
+2. Abre **Prime Day Butler** en la navegación izquierda y luego **Buscador de ofertas**. (El grupo Prime Day Butler tiene dos espacios de trabajo: **Buscador de ofertas**, que se explica aquí, y **Ofertas Prime Day**, que se explica más abajo.)
 3. Opcional: crea una **lista de palabras clave seguidas**. Escribe una palabra clave y haz clic en **Seguir**. Las palabras clave seguidas se usan en cada pasada y al buscar tendencias, así no las reescribes cada vez.
 4. Configura los filtros:
    - **Palabra clave**: búsqueda puntual opcional para esta ejecución.
@@ -66,6 +66,7 @@ Si falta alguna fuente, el espacio de trabajo sigue funcionando. Solo muestra me
 5. Haz clic en **Ejecutar ahora**. La línea de estado muestra el recuento, dividido en próximas, ganancias rápidas y de última hora.
 6. Usa las pestañas de grupo para enfocarte, ordena por **Ganancia est.** para publicar primero lo que más rinde, o por **vs mín. año** para empezar por las mejores ofertas del año. Escribe en el cuadro **Filtrar por palabra clave o ASIN** para acotar las filas visibles, o usa los filtros **Estado de la oferta** y **Solo con contenido creado**.
 7. Por fila: **Abrir** el producto, abrir los enlaces de la columna **Contenido** o **Descargar** el archivo que ya creaste, o **Añadir a Deals Butler** para encolar una sola publicación. **Exportar CSV** vuelca toda la lista filtrada, incluidas las columnas de ganancias.
+8. **Imprimir lista de contenido** te da una lista imprimible de ofertas activas o próximas para las que aún no tienes contenido, e **Imprimir lista para repostear** te da las ofertas para las que ya tienes contenido o una publicación. Ambas muestran las 60 primeras ordenadas por ganancias estimadas. En **Enviar ofertas a** eliges a qué espacio de Deals Butler van tus selecciones. Durante un evento Prime, por defecto es tu cola de Prime Day.
 
 ## Selecciona y publica en un par de clics
 
@@ -91,6 +92,16 @@ Si prefieres no marcar filas, despliega **Piloto automático del Deals Hub** (es
 
 Haz clic en **Buscar tendencias** para traer ofertas actuales de Prime Day desde la Creators API (una consulta base más tus palabras clave seguidas). Las nuevas ofertas se fusionan en la tabla con la misma priorización por ganancias, así las tendencias quedan junto a las tuyas.
 
+## El espacio Ofertas Prime Day
+
+**Ofertas Prime Day** es un espacio de trabajo de Deals Butler con su propia cola, así que tus ofertas del evento nunca se mezclan con las habituales. Todo lo que conoces de Deals Butler funciona igual: Crea tu publicación, el Programador y los Destinos sociales.
+
+- **Buscar ofertas** devuelve solo ofertas de Prime Big Deal Days del catálogo del Deals Hub. Las palabras clave lo acotan, y el precio, el porcentaje de descuento, las exclusiones, **Máx. de ofertas recopiladas**, **Prioridad de resultados** y **Rellenar** siguen aplicando.
+- En el **Centro de códigos promocionales**, la pestaña **Catálogo de ofertas del Prime Day** se abre con Prime Big Deal Days ya marcado. Usa **Actualizar desde Amazon** y filtra con **Solo activas**, **Solo próximas**, **Solo precio más bajo del año**, **Solo exclusivas Prime**, **Solo favoritas de creadores**, **Solo Creator Connections**, **Solo SPCC** y **Ocultar enviadas**.
+- Los códigos promocionales, las tarjetas de promociones y las búsquedas de cupones están ocultos aquí porque no se aplican a las ofertas de evento.
+- La primera vez que lo abres, tu horario de Deals Butler se copia con la publicación automática **desactivada**. Revisa cada cuánto publica y tu hora de inicio antes de activar el modo Prime Day.
+- **Ofertas de Walmart** tiene una pestaña **Ofertas del evento** (el Evento de Ofertas de Otoño de Walmart) donde eliges ofertas y las añades a tu cola.
+
 ## Publica tus ofertas de Prime Day: activa y desactiva el modo Prime Day
 
 Prime Day Butler encuentra las ofertas. Para publicarlas de verdad, cambia Deals Butler al **modo Prime Day**.
@@ -109,6 +120,10 @@ Mientras está activado, se publican tus ofertas de Prime Day y la publicación 
 
 **No tienes que acordarte de las fechas.** El día antes de Prime Day o de Prime Big Deal Days aparece un aviso arriba en la app que te dice que actives el modo Prime Day, y **Muéstrame dónde** señala directamente el interruptor. Cuando el evento termina y el modo sigue activado, un aviso te dice que lo desactives, y **Muéstrame cómo** señala el botón. Los avisos desaparecen solos cuando cambias el modo, y la x oculta uno para ese evento.
 
+**Que empiece y termine solo.** En la misma tarjeta, marca **Activar el modo Prime Day automáticamente cuando empiece el evento** (opcional). Se activa a medianoche (hora del Pacífico) el primer día del evento, siempre que tengas ofertas de Prime Day programadas y la publicación automática esté activada en el Programador. Si lo desactivas tú durante el evento, se queda desactivado. El modo Prime Day también se desactiva solo cuando termina el evento o se agotan tus ofertas de Prime Day, muestra un aviso breve con el motivo, y tus ofertas habituales vuelven a publicarse.
+
+**Walmart durante el modo Prime Day.** Walmart celebra su propio evento al mismo tiempo. El menú **Ofertas de Walmart durante el modo Prime Day** de la tarjeta te deja elegir **Seguir publicando mis ofertas del Evento de Ofertas de Otoño de Walmart** (por defecto), **Seguir publicando todas mis ofertas de Walmart** o **Pausar también Walmart**. Tus ofertas habituales de Amazon siguen en pausa en cualquier caso.
+
 ## Fórmulas de publicación y llamadas a la acción de Prime Day
 
 Tus espacios de Prime Day tienen sus propias **Fórmulas de inicio rápido** en Build Your Post, pensadas para ofertas de evento y no para ofertas normales. Están agrupadas en **Bajadas de precio de Prime Day**, **Mínimo del año**, **Fechas de inicio y fin** y **Prueba social**, además de los diseños de Telegram y de deal drop. Haz clic en una para rellenar el texto y el comentario fijado, y luego edita lo que quieras. Los diseños de código promocional, cupón y compra más, ahorra más están ocultos aquí porque no se aplican a las ofertas de evento.
@@ -116,6 +131,16 @@ Tus espacios de Prime Day tienen sus propias **Fórmulas de inicio rápido** en 
 Las ofertas de Prime Day también activan pastillas extra en la bandeja: **Starts** (cuándo empieza una oferta próxima), **Year-to-Date Low** (el precio más bajo que ha tenido el producto este año), **% Below YTD Low** (cuánto por debajo de ese mínimo está el precio) y **Deal Badge** (como Oferta por tiempo limitado). Una línea basada en una de ellas desaparece sola cuando una oferta no tiene ese dato, así que nunca publicas una etiqueta suelta.
 
 La pastilla **Call to action** usa líneas de Prime en estos espacios (por ejemplo "Prime deal, link in the first comment" o "Set a reminder, this Prime deal starts soon") y se quitan las llamadas a la acción normales. Las líneas que añadiste tú se conservan, y puedes seguir añadiendo, desactivando o borrando cualquier línea.
+
+## Envía a ambos butlers en días de evento
+
+Mientras dura Prime Day, Prime Big Deal Days o un evento de Walmart Deals, la extensión de Influencer Butler puede enviar una oferta al espacio de Ofertas Prime Day además de tu espacio habitual de Deals Butler. Abre los Ajustes de la extensión, luego Ofertas, y elige una opción en "En días de evento":
+
+- **Enviar solo a mi espacio elegido**: no cambia nada.
+- **Ofrecer un botón extra** (opción por defecto): la barra de la página de producto muestra la casilla "Enviar también a Ofertas Prime Day", y el botón Enviar a Ofertas de los sitios de ofertas incluye un botón "+ Ofertas Prime Day" al lado.
+- **Enviar siempre a ambos automáticamente**.
+
+La opción extra solo aparece durante un evento, y solo si el butler de Ofertas Prime Day está activado en la app.
 
 ## Detalles a tener en cuenta
 

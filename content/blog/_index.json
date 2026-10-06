@@ -2255,6 +2255,34 @@
       "imageAlt": "Illustration of a phone showing an Instagram channel filling with deal posts on a schedule",
       "imagePrompt": "a phone screen showing an Instagram-style channel filling itself with deal posts, a small scheduling clock beside it, friendly hands-off automation",
       "order": 222
+    },
+    {
+      "id": "prime-day-butler-whats-new",
+      "title": "What's New in Prime Day Butler for Prime Big Deal Days",
+      "category": "Deals",
+      "summary": "Prime Day mode now starts and stops itself, Prime Day Deals has its own queue and catalog, and event posts get new formulas. Here is everything that changed.",
+      "date": "2026-10-06",
+      "author": "The Influencer Butler Team",
+      "readingTime": "6 min read",
+      "keywords": "prime day butler, prime big deal days, prime day mode, auto post prime day deals, prime day deals workspace, deals butler",
+      "image": "/assets/blog/prime-day-deal-strategy.png",
+      "imageAlt": "Illustration of a creator dashboard with a Prime Day switch turning itself on while deal cards queue up",
+      "imagePrompt": "a friendly creator dashboard with a big event switch flipping on by itself, a calendar clock beside it, and a neat queue of deal cards ready to post",
+      "order": 223
+    },
+    {
+      "id": "prime-day-butler-find-and-auto-post-deals",
+      "title": "How to Find and Auto Post Prime Day Deals with Prime Day Butler",
+      "category": "Deals",
+      "summary": "A step-by-step walkthrough: unlock Prime Day Butler, find the deals worth posting, build the posts, and let Prime Day mode auto post them for you.",
+      "date": "2026-10-06",
+      "author": "The Influencer Butler Team",
+      "readingTime": "8 min read",
+      "keywords": "how to auto post prime day deals, prime day butler tutorial, find prime day deals, prime day mode, prime big deal days posting, deals butler setup",
+      "image": "/assets/blog/prime-day-live-day-tactics.png",
+      "imageAlt": "Illustration of a creator following a numbered checklist while deal posts flow out to social channels",
+      "imagePrompt": "a creator ticking off a numbered checklist as a stream of deal posts flows out to social media icons on its own, calm and organized",
+      "order": 224
     }
   ]
 }

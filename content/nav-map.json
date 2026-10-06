@@ -202,10 +202,10 @@
       "section": "prime-day-butler",
       "workspaceId": "prime-day-butler",
       "label": "Prime Day Butler",
-      "path": "Amazon Butler › Prime Day Butler",
+      "path": "Prime Day Butler › Deal Finder",
       "crumbs": [
-        "Amazon Butler",
-        "Prime Day Butler"
+        "Prime Day Butler",
+        "Deal Finder"
       ],
       "description": "Seasonal helper: surface Prime Day deals you can post about, including products you already own."
     },
