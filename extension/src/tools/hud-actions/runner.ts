@@ -17,6 +17,16 @@ export function toProductRef(signals: ProductSignals): ProductRef {
   const url = signals.asin
     ? canonicalProductUrl(signals.asin, signals.marketplace, "", retailer)
     : undefined;
+  // A Walmart rollback's was price, so the desktop can fill the "was $X" and
+  // "N% off" caption lines (it only back-fills them from a live offer lookup
+  // for Amazon). Walmart only: Amazon pushes keep their desktop-side enrichment.
+  const originalPrice =
+    retailer === "walmart" &&
+    signals.listPriceCents != null &&
+    signals.priceCents != null &&
+    signals.listPriceCents > signals.priceCents
+      ? signals.listPriceCents / 100
+      : undefined;
   return {
     asin: signals.asin as string,
     marketplace: signals.marketplace,
@@ -29,6 +39,7 @@ export function toProductRef(signals: ProductSignals): ProductRef {
     imageUrl: signals.imageUrl ?? undefined,
     commissionRatePct: signals.commissionRatePct,
     url: url || undefined,
+    ...(originalPrice !== undefined ? { originalPrice } : {}),
   };
 }
 

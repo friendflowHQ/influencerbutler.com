@@ -513,6 +513,13 @@ export async function initSearchOverlay(
       imageUrl: r.tile.imageUrl ?? undefined,
       commissionRatePct: null,
       url: r.tile.href ?? undefined,
+      // The tile's strikethrough was price, so the desktop caption can print
+      // "was $X" and "N% off" instead of a bare sale price.
+      ...(r.tile.wasPriceCents != null &&
+      r.tile.priceCents != null &&
+      r.tile.wasPriceCents > r.tile.priceCents
+        ? { originalPrice: r.tile.wasPriceCents / 100 }
+        : {}),
     }));
     setStatus(t().searchSendingDeals(products.length));
     // Honour the creator's "When a deal arrives" placement (Settings > Deals),

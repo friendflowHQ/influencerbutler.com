@@ -29,6 +29,9 @@ export type WalmartProduct = {
   title: string | null;
   brand: string | null;
   priceCents: number | null;
+  // Walmart's strikethrough "was" price (priceInfo.wasPrice) when the item is on
+  // rollback / reduced price; null for an everyday-price item.
+  wasPriceCents: number | null;
   currency: string;
   inStock: boolean;
   category: string | null;
@@ -48,7 +51,9 @@ export function parseWalmartProduct(nextData: NextData | null): WalmartProduct |
     | Record<string, unknown>
     | undefined;
   if (!p) return null;
-  const priceInfo = p.priceInfo as { currentPrice?: { price?: unknown; currencyUnit?: unknown } } | undefined;
+  const priceInfo = p.priceInfo as
+    | { currentPrice?: { price?: unknown; currencyUnit?: unknown }; wasPrice?: { price?: unknown } }
+    | undefined;
   const current = priceInfo?.currentPrice;
   const category = p.category as { path?: Array<{ name?: string }> } | undefined;
   const path = Array.isArray(category?.path) ? category.path : [];
@@ -58,6 +63,7 @@ export function parseWalmartProduct(nextData: NextData | null): WalmartProduct |
     title: typeof p.name === "string" ? p.name : null,
     brand: typeof p.brand === "string" ? p.brand : null,
     priceCents: centsOf(current?.price),
+    wasPriceCents: centsOf(priceInfo?.wasPrice?.price),
     currency: typeof current?.currencyUnit === "string" ? current.currencyUnit : "USD",
     inStock: p.availabilityStatus === "IN_STOCK",
     category: path.length ? path[path.length - 1]?.name ?? null : null,
@@ -76,9 +82,14 @@ function toSignals(prod: WalmartProduct | null, url: string): ProductSignals {
     title: prod?.title ?? null,
     priceCents: prod?.priceCents ?? null,
     currency: prod?.currency ?? "USD",
-    // Walmart deal semantics ride the tile-level dealBadge / wasPriceCents path,
-    // not the Amazon buybox readers, so the product-panel deal fields stay null.
-    listPriceCents: null,
+    // The was price only counts when it is really above the current price, so a
+    // stale or equal wasPrice never reads as a discount. dealKind stays null:
+    // Walmart's badge semantics ride the tile-level dealBadge path, not the
+    // Amazon buybox readers.
+    listPriceCents:
+      prod?.wasPriceCents != null && prod.priceCents != null && prod.wasPriceCents > prod.priceCents
+        ? prod.wasPriceCents
+        : null,
     dealKind: null,
     inStock: prod?.inStock ?? true,
     boughtPastMonth: null,

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { extractItemId, parseWalmartProduct } from "./product-signals";
+import { extractItemId, extractSignals, parseWalmartProduct } from "./product-signals";
+import { toProductRef } from "../tools/hud-actions/runner";
 import {
   parseWalmartSearchItems,
   parseWalmartPriceCents,
@@ -162,5 +163,44 @@ describe("Walmart tile DOM text parsers", () => {
     expect(parseWasPriceText("$39.99 current price $39.99 Was $1,299.00")).toBe(129900);
     // No reference price on a full-price tile.
     expect(parseWasPriceText("$15.99 current price $15.99")).toBeNull();
+  });
+});
+
+describe("Walmart was price on the product page", () => {
+  const withWas = (was: unknown, now = 79) => ({
+    props: {
+      pageProps: {
+        initialData: {
+          data: {
+            product: {
+              usItemId: "11381374703",
+              name: "Apple AirPods 4",
+              availabilityStatus: "IN_STOCK",
+              priceInfo: { currentPrice: { price: now, currencyUnit: "USD" }, wasPrice: was },
+            },
+          },
+        },
+      },
+    },
+  });
+  const docWith = (data: unknown): Document =>
+    ({ getElementById: () => ({ textContent: JSON.stringify(data) }) }) as unknown as Document;
+
+  it("reads priceInfo.wasPrice and sends it as the product ref's originalPrice", () => {
+    const signals = extractSignals(docWith(withWas({ price: 129.99 })), "https://www.walmart.com/ip/Apple-AirPods-4/11381374703");
+    expect(parseWalmartProduct(withWas({ price: 129.99 }))?.wasPriceCents).toBe(12999);
+    expect(signals.listPriceCents).toBe(12999);
+    const ref = toProductRef(signals);
+    expect(ref.priceCents).toBe(7900);
+    expect(ref.originalPrice).toBe(129.99);
+    expect(ref.url).toBe("https://www.walmart.com/ip/11381374703");
+  });
+
+  it("omits originalPrice for an everyday-price item or a was price at or below the current price", () => {
+    for (const was of [null, undefined, { price: 79 }, { price: 50 }]) {
+      const signals = extractSignals(docWith(withWas(was)), "https://www.walmart.com/ip/11381374703");
+      expect(signals.listPriceCents).toBeNull();
+      expect("originalPrice" in toProductRef(signals)).toBe(false);
+    }
   });
 });
