@@ -25,7 +25,7 @@ The point isn't engagement gaming. It's reciprocity: if you like a creator's or 
    - **Max likes per run**: start at the default 10. This is the run-wide budget across all accounts.
    - **Delay between likes**: 8-12 seconds is safe. Anything faster than 5 seconds invites rate-limiting.
    - **Recent posts per account**: how many of each account's newest posts to check (default 30).
-4. Keep **👀 Watch it run** on for the first pass so you can see the browser and sign in if asked.
+4. Keep **Watch it run** turned on in the top right of the app for the first pass so you can see the browser and sign in if asked.
 5. Click **Start Instagram Like Butler**.
 
 A Chrome window opens on each profile, collects the most recent posts, opens each one, and taps like with your configured delay. Posts that are already liked are skipped. Progress shows in the KPI tiles (**Total likes given**, **Likes this run**).
@@ -59,7 +59,7 @@ Instagram sometimes rate-limits accounts that act too fast. When the butler sees
 
 ## Common gotchas
 
-- **"Instagram sign-in is required" with Watch it run off**: the sign-in window is hidden in headless mode. Turn on 👀 Watch it run, start again, and sign in in the window that opens.
+- **"Instagram sign-in is required" with Watch it run off**: the butler stops and waits for you to sign in. The sign-in window opens on its own and comes to the front, so sign in there and start again.
 - **Scheduler appears stuck**: the account list is locked while a schedule is active. Click Stop Schedule, edit, restart.
 - **An account shows 0 likes after a run**: every recent post was already liked (check the History tab), or the run budget was spent on earlier accounts.
 - **A username is rejected**: enter just the handle (`@creator`) or a profile URL. Post links and hashtag pages aren't accounts.
