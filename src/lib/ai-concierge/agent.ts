@@ -212,7 +212,19 @@ const WALKTHROUGH_TOURS: Array<{ id: string; about: string }> = [
   { id: "collab-butler-setup", about: "Collab Butler: track brand collaborations in the CRM board" },
   { id: "orders-butler-harvest", about: "Orders Butler: harvest your Amazon order history" },
   { id: "retag-butler-setup", about: "Retag Butler: rescan posts to retag products, run and schedule" },
+  { id: "prime-big-deal-days", about: "Prime Day and Prime Big Deal Days prep: load the event deals, refresh orders, build and print the content list in Prime Day Butler" },
 ];
+
+/**
+ * Richer descriptions for tours that only newer desktop builds ship. They are NOT
+ * in WALKTHROUGH_TOURS or BASE_TOUR_IDS (older builds cannot resolve them); the
+ * desktop's live catalog is what makes them selectable, and walkthroughListLine
+ * swaps its bare title for this description when the id is in that catalog.
+ */
+const DESKTOP_ONLY_TOUR_ABOUT: Record<string, string> = {
+  "prime-day-deals-setup": "Prime Day Deals workspace and Prime Day mode: Search Deals, catalogue, caption formulas, calls to action, then the switch that posts the event queue",
+  "prime-day-foyer": "Choose whether the Foyer page shows Prime Day deals during the event",
+};
 
 /**
  * The curated tour ids the model may always pass, even when the desktop sends
@@ -229,7 +241,7 @@ export const BASE_TOUR_IDS: string[] = [
   "facebook-message-setup", "content-butler-plan", "messenger-setup",
   "pitch-butler-setup", "like-butler-setup", "storefront-butler-harvest",
   "benable-butler-setup", "collab-butler-setup", "orders-butler-harvest",
-  "retag-butler-setup",
+  "retag-butler-setup", "prime-big-deal-days",
 ];
 
 /** One catalog entry the desktop sends: a tour id and its human title. */
@@ -278,7 +290,8 @@ function walkthroughListLine(extra: TourCatalogEntry[]): string {
   for (const t of extra) {
     if (seen.has(t.id)) continue;
     seen.add(t.id);
-    parts.push(t.title ? `${t.id} (${t.title})` : t.id);
+    const about = DESKTOP_ONLY_TOUR_ABOUT[t.id] || t.title;
+    parts.push(about ? `${t.id} (${about})` : t.id);
   }
   return parts.join("; ");
 }
@@ -368,6 +381,53 @@ export function buildInstructions(
     "  Hub, the \"Scan my Amazon campaigns\" button reads codes from the brands they are accepted with,",
     "  and they can also paste or add codes they find. Many campaigns carry no code, so a scan finding",
     "  few or none is normal.",
+    "",
+    "Prime Day and Prime Big Deal Days (Amazon's two big deal events):",
+    "- Prime Day is the summer event and Prime Big Deal Days is the October one. Amazon announces the",
+    "  exact dates and the deal prices itself, so never state dates or prices as fact. The app shows a",
+    "  banner at the top before each event, and when a \"Live app status\" note has a Prime Day block it",
+    "  names the event that is on, its countdown, and each Deals Butler's real Prime Day mode state.",
+    "  Use that block to answer \"is my Prime Day mode on?\" instead of guessing.",
+    "- Four tools work together. (1) Prime Day Butler > Deal Finder finds what to post and film: it",
+    "  ranks Amazon deals by estimated earnings from your storefront content, products you own",
+    "  (Orders Butler), fresh Creators API finds and the Amazon Deals Hub (including upcoming deals).",
+    "  Buckets are Upcoming, Quick wins (you already have content) and Last-minute (you own it, no",
+    "  content yet). Print content list shows what to film, Print repost list what to resurface, and",
+    "  picks go to Deals Butler as drafts or ready to post. It ships hidden: Settings, then Show / Hide",
+    "  Butlers, switch on Prime Day Butler. (2) Prime Day Deals is a separate Deals Butler queue so",
+    "  event deals never mix with regular ones. Search Deals there returns only event deals, the Promo",
+    "  Code Hub has a Prime Day Deals Catalogue tab, and Build Your Post has Prime Day caption formulas",
+    "  and calls to action. Every Deals Butler clone has its own Prime Day Deals queue that posts",
+    "  through that clone's destinations. (3) Prime Day mode is the switch that posts the event queue:",
+    "  in the left menu, Deals Butler, Scheduler tab, the Prime Day mode card, tick \"Post my Prime Day",
+    "  deals instead.\" While it is on the regular deals pause by design. (4) The browser extension can",
+    "  also send a deal to Prime Day Deals on event days.",
+    "- The usual plan: before the event, run Deal Finder, print the content list, film, and send picks",
+    "  to Prime Day Deals. The day before, turn Prime Day mode on and check auto-post is on in the",
+    "  Scheduler (or tick \"Start Prime Day mode by itself when the event begins\"). During the event,",
+    "  re-run Deal Finder every 2 to 4 hours because prices flip. Prime Day mode turns itself off when",
+    "  the event ends or the Prime deals run out, and regular deals resume. They can also click Turn",
+    "  off Prime Day mode in the banner at the top of Deals Butler.",
+    "- Common answers. Prime deals not posting: check Prime Day mode is on, auto-post is on in that",
+    "  Deals Butler's Scheduler, the Prime Day Deals queue actually has deals, destinations are",
+    "  connected (Prime posts use the main Deals Butler's Social Destinations), and nothing is paused",
+    "  (see the live status). Upcoming deals are embargoed: the app asks to confirm before queuing one,",
+    "  and they should wait until the deal is live. Deal Finder wants fresh orders, so the Prime Big",
+    "  Deal Days walkthrough refreshes a stale Orders Butler first. Walmart during Prime Day mode: a",
+    "  dropdown on the card keeps the Walmart Fall Deals Event deals, keeps all Walmart deals, or",
+    "  pauses Walmart too. Amazon promo codes and coupons do not apply to event deals.",
+    "- Foyer page: in newer app versions, Foyer Butler, Today's Deals storefront, has a \"Prime Day",
+    "  deals on this page\" choice (ask me, yes, or no). Yes makes the public page show only that Deals",
+    "  Butler's Prime Day deals during the event and go back by itself when it ends. If the user does",
+    "  not see that setting, tell them to update the app.",
+    "- Questions first: when someone asks for help with Prime Day or Prime Big Deal Days with no",
+    "  specifics, ask ONE short question with three choices: finding what to post and film, setting up",
+    "  posting, or something not working. Then answer and offer the matching walkthrough: finding and",
+    "  filming is prime-big-deal-days; posting, Prime Day mode, or the queue is prime-day-deals-setup;",
+    "  the Foyer page is prime-day-foyer; stale orders is orders-butler-harvest. Use the Prime Day ids",
+    "  only when they appear in the curated tours list above; otherwise compose steps from the menu map.",
+    "- Do not call Black Friday Butler a Prime Day tool. It is the separate Black Friday and Cyber",
+    "  Monday radar.",
     "",
     "Giving directions:",
     "- When you tell the user how to do something in the desktop app, give the exact click path,",

@@ -366,6 +366,50 @@ describe("tool schemas", () => {
   });
 });
 
+describe("Prime Day and Prime Big Deal Days coaching", () => {
+  it("prompt carries the event facts, the questions-first rule, and no em-dash", () => {
+    const s = buildInstructions();
+    expect(s).toContain("Prime Day and Prime Big Deal Days");
+    expect(s).toContain("Prime Day mode");
+    expect(s).toContain("Deal Finder");
+    expect(s).toContain("Prime Day Deals");
+    // Never state dates or prices as fact: Amazon announces them.
+    expect(s).toMatch(/never state dates or prices as fact/i);
+    // Ask one short question first when the request is vague.
+    expect(s).toMatch(/ask ONE short question with three choices/);
+    expect(s).not.toContain("—");
+  });
+
+  it("the prep tour is always offerable; the newer Prime Day tours only via the live catalog", () => {
+    const toolEnum = (extra: { id: string; title?: string }[] = []) => {
+      const tools = toChatTools(extra);
+      const tool = tools[AGENT_TOOLS.findIndex((t) => t.name === "start_walkthrough")] as unknown as {
+        function: { parameters: { properties: Record<string, { enum?: string[] }> } };
+      };
+      return tool.function.parameters.properties.tourId.enum ?? [];
+    };
+    expect(toolEnum()).toContain("prime-big-deal-days");
+    // Older desktops cannot resolve these, so they are not in the base enum.
+    expect(toolEnum()).not.toContain("prime-day-deals-setup");
+    expect(toolEnum()).not.toContain("prime-day-foyer");
+    const widened = toolEnum([{ id: "prime-day-deals-setup", title: "Prime Day Deals and Prime Day mode" }]);
+    expect(widened).toContain("prime-day-deals-setup");
+  });
+
+  it("describes the Prime Day tours richly only when the desktop ships them", () => {
+    const without = buildInstructions();
+    expect(without).toContain("prime-big-deal-days (");
+    // The routing hint names the id, but the curated list must not describe it.
+    expect(without).not.toContain("prime-day-deals-setup (");
+    const withIt = buildInstructions(undefined, [
+      { id: "prime-day-deals-setup", title: "Prime Day Deals and Prime Day mode" },
+      { id: "prime-day-foyer", title: "Show Prime Day deals on your Foyer page" },
+    ]);
+    expect(withIt).toMatch(/prime-day-deals-setup \(Prime Day Deals workspace and Prime Day mode/);
+    expect(withIt).toMatch(/prime-day-foyer \(Choose whether the Foyer page/);
+  });
+});
+
 describe("guided walkthroughs", () => {
   it("prompt includes the walkthrough guidance and section keys", () => {
     const s = buildInstructions();
