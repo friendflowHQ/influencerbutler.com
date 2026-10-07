@@ -1,0 +1,65 @@
+---
+title: "Miroir de groupe : copiez les publications de votre groupe Facebook vers Telegram"
+summary: Surveillez votre groupe Facebook et copiez chaque nouvelle publication, avec sa photo et ses liens, vers votre canal Telegram automatiquement. Idéal quand Facebook cache vos publications.
+category: Other
+---
+
+Miroir de groupe surveille les groupes Facebook que vous choisissez et copie chaque nouvelle publication vers votre canal Telegram, avec sa photo et ses liens. Si vous, votre équipe ou vos assistants virtuels publiez des offres dans un groupe Facebook et que Facebook ne les montre pas à tout le monde, cela vous donne un second endroit où chaque offre arrive.
+
+## Avant de commencer
+
+1. **Connectez Telegram une fois.** Miroir de groupe envoie via le même bot et le même canal Telegram que Deals Butler. Si vous publiez déjà des offres sur Telegram, vous êtes déjà connecté. Sinon, suivez d'abord le [tutoriel de configuration du bot Telegram](/help/tutorials/telegram-bot). La carte État de Miroir de groupe affiche **Connecté** quand tout est prêt.
+2. **Connectez-vous à Facebook.** Miroir de groupe lit le groupe avec l'un de vos comptes Facebook de Deals Butler. Vérifiez que ce compte y est connecté et qu'il est **membre du groupe** que vous voulez copier.
+3. Gardez Influencer Butler ouvert et votre ordinateur actif. Miroir de groupe fonctionne sur votre ordinateur, pas dans le cloud.
+
+## Configurez-le
+
+Ouvrez **Telegram Butler** et cliquez sur **Miroir de groupe**. Tout s'enregistre pendant que vous écrivez, donc il n'y a pas de bouton Enregistrer.
+
+1. Sous **Groupes à surveiller**, collez le lien de chaque groupe Facebook, un par ligne, et choisissez le **Compte Facebook** qui en est membre.
+2. Sous **Quoi copier**, choisissez vos filtres (voir plus bas).
+3. Sous **Liens**, choisissez l'apparence des liens dans Telegram.
+4. Sous **Planification**, activez **Vérifier automatiquement** et choisissez la fréquence. Le plus rapide autorisé est toutes les 10 minutes, car Facebook ralentit les comptes qui chargent des pages trop souvent.
+
+Cliquez sur **Vérifier maintenant** à tout moment pour regarder vos groupes tout de suite.
+
+## Seules les nouvelles publications sont copiées
+
+La première fois qu'un groupe est vérifié, Miroir de groupe se contente de **mémoriser** les publications déjà présentes. Ensuite, seules les publications faites après sont copiées, donc l'activer n'inonde jamais votre canal d'anciennes publications. Si vous voulez aussi copier celles qui existent déjà, activez **Copier aussi les publications déjà présentes dans le groupe** avant la première vérification.
+
+## Choisissez quoi copier
+
+Utilisez l'un des filtres, ou les deux ensemble :
+
+- **Seulement les publications avec un lien d'achat** (activé par défaut). Seules les publications contenant un lien Amazon ou Walmart sont copiées, donc les questions et les discussions restent hors de Telegram. Désactivez-le pour copier toutes les nouvelles publications.
+- **Seulement les publications de certaines personnes** (facultatif). Saisissez les noms des personnes dont vous voulez les publications, un par ligne, tels que Facebook les affiche. C'est pratique quand vous et vos assistants publiez les offres et que les membres publient tout le reste. Laissez vide pour copier les publications de tout le monde.
+
+Les publications écartées par un filtre ne sont jamais copiées plus tard, même si vous changez les filtres.
+
+## Choisissez l'apparence des liens
+
+- **Copier tel que publié** (par défaut). Les liens arrivent dans Telegram exactement comme dans le groupe.
+- **Utiliser mon ID de suivi.** Les liens Amazon sont remplacés par votre propre ID de suivi Amazon, par exemple `votrenom-20`. Les liens Walmart et les liens courts ne sont jamais modifiés. Utilisez-le si votre équipe publie des liens sans votre balise.
+
+## Photos et longues publications
+
+La première photo d'une publication est copiée avec le texte. Si le texte est trop long pour tenir sous une photo Telegram, la photo est envoyée d'abord et le texte suit juste après.
+
+## Gardez un œil dessus
+
+- **Activité récente** liste les dernières publications copiées, ou qui n'ont pas pu l'être.
+- Les publications copiées apparaissent aussi dans **Gérer les publications**, où vous pouvez les modifier ou les supprimer dans Telegram.
+- **Recommencer** oublie tout ce qui a été copié. La prochaine vérification traite vos groupes comme nouveaux.
+- **Avancé** vous permet de changer le nombre de publications lues par groupe et le maximum copié par vérification. Les valeurs par défaut conviennent à la plupart des groupes.
+
+## Bon à savoir
+
+- Les modifications faites à une publication Facebook après sa copie ne sont pas recopiées, et supprimer une publication Facebook ne supprime pas la copie Telegram.
+- Miroir de groupe ne voit que ce que le compte Facebook voit. Si rien n'est trouvé, vérifiez que le compte est connecté et membre du groupe.
+- Si Telegram n'est pas connecté quand de nouvelles publications sont trouvées, rien n'est perdu. Elles sont reprises lors d'une vérification ultérieure une fois Telegram connecté, tant qu'elles restent près du haut du groupe.
+- Facebook change parfois la construction de ses pages. Si la lecture cesse de fonctionner, mettez à jour Influencer Butler et réessayez.
+
+## Voir aussi
+
+- [Tutoriel Telegram Butler](/help/tutorials/telegram-compose) - rédigez, programmez et gérez vos propres publications Telegram.
+- [Tutoriel de configuration du bot Telegram](/help/tutorials/telegram-bot) - créez le bot et connectez votre canal.

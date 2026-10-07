@@ -1,0 +1,65 @@
+---
+title: "Group Mirror: copy your Facebook group posts to Telegram"
+summary: Watch your Facebook group and copy every new post, with its photo and links, to your Telegram channel automatically. Perfect when Facebook is hiding your posts.
+category: Other
+---
+
+Group Mirror watches the Facebook groups you choose and copies each new post to your Telegram channel, with its photo and links. If you, your team, or your VAs post deals in a Facebook group and Facebook is not showing them to everyone, this gives you a second place where every deal lands.
+
+## Before you start
+
+1. **Connect Telegram once.** Group Mirror sends through the same Telegram bot and channel as Deals Butler. If you already post deals to Telegram, you are connected. If not, follow the [Telegram Bot setup tutorial](/help/tutorials/telegram-bot) first. The Status card at the top of Group Mirror shows **Connected** when it is ready.
+2. **Sign in to Facebook.** Group Mirror reads the group with one of your Facebook accounts from Deals Butler. Make sure that account is signed in there, and that it is a **member of the group** you want to copy.
+3. Keep Influencer Butler open and your computer awake. Group Mirror runs on your computer, not in the cloud.
+
+## Set it up
+
+Open **Telegram Butler** and click **Group Mirror**. Everything saves as you type, so there is no Save button.
+
+1. Under **Groups to watch**, paste the link to each Facebook group, one per line, and pick the **Facebook account** that is a member.
+2. Under **What to copy**, choose your filters (see below).
+3. Under **Links**, choose how links should look in Telegram.
+4. Under **Schedule**, turn on **Check automatically** and pick how often. The fastest allowed is every 10 minutes, because Facebook slows down accounts that load pages too often.
+
+Click **Check now** any time to look at your groups right away.
+
+## Only new posts are copied
+
+The first time a group is checked, Group Mirror only **remembers** the posts that are already there. From then on, only posts made after that are copied, so turning it on never floods your channel with old posts. If you want the existing posts copied too, turn on **Also copy the posts already in the group** before the first check.
+
+## Choose what to copy
+
+Use either filter, or both together:
+
+- **Only posts with a shop link** (on by default). Only posts that contain an Amazon or Walmart link are copied, so questions and chatter stay out of Telegram. Turn it off to copy every new post.
+- **Only posts from certain people** (optional). Type the names of the people whose posts you want, one per line, spelled the way Facebook shows them. This is handy when you and your VAs post the deals and members post everything else. Leave it empty to copy posts from everyone.
+
+Posts that are skipped by a filter are never copied later, even if you change the filters.
+
+## Choose how links look
+
+- **Copy exactly as posted** (default). Links go to Telegram exactly as they were in the group.
+- **Use my tracking ID.** Amazon links are changed to your own Amazon tracking ID, for example `yourname-20`. Walmart links and short links are never changed. Use this if your team posts links without your tag.
+
+## Photos and long posts
+
+The first photo in a post is copied along with the text. If the text is too long to fit under a Telegram photo, the photo is sent first and the text follows right after.
+
+## Keep an eye on it
+
+- **Recent activity** lists the latest posts that were copied, or could not be copied.
+- Copied posts also appear in **Manage posts**, where you can edit or delete them in Telegram.
+- **Start over** forgets everything that has been copied. The next check treats your groups as new.
+- **Advanced** lets you change how many posts are read per group and the most posts copied per check. The defaults work well for most groups.
+
+## Good to know
+
+- Edits made to a Facebook post after it was copied are not copied again, and deleting a Facebook post does not delete the Telegram copy.
+- Group Mirror can only see what the Facebook account can see. If nothing is found, check that the account is signed in and is a member of the group.
+- If Telegram is not connected when new posts are found, nothing is lost. They are picked up on a later check once Telegram is connected, as long as they are still near the top of the group.
+- Facebook sometimes changes how its pages are built. If reading ever stops working, update Influencer Butler and try again.
+
+## Related
+
+- [Telegram Butler tutorial](/help/tutorials/telegram-compose) - compose, schedule, and manage your own Telegram posts.
+- [Telegram Bot setup tutorial](/help/tutorials/telegram-bot) - create the bot and connect your channel.

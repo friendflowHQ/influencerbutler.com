@@ -816,6 +816,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "telegram-mirror",
+      "title": "Group Mirror: copy your Facebook group posts to Telegram",
+      "category": "Other",
+      "summary": "Watch your Facebook group and copy every new post, with its photo and links, to your Telegram channel automatically. Perfect when Facebook is hiding your posts.",
+      "order": 361,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "reddit-compose",
       "title": "Reddit Butler: post to a subreddit",
       "category": "Other",
