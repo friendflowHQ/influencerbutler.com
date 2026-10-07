@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Extensión de Influencer Butler: cómo funciona</title>
+<link rel="stylesheet" href="fonts.css">
+<style>
+  :root {
+    --brand: #f97316; --brand-50: #fff7ed; --brand-100: #ffedd5; --brand-200: #fed7aa;
+    --brand-300: #fdba74; --brand-400: #fb923c; --brand-600: #ea580c; --brand-700: #c2410c;
+    --brand-800: #9a3412; --brand-900: #7c2d12; --amber-50: #fffbeb; --amber-200: #fde68a;
+    --text: #111827; --text-2: #374151; --muted: #6b7280; --border: #e5e7eb;
+    --good: #15803d; --good-bg: #f0fdf4; --good-bd: #bbf7d0;
+  }
+  @page { size: 8.5in 11in; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: 'Inter', system-ui, 'Segoe UI', Arial, sans-serif; color: var(--text); font-size: 10.4px; line-height: 1.5; background: #fff; }
+  .page { width: 8.5in; height: 11in; position: relative; overflow: hidden; page-break-after: always; padding: 0.5in 0.55in 0.62in; background: linear-gradient(180deg, #fffbf5 0%, #ffffff 22%); }
+  .page:last-child { page-break-after: auto; }
+
+  /* header */
+  .brandbar { display: flex; align-items: center; gap: 14px; padding: 12px 16px; border-radius: 16px; border: 1px solid var(--brand-200);
+    background: linear-gradient(120deg, #fff7ed 0%, #ffedd5 60%, #fde7c8 100%); box-shadow: 0 6px 18px rgba(194,65,12,.08); }
+  .brandbar img { width: 66px; height: 66px; border-radius: 12px; background: #fff; border: 1px solid var(--brand-200); }
+  .brandbar .t { flex: 1; }
+  .brandbar h1 { font-size: 21px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; color: var(--text); }
+  .brandbar p { font-size: 10.6px; color: var(--text-2); margin-top: 3px; }
+  .pills { display: flex; flex-direction: column; gap: 5px; align-items: flex-end; }
+  .pill { display: inline-block; font-size: 8.4px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; padding: 3px 10px; border-radius: 999px; background: #fff; color: var(--brand-700); border: 1px solid var(--brand-200); }
+  .pill.solid { background: var(--brand-600); color: #fff; border-color: var(--brand-600); }
+
+  .minihead { display: flex; align-items: center; gap: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--brand-200); margin-bottom: 14px; }
+  .minihead img { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--brand-200); background: #fff; }
+  .minihead b { font-size: 11px; font-weight: 800; }
+  .minihead span { margin-left: auto; font-size: 8.4px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--brand-700); }
+
+  /* type */
+  .kicker { font-size: 8.6px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--brand-700); margin-bottom: 3px; }
+  h2 { font-size: 16px; font-weight: 800; letter-spacing: -0.015em; margin-bottom: 4px; }
+  h3 { font-size: 11.4px; font-weight: 800; margin-bottom: 3px; }
+  .lead { color: var(--text-2); font-size: 10.6px; margin-bottom: 10px; }
+  .sec { margin-top: 13px; }
+  p + p { margin-top: 5px; }
+  strong { font-weight: 700; }
+  .muted { color: var(--muted); }
+
+  /* cards */
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; }
+  .grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 11px; }
+  .card { background: #fff; border: 1px solid var(--brand-200); border-radius: 14px; padding: 11px 13px; box-shadow: 0 1px 3px rgba(0,0,0,.05), 0 4px 12px rgba(0,0,0,.035); }
+  .card.warm { background: linear-gradient(160deg, #fff7ed 0%, #fffbeb 100%); border-color: var(--amber-200); }
+  .card .label { font-size: 8.4px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--brand-700); margin-bottom: 4px; }
+  .card .big { font-size: 15px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 2px; }
+  ul.tight { list-style: none; }
+  ul.tight li { position: relative; padding-left: 13px; margin-top: 3px; color: var(--text-2); }
+  ul.tight li::before { content: ""; position: absolute; left: 2px; top: .52em; width: 5px; height: 5px; border-radius: 50%; background: var(--brand); }
+
+  /* score bars */
+  .bars { margin-top: 8px; }
+  .bar { display: grid; grid-template-columns: 112px 1fr 36px; align-items: center; gap: 9px; margin-top: 7px; }
+  .bar .n { font-weight: 700; font-size: 10.4px; }
+  .bar .n small { display: block; font-weight: 500; font-size: 8.8px; color: var(--muted); margin-top: 1px; }
+  .track { height: 11px; background: var(--brand-100); border-radius: 999px; overflow: hidden; }
+  .fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--brand-400), var(--brand-600)); }
+  .bar .pts { font-weight: 800; color: var(--brand-700); text-align: right; font-size: 10.6px; }
+  .bands { display: flex; gap: 8px; margin-top: 10px; }
+  .band { flex: 1; border-radius: 12px; padding: 8px 10px; border: 1px solid; text-align: center; }
+  .band b { display: block; font-size: 15px; font-weight: 800; }
+  .band span { font-size: 9px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .band.hot { background: var(--brand-50); border-color: var(--brand-200); color: var(--brand-700); }
+  .band.warm { background: var(--amber-50); border-color: var(--amber-200); color: #b45309; }
+  .band.cool { background: #f1f5f9; border-color: #e2e8f0; color: #64748b; }
+  .math { font-variant-numeric: tabular-nums; background: var(--brand-50); border: 1px dashed var(--brand-300); border-radius: 10px; padding: 8px 11px; margin-top: 9px; color: var(--text-2); }
+
+  /* chips */
+  .chip { display: inline-block; border-radius: 999px; padding: 1px 8px; font-size: 9.2px; font-weight: 700; border: 1px solid #e2e8f0; background: #f8fafc; color: #334155; white-space: nowrap; }
+  .chip.good { background: var(--good-bg); border-color: var(--good-bd); color: var(--good); }
+  .chip.score { background: var(--brand-50); border-color: var(--brand-200); color: var(--brand-700); font-weight: 800; }
+  .chip.warn { background: var(--amber-50); border-color: var(--amber-200); color: #b45309; }
+
+  table { width: 100%; border-collapse: separate; border-spacing: 0; border: 1px solid var(--brand-200); border-radius: 12px; overflow: hidden; margin-top: 8px; }
+  th { text-align: left; background: var(--brand-50); font-size: 8.4px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: var(--brand-700); padding: 6px 9px; border-bottom: 1px solid var(--brand-200); }
+  td { padding: 6px 9px; vertical-align: top; border-bottom: 1px solid #f3f4f6; color: var(--text-2); font-size: 9.7px; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { white-space: nowrap; width: 112px; }
+  td b { color: var(--text); }
+
+  .tag { font-size: 8.2px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: 1px 7px; border-radius: 999px; }
+  .tag.real { background: var(--good-bg); color: var(--good); border: 1px solid var(--good-bd); }
+  .tag.est { background: var(--amber-50); color: #b45309; border: 1px solid var(--amber-200); }
+
+  .src { margin-top: 8px; }
+  .src .row { display: grid; grid-template-columns: 86px 1fr; gap: 9px; padding: 4px 0; border-top: 1px solid #f3f4f6; }
+  .src .row:first-child { border-top: 0; }
+  .src .row .k { font-weight: 700; color: var(--text); font-size: 9.7px; }
+  .src .row .v { color: var(--text-2); font-size: 9.7px; }
+
+  .steps { counter-reset: s; margin-top: 7px; }
+  .steps li { list-style: none; position: relative; padding-left: 26px; margin-top: 5px; color: var(--text-2); }
+  .steps li::before { counter-increment: s; content: counter(s); position: absolute; left: 0; top: -1px; width: 18px; height: 18px; border-radius: 50%; background: var(--brand-600); color: #fff; font-weight: 800; font-size: 9.6px; display: flex; align-items: center; justify-content: center; }
+
+  .faq .q { font-weight: 800; font-size: 10.6px; margin-top: 8px; }
+  .faq .a { color: var(--text-2); margin-top: 1px; }
+
+  .foot { position: absolute; left: 0.55in; right: 0.55in; bottom: 0.3in; display: flex; justify-content: space-between; align-items: center; font-size: 8.2px; color: var(--muted); border-top: 1px solid var(--brand-200); padding-top: 6px; }
+  .foot b { color: var(--brand-700); }
+  .callout { border-radius: 12px; padding: 9px 12px; background: var(--amber-50); border: 1px solid var(--amber-200); color: #78350f; margin-top: 10px; }
+  .callout b { color: #78350f; }
+  /* translated copy runs longer: tighten spacing so each page still fits */
+  body { font-size: 10px; line-height: 1.45; }
+  .lead { font-size: 10.2px; margin-bottom: 8px; }
+  .sec { margin-top: 11px; }
+  td, .src .row .k, .src .row .v { font-size: 9.3px; }
+  td { padding: 4.5px 9px; }
+  .src .row { padding: 3px 0; }
+  .card { padding: 9px 12px; }
+  .steps li { margin-top: 4px; }
+  .faq .q { margin-top: 6px; }
+  .callout { padding: 7px 11px; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<!-- ============ PAGE 1 ============ -->
+<section class="page">
+  <div class="brandbar">
+    <img src="logo.png" alt="Influencer Butler">
+    <div class="t">
+      <h1>Cómo funciona Influencer Butler</h1>
+      <p>La extensión de Chrome: puntuaciones, fuentes de datos y estimaciones. Una referencia rápida para tener a mano mientras exploras.</p>
+    </div>
+    <div class="pills"><span class="pill solid">Extensión de Chrome</span><span class="pill">Guía de referencia</span></div>
+  </div>
+
+  <div class="sec" style="margin-top:16px">
+    <div class="kicker">De un vistazo</div>
+    <h2>Añade una capa de dinero a la página en la que ya estás</h2>
+    <p class="lead">En los resultados de búsqueda y las páginas de producto de Amazon y Walmart, el Butler muestra cuánto podría ganarte un producto y si vale la pena crear contenido sobre él, para que decidas en segundos sin abrir cada anuncio.</p>
+  </div>
+
+  <div class="grid3">
+    <div class="card warm">
+      <div class="label">1. Leer</div>
+      <div class="big">La página</div>
+      <p>El precio, las ofertas, las valoraciones, las reseñas y el dato de Amazon de «comprados el mes pasado» se leen directamente de la página que estás viendo.</p>
+    </div>
+    <div class="card warm">
+      <div class="label">2. Consultar</div>
+      <div class="big">Tarifas y demanda</div>
+      <p>Las tarifas de comisión y de campaña, el stock, el número de videos y el ranking de ventas vienen de las páginas de producto, de los tarifarios y de nuestro catálogo compartido.</p>
+    </div>
+    <div class="card warm">
+      <div class="label">3. Puntuar</div>
+      <div class="big">De 0 a 100</div>
+      <p>Seis señales se combinan en un solo Butler Score, para ordenar los resultados como los valoraría un creador.</p>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="kicker">El Butler Score</div>
+    <h2>Cómo se construye el número de 0 a 100</h2>
+    <p class="lead" style="margin-bottom:2px">Seis señales, ponderadas según lo que realmente decide si un video gana dinero. Los puntos siempre suman la puntuación que ves.</p>
+    <div class="bars">
+      <div class="bar"><div class="n">Comisión<small>ganada por venta</small></div><div class="track"><div class="fill" style="width:100%"></div></div><div class="pts">30</div></div>
+      <div class="bar"><div class="n">Espacio libre para video<small>qué tan saturado está</small></div><div class="track"><div class="fill" style="width:83%"></div></div><div class="pts">25</div></div>
+      <div class="bar"><div class="n">Demanda<small>¿se vende ahora?</small></div><div class="track"><div class="fill" style="width:67%"></div></div><div class="pts">20</div></div>
+      <div class="bar"><div class="n">En stock<small>se puede comprar</small></div><div class="track"><div class="fill" style="width:33%"></div></div><div class="pts">10</div></div>
+      <div class="bar"><div class="n">Campaña<small>bonus si existe una</small></div><div class="track"><div class="fill" style="width:33%"></div></div><div class="pts">10</div></div>
+      <div class="bar"><div class="n">Precio<small>que valga el esfuerzo</small></div><div class="track"><div class="fill" style="width:17%"></div></div><div class="pts">5</div></div>
+    </div>
+    <div class="bands">
+      <div class="band hot"><b>70+</b><span>Muy recomendable</span></div>
+      <div class="band warm"><b>40 a 69</b><span>Vale un vistazo</span></div>
+      <div class="band cool"><b>Menos de 40</b><span>Baja prioridad</span></div>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:12px">
+    <div class="card">
+      <h3>Cómo se valora cada señal</h3>
+      <ul class="tight">
+        <li><strong>Comisión:</strong> dólares por venta. Puntos completos a partir de $5, y proporcionales por debajo.</li>
+        <li><strong>Espacio libre:</strong> cuantos menos videos de influencers haya, más puntos. Con seis o más, esta parte baja a cero.</li>
+        <li><strong>Demanda:</strong> el dato «comprados el mes pasado» de Amazon. Puntos completos con 200 o más.</li>
+        <li><strong>Precio:</strong> puntos completos a partir de $20.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>¿Aún no se sabe? Sin penalización.</h3>
+      <p>Si una señal aún no ha cargado (por ejemplo, el número de videos en un resultado de búsqueda), recibe <strong>medio crédito</strong> en lugar de bajar la puntuación. Abre el producto o pulsa <strong>Escanear videos de esta página</strong> y la puntuación se afina.</p>
+      <div class="math"><strong>Ejemplo:</strong> una laptop de $299.99 con una tasa del 2.5% obtiene 83: comisión 30 + espacio libre 12.5 (sin escanear) + demanda 20 + stock 5 (sin comprobar aún) + precio 5 + campaña 10.</div>
+    </div>
+  </div>
+
+  <div class="foot"><span><b>Influencer Butler</b> &middot; influencerbutler.com</span><span>Página 1 de 4</span></div>
+</section>
+
+<!-- ============ PAGE 2 ============ -->
+<section class="page">
+  <div class="minihead"><img src="logo.png" alt=""><b>Influencer Butler</b><span>Cómo leer los resultados</span></div>
+
+  <div class="kicker">Butler Approved</div>
+  <h2>La comprobación de sí o no detrás de «Aprobado por Butler» y «Buen candidato»</h2>
+  <p class="lead">Las mismas señales que la puntuación, como una lista de comprobación simple que puedes ajustar en los ajustes de la extensión.</p>
+
+  <div class="grid2">
+    <div class="card warm">
+      <div class="label">Pasan las cuatro</div>
+      <div class="big"><span class="chip good" style="font-size:11px">Aprobado por Butler</span></div>
+      <ul class="tight">
+        <li>Se vende ahora: 50 o más comprados el mes pasado</li>
+        <li>Espacio libre: 5 videos de influencers o menos</li>
+        <li>En stock</li>
+        <li>Precio de al menos $20</li>
+      </ul>
+    </div>
+    <div class="card warm">
+      <div class="label">Pasan tres, número de videos desconocido</div>
+      <div class="big"><span class="chip" style="font-size:11px">Buen candidato</span></div>
+      <p>Todo lo que podemos ver pasa, pero el número de videos aún no ha cargado. Abre la página del producto o escanea los videos para confirmarlo.</p>
+      <p class="muted" style="margin-top:4px">Si falla cualquier comprobación, se quita la insignia en vez de adivinar.</p>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="kicker">Glosario de chips</div>
+    <h2>Qué significa cada chip de un resultado de búsqueda</h2>
+    <table>
+      <tr><th>Chip</th><th>Qué te dice</th><th>Cómo se calcula</th></tr>
+      <tr><td><span class="chip score">83</span></td><td><b>Butler Score</b></td><td>Combinación ponderada de seis señales (página 1).</td></tr>
+      <tr><td><span class="chip">$7.50/venta</span></td><td><b>Tu comisión estimada por venta</b></td><td>Precio &times; tu tasa de comisión. La tasa sale de tu tarifa en vivo de SiteStripe; si no, del tarifario de Associates para la categoría; si no, de tu valor guardado.</td></tr>
+      <tr><td><span class="chip">~1,000 uds./mes</span></td><td><b>Ventas mensuales estimadas</b></td><td>El dato «comprados el mes pasado» de Amazon cuando aparece; si no, se calcula a partir del ranking de ventas del producto.</td></tr>
+      <tr><td><span class="chip">~$300K/mes</span></td><td><b>Ingresos estimados del producto</b></td><td>Unidades estimadas &times; precio. Son los ingresos del producto, no lo que ganarías tú.</td></tr>
+      <tr><td><span class="chip">#5 Laptops</span></td><td><b>Ranking de ventas</b></td><td>Se lee de la página del producto.</td></tr>
+      <tr><td><span class="chip good">Campaña 10%</span></td><td><b>Hay una campaña con pago</b></td><td>Tasa de Creator Connections cuando carga. Sponsored Products muestra la previsión por clic de Amazon.</td></tr>
+      <tr><td><span class="chip good">Oferta -43%</span></td><td><b>Una rebaja real</b></td><td>Precio actual frente al precio anterior o de lista, para rebajas del 10% o más. Los precios de referencia «Typical price» no cuentan como ofertas.</td></tr>
+      <tr><td><span class="chip good">Prime Day</span></td><td><b>Oferta de evento</b></td><td>Se lee de la insignia de oferta de Amazon (Prime Day, Oferta flash).</td></tr>
+      <tr><td><span class="chip warn">Ganaste $42</span></td><td><b>Ya has ganado con esto</b></td><td>De tu propio historial de pedidos y ganancias en la app de escritorio.</td></tr>
+      <tr><td><span class="chip">&#9733; Seguir</span></td><td><b>Recibe alertas</b></td><td>Te avisa cuando vuelve a haber stock, se abre un espacio de video o baja el precio (Amazon).</td></tr>
+      <tr><td><span class="chip">&middot;&middot;&middot;</span></td><td><b>Más acciones</b></td><td>Añadir a una lista, copiar un enlace con seguimiento, abrir la página, programar una publicación.</td></tr>
+    </table>
+  </div>
+
+  <div class="sec">
+    <div class="kicker">Ponlo en práctica</div>
+    <h2>Una forma rápida de elegir qué grabar</h2>
+    <ol class="steps">
+      <li><strong>Ordena por Butler Score</strong> con la barra de herramientas sobre los resultados. Los más recomendables (70+) suben al principio.</li>
+      <li><strong>Busca «Aprobado por Butler» o «Buen candidato».</strong> Se venden ahora, tienen stock y no están saturados de otros creadores.</li>
+      <li><strong>Revisa los chips de dinero:</strong> comisión por venta, un chip de Campaña para pago mejorado y chips de Oferta para rebajas reales.</li>
+      <li><strong>Abre el producto</strong> para confirmar el número de videos, o pulsa <strong>Escanear videos de esta página</strong> para revisar toda la página a la vez. La puntuación se afina a medida que cargan los datos.</li>
+    </ol>
+  </div>
+  <div class="callout"><b>Consejo:</b> pasa el cursor sobre los chips de estimación para ver una nota en lenguaje claro, y vuelve a elegir un orden en la barra de herramientas cuando carguen los detalles para aplicar las puntuaciones actualizadas.</div>
+
+  <div class="foot"><span><b>Influencer Butler</b> &middot; influencerbutler.com</span><span>Página 2 de 4</span></div>
+</section>
+
+<!-- ============ PAGE 3 ============ -->
+<section class="page">
+  <div class="minihead"><img src="logo.png" alt=""><b>Influencer Butler</b><span>De dónde salen los datos</span></div>
+
+  <div class="kicker">Fuentes de datos</div>
+  <h2>De dónde sale cada número</h2>
+  <p class="lead">Dos tipos de números: <span class="tag real">Leído</span> directamente de la página, y <span class="tag est">Estimado</span> a partir de nuestros modelos y el catálogo compartido. Las ventas y los ingresos estimados siempre llevan un «~».</p>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="label">Amazon</div>
+      <div class="src">
+        <div class="row"><div class="k"><span class="tag real">Leído</span></div><div class="v"><strong>De la página:</strong> precio, precio anterior, insignias de oferta y cupón, valoración, número de reseñas, «comprados el mes pasado» y etiqueta de patrocinado.</div></div>
+        <div class="row"><div class="k"><span class="tag real">Leído</span></div><div class="v"><strong>De cada página de producto:</strong> stock, número de videos de influencers, ranking de ventas y categoría. Se cargan en tu propio navegador para los resultados por los que te desplazas, o bajo demanda.</div></div>
+        <div class="row"><div class="k"><span class="tag real">Tarifa</span></div><div class="v"><strong>Comisión:</strong> tu tasa de SiteStripe en vivo; si no, el tarifario de Amazon Associates para la categoría; si no, tu valor por defecto.</div></div>
+        <div class="row"><div class="k"><span class="tag real">Tarifa</span></div><div class="v"><strong>Campañas:</strong> tasas y fechas de fin de Creator Connections, actualizadas a diario, más la previsión propia de Amazon para Sponsored Products.</div></div>
+        <div class="row"><div class="k"><span class="tag est">Est.</span></div><div class="v"><strong>Ventas e ingresos:</strong> consulta «Cómo se calculan las estimaciones» más abajo.</div></div>
+        <div class="row"><div class="k"><span class="tag real">Tuyo</span></div><div class="v"><strong>Ganancias, pedidos, «ya publicado»:</strong> de tu propia app de escritorio, mediante una conexión en tu propio ordenador. Solo aparece cuando la app está conectada.</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="label">Walmart</div>
+      <div class="src">
+        <div class="row"><div class="k"><span class="tag real">Leído</span></div><div class="v"><strong>De la página:</strong> precio, precio anterior, insignias Rollback, Clearance y Reduced price, valoración, número de reseñas.</div></div>
+        <div class="row"><div class="k"><span class="tag real">Leído</span></div><div class="v"><strong>Páginas de producto:</strong> precio, stock y categoría a partir de los propios datos de la página.</div></div>
+        <div class="row"><div class="k"><span class="tag real">Tarifa</span></div><div class="v"><strong>Comisión:</strong> las tasas de afiliado por categoría publicadas por Walmart. Los resultados de búsqueda no muestran categoría, así que usan la tasa base (alrededor del 1%). Las páginas de producto usan la categoría.</div></div>
+        <div class="row"><div class="k"><span class="tag est">Est.</span></div><div class="v"><strong>Ventas e ingresos:</strong> solo aparecen cuando el catálogo compartido tiene datos del artículo. La cobertura de Walmart sigue creciendo.</div></div>
+        <div class="row"><div class="k"><span class="tag real">Nota</span></div><div class="v"><strong>Los espacios de video</strong> son un concepto de Amazon, así que las puntuaciones de Walmart se apoyan en la comisión, el precio y las ofertas.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="kicker">Estimaciones</div>
+    <h2>Cómo se calculan las estimaciones</h2>
+    <div class="grid2" style="margin-top:6px">
+      <div class="card warm">
+        <h3>Ventas estimadas por mes</h3>
+        <ol class="steps">
+          <li><strong>Primero, el dato de Amazon.</strong> Cuando un anuncio muestra «400+ comprados el mes pasado», se usa como mínimo.</li>
+          <li><strong>Catálogo compartido.</strong> Si no, una estimación de ventas a partir del ranking de ventas, ajustada por categoría con productos de los que vemos tanto el ranking como el dato de comprados de Amazon.</li>
+          <li><strong>Modelo de ranking integrado</strong> como último recurso, ajustado por categoría.</li>
+        </ol>
+        <p class="muted" style="margin-top:6px">Los ingresos son las unidades estimadas &times; el precio.</p>
+      </div>
+      <div class="card warm">
+        <h3>Tu comisión por venta</h3>
+        <ol class="steps">
+          <li><strong>Tasa de SiteStripe en vivo</strong> cuando has iniciado sesión y aparece en la página.</li>
+          <li><strong>Tarifario de Associates</strong> de la categoría del producto (Walmart: sus tasas por categoría publicadas).</li>
+          <li><strong>Tu tasa por defecto guardada</strong> en los ajustes de la extensión.</li>
+        </ol>
+        <p class="muted" style="margin-top:6px">Una tasa confirmada de Creator Connections reemplaza la tasa estándar de ese producto.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="kicker">Actualidad</div>
+    <h2>¿Qué tan actual es?</h2>
+    <table>
+      <tr><th>Qué</th><th>Con qué frecuencia se actualiza</th></tr>
+      <tr><td><b>Valores de la página</b></td><td>En vivo mientras navegas: precio, ofertas, valoración, reseñas y comprados.</td></tr>
+      <tr><td><b>Detalles de la página de producto</b></td><td>El stock, el número de videos y el ranking se reutilizan hasta un día para que el desplazamiento sea fluido.</td></tr>
+      <tr><td><b>Tasas de comisión y de campaña</b></td><td>Se actualizan más o menos una vez al día.</td></tr>
+    </table>
+  </div>
+
+  <div class="foot"><span><b>Influencer Butler</b> &middot; influencerbutler.com</span><span>Página 3 de 4</span></div>
+</section>
+
+<!-- ============ PAGE 4 ============ -->
+<section class="page">
+  <div class="minihead"><img src="logo.png" alt=""><b>Influencer Butler</b><span>Precisión, privacidad y preguntas frecuentes</span></div>
+
+  <div class="grid2">
+    <div>
+      <div class="kicker">Conviene saber</div>
+      <h2>Cómo leer bien los números</h2>
+      <ul class="tight" style="margin-top:6px">
+        <li><strong>Las ventas y los ingresos son estimaciones.</strong> Un «~» significa calculado con un modelo, no informado por Amazon ni Walmart.</li>
+        <li><strong>«400+ comprados» es un mínimo</strong>, así que la cifra real es al menos esa.</li>
+        <li><strong>Los ingresos son el total del producto,</strong> no tus ganancias. Tus ganancias son las ventas que generas por tu tasa.</li>
+        <li><strong>La comisión es una estimación.</strong> Las tasas de Associates varían según la categoría y el país, y las campañas especiales pueden pagar más.</li>
+        <li><strong>Los datos se actualizan mientras navegas.</strong> Las tasas y los detalles de producto se reutilizan hasta un día.</li>
+        <li><strong>Otros países:</strong> Alcance global muestra «sin revisar» hasta que se conecta la Creator API, en lugar de adivinar.</li>
+        <li><strong>Los sitios cambian.</strong> Cuando Amazon o Walmart rediseñan una página, publicamos una corrección rápido.</li>
+      </ul>
+    </div>
+    <div>
+      <div class="kicker">Privacidad</div>
+      <h2>Tus datos siguen siendo tuyos</h2>
+      <ul class="tight" style="margin-top:6px">
+        <li><strong>Lee las páginas en tu navegador.</strong> No hace falta una cuenta para las herramientas básicas.</li>
+        <li><strong>La sincronización opcional</strong> envía tus propios hallazgos a tu panel, solo si la activas.</li>
+        <li><strong>Contribuir al catálogo compartido está desactivado por defecto.</strong> Si lo activas, solo se agrupan datos de producto (precio, ranking, categoría, comprados), nunca datos personales.</li>
+        <li><strong>El enlace con la app de escritorio</strong> se queda en tu propio ordenador.</li>
+      </ul>
+      <div class="card warm" style="margin-top:10px">
+        <div class="label">Dónde funciona</div>
+        <p><strong>12 tiendas de Amazon</strong> (US, CA, UK, AU, DE, FR, IT, ES, JP, IN, MX, BR) y <strong>Walmart.com</strong> (US). Los textos que no están en inglés son de mejor esfuerzo.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="kicker">Preguntas frecuentes</div>
+    <h2>Respuestas rápidas</h2>
+    <div class="faq">
+      <div class="q">¿Por qué una puntuación alta dice «Buen candidato» y no «Aprobado»?</div>
+      <div class="a">El número de videos no ha cargado para ese resultado. Abre el producto o pulsa Escanear videos y pasa a Aprobado o se quita la insignia.</div>
+      <div class="q">¿Por qué algunos resultados no tienen chips?</div>
+      <div class="a">Los carruseles de anuncios patrocinados y los bloques que no son productos no se puntúan. Los resultados de producto normales sí.</div>
+      <div class="q">¿Puedo cambiar los umbrales?</div>
+      <div class="a">Sí. En los ajustes de la extensión puedes fijar el mínimo de comprados, el máximo de videos de influencers, el precio mínimo y tu tasa de comisión por defecto.</div>
+      <div class="q">¿Necesito la app de escritorio?</div>
+      <div class="a">No. La puntuación, los chips y el orden funcionan sin ella. La app añade tus ganancias, los marcadores de «ya publicado» y el envío con un clic a tus butlers.</div>
+      <div class="q">¿Los ingresos estimados son lo que voy a ganar?</div>
+      <div class="a">No. Son los ingresos estimados del producto. Tus ganancias dependen de las ventas que generes y de tu tasa de comisión.</div>
+      <div class="q">¿La extensión es gratis?</div>
+      <div class="a">Sí, la extensión se instala gratis.</div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="kicker">Glosario</div>
+    <h2>Términos que verás</h2>
+    <div class="grid2" style="margin-top:6px">
+      <div class="card">
+        <ul class="tight">
+          <li><strong>SiteStripe:</strong> la barra de Amazon Associates en la parte superior de las páginas de Amazon. Muestra tu tasa de comisión en vivo.</li>
+          <li><strong>Creator Connections:</strong> el programa de Amazon en el que las marcas ofrecen una comisión mejorada en productos concretos.</li>
+          <li><strong>Sponsored Products for Creators:</strong> un tipo de campaña de pago por clic. El Butler muestra la previsión por clic de Amazon.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <ul class="tight">
+          <li><strong>Ranking de ventas (Best Sellers Rank):</strong> el puesto de Amazon dentro de una categoría. Un número más bajo significa más ventas.</li>
+          <li><strong>Espacio libre:</strong> hueco para un nuevo video de creador, según cuántos videos de influencers ya tiene el producto.</li>
+          <li><strong>Rollback y Clearance:</strong> las marcas de Walmart para precios rebajados.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout" style="margin-top:12px"><b>¿Necesitas ayuda o ves algo raro?</b> Usa la burbuja de chat en la esquina de cualquier página donde funcione la extensión, o visita <b>influencerbutler.com/help</b>.</div>
+
+  <div class="foot"><span><b>Influencer Butler</b> &middot; Las estimaciones son orientativas y no garantizan ganancias. Sin afiliación con Amazon ni Walmart.</span><span>Página 4 de 4</span></div>
+</section>
+
+</body>
+</html>

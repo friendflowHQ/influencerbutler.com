@@ -576,6 +576,14 @@ export default function ExtensionLandingContent() {
           >
             Read the tutorial
           </Link>
+          <a
+            href="/guides/influencer-butler-extension-guide-en.pdf"
+            target="_blank"
+            rel="noopener"
+            className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-base font-semibold text-slate-800 transition hover:border-[#f97316] hover:text-[#f97316]"
+          >
+            Download the guide (PDF)
+          </a>
         </div>
       </section>
 
@@ -615,6 +623,7 @@ export default function ExtensionLandingContent() {
             <h4 className="mb-1 text-[0.85rem] font-bold uppercase tracking-wider text-slate-900">Support</h4>
             <Link href="/contact" className="text-sm text-slate-500 transition hover:text-[#f97316]">Contact Us</Link>
             <Link href="/help/tutorials/extension" className="text-sm text-slate-500 transition hover:text-[#f97316]">Extension tutorial</Link>
+            <a href="/guides/influencer-butler-extension-guide-en.pdf" target="_blank" rel="noopener" className="text-sm text-slate-500 transition hover:text-[#f97316]">Extension guide (PDF)</a>
             <Link href="/dashboard" className="text-sm text-slate-500 transition hover:text-[#f97316]">My Account</Link>
           </div>
         </div>

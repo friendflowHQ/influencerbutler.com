@@ -2283,6 +2283,20 @@
       "imageAlt": "Illustration of a creator following a numbered checklist while deal posts flow out to social channels",
       "imagePrompt": "a creator ticking off a numbered checklist as a stream of deal posts flows out to social media icons on its own, calm and organized",
       "order": 224
+    },
+    {
+      "id": "how-the-butler-score-works",
+      "title": "How the Butler Score Works (and Where the Numbers Come From)",
+      "category": "Amazon",
+      "summary": "The Butler Score ranks products from 0 to 100 so you can pick what to film faster. How the six signals are weighted, where each number comes from on Amazon and Walmart, and a free PDF guide.",
+      "date": "2026-10-07",
+      "author": "The Influencer Butler Team",
+      "readingTime": "5 min read",
+      "keywords": "butler score, influencer butler extension, amazon product research for creators, how to choose products to film, commission per sale, estimated sales per month",
+      "image": "/assets/extension/extension_shot_5_search_overlay_1280x800.png",
+      "imageAlt": "Amazon search results with Butler Score chips under each product",
+      "imagePrompt": "Amazon search results with small score chips under each product, shown as a clean extension screenshot",
+      "order": 225
     }
   ]
 }

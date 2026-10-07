@@ -88,6 +88,14 @@ const CURATED_PAGES: Array<{
     keywords: "chrome extension browser add-on free product research money signals",
   },
   {
+    id: "page:extension-guide",
+    title: "How the Butler Score works (PDF guide)",
+    summary: "A four-page guide to the Butler Score, the chips, where the data comes from and how estimates are calculated.",
+    category: "Pages",
+    url: "/guides/influencer-butler-extension-guide-en.pdf",
+    keywords: "butler score how it works data sources estimates chips glossary pdf guide download extension reference",
+  },
+  {
     id: "page:download",
     title: "Download the App",
     summary: "Download the Influencer Butler desktop app for Windows and Mac.",
