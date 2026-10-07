@@ -12,6 +12,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { sendTestimonialEmail } from "@/lib/testimonial-email";
+import { verifyBearer } from "@/lib/auth-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,12 +56,7 @@ function getServiceClient(): CronClient | null {
 }
 
 function isAuthorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    console.error("cron testimonial-requests: CRON_SECRET not set - refusing to execute");
-    return false;
-  }
-  return (request.headers.get("authorization") ?? "") === `Bearer ${secret}`;
+  return verifyBearer(request, "CRON_SECRET");
 }
 
 async function fetchContact(

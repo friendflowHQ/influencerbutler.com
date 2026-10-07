@@ -12,6 +12,7 @@
  * switch (app_config 'activity_seed'); when off, this is a no-op.
  */
 import { NextResponse } from "next/server";
+import { verifyBearer } from "@/lib/auth-secret";
 import {
   readSeedEnabled,
   readSeedQueue,
@@ -24,12 +25,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    console.error("seed-activity cron: CRON_SECRET not set - refusing to execute");
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  if ((request.headers.get("authorization") ?? "") !== `Bearer ${secret}`) {
+  if (!verifyBearer(request, "CRON_SECRET")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

@@ -24,6 +24,7 @@ import {
   serializeQueue,
 } from "@/lib/blog-autogen/queue";
 import type { GenerationResult } from "@/lib/blog-autogen/types";
+import { verifyBearer } from "@/lib/auth-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,12 +33,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 function isAuthorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    console.error("blog-autogen cron: CRON_SECRET not set - refusing to execute");
-    return false;
-  }
-  return (request.headers.get("authorization") ?? "") === `Bearer ${secret}`;
+  return verifyBearer(request, "CRON_SECRET");
 }
 
 export async function GET(request: Request) {

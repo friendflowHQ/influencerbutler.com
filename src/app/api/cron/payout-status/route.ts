@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { verifyBearer } from "@/lib/auth-secret";
 import { getPayoutBatch } from "@/lib/paypal";
 import { applyPayoutStatus, mapTransactionStatus, type PayoutRow } from "@/lib/paypal-payouts";
 
@@ -12,9 +13,7 @@ export const dynamic = "force-dynamic";
  * ?dry=1 reports what it would do without writing.
  */
 export async function GET(request: Request) {
-  const secret = process.env.CRON_SECRET;
-  const auth = request.headers.get("authorization") || "";
-  if (!secret || auth !== `Bearer ${secret}`) {
+  if (!verifyBearer(request, "CRON_SECRET")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

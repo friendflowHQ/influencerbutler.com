@@ -11,6 +11,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildFilter, r2Configured, readLatest, type CatalogueKind } from "@/lib/r2-catalogue";
 import { isMissingTableError } from "@/lib/extension-api";
+import { verifyBearer } from "@/lib/auth-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,9 +20,7 @@ export const maxDuration = 300;
 const KINDS: CatalogueKind[] = ["cc", "spcc", "deals"];
 
 function authorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
-  return (request.headers.get("authorization") ?? "") === `Bearer ${secret}`;
+  return verifyBearer(request, "CRON_SECRET");
 }
 
 export async function GET(request: Request) {

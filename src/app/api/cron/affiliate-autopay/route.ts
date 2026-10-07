@@ -30,17 +30,13 @@ import { sendPayoutsDueDigest, type PayoutDigestRow } from "@/lib/payout-digest-
 import { isAutopayArmed, autopayCapCents, autopayPeriod } from "@/lib/affiliate-autopay-state";
 import { sendTaxReminderOnce } from "@/lib/tax-reminder";
 import type { AffiliateStatement } from "@/lib/affiliate-commissions-data";
+import { verifyBearer } from "@/lib/auth-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function isAuthorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    console.error("affiliate-autopay cron: CRON_SECRET not set - refusing to execute");
-    return false;
-  }
-  return (request.headers.get("authorization") ?? "") === `Bearer ${secret}`;
+  return verifyBearer(request, "CRON_SECRET");
 }
 
 // isArmed / capCents / period now live in affiliate-autopay-state (shared with

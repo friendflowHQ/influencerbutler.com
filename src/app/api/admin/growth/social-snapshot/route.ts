@@ -25,6 +25,7 @@
  */
 import { NextResponse } from "next/server";
 import { getAdminSessionAny, createAdminClient } from "@/lib/admin";
+import { verifySecretHeader } from "@/lib/auth-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -56,10 +57,7 @@ function todayUtc(): string {
 }
 
 function hasCronSecret(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
-  const header = request.headers.get("x-cron-secret") ?? "";
-  return header === secret;
+  return verifySecretHeader(request, "x-cron-secret", "CRON_SECRET");
 }
 
 async function isAuthorized(request: Request): Promise<boolean> {

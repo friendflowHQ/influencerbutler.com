@@ -8,17 +8,13 @@ import { NextResponse } from "next/server";
 import { getAdmin } from "@/lib/events";
 import { sendEventReminder, type EventEmailData } from "@/lib/event-emails";
 import { sendEventReplays } from "@/lib/event-email-lifecycle";
+import { verifyBearer } from "@/lib/auth-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function authorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    console.error("[event-reminders] CRON_SECRET not set");
-    return false;
-  }
-  return request.headers.get("authorization") === `Bearer ${secret}`;
+  return verifyBearer(request, "CRON_SECRET");
 }
 
 type EventRow = {

@@ -20,6 +20,7 @@ import {
   nextIssueIndex,
   NEWSLETTER_ISSUES,
 } from "@/lib/newsletter";
+import { verifyBearer } from "@/lib/auth-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,12 +29,7 @@ export const dynamic = "force-dynamic";
 const MIN_GAP_MS = 6 * 24 * 60 * 60 * 1000;
 
 function isAuthorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    console.error("newsletter cron: CRON_SECRET not set - refusing to execute");
-    return false;
-  }
-  return (request.headers.get("authorization") ?? "") === `Bearer ${secret}`;
+  return verifyBearer(request, "CRON_SECRET");
 }
 
 export async function GET(request: Request) {

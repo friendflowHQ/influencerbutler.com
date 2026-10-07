@@ -18,6 +18,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { computeValuationSnapshot, upsertValuationSnapshot } from "@/lib/valuation";
 import { isMigrationPendingError } from "@/lib/finance-stepup";
+import { verifyBearer } from "@/lib/auth-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,12 +26,7 @@ export const dynamic = "force-dynamic";
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 function isAuthorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    console.error("cron valuation: CRON_SECRET not set - refusing to execute");
-    return false;
-  }
-  return (request.headers.get("authorization") ?? "") === `Bearer ${secret}`;
+  return verifyBearer(request, "CRON_SECRET");
 }
 
 export async function GET(request: Request) {

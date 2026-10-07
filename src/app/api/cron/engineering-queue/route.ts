@@ -11,15 +11,14 @@
 import { NextResponse } from "next/server";
 import { runEngineeringQueueSweep, isEngQueueConfigured } from "@/lib/engineering-queue";
 import { sendEngRecap } from "@/lib/engineering-queue-email";
+import { verifyBearer } from "@/lib/auth-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
 function authorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) { console.error("[engineering-queue] CRON_SECRET not set"); return false; }
-  return request.headers.get("authorization") === `Bearer ${secret}`;
+  return verifyBearer(request, "CRON_SECRET");
 }
 
 export async function GET(request: Request) {

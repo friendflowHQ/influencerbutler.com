@@ -13,6 +13,7 @@ import { isUndeliverableTestEmail } from "@/lib/email-address";
 import { runSwipeKitBroadcast, type SwipeKitDb } from "@/lib/affiliate-swipe-kit";
 import { TRIAL_LENGTH_DAYS } from "@/lib/pricing-constants";
 import { getFunnelOverrides, tierThresholdMs, type FunnelOverride } from "@/lib/funnel-copy";
+import { verifyBearer } from "@/lib/auth-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -95,14 +96,7 @@ function getServiceClient(): CronClient | null {
 // --- Auth ----------------------------------------------------------------
 
 function isAuthorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    // Without a secret configured we refuse to run - safer than open endpoint.
-    console.error("cron: CRON_SECRET not set - refusing to execute");
-    return false;
-  }
-  const header = request.headers.get("authorization") ?? "";
-  return header === `Bearer ${secret}`;
+  return verifyBearer(request, "CRON_SECRET");
 }
 
 // --- Step A: auto-approve -------------------------------------------------

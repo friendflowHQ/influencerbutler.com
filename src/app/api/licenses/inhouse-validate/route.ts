@@ -19,6 +19,7 @@
 import { NextResponse, after } from "next/server";
 import { adminService, type AdminService } from "@/lib/admin-service";
 import { hashLicenseKey } from "@/lib/license-auth";
+import { safeEqual } from "@/lib/auth-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
     console.error("inhouse-validate: LICENSING_WORKER_SECRET not set");
     return NextResponse.json({ valid: false, error: "not_configured" }, { status: 503 });
   }
-  if ((request.headers.get("x-ib-worker-secret") || "") !== secret) {
+  if (!safeEqual(request.headers.get("x-ib-worker-secret") || "", secret)) {
     return NextResponse.json({ valid: false, error: "unauthorized" }, { status: 401 });
   }
 

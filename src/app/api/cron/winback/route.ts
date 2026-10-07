@@ -33,6 +33,7 @@ import {
   type WinbackTier,
   type WinbackSegment,
 } from "@/lib/winback-emails";
+import { verifyBearer } from "@/lib/auth-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -66,12 +67,7 @@ type CancelRow = {
 };
 
 function isAuthorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    console.error("cron winback: CRON_SECRET not set - refusing to execute");
-    return false;
-  }
-  return (request.headers.get("authorization") ?? "") === `Bearer ${secret}`;
+  return verifyBearer(request, "CRON_SECRET");
 }
 
 /** Highest matured tier whose sent column is still null, or null if none due.

@@ -21,6 +21,7 @@ import {
   build1099ReminderBody,
 } from "@/lib/finance-tax-reminder-email";
 import { load1099Data } from "@/lib/finance-1099";
+import { verifyBearer } from "@/lib/auth-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,12 +31,7 @@ const REMINDER_OFFSETS = [7, 1];
 const OFFSETS_1099 = [25, 7];
 
 function isAuthorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    console.error("finance-tax-reminder cron: CRON_SECRET not set - refusing to execute");
-    return false;
-  }
-  return (request.headers.get("authorization") ?? "") === `Bearer ${secret}`;
+  return verifyBearer(request, "CRON_SECRET");
 }
 
 function pad2(n: number): string {

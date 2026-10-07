@@ -17,6 +17,7 @@ import { NextResponse } from "next/server";
 import { getAdmin } from "@/lib/events";
 import { loadConfig } from "@/lib/scheduling-server";
 import { uploadVideoFromUrl, getBoundChannel } from "@/lib/youtube";
+import { verifyBearer } from "@/lib/auth-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,12 +27,7 @@ const SITE =
   process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
 
 function authorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    console.error("[youtube-uploads] CRON_SECRET not set");
-    return false;
-  }
-  return request.headers.get("authorization") === `Bearer ${secret}`;
+  return verifyBearer(request, "CRON_SECRET");
 }
 
 type Row = {

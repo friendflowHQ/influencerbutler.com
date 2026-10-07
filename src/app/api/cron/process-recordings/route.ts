@@ -11,6 +11,7 @@ import { getAdmin } from "@/lib/scheduling-server";
 import { fetchTranscriptText, getBot, recordingUrlOf } from "@/lib/recall";
 import { applyTranscriptResult } from "@/lib/call-recording-finalize";
 import { applyEventTranscriptResult, type FinalizeEvent } from "@/lib/event-recording-finalize";
+import { verifyBearer } from "@/lib/auth-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,9 +21,7 @@ const GRACE_MS = 6 * 3600_000;
 const BATCH = 20;
 
 function authorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) { console.error("[process-recordings] CRON_SECRET not set"); return false; }
-  return request.headers.get("authorization") === `Bearer ${secret}`;
+  return verifyBearer(request, "CRON_SECRET");
 }
 
 type Row = {

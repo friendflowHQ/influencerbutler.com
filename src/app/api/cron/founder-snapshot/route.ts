@@ -38,6 +38,7 @@ import {
   type SnapshotKpi,
   type FounderSnapshotData,
 } from "@/lib/founder-snapshot-email";
+import { verifyBearer } from "@/lib/auth-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -46,12 +47,7 @@ const DEFAULT_TO = "elizabethdean30@gmail.com";
 const FROM_ADDRESS = transactionalFrom();
 
 function isAuthorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    console.error("cron founder-snapshot: CRON_SECRET not set - refusing to execute");
-    return false;
-  }
-  return (request.headers.get("authorization") ?? "") === `Bearer ${secret}`;
+  return verifyBearer(request, "CRON_SECRET");
 }
 
 function monthLongLabel(month: string): string {

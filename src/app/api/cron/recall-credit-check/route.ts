@@ -18,6 +18,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { checkRecallCredits, isRecallConfigured, isRecordableMeetingUrl } from "@/lib/recall";
 import { getRecallCreditStatus, recordRecallCreditCheck } from "@/lib/recall-credit-alert";
+import { verifyBearer } from "@/lib/auth-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,12 +31,7 @@ const LOOKAHEAD_H = 48;
 const FRESH_OK_MS = 6 * 3600_000;
 
 function authorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    console.error("[recall-credit-check] CRON_SECRET not set");
-    return false;
-  }
-  return request.headers.get("authorization") === `Bearer ${secret}`;
+  return verifyBearer(request, "CRON_SECRET");
 }
 
 type UpcomingRow = { starts_at: string | null; join_url: string | null; topic?: string | null; title?: string | null };

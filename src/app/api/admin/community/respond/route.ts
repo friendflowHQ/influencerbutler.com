@@ -20,6 +20,7 @@ import {
   notifyCommunityAnswer,
   resolveParentAnswer,
 } from "@/lib/community-notify";
+import { verifyBearer } from "@/lib/auth-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,12 +32,7 @@ const ALREADY_RESPONDED_WINDOW_MS = 6 * 60 * 60 * 1000;
 const DEFAULT_RESPONDER_EMAIL = "elizabethdean30@gmail.com";
 
 function isAuthorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    console.error("community respond: CRON_SECRET not set - refusing to execute");
-    return false;
-  }
-  return (request.headers.get("authorization") ?? "") === `Bearer ${secret}`;
+  return verifyBearer(request, "CRON_SECRET");
 }
 
 type ProfileRow = { id: string; display_name: string | null };

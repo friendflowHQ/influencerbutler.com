@@ -20,17 +20,13 @@ import { logAdminAction } from "@/lib/admin-audit";
 import { loadComps, type CompRow } from "@/lib/comps-data";
 import { cancelCompSubscription } from "@/lib/comps-cancel";
 import { sendCompDigest } from "@/lib/comp-expiry-email";
+import { verifyBearer } from "@/lib/auth-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function isAuthorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    console.error("comp-expiry cron: CRON_SECRET not set - refusing to execute");
-    return false;
-  }
-  return (request.headers.get("authorization") ?? "") === `Bearer ${secret}`;
+  return verifyBearer(request, "CRON_SECRET");
 }
 
 /** Stamp a warn marker (and context) on the comp_grants row. Best-effort. */

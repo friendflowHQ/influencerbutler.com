@@ -11,6 +11,7 @@
  */
 import { NextResponse } from "next/server";
 import { createAdminClient, isEmailAdmin } from "@/lib/admin";
+import { verifyBearer } from "@/lib/auth-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,12 +21,7 @@ const LIMIT_DEFAULT = 25;
 const LIMIT_MAX = 50;
 
 function isAuthorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    console.error("community inbox: CRON_SECRET not set - refusing to execute");
-    return false;
-  }
-  return (request.headers.get("authorization") ?? "") === `Bearer ${secret}`;
+  return verifyBearer(request, "CRON_SECRET");
 }
 
 type QuestionRow = {

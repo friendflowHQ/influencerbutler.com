@@ -18,6 +18,7 @@
  */
 import { NextResponse } from "next/server";
 import { enrollAppTrialLead } from "@/lib/app-trial-enroll";
+import { verifyBearer } from "@/lib/auth-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,14 +26,9 @@ export const dynamic = "force-dynamic";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function isAuthorized(request: Request): boolean {
-  const secret = process.env.APP_TRIAL_INTAKE_SECRET;
-  if (!secret) {
-    // Without a secret configured we refuse rather than run open: this route
-    // writes to the owned list and arms a send sequence.
-    console.error("app-trial signup: APP_TRIAL_INTAKE_SECRET not set, refusing");
-    return false;
-  }
-  return (request.headers.get("authorization") ?? "") === `Bearer ${secret}`;
+  // Fails closed (and logs) when APP_TRIAL_INTAKE_SECRET is unset: this route
+  // writes to the owned list and arms a send sequence.
+  return verifyBearer(request, "APP_TRIAL_INTAKE_SECRET");
 }
 
 type SignupBody = { email?: unknown };

@@ -43,6 +43,7 @@ import { isEmailSuppressed } from "@/lib/email-unsubscribe";
 import { isMissingTable } from "@/lib/growth-goals";
 import { buildCampaignEmail } from "@/lib/campaign-email";
 import type { NormalizedAttachment } from "@/lib/email-attachments";
+import { verifyBearer } from "@/lib/auth-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -152,12 +153,7 @@ type StepRow = {
 };
 
 function isAuthorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    console.error("cron email-marketing: CRON_SECRET not set - refusing to execute");
-    return false;
-  }
-  return (request.headers.get("authorization") ?? "") === `Bearer ${secret}`;
+  return verifyBearer(request, "CRON_SECRET");
 }
 
 function chunkArr<T>(arr: T[], size: number): T[][] {

@@ -15,6 +15,7 @@ import { NextResponse } from "next/server";
 import { callSupportWorker } from "@/lib/support-worker";
 import { tagTicket, type WorkerTicket } from "@/lib/support-sweep";
 import { TAG_WORKING, TAG_DONE, isEngQueueConfigured } from "@/lib/engineering-queue";
+import { verifyBearer } from "@/lib/auth-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,9 +23,7 @@ export const dynamic = "force-dynamic";
 const TICKET_ID_RE = /^fb-[0-9a-f-]{36}$/i;
 
 function authorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) { console.error("[engineering-queue/update] CRON_SECRET not set"); return false; }
-  return request.headers.get("authorization") === `Bearer ${secret}`;
+  return verifyBearer(request, "CRON_SECRET");
 }
 
 type UpdateBody = { sourceTicketIds?: unknown; status?: unknown; prUrl?: unknown };

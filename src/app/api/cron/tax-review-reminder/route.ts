@@ -33,17 +33,13 @@ import {
 } from "@/lib/tax-review-reminder-email";
 import { formatUsdFromCents } from "@/lib/affiliates";
 import type { AffiliateStatement } from "@/lib/affiliate-commissions-data";
+import { verifyBearer } from "@/lib/auth-secret";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function isAuthorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) {
-    console.error("tax-review-reminder cron: CRON_SECRET not set - refusing to execute");
-    return false;
-  }
-  return (request.headers.get("authorization") ?? "") === `Bearer ${secret}`;
+  return verifyBearer(request, "CRON_SECRET");
 }
 
 function displayName(s: AffiliateStatement): string {
