@@ -5,6 +5,7 @@ import { sendEmail } from "@/lib/email-send";
 import { transactionalFrom } from "@/lib/email-senders";
 import { hasAdsConsent, readMetaCookies, sendMetaEvent } from "@/lib/meta-capi";
 import { logTrialClickActivity, readGeo } from "@/lib/recent-activity";
+import { redirectBase } from "@/lib/site-url";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -143,13 +144,10 @@ function isPrefetchRequest(h: Headers): boolean {
   return false;
 }
 
-// Behind Vercel's proxy, new URL(request.url).origin can be an internal host,
-// so prefer the forwarded host/proto when building the /download redirect.
-function publicBaseUrl(h: Headers, fallbackOrigin: string): string {
-  const host = h.get("x-forwarded-host") || h.get("host");
-  if (!host) return fallbackOrigin;
-  const proto = h.get("x-forwarded-proto") || "https";
-  return `${proto}://${host}`;
+// Fixed site URL (never x-forwarded-host / Host, which a caller can spoof into
+// an open redirect); the local origin is only used outside production.
+function publicBaseUrl(_h: Headers, fallbackOrigin: string): string {
+  return redirectBase(fallbackOrigin);
 }
 
 // Picks which build the visitor wants, based on an explicit ?os= param (used by

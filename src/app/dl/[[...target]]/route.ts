@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { redirectBase } from "@/lib/site-url";
 import {
   WINDOWS_DOWNLOAD_URL,
   currentMacDownloadUrl,
@@ -55,12 +56,8 @@ async function resolveDestination(target: string, request: Request): Promise<str
   return `${publicBaseUrl(request)}/download`;
 }
 
-// Behind Vercel's proxy, new URL(request.url).origin can be an internal host,
-// so prefer the forwarded host/proto when building the /download redirect.
+// Fixed site URL (never x-forwarded-host / Host, which a caller can spoof into
+// an open redirect); the local origin is only used outside production.
 function publicBaseUrl(request: Request): string {
-  const h = request.headers;
-  const host = h.get("x-forwarded-host") || h.get("host");
-  if (!host) return new URL(request.url).origin;
-  const proto = h.get("x-forwarded-proto") || "https";
-  return `${proto}://${host}`;
+  return redirectBase(new URL(request.url).origin);
 }

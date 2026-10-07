@@ -15,18 +15,13 @@ import crypto from "node:crypto";
 import { resolveLicenseOnly } from "@/lib/license-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { jsonWithCors, optionsResponse } from "@/lib/extension-api";
+import { sniffImage } from "@/lib/image-sniff";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const BUCKET = "social-post-images";
 const MAX_BYTES = 12 * 1024 * 1024; // 12 MB
-const EXT_BY_TYPE: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-  "image/gif": "gif",
-};
 
 export async function OPTIONS() {
   return optionsResponse();
@@ -47,15 +42,18 @@ export async function POST(request: Request) {
   if (!(file instanceof File)) {
     return jsonWithCors({ error: "Please choose an image." }, 400);
   }
-  const ext = EXT_BY_TYPE[file.type];
-  if (!ext) {
-    return jsonWithCors({ error: "Please upload a JPG, PNG, WEBP, or GIF." }, 400);
-  }
   if (file.size > MAX_BYTES) {
     return jsonWithCors({ error: "That image is too large (max 12 MB)." }, 400);
   }
 
   const bytes = new Uint8Array(await file.arrayBuffer());
+  // Magic bytes decide the type and extension, not the client-declared MIME
+  // (this bucket is public).
+  const sniffed = sniffImage(bytes);
+  if (!sniffed) {
+    return jsonWithCors({ error: "Please upload a JPG, PNG, WEBP, or GIF." }, 400);
+  }
+  const ext = sniffed.ext;
   // Path keyed by the owning user id plus a random suffix so revisions never
   // collide and one creator's uploads stay grouped.
   const path = `${auth.auth.userId}/${crypto.randomUUID()}.${ext}`;
@@ -63,7 +61,7 @@ export async function POST(request: Request) {
   try {
     const db = createAdminClient();
     const { error } = await db.storage.from(BUCKET).upload(path, bytes, {
-      contentType: file.type,
+      contentType: sniffed.mime,
       upsert: true,
     });
     if (error) {

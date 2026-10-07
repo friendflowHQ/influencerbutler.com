@@ -14,6 +14,7 @@ import { NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { verifyBundleSubmitToken } from "@/lib/grow-together-submit";
+import { sniffImage } from "@/lib/image-sniff";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,12 +22,6 @@ export const dynamic = "force-dynamic";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const BUCKET = "bundle-headshots";
 const MAX_BYTES = 6 * 1024 * 1024; // 6 MB
-const EXT_BY_TYPE: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-  "image/gif": "gif",
-};
 
 export async function POST(request: Request) {
   let form: FormData;
@@ -46,15 +41,19 @@ export async function POST(request: Request) {
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "Please choose an image." }, { status: 400 });
   }
-  const ext = EXT_BY_TYPE[file.type];
-  if (!ext) {
-    return NextResponse.json({ error: "Please upload a JPG, PNG, WEBP, or GIF." }, { status: 400 });
-  }
   if (file.size > MAX_BYTES) {
     return NextResponse.json({ error: "That image is too large (max 6 MB)." }, { status: 400 });
   }
 
   const bytes = new Uint8Array(await file.arrayBuffer());
+  // Trust the file's magic bytes, never the client-declared Content-Type: this
+  // bucket is public, so an HTML/SVG upload labelled image/png would be served
+  // from our storage domain.
+  const sniffed = sniffImage(bytes);
+  if (!sniffed) {
+    return NextResponse.json({ error: "Please upload a JPG, PNG, WEBP, or GIF." }, { status: 400 });
+  }
+  const ext = sniffed.ext;
   // Path is keyed by a hash of the email (so it is stable-ish per person and does
   // not leak the address) plus a random suffix so revisions do not collide.
   const who = crypto.createHash("sha256").update(email).digest("hex").slice(0, 16);
@@ -63,7 +62,7 @@ export async function POST(request: Request) {
   try {
     const db = createAdminClient();
     const { error } = await db.storage.from(BUCKET).upload(path, bytes, {
-      contentType: file.type,
+      contentType: sniffed.mime,
       upsert: true,
     });
     if (error) {
