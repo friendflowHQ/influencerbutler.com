@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-09-15T15:09:53.905Z",
-  "count": 108,
+  "generatedAt": "2026-10-07T18:54:24.194Z",
+  "count": 118,
   "entries": [
     {
       "section": "action-queue",
@@ -31,6 +31,16 @@
         "AI Assistant"
       ],
       "description": "Ask the AI assistant for setup help and how-tos."
+    },
+    {
+      "section": "ai-influencer-butler",
+      "workspaceId": "ai-influencer-butler",
+      "label": "AI Influencer Butler",
+      "path": "AI Influencer Butler",
+      "crumbs": [
+        "AI Influencer Butler"
+      ],
+      "description": "Create branded AI outfit looks and post them on autopilot."
     },
     {
       "section": "amazon-butler-dashboard",
@@ -108,6 +118,17 @@
         "Campaign Deals"
       ],
       "description": "See which products in your Creator Connections campaigns are on sale right now."
+    },
+    {
+      "section": "creator-watch-butler",
+      "workspaceId": "creator-watch-butler",
+      "label": "Creator Watch",
+      "path": "Amazon Butler › Creator Watch",
+      "crumbs": [
+        "Amazon Butler",
+        "Creator Watch"
+      ],
+      "description": "Watch top creators' storefronts and let them find your next product."
     },
     {
       "section": "harvest",
@@ -199,17 +220,6 @@
       "description": "Reload your Amazon storefront photos to other marketplaces with fresh tags."
     },
     {
-      "section": "prime-day-butler",
-      "workspaceId": "prime-day-butler",
-      "label": "Prime Day Butler",
-      "path": "Prime Day Butler › Deal Finder",
-      "crumbs": [
-        "Prime Day Butler",
-        "Deal Finder"
-      ],
-      "description": "Seasonal helper: surface Prime Day deals you can post about, including products you already own."
-    },
-    {
       "section": "product-research",
       "workspaceId": "product-research-butler",
       "label": "Product Research",
@@ -219,6 +229,17 @@
         "Product Research"
       ],
       "description": "See price and sales-rank history for any product you browse."
+    },
+    {
+      "section": "reach-booster",
+      "workspaceId": "reach-booster",
+      "label": "Reach Booster",
+      "path": "Amazon Butler › Reach Booster",
+      "crumbs": [
+        "Amazon Butler",
+        "Reach Booster"
+      ],
+      "description": "See the videos and photos Amazon is holding back from product detail pages, and how to fix each one."
     },
     {
       "section": "retag-butler",
@@ -404,14 +425,14 @@
       "description": "Pick the keywords and filters that choose your collage products."
     },
     {
-      "section": "audit",
-      "workspaceId": "audit",
-      "label": "Console",
-      "path": "Console",
+      "section": "community",
+      "workspaceId": "community",
+      "label": "Community",
+      "path": "Community",
       "crumbs": [
-        "Console"
+        "Community"
       ],
-      "description": "Live activity logs from every running butler."
+      "description": "Chat with other Pro members in real time."
     },
     {
       "section": "content-butler",
@@ -462,6 +483,17 @@
         "Deals Butler"
       ],
       "description": "Open Deals Butler. Switch sections with the tabs at the top."
+    },
+    {
+      "section": "ai-clone-butler",
+      "workspaceId": "ai-clone-butler",
+      "label": "AI Clone Butler",
+      "path": "Deals Butler › AI Clone Butler",
+      "crumbs": [
+        "Deals Butler",
+        "AI Clone Butler"
+      ],
+      "description": "Make an AI clone of yourself and create 4K photos of you using your products."
     },
     {
       "section": "posted-deals-log",
@@ -517,6 +549,17 @@
         "Pricecrash Butler"
       ],
       "description": "Catch Amazon pricing errors before the seller fixes them."
+    },
+    {
+      "section": "shopping-butler",
+      "workspaceId": "shopping-butler",
+      "label": "Shopping Butler",
+      "path": "Deals Butler › Shopping Butler",
+      "crumbs": [
+        "Deals Butler",
+        "Shopping Butler"
+      ],
+      "description": "Find the best product to buy or feature across Amazon and Walmart."
     },
     {
       "section": "facebook-butler-dashboard",
@@ -626,6 +669,16 @@
         "Group Uninvite Butler"
       ],
       "description": "Cancel pending invites in your Facebook group, one at a time."
+    },
+    {
+      "section": "foyer-butler",
+      "workspaceId": "foyer-butler",
+      "label": "Foyer Butler",
+      "path": "Foyer Butler",
+      "crumbs": [
+        "Foyer Butler"
+      ],
+      "description": "Build one shoppable link for your bio, filled from your products."
     },
     {
       "section": "help",
@@ -841,6 +894,27 @@
       "description": "One CRM for every brand you're prospecting, pitching, or negotiating with."
     },
     {
+      "section": "prime-day-hub-dashboard",
+      "workspaceId": "prime-day-hub-dashboard",
+      "label": "Prime Day Butler",
+      "path": "Prime Day Butler",
+      "crumbs": [
+        "Prime Day Butler"
+      ],
+      "description": "Expand to see your Prime Day tools."
+    },
+    {
+      "section": "prime-day-butler",
+      "workspaceId": "prime-day-butler",
+      "label": "Deal Finder",
+      "path": "Prime Day Butler › Deal Finder",
+      "crumbs": [
+        "Prime Day Butler",
+        "Deal Finder"
+      ],
+      "description": "Surface Prime Day deals you can post about, including products you already own."
+    },
+    {
       "section": "reddit-butler-dashboard",
       "workspaceId": "reddit-butler-dashboard",
       "label": "Reddit Butler",
@@ -893,6 +967,16 @@
       "description": "Send content your butlers generate to a Google Sheet, like Deals Butler does."
     },
     {
+      "section": "settings-workspace-visibility",
+      "workspaceId": "settings-workspace-visibility",
+      "label": "Show / Hide Butlers",
+      "path": "Show / Hide Butlers",
+      "crumbs": [
+        "Show / Hide Butlers"
+      ],
+      "description": "Turn butlers on or off in the left menu. Hidden butlers keep their settings."
+    },
+    {
       "section": "social-posting-butler",
       "workspaceId": "social-posting-butler",
       "label": "Social Posting Butler",
@@ -901,6 +985,16 @@
         "Social Posting Butler"
       ],
       "description": "Schedule and publish your posts to every social destination."
+    },
+    {
+      "section": "support-circle",
+      "workspaceId": "support-circle",
+      "label": "Support Circle",
+      "path": "Support Circle",
+      "crumbs": [
+        "Support Circle"
+      ],
+      "description": "Share your links and let your butlers support fellow members."
     },
     {
       "section": "telegram-butler-dashboard",
@@ -1104,6 +1198,17 @@
         "Walmart Butler"
       ],
       "description": "Expand to see your Walmart tools."
+    },
+    {
+      "section": "walmart-collection-builder",
+      "workspaceId": "walmart-collection-builder",
+      "label": "Collection Builder",
+      "path": "Walmart Butler › Collection Builder",
+      "crumbs": [
+        "Walmart Butler",
+        "Collection Builder"
+      ],
+      "description": "Turn one of your Amazon lists into a matching Walmart collection."
     },
     {
       "section": "walmart-photo-butler",
