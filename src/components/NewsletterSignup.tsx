@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { FACEBOOK_GROUP_URL } from "@/lib/social";
+import TurnstileField, { TURNSTILE_SITE_KEY } from "@/components/TurnstileField";
 
 /**
  * Newsletter opt-in form. Posts to /api/newsletter/subscribe. Used in the site
@@ -22,17 +23,28 @@ export default function NewsletterSignup({ source, title, subtitle, className }:
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState<string | null>(null);
+  // The Turnstile widget (and Cloudflare's script) only loads once the visitor
+  // engages with the form, so it costs nothing on pages where nobody signs up.
+  const [engaged, setEngaged] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+  const [resetSignal, setResetSignal] = useState(0);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (status === "loading") return;
+    if (TURNSTILE_SITE_KEY && !token) {
+      setEngaged(true);
+      setStatus("error");
+      setMessage("Please complete the verification checkbox, then subscribe.");
+      return;
+    }
     setStatus("loading");
     setMessage(null);
     try {
       const res = await fetch("/api/newsletter/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, source }),
+        body: JSON.stringify({ email, source, turnstileToken: token }),
       });
       const json = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
       if (!res.ok || !json.ok) {
@@ -46,6 +58,8 @@ export default function NewsletterSignup({ source, title, subtitle, className }:
     } catch {
       setStatus("error");
       setMessage("Network error. Please try again.");
+    } finally {
+      setResetSignal((n) => n + 1);
     }
   };
 
@@ -83,6 +97,7 @@ export default function NewsletterSignup({ source, title, subtitle, className }:
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            onFocus={() => setEngaged(true)}
             placeholder="you@example.com"
             className="w-full rounded-[14px] border border-slate-300 px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-orange-500"
           />
@@ -95,6 +110,12 @@ export default function NewsletterSignup({ source, title, subtitle, className }:
           </button>
         </form>
       )}
+
+      {status !== "done" && engaged ? (
+        <div className="mt-2">
+          <TurnstileField onToken={setToken} resetSignal={resetSignal} />
+        </div>
+      ) : null}
 
       {status === "error" && message ? (
         <p className="mt-2 text-sm text-rose-600">{message}</p>

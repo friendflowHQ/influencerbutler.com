@@ -14,12 +14,16 @@
  * the secret set). Mirrors src/lib/support-worker.ts (submitSupportTicket)
  * and src/lib/ai-concierge/agent.ts (submitFeedback).
  *
- * Abuse control: the worker enforces a per-IP rate limit, and this route
- * additionally verifies a Cloudflare Turnstile token when TURNSTILE_SECRET_KEY
- * is configured. If the secret is not set (e.g. a preview deploy without keys),
- * verification is skipped so the form still works.
+ * Abuse control: the worker enforces a per-IP rate limit, this route adds its
+ * own per-IP limit, and a Cloudflare Turnstile token is always verified. The
+ * Turnstile check FAILS CLOSED in production when TURNSTILE_SECRET_KEY is unset
+ * (see src/lib/turnstile.ts); outside production an unset secret is skipped so
+ * local dev and keyless previews still work.
  */
 import { NextResponse } from "next/server";
+import { clientIp } from "@/lib/client-ip";
+import { rateLimit } from "@/lib/rate-limit";
+import { verifyTurnstile } from "@/lib/turnstile";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,37 +41,6 @@ type PostBody = {
   userEmail?: string;
   turnstileToken?: string;
 };
-
-function clientIp(request: Request): string {
-  const h = request.headers;
-  return (
-    h.get("cf-connecting-ip") ||
-    (h.get("x-forwarded-for") || "").split(",")[0].trim() ||
-    ""
-  );
-}
-
-async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
-  const secret = process.env.TURNSTILE_SECRET_KEY || "";
-  // No secret configured -> skip verification so the form stays usable.
-  if (!secret) return true;
-  if (!token) return false;
-  try {
-    const form = new URLSearchParams();
-    form.set("secret", secret);
-    form.set("response", token);
-    if (ip) form.set("remoteip", ip);
-    const res = await fetch(
-      "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-      { method: "POST", body: form },
-    );
-    const json = (await res.json().catch(() => null)) as { success?: boolean } | null;
-    return Boolean(json?.success);
-  } catch (err) {
-    console.error("[api/feedback] turnstile verify threw", err);
-    return false;
-  }
-}
 
 export async function POST(request: Request) {
   let payload: PostBody;
@@ -109,8 +82,15 @@ export async function POST(request: Request) {
   }
 
   const ip = clientIp(request);
-  const humanOk = await verifyTurnstile(turnstileToken, ip);
-  if (!humanOk) {
+  const limited = await rateLimit(`feedback:ip:${ip}`, 5, 3600);
+  if (!limited.allowed) {
+    return NextResponse.json(
+      { ok: false, error: "Too many messages from your network. Please try again later." },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
+  const human = await verifyTurnstile(turnstileToken, ip);
+  if (!human.ok) {
     return NextResponse.json(
       { ok: false, error: "Verification failed. Please try the checkbox again." },
       { status: 400 },
@@ -118,8 +98,16 @@ export async function POST(request: Request) {
   }
 
   const sharedKey = process.env.FEEDBACK_SHARED_KEY || "";
-  const headers: Record<string, string> = { "content-type": "application/json" };
-  if (sharedKey) headers["x-ib-key"] = sharedKey;
+  // Always attach the shared key. If it is missing in production the worker
+  // will (correctly) reject us; surface that loudly instead of silently
+  // forwarding unauthenticated.
+  if (!sharedKey && process.env.NODE_ENV === "production") {
+    console.error("[api/feedback] FEEDBACK_SHARED_KEY is not set in production");
+  }
+  const headers: Record<string, string> = {
+    "content-type": "application/json",
+    "x-ib-key": sharedKey,
+  };
 
   const base = (process.env.FEEDBACK_WORKER_URL || "https://feedback.influencerbutler.com").replace(/\/+$/, "");
   try {

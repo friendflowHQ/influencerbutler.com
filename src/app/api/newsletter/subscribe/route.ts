@@ -7,6 +7,14 @@
  * the contact there too so issues can be composed and sent from the Resend
  * dashboard (unsubscribe + compliance handled by Resend).
  *
+ * Abuse control (this is an email-sink: anyone can type a victim's address):
+ *  - per-IP and per-email rate limits (src/lib/rate-limit.ts);
+ *  - Turnstile is verified whenever a token is sent, and REQUIRED when
+ *    NEWSLETTER_REQUIRE_TURNSTILE=1 (turn on once every form that posts here
+ *    renders the widget; today only NewsletterSignup does).
+ *  - There is no double opt-in yet (needs a product decision: confirmation
+ *    email + pending status in email_subscribers).
+ *
  * Always returns a friendly result: a duplicate email is treated as success so
  * we never leak who is already on the list, and a missing table / missing
  * Resend config degrades gracefully instead of erroring at the visitor.
@@ -15,13 +23,16 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { addToResendAudience } from "@/lib/resend-audience";
 import { isUndeliverableTestEmail } from "@/lib/email-address";
+import { clientIp } from "@/lib/client-ip";
+import { rateLimit } from "@/lib/rate-limit";
+import { verifyTurnstile } from "@/lib/turnstile";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-type SubscribeBody = { email?: unknown; source?: unknown };
+type SubscribeBody = { email?: unknown; source?: unknown; turnstileToken?: unknown };
 
 type ServiceDb = {
   from: (table: string) => {
@@ -53,6 +64,32 @@ export async function POST(request: Request) {
   const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
   if (!email || email.length > 254 || !EMAIL_RE.test(email)) {
     return NextResponse.json({ error: "Please enter a valid email." }, { status: 400 });
+  }
+
+  const ip = clientIp(request);
+  const token = typeof body.turnstileToken === "string" ? body.turnstileToken : "";
+  if (token || process.env.NEWSLETTER_REQUIRE_TURNSTILE === "1") {
+    const human = await verifyTurnstile(token, ip);
+    if (!human.ok) {
+      return NextResponse.json(
+        { error: "Verification failed. Please try the checkbox again." },
+        { status: 400 },
+      );
+    }
+  }
+
+  const [byIp, byEmail] = await Promise.all([
+    rateLimit(`newsletter:ip:${ip}`, 10, 3600),
+    rateLimit(`newsletter:email:${email}`, 3, 86400),
+  ]);
+  if (!byIp.allowed || !byEmail.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.max(byIp.retryAfterSec, byEmail.retryAfterSec)) },
+      },
+    );
   }
 
   // Reserved test domains (example.com, *.test, ...) can never receive mail, so

@@ -6,6 +6,7 @@ import { FormEvent, Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { resolveNext } from "@/lib/safe-next";
+import TurnstileField, { TURNSTILE_SITE_KEY } from "@/components/TurnstileField";
 
 type LinkMode = "signin" | "reset";
 
@@ -16,6 +17,8 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [linkMode, setLinkMode] = useState<LinkMode | null>(null);
   const [linkNotice, setLinkNotice] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileReset, setTurnstileReset] = useState(0);
   const searchParams = useSearchParams();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -51,12 +54,16 @@ function LoginForm() {
       setError("Enter your email above first, then choose an option.");
       return;
     }
+    if (TURNSTILE_SITE_KEY && !turnstileToken) {
+      setError("Please complete the verification checkbox first.");
+      return;
+    }
     setLinkMode(mode);
     try {
       const res = await fetch("/api/auth/login-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, mode }),
+        body: JSON.stringify({ email, mode, turnstileToken }),
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => null)) as { error?: string } | null;
@@ -72,6 +79,8 @@ function LoginForm() {
       setError("Something went wrong. Please try again.");
     } finally {
       setLinkMode(null);
+      // Turnstile tokens are single use; get a fresh one for the next request.
+      setTurnstileReset((n) => n + 1);
     }
   };
 
@@ -122,6 +131,9 @@ function LoginForm() {
           they end up looping on sign-in links instead. */}
       <div className="pt-2 text-sm text-slate-600">
         <p className="font-medium text-slate-700">No password yet, or trouble signing in?</p>
+        <div className="mt-2">
+          <TurnstileField onToken={setTurnstileToken} resetSignal={turnstileReset} />
+        </div>
         <div className="mt-2 grid gap-2 sm:grid-cols-2">
           <button
             type="button"

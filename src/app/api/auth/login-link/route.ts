@@ -2,18 +2,23 @@ import { NextResponse } from "next/server";
 import { adminService, type AdminService } from "@/lib/admin-service";
 import { sendEmail } from "@/lib/email-send";
 import { transactionalFrom } from "@/lib/email-senders";
+import { clientIp } from "@/lib/client-ip";
+import { rateLimit } from "@/lib/rate-limit";
+import { verifyTurnstile } from "@/lib/turnstile";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type Mode = "signin" | "reset";
-type Body = { email?: string; mode?: string };
+type Body = { email?: string; mode?: string; turnstileToken?: string };
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
+// Cheap first line of defence only: a client cookie is trivially bypassed by a
+// script. The real limits are per-IP and per-email (rate-limit.ts) plus
+// Turnstile, enforced in POST below.
 // One send per browser per 60s, matched by mode so a "sign-in link" and a
-// "reset" request don't block each other. Blunts trivial spamming; Supabase
-// rate-limits generateLink server-side as the real backstop.
+// "reset" request don't block each other.
 const COOLDOWN_SECONDS = 60;
 const COOLDOWN_COOKIE = "ib_login_link";
 
@@ -57,6 +62,8 @@ async function sendLinkEmail(
     `    ${actionLink}`,
     ``,
     closing,
+    ``,
+    `Staying safe: we only send sign-in links from influencerbutler.com. Never share this link with anyone, and we will never ask for your password or license key by email.`,
     ``,
     `- The Influencer Butler team`,
   ].join("\n");
@@ -133,6 +140,35 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
   }
 
+  // Bot gate. Fails closed in production when TURNSTILE_SECRET_KEY is unset.
+  // This concerns the visitor's own submission, not account existence, so it
+  // is safe to surface.
+  const ip = clientIp(request);
+  const human = await verifyTurnstile(body.turnstileToken, ip);
+  if (!human.ok) {
+    return NextResponse.json(
+      { error: "Verification failed. Please try the checkbox again." },
+      { status: 400 },
+    );
+  }
+
+  // Real rate limits: keyed per IP and per target email (independent of whether
+  // the account exists, so they leak nothing). Stops this endpoint being used to
+  // mail-bomb a victim or to mass-create accounts.
+  const [byIp, byEmail] = await Promise.all([
+    rateLimit(`login-link:ip:${ip}`, 10, 3600),
+    rateLimit(`login-link:email:${mode}:${email}`, 3, 3600),
+  ]);
+  if (!byIp.allowed || !byEmail.allowed) {
+    return NextResponse.json(
+      { error: "Too many requests. Please wait a bit and try again." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(Math.max(byIp.retryAfterSec, byEmail.retryAfterSec)) },
+      },
+    );
+  }
+
   const ok = NextResponse.json({ ok: true });
 
   // Cooldown and misconfiguration both fall through to the same generic ok, so
@@ -159,7 +195,7 @@ export async function POST(request: Request) {
       console.error("auth/login-link: provisioned new user", {
         mode,
         email,
-        ip: request.headers.get("x-forwarded-for") ?? "unknown",
+        ip,
       });
     }
 
