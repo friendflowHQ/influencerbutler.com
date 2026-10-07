@@ -3,12 +3,13 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
-import { lookupAffiliateByCode, withTimeout } from "@/lib/affiliate-lookup";
+import { lookupAffiliateOwnerByCode, withTimeout } from "@/lib/affiliate-lookup";
 import {
   DISCOUNT_PCT_FIRST,
   DISCOUNT_PCT_RETURNING,
   WELCOME_FIRST_CODE,
   WELCOME_RETURNING_CODE,
+  readAffiliateSourceCookie,
   readPromoTier,
   type PromoTier,
 } from "@/lib/promo";
@@ -16,8 +17,8 @@ import PricingCardsClient from "./PricingCardsClient";
 import PricingFaq from "./PricingFaq";
 import PricingFeatures from "./PricingFeatures";
 import FacebookGroupIconLink from "@/components/FacebookGroupIconLink";
-
 import AiKeyNote from "@/components/AiKeyNote";
+
 export const dynamic = "force-dynamic";
 
 export const metadata = {
@@ -71,8 +72,16 @@ export default async function PricingPage({
       redirect("/dashboard?from=pricing");
     }
   }
-  const affiliate =
-    rawCode.length > 0 ? await withTimeout(lookupAffiliateByCode(rawCode), 3000, null) : null;
+  // Banner must match what checkout will actually charge. Checkout falls back
+  // to the first-touch ib_aff_src cookie when no ?code= is present, and applies
+  // the affiliate's code (suppressing WELCOME) for self-hosted affiliates that
+  // have no ls_affiliate_id, so look up by owner and honor the cookie too.
+  const bannerCode = rawCode || readAffiliateSourceCookie(cookieStore) || "";
+  const affiliateOwner =
+    bannerCode.length > 0
+      ? await withTimeout(lookupAffiliateOwnerByCode(bannerCode), 3000, null)
+      : null;
+  const affiliate = affiliateOwner ? { code: affiliateOwner.code } : null;
 
   const tier: PromoTier = readPromoTier(cookieStore);
 
@@ -138,6 +147,7 @@ export default async function PricingPage({
             for all 50+ tools, unlimited messages, and priority support, starting with a 14-day
             free trial. Cancel anytime - no questions asked.
           </p>
+          <AiKeyNote compact className="mx-auto mt-4 max-w-2xl" />
           <div className="mt-5 flex justify-center">
             <span className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-xs font-medium text-emerald-900">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
@@ -147,7 +157,6 @@ export default async function PricingPage({
                 Butler &amp; Storefront Butler - on every account, even after trial expiry or
                 cancellation.
               </span>
-          <AiKeyNote compact className="mx-auto mt-4 max-w-2xl" />
             </span>
           </div>
         </div>

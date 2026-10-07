@@ -726,6 +726,48 @@ async function onboardingLeadConverted(supabase: CronClient, email: string): Pro
   }
 }
 
+// No-stacking for the static email incentives (FREE_ONBOARDING_DISCOUNT_CODE,
+// APP_TRIAL_DISCOUNT_CODE): a lead who was referred by an affiliate (web signup,
+// extension or desktop stamp on profiles.ref_*) already has the affiliate's
+// discount waiting at checkout, so a second code in the email would stack, or
+// pull them off the affiliate's code. Returns null when not referred, "" when
+// referred without a recorded code, else the affiliate code. Best-effort: any
+// read error reads as "not referred" (the prior behavior).
+async function referredAffiliateCodeForEmail(
+  supabase: CronClient,
+  email: string,
+): Promise<string | null> {
+  try {
+    const fetchClient = supabase as unknown as CronRowFetchClient;
+    const { data } = await fetchClient
+      .from("profiles")
+      .select("ref_affiliate_user_id,ref_affiliate_code")
+      .eq("email", email)
+      .maybeSingle();
+    if (!data) return null;
+    const userId = typeof data.ref_affiliate_user_id === "string" ? data.ref_affiliate_user_id : "";
+    const code = typeof data.ref_affiliate_code === "string" ? data.ref_affiliate_code.trim() : "";
+    if (!userId && !code) return null;
+    return code;
+  } catch (err) {
+    console.error("cron: referred-affiliate lookup threw", err);
+    return null;
+  }
+}
+
+// Pricing link for an email: the static incentive code for organic leads, the
+// referring affiliate's own code for referred ones (never both).
+function pricingUrlForLead(
+  base: string,
+  incentiveUrl: string,
+  referredCode: string | null,
+): string {
+  if (referredCode === null) return incentiveUrl;
+  return referredCode
+    ? `${base}/pricing?code=${encodeURIComponent(referredCode)}`
+    : `${base}/pricing`;
+}
+
 async function sendFreeOnboardingEmails(supabase: CronClient): Promise<Record<OnboardingTier, number>> {
   const counts: Record<OnboardingTier, number> = { day0: 0, day2: 0, day5: 0, day10: 0 };
 
@@ -805,13 +847,15 @@ async function sendFreeOnboardingEmails(supabase: CronClient): Promise<Record<On
         continue;
       }
 
+      const referredCode = await referredAffiliateCodeForEmail(supabase, row.email);
+
       const sent = await sendOnboardingEmail({
         tier: tier.tier,
         to: row.email,
-        pricingUrl,
+        pricingUrl: pricingUrlForLead(base, pricingUrl, referredCode),
         helpUrl,
         extensionUrl,
-        discountCode,
+        discountCode: referredCode === null ? discountCode : null,
         discountPercent: Number.isFinite(discountPercent) ? discountPercent : 0,
       });
 
@@ -1035,13 +1079,15 @@ async function sendAppTrialEmails(supabase: CronClient): Promise<Record<AppTrial
         continue;
       }
 
+      const referredCode = await referredAffiliateCodeForEmail(supabase, row.email);
+
       const sent = await sendAppTrialEmail({
         tier: tier.tier,
         to: row.email,
         name: "",
-        pricingUrl,
+        pricingUrl: pricingUrlForLead(base, pricingUrl, referredCode),
         helpUrl,
-        discountCode,
+        discountCode: referredCode === null ? discountCode : null,
         discountPercent,
       });
 

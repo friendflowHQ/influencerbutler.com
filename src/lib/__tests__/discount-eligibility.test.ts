@@ -73,8 +73,26 @@ describe("hasRedeemedDiscount", () => {
     expect(await hasRedeemedDiscount(client, "u1")).toBe(true);
   });
 
+  it("is true when the profile was referred before any purchase (web/extension/desktop)", async () => {
+    const client = stubClient({
+      orders: [],
+      subscriptions: [],
+      profiles: [{ ref_affiliate_user_id: "aff-7", ref_affiliate_code: "CINDY" }],
+    });
+    expect(await hasRedeemedDiscount(client, "u1")).toBe(true);
+  });
+
+  it("is false when the profile has no referral stamp", async () => {
+    const client = stubClient({
+      orders: [],
+      subscriptions: [],
+      profiles: [{ ref_affiliate_user_id: null, ref_affiliate_code: null }],
+    });
+    expect(await hasRedeemedDiscount(client, "u1")).toBe(false);
+  });
+
   it("fails open (false) when both reads error on a lagging schema", async () => {
-    const client = stubClient({ orders: "error", subscriptions: "error" });
+    const client = stubClient({ orders: "error", subscriptions: "error", profiles: "error" });
     expect(await hasRedeemedDiscount(client, "u1")).toBe(false);
   });
 

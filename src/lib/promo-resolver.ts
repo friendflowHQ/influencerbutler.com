@@ -313,12 +313,17 @@ export function resolveIntendedAffiliate(
  * "best of 24-month NPV" ranking, paying the affiliate commission on a
  * site-wide discount that we'd also otherwise pay - double leakage.
  *
+ * An affiliate counts whether or not Lemon Squeezy has them linked: the
+ * self-hosted program never sets `ls_affiliate_id`, so keying only off
+ * `isAffiliate` (linked-only) would let the welcome code undercut every
+ * self-hosted affiliate's branded code. `affiliateUserId` is set for both.
+ *
  * Mirrored in customer-facing copy: see "No discount stacking" in
  * public/legal/affiliate-terms.html Section 3(e).
  */
 export function applyStackingRules(candidates: CandidateCode[]): CandidateCode[] {
   const hasAffiliate = candidates.some(
-    (c) => c.isAffiliate && c.source !== "welcome-cookie",
+    (c) => (c.isAffiliate || c.affiliateUserId) && c.source !== "welcome-cookie",
   );
   if (!hasAffiliate) return candidates;
   return candidates.filter((c) => c.source !== "welcome-cookie");

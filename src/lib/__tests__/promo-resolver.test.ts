@@ -486,6 +486,24 @@ describe("applyStackingRules (affiliate XOR welcome)", () => {
     expect(applyStackingRules(cands)).toEqual(cands);
   });
 
+  it("drops welcome-cookie for a self-hosted affiliate with no LS link", () => {
+    // Self-hosted affiliates never get ls_affiliate_id, so isAffiliate is false.
+    // The owner lookup still resolves them (affiliateUserId), and that must be
+    // enough to suppress the welcome code.
+    const cands = [
+      candidate({
+        code: "CINDY",
+        source: "url-code",
+        isAffiliate: false,
+        lsAffiliateId: null,
+        affiliateUserId: "aff-cindy",
+      }),
+      candidate({ code: "WELCOME30", source: "welcome-cookie" }),
+    ];
+    const out = applyStackingRules(cands);
+    expect(out.map((c) => c.code)).toEqual(["CINDY"]);
+  });
+
   it("does NOT drop welcome based on a non-affiliate typed/url code", () => {
     // A marketing campaign code from a URL is not an affiliate. It shouldn't
     // trigger the XOR suppression.

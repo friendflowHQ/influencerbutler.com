@@ -12,6 +12,8 @@
  *   - orders.discount_code present, or orders.discount_total_cents > 0
  *   - orders.ref_affiliate_code / ref_affiliate_user_id (affiliate referral)
  *   - subscriptions.ref_affiliate_code / ref_affiliate_user_id
+ *   - profiles.ref_affiliate_code / ref_affiliate_user_id (referred before any
+ *     purchase: web signup, Chrome extension, or desktop app)
  *
  * Reads are best-effort: these columns live on manual-apply migrations that can
  * lag prod (20260617 / 20260702 / 20260704). A read error is treated as "no
@@ -74,5 +76,40 @@ export async function hasRedeemedDiscount(
     console.error("hasRedeemedDiscount: subscription read failed", error);
   }
 
+  // A referral stamped on the profile BEFORE any purchase: web signup capture,
+  // the extension's carried code, or the desktop app's deep-link code. These
+  // customers are entitled to the affiliate's discount at checkout, so a member
+  // code on top would stack.
+  if ((await referringAffiliateCode(client, userId)) !== null) return true;
+
   return false;
+}
+
+/**
+ * The referring affiliate's code stamped on this user's profile (first-touch,
+ * from web signup, the Chrome extension or the desktop app). Returns null when
+ * the user was not referred, and "" when referred but the code is not recorded
+ * (so check `!== null`, not truthiness). Best-effort
+ * like the rest of this file: a read error (e.g. schema lag) reads as "no
+ * referral" so callers fail open to their prior behavior.
+ */
+export async function referringAffiliateCode(
+  client: FromClient,
+  userId: string,
+): Promise<string | null> {
+  try {
+    const { data } = await client
+      .from("profiles")
+      .select("ref_affiliate_code,ref_affiliate_user_id")
+      .eq("id", userId)
+      .limit(1);
+    for (const p of (data ?? []) as SubSignal[]) {
+      if (p.ref_affiliate_user_id || p.ref_affiliate_code) {
+        return p.ref_affiliate_code?.trim() || "";
+      }
+    }
+  } catch (error) {
+    console.error("referringAffiliateCode: profile read failed", error);
+  }
+  return null;
 }
