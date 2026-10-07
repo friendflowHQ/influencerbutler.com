@@ -2,6 +2,42 @@
   "lastUpdated": "2026-10-07",
   "releases": [
     {
+      "version": "0.1.29",
+      "date": "October 7, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "A one-click PDF guide to how the Butler Score is calculated, what each chip means and where the numbers come from. Find it in the popup footer, at the end of setup, and under the Butler Score on product pages, in English, Spanish and French"
+          ]
+        },
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "Amazon search: the Butler chip row no longer overlaps the next product's title. It now sits inside each product card",
+            "Amazon search: units per month now respects Amazon's own bought in past month figure, and a rating or price right before it can no longer inflate the count",
+            "Amazon search: a Typical price strikethrough is no longer shown as a Deal, and the percent off only shows for real cuts of 10% or more",
+            "Amazon search: a Campaign chip that has no matching campaign rate is dropped instead of lingering",
+            "Walmart search: tiles on Walmart's new layout are now scored (47 of 70 on a laptop search, up from 4), and the grid is re-scored when Walmart redraws it",
+            "Walmart: the extension now loads from the Walmart home page, product pages refresh when you move between products, and the Watch star no longer appears on Walmart tiles",
+            "Creator Hub: the Manage videos list at amazon.com/creatorhub now gets Video Money and YouTube chips",
+            "The tile menu button is now a clear three-dot icon, and toasts replace each other instead of stacking on top of one another",
+            "Global reach: countries that have not been checked now say so instead of claiming the product was not found there",
+            "The toolbar icon opens Settings on pages that have no panel instead of doing nothing, and the creator name on product videos no longer runs into Earns commissions"
+          ]
+        },
+        {
+          "heading": "Other notable changes",
+          "items": [
+            "The Draft caption and Draft voiceover buttons now say right next to them when they need your own OpenAI key, with a Connect OpenAI link. You pay OpenAI directly (usually pennies), and a ChatGPT subscription does not work",
+            "OpenAI errors are now clear and actionable: an invalid or revoked key tells you to create a new one, and an out-of-credit account tells you to add billing at platform.openai.com",
+            "Settings now explain up front that the AI section is optional, billed by OpenAI directly, and links to a setup guide",
+            "When the Butler's Brief is not available right now, it says so plainly and explains that your own OpenAI key makes it work reliably. The technical reason code is tucked behind a Details toggle"
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.28",
       "date": "October 7, 2026",
       "sections": [

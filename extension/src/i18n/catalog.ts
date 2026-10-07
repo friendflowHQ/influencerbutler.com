@@ -174,6 +174,7 @@ export interface Dict {
   feedbackPlaceholder: string;
   feedbackSend: string;
   footerHelp: string;
+  footerGuide: string;
   footerDashboard: string;
 
   // Popup: dynamic status
@@ -383,6 +384,7 @@ export interface Dict {
   butlerScoreIntro: string;
   scoreBandLabel: (band: "hot" | "warm" | "cool") => string;
   scoreOutOf: string;
+  scoreGuideLink: string;
   scorePartCommission: string;
   scorePartSlot: string;
   scorePartDemand: string;
@@ -1067,6 +1069,7 @@ export interface Dict {
   obDoneBody: string;
   obDoneHelp: string;
   obDoneDashboard: string;
+  obDoneGuide: string;
   obDoneClose: string;
 
   // Settings sync with the paired desktop app (popup card + walkthrough +
@@ -1254,6 +1257,7 @@ const en: Dict = {
   feedbackPlaceholder: "What happened, or what would help?",
   feedbackSend: "Send feedback",
   footerHelp: "Help",
+  footerGuide: "PDF guide",
   footerDashboard: "My dashboard",
 
   openAmazonToStart: "Open an Amazon or Walmart product page, your orders, or your storefront to get started.",
@@ -1463,6 +1467,7 @@ const en: Dict = {
   scoreBandLabel: (band) =>
     band === "hot" ? "Hot pick" : band === "warm" ? "Worth a look" : "Low priority",
   scoreOutOf: "out of 100",
+  scoreGuideLink: "How the score works (PDF)",
   scorePartCommission: "Commission",
   scorePartSlot: "Open slot",
   scorePartDemand: "Demand",
@@ -2160,6 +2165,7 @@ const en: Dict = {
     "Influencer Butler is ready. Open a product, your storefront, or a Creator Connections campaign to see it work.",
   obDoneHelp: "Open Help",
   obDoneDashboard: "My dashboard",
+  obDoneGuide: "Download the PDF guide",
   obDoneClose: "Done",
 
   syncTitle: "Sync with desktop app",
@@ -2350,6 +2356,7 @@ const es: Dict = {
   feedbackPlaceholder: "¿Qué pasó, o qué te ayudaría?",
   feedbackSend: "Enviar comentario",
   footerHelp: "Ayuda",
+  footerGuide: "Guía PDF",
   footerDashboard: "Mi panel",
 
   openAmazonToStart: "Abre una página de producto de Amazon o Walmart, tus pedidos o tu storefront para empezar.",
@@ -2559,6 +2566,7 @@ const es: Dict = {
   scoreBandLabel: (band) =>
     band === "hot" ? "Muy recomendable" : band === "warm" ? "Vale un vistazo" : "Baja prioridad",
   scoreOutOf: "de 100",
+  scoreGuideLink: "Cómo funciona la puntuación (PDF)",
   scorePartCommission: "Comisión",
   scorePartSlot: "Espacio libre",
   scorePartDemand: "Demanda",
@@ -3257,6 +3265,7 @@ const es: Dict = {
     "Influencer Butler está listo. Abre un producto, tu tienda o una campaña de Creator Connections para verlo en acción.",
   obDoneHelp: "Abrir Ayuda",
   obDoneDashboard: "Mi panel",
+  obDoneGuide: "Descargar la guía en PDF",
   obDoneClose: "Listo",
 
   syncTitle: "Sincronizar con la app de escritorio",
@@ -3447,6 +3456,7 @@ const fr: Dict = {
   feedbackPlaceholder: "Que s'est-il passé, ou qu'est-ce qui aiderait?",
   feedbackSend: "Envoyer un retour",
   footerHelp: "Aide",
+  footerGuide: "Guide PDF",
   footerDashboard: "Mon tableau de bord",
 
   openAmazonToStart: "Ouvrez une page produit Amazon ou Walmart, vos commandes ou votre storefront pour commencer.",
@@ -3656,6 +3666,7 @@ const fr: Dict = {
   scoreBandLabel: (band) =>
     band === "hot" ? "Excellent choix" : band === "warm" ? "À considérer" : "Priorité basse",
   scoreOutOf: "sur 100",
+  scoreGuideLink: "Comment fonctionne le score (PDF)",
   scorePartCommission: "Commission",
   scorePartSlot: "Créneau libre",
   scorePartDemand: "Demande",
@@ -4354,6 +4365,7 @@ const fr: Dict = {
     "Influencer Butler est prêt. Ouvrez un produit, votre boutique ou une campagne Creator Connections pour le voir à l'œuvre.",
   obDoneHelp: "Ouvrir l'aide",
   obDoneDashboard: "Mon tableau de bord",
+  obDoneGuide: "Télécharger le guide PDF",
   obDoneClose: "Terminé",
 
   syncTitle: "Synchroniser avec l'app de bureau",

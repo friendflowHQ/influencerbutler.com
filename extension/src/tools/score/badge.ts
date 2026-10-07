@@ -1,5 +1,7 @@
 import { addSection, el, infoTip } from "../../ui/components";
-import { t } from "../../i18n";
+import { getLocale, t } from "../../i18n";
+import { sendToBackground } from "../../shared/messages";
+import { guideUrlFor } from "../../shared/constants";
 import type { ButlerScore } from "./model";
 
 // The Butler Score panel section: the 0-100 number, a hot/warm/cool band, and
@@ -17,6 +19,24 @@ export function renderScore(score: ButlerScore): void {
   );
   badge.append(num, meta, infoTip(breakdown(score)));
   section.append(badge);
+  section.append(guideLink());
+}
+
+// "How the score works" PDF link under the number. The panel lives in a shadow
+// DOM, where a plain anchor does not reliably navigate, so a normal click is
+// routed through the background worker (same pattern as the app upsell CTA).
+function guideLink(): HTMLElement {
+  const url = guideUrlFor(getLocale());
+  const link = el("a", "inline-connect", t().scoreGuideLink) as HTMLAnchorElement;
+  link.href = url;
+  link.target = "_blank";
+  link.rel = "noopener";
+  link.addEventListener("click", (event) => {
+    if (event.ctrlKey || event.metaKey || event.shiftKey) return;
+    event.preventDefault();
+    void sendToBackground<void>({ kind: "OPEN_URL", url });
+  });
+  return link;
 }
 
 // Compact "why this number" line for the tooltip: the weighted points each

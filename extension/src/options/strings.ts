@@ -7,6 +7,9 @@ import type { Locale } from "../i18n/catalog";
 
 export interface OptionsDict {
   pageTitle: string;
+  // Header button that opens the AI Assistant chat tab.
+  openChat: string;
+  openChatHint: string;
   pageIntro: string;
   securityNote: string;
   affiliateDisclosure: string;
@@ -202,16 +205,18 @@ export interface OptionsDict {
   // Extra routing-roster status pills (statusOk doubles as "Connected")
   statusSignedIn: string;
   statusReady: string;
-  statusNotConnected: string;
-}
-
   // Session providers (Mavely, Walmart Creator) connected in the desktop app
   // instead of this browser: a short status pill, and the explainer under the card.
   statusViaApp: string;
   viaAppNote: string;
   viaAppNoteAs: string;
+  statusNotConnected: string;
+}
+
 const en: OptionsDict = {
   pageTitle: "Settings",
+  openChat: "Chat",
+  openChatHint: "Open the AI Assistant: get instant answers from our help guides",
   pageIntro:
     "Connect the same providers the desktop app uses. Paste a key, test it, and the extension uses it while you browse Amazon.",
   securityNote:
@@ -419,16 +424,18 @@ const en: OptionsDict = {
   routingRowWalmart: "Walmart",
   statusSignedIn: "Signed in",
   statusReady: "Ready",
-  statusNotConnected: "Not connected",
-};
-
-const es: OptionsDict = {
-  pageTitle: "Ajustes",
   statusViaApp: "Via app",
   viaAppNote:
     "Connected through the Influencer Butler app. Your links mint there, so you do not need to sign in here. If the app signs out, this card will ask you to reconnect.",
   viaAppNoteAs:
     "Connected through the Influencer Butler app as {account}. Your links mint there, so you do not need to sign in here. If the app signs out, this card will ask you to reconnect.",
+  statusNotConnected: "Not connected",
+};
+
+const es: OptionsDict = {
+  pageTitle: "Ajustes",
+  openChat: "Chat",
+  openChatHint: "Abrir el asistente de IA: respuestas al instante desde nuestra ayuda",
   pageIntro:
     "Conecta los mismos proveedores que usa la app de escritorio. Pega una clave, pruébala y la extensión la usa mientras navegas por Amazon.",
   securityNote:
@@ -636,18 +643,20 @@ const es: OptionsDict = {
   routingRowWalmart: "Walmart",
   statusSignedIn: "Sesión iniciada",
   statusReady: "Listo",
-  statusNotConnected: "Sin conectar",
-};
-
-const fr: OptionsDict = {
-  pageTitle: "Paramètres",
-  pageIntro:
-    "Connectez les mêmes fournisseurs que l'app de bureau. Collez une clé, testez-la, et l'extension l'utilise pendant que vous naviguez sur Amazon.",
   statusViaApp: "Vía la app",
   viaAppNote:
     "Conectado a través de la app de Influencer Butler. Tus enlaces se crean allí, así que no necesitas iniciar sesión aquí. Si la app cierra sesión, esta tarjeta te pedirá reconectar.",
   viaAppNoteAs:
     "Conectado a través de la app de Influencer Butler como {account}. Tus enlaces se crean allí, así que no necesitas iniciar sesión aquí. Si la app cierra sesión, esta tarjeta te pedirá reconectar.",
+  statusNotConnected: "Sin conectar",
+};
+
+const fr: OptionsDict = {
+  pageTitle: "Paramètres",
+  openChat: "Chat",
+  openChatHint: "Ouvrir l'assistant IA : réponses instantanées depuis notre aide",
+  pageIntro:
+    "Connectez les mêmes fournisseurs que l'app de bureau. Collez une clé, testez-la, et l'extension l'utilise pendant que vous naviguez sur Amazon.",
   securityNote:
     "Vos clés restent sur cet appareil, chiffrées, et ne sont envoyées qu'à chaque fournisseur. Elles ne passent jamais par les serveurs Influencer Butler.",
   affiliateDisclosure:
@@ -853,12 +862,12 @@ const fr: OptionsDict = {
   routingRowWalmart: "Walmart",
   statusSignedIn: "Connecté",
   statusReady: "Prêt",
-  statusNotConnected: "Non connecté",
-};
-
-export const OPTIONS_CATALOG: Record<Locale, OptionsDict> = { en, es, fr };
   statusViaApp: "Via l'app",
   viaAppNote:
     "Connecté via l'application Influencer Butler. Vos liens y sont créés, vous n'avez donc pas besoin de vous connecter ici. Si l'application se déconnecte, cette carte vous demandera de vous reconnecter.",
   viaAppNoteAs:
     "Connecté via l'application Influencer Butler en tant que {account}. Vos liens y sont créés, vous n'avez donc pas besoin de vous connecter ici. Si l'application se déconnecte, cette carte vous demandera de vous reconnecter.",
+  statusNotConnected: "Non connecté",
+};
+
+export const OPTIONS_CATALOG: Record<Locale, OptionsDict> = { en, es, fr };

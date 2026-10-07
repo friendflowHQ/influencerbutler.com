@@ -1,7 +1,7 @@
 import { getSettings, getState, patchSettings, patchState } from "../storage/store";
-import { setLocale, t } from "../i18n";
+import { getLocale, setLocale, t } from "../i18n";
 import { sendToBackground, type AuthStatus, type PairResult, type SignInResult } from "../shared/messages";
-import { API_BASE } from "../shared/constants";
+import { API_BASE, guideUrlFor } from "../shared/constants";
 import type { Settings } from "../storage/schema";
 import { isPairedLocal } from "../shared/bridge-token";
 import { isAndroid } from "../shared/platform";
@@ -280,6 +280,7 @@ async function offerSyncAfterPair(): Promise<void> {
 function wireDoneLinks(): void {
   (document.getElementById("ob-done-help") as HTMLAnchorElement).href = `${API_BASE}/extension`;
   (document.getElementById("ob-done-dashboard") as HTMLAnchorElement).href = `${API_BASE}/dashboard/extension`;
+  (document.getElementById("ob-done-guide") as HTMLAnchorElement).href = guideUrlFor(getLocale());
 }
 
 // --- i18n -------------------------------------------------------------------

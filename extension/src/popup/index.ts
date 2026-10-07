@@ -35,7 +35,8 @@ import { isPairedLocal } from "../shared/bridge-token";
 import { isAndroid, isMobileUserAgent } from "../shared/platform";
 import { activePageTab } from "./active-tab";
 import { autoFillFromDesktop, runSyncReconcile } from "../tools/settings-sync/ui";
-import { resolveLocale, setLocale, t } from "../i18n";
+import { getLocale, resolveLocale, setLocale, t } from "../i18n";
+import { guideUrlFor } from "../shared/constants";
 
 // Popup: page status via the active tab's content script, account sign-in via
 // the background, settings straight to storage (content scripts pick changes
@@ -68,6 +69,8 @@ async function init(): Promise<void> {
   const settings = await getSettings();
   setLocale(settings.locale);
   applyStaticI18n();
+  // The PDF guide in the user's language (the static href is the English file).
+  byId<HTMLAnchorElement>("open-guide").href = guideUrlFor(getLocale());
   showVersion();
   await Promise.all([
     renderUpdateCard(),

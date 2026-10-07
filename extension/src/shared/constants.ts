@@ -344,6 +344,19 @@ export const BRIDGE_STATUS_FAIL_TTL_MS = 2_500;
 export const APP_TRIAL_URL = `${API_BASE}/go/download`;
 export const APP_LEARN_URL = `${API_BASE}/extension`;
 
+// The four-page PDF guide ("How Influencer Butler Works"), one file per
+// language. It lives under the public /guides path: /help is behind a login.
+export const HOW_IT_WORKS_GUIDE_URLS = {
+  en: `${API_BASE}/guides/influencer-butler-extension-guide-en.pdf`,
+  es: `${API_BASE}/guides/influencer-butler-extension-guide-es.pdf`,
+  fr: `${API_BASE}/guides/influencer-butler-extension-guide-fr.pdf`,
+} as const;
+
+// The guide in the user's language (English for anything unknown).
+export function guideUrlFor(locale: string): string {
+  return locale === "es" || locale === "fr" ? HOW_IT_WORKS_GUIDE_URLS[locale] : HOW_IT_WORKS_GUIDE_URLS.en;
+}
+
 // Opened in a new tab on FIRST install only (not on updates): a short welcome
 // page that optionally captures an email for setup tips and, ~10 days later, the
 // review + feedback nudge. The extension is anonymous, so this on-site page is
