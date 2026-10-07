@@ -401,6 +401,7 @@ function SiteFooter() {
               <li><Link href="/legal/eula" className="hover:text-[#f97316]">EULA</Link></li>
               <li><Link href="/legal/terms" className="hover:text-[#f97316]">Terms of Service</Link></li>
               <li><Link href="/legal/accessibility" className="hover:text-[#f97316]">Accessibility</Link></li>
+              <li><Link href="/security" className="hover:text-[#f97316]">Security</Link></li>
             </ul>
           </div>
 

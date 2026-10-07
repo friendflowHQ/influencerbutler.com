@@ -98,6 +98,9 @@ const STATIC_HTML_SOURCES = [
   "/for-agencies",
   "/for-agencies/:slug",
   "/legal/:slug",
+  "/security",
+  "/es/security",
+  "/fr/security",
 ];
 
 const agentDiscoveryLinkHeader = [
@@ -138,6 +141,9 @@ const nextConfig: NextConfig = {
       { source: "/legal/cookies", destination: "/legal/cookies.html" },
       { source: "/legal/affiliate-terms", destination: "/legal/affiliate-terms.html" },
       { source: "/legal/accessibility", destination: "/legal/accessibility.html" },
+      { source: "/security", destination: "/security.html" },
+      { source: "/es/security", destination: "/security-es.html" },
+      { source: "/fr/security", destination: "/security-fr.html" },
     ];
   },
   async redirects() {

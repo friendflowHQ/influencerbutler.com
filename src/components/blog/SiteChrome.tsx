@@ -226,6 +226,9 @@ export function SiteFooter() {
               <a href="/legal/accessibility" className="block text-slate-500 hover:text-orange-700">
                 Accessibility
               </a>
+              <a href="/security" className="block text-slate-500 hover:text-orange-700">
+                Security
+              </a>
             </div>
           </div>
 
