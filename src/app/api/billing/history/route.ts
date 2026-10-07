@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { lsApi } from "@/lib/lemonsqueezy";
+import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -155,29 +157,81 @@ async function fetchInvoicesForSubscription(subscriptionId: string): Promise<Bil
     .filter((invoice): invoice is BillingInvoice => invoice !== null);
 }
 
-// POST: fetches the user's billing history from Lemon Squeezy.
-// Auth is enforced by middleware via cookie check. The client passes in the
-// identifiers looked up from Supabase (ls_subscription_id per subscription row,
-// plus the user's email) to avoid Vercel -> Supabase DNS failures.
+/**
+ * Subscription ids that belong to this user, read server-side with the
+ * service-role client keyed on the SESSION user id (never a body value).
+ */
+async function ownedSubscriptionIds(userId: string): Promise<Set<string>> {
+  const owned = new Set<string>();
+  try {
+    const admin = createAdminClient();
+    const { data, error } = await admin
+      .from("subscriptions")
+      .select("ls_subscription_id")
+      .eq("user_id", userId);
+    if (error) {
+      console.error("api/billing/history subscriptions lookup failed", error.message);
+      return owned;
+    }
+    for (const row of data ?? []) {
+      const id = (row as { ls_subscription_id?: string | number | null }).ls_subscription_id;
+      if (id !== null && id !== undefined && String(id)) owned.add(String(id));
+    }
+  } catch (error) {
+    console.error("api/billing/history subscriptions lookup threw", error);
+  }
+  return owned;
+}
+
+// POST: fetches the signed-in user's billing history from Lemon Squeezy.
+//
+// SECURITY: this route is NOT covered by middleware (it only matches pages), so
+// it authenticates itself. Identity comes ONLY from the verified Supabase
+// session (auth.getUser(), never getSession()); any userEmail / subscription id
+// in the request body is treated as a hint and ignored unless it is already one
+// of the caller's own subscriptions. Without this, anyone could POST a victim's
+// email and read their invoices (names, last-4, invoice URLs).
 //
 // Lemon Squeezy's /subscription-invoices endpoint only supports filtering by
-// subscription_id, so we gather the user's subscription IDs (directly, or by
-// looking them up via user_email) and then fan out one request per subscription.
+// subscription_id, so we gather the user's subscription IDs (from our own
+// subscriptions table, falling back to a lookup by the session email) and then
+// fan out one request per subscription.
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as HistoryRequestBody;
-
-    const subscriptionIds = new Set<string>();
-
-    if (body.lsSubscriptionId) {
-      subscriptionIds.add(String(body.lsSubscriptionId));
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user?.id) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
+
+    let body: HistoryRequestBody = {};
+    try {
+      body = (await request.json()) as HistoryRequestBody;
+    } catch {
+      // Body is optional now that identity comes from the session.
+    }
+
+    const owned = await ownedSubscriptionIds(user.id);
+
+    // Only honour body-supplied ids that the session user actually owns.
+    const requested = new Set<string>();
+    if (body.lsSubscriptionId) requested.add(String(body.lsSubscriptionId));
     for (const id of body.lsSubscriptionIds ?? []) {
-      if (id) subscriptionIds.add(String(id));
+      if (id) requested.add(String(id));
     }
+    const subscriptionIds = new Set<string>(
+      requested.size > 0
+        ? Array.from(requested).filter((id) => owned.has(id))
+        : Array.from(owned),
+    );
 
-    if (subscriptionIds.size === 0 && body.userEmail) {
-      const discovered = await fetchSubscriptionIdsForEmail(body.userEmail);
+    // Fall back to the SESSION email (never the body email) when we hold no
+    // subscription rows for this user.
+    if (subscriptionIds.size === 0 && user.email) {
+      const discovered = await fetchSubscriptionIdsForEmail(user.email);
       for (const id of discovered) subscriptionIds.add(id);
     }
 

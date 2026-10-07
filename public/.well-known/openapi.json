@@ -142,7 +142,7 @@
       }
     },
     "/api/billing/history": {
-      "get": {
+      "post": {
         "tags": ["billing"],
         "summary": "List the authenticated user's billing history",
         "security": [{ "supabaseSession": [] }],
@@ -180,17 +180,6 @@
         "summary": "Resolve the price for a Lemon Squeezy variant",
         "responses": {
           "200": { "description": "Variant price metadata." }
-        }
-      }
-    },
-    "/api/affiliates/me": {
-      "get": {
-        "tags": ["affiliates"],
-        "summary": "Get the authenticated user's affiliate profile",
-        "security": [{ "supabaseSession": [] }],
-        "responses": {
-          "200": { "description": "Affiliate profile." },
-          "401": { "description": "Not authenticated." }
         }
       }
     },
