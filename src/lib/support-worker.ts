@@ -158,6 +158,8 @@ export async function submitSupportTicket(input: {
   platform?: string;
   appVersion?: string;
   tags?: string;
+  /** Optional diagnostics text (ASCII-safe), stored as the ticket's log tail. */
+  logs?: string;
 }): Promise<{ ok: boolean; id: string | null }> {
   const title = (input.title || "").trim().slice(0, 200);
   if (!title) return { ok: false, id: null };
@@ -179,6 +181,8 @@ export async function submitSupportTicket(input: {
         userEmail: input.userEmail || "",
         appVersion: input.appVersion || "",
         platform: input.platform || "call-notes",
+        // The worker stores this as the ticket's logTail so support can read it.
+        ...(input.logs ? { logsBase64: Buffer.from(input.logs.slice(0, 60_000), "latin1").toString("base64") } : {}),
         // The worker sets tags via triage, not /submit; it ignores an unknown
         // field, so this is a best-effort hint only (provenance also lives in
         // the description). Harmless if dropped upstream.

@@ -154,6 +154,7 @@ export async function POST(request: Request) {
         userEmail: email || undefined,
         platform: "extension",
         appVersion: cleanString(input.ext_version, 20) || undefined,
+        logs: logs || undefined,
       });
       if (filed.ok && filed.id) {
         d1Id = filed.id;

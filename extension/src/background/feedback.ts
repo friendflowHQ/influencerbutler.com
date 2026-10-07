@@ -1,5 +1,6 @@
 import { ENDPOINTS } from "../shared/constants";
 import { getState } from "../storage/store";
+import { collectBridgeDiagnostics } from "./bridge-diagnostics";
 import type {
   FeedbackInput,
   FeedbackResult,
@@ -226,9 +227,9 @@ export async function postFeedbackReply(ticketId: string, body: string): Promise
   }
 }
 
-// A compact, redaction-friendly diagnostic blob. The extension has no log ring,
-// so this is the ambient context that helps triage: version, page, environment.
-function collectLogs(pageUrl?: string): string {
+// A compact, redaction-friendly diagnostic blob. Version, page, environment,
+// plus a live probe of the desktop bridge (ports, pairing token, auth result).
+async function collectLogs(pageUrl?: string): Promise<string> {
   const lines = [
     "== Extension ==",
     `Version: ${extensionVersion()}`,
@@ -237,7 +238,13 @@ function collectLogs(pageUrl?: string): string {
     `Page: ${pageUrl || "(unknown)"}`,
     `Captured at: ${new Date().toISOString()}`,
   ];
-  return lines.join("\n");
+  let bridge = "";
+  try {
+    bridge = await collectBridgeDiagnostics();
+  } catch {
+    bridge = "== Desktop connection ==\n(diagnostics unavailable)";
+  }
+  return `${lines.join("\n")}\n\n${bridge}`;
 }
 
 export async function submitFeedbackRich(input: RichFeedbackInput): Promise<RichFeedbackResult> {
@@ -261,7 +268,7 @@ export async function submitFeedbackRich(input: RichFeedbackInput): Promise<Rich
     ext_version: extensionVersion(),
     browser: "chrome",
     screenshots,
-    logs: input.attachLogs === false ? null : collectLogs(input.pageUrl),
+    logs: input.attachLogs === false ? null : await collectLogs(input.pageUrl),
   };
 
   let serverId: string | null = null;
