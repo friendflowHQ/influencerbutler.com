@@ -156,7 +156,7 @@ export function initCampaignMatcher(source: MatchSource): void {
     // accept in bulk (same funnel as the Send-to-app section).
     const auth = await sendToBackground<AuthStatus>({ kind: "GET_AUTH_STATUS" });
     const cta = el("a", "btn");
-    cta.textContent = auth.signedIn ? t().ctaOpenApp : t().ctaStartTrial;
+    cta.textContent = auth?.signedIn ? t().ctaOpenApp : t().ctaStartTrial;
     (cta as HTMLAnchorElement).href = APP_TRIAL_URL;
     (cta as HTMLAnchorElement).target = "_blank";
     (cta as HTMLAnchorElement).rel = "noopener";

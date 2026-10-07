@@ -43,12 +43,19 @@ export type RateMatch = { ratePct: number; label: string; isDefault: boolean };
 // pages show narrow leaf ones, so a substring match either way is right), then
 // falls back to the catch-all default rate. Returns null when nothing matches
 // and there is no default.
+// Whole-word containment (plural tolerant): "chair" must not match the "hair"
+// token, nor "carpet" the "pet" token, which a raw substring test would.
+export function containsWord(haystack: string, word: string): boolean {
+  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(^|[^a-z0-9])${escaped}(?:e?s)?($|[^a-z0-9])`, "i").test(haystack);
+}
+
 export function rateForCategory(card: StoredRateCard, category: string | null): RateMatch | null {
   const needle = (category ?? "").trim().toLowerCase();
   if (needle) {
     for (const row of card.rows) {
       for (const token of row.tokens) {
-        if (token && (token === needle || token.includes(needle) || needle.includes(token))) {
+        if (token && (token === needle || containsWord(token, needle) || containsWord(needle, token))) {
           return { ratePct: row.ratePct, label: row.label, isDefault: false };
         }
       }

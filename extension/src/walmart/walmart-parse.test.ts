@@ -145,6 +145,13 @@ describe("Walmart tile DOM text parsers", () => {
     expect(parseWalmartPriceCents("no price here")).toBeNull();
   });
 
+  it("parses the price and was price out of the unified tile layout aria-label", () => {
+    expect(parseWalmartPriceCents("Price $ 219.00 Was $ 234.99 Options from $177.00")).toBe(21900);
+    expect(parseWasPriceText("Price $ 219.00 Was $ 234.99 Options from $177.00")).toBe(23499);
+    expect(parseWalmartPriceCents("Price $ 199.00 Options from $199.00 – $199.00")).toBe(19900);
+    expect(parseWasPriceText("Price $ 199.00 Options from $169.00")).toBeNull();
+  });
+
   it("parses the review count", () => {
     expect(parseWalmartReviewCount("31")).toBe(31);
     expect(parseWalmartReviewCount("1,234")).toBe(1234);

@@ -302,8 +302,29 @@ chrome.tabs.onActivated.addListener(({ tabId }) => {
 
 // Only ever fires on a tab whose popup was just cleared above, i.e. a
 // HUD-capable page: tell the content script to show/hide its panel.
+// Pages with no panel (search grids, home pages) get the settings popup instead,
+// so the icon never silently does nothing.
 chrome.action.onClicked.addListener((tab) => {
-  if (tab.id != null) void chrome.tabs.sendMessage(tab.id, { kind: "TOGGLE_HUD_PANEL" }).catch(() => undefined);
+  const tabId = tab.id;
+  if (tabId == null) return;
+  void (async () => {
+    let handled = false;
+    try {
+      const reply = (await chrome.tabs.sendMessage(tabId, { kind: "TOGGLE_HUD_PANEL" })) as
+        | { handled?: boolean }
+        | undefined;
+      handled = reply?.handled === true;
+    } catch {
+      // no content script on this tab: fall through to the popup
+    }
+    if (handled) return;
+    try {
+      await chrome.action.setPopup({ tabId, popup: "popup.html" });
+      await chrome.action.openPopup();
+    } catch {
+      await chrome.tabs.create({ url: chrome.runtime.getURL("popup.html") }).catch(() => undefined);
+    }
+  })();
 });
 
 async function skipOnAndroid(job: () => Promise<void>): Promise<void> {

@@ -75,7 +75,23 @@ function productRefOf(target: TileMenuTarget): ProductRef {
 export function mountTileMenuButton(container: HTMLElement, target: TileMenuTarget, hud: HudRef): void {
   const btn = el("button", "tile-menu-btn");
   btn.type = "button";
-  btn.textContent = "⋯"; // horizontal ellipsis
+  // Inline SVG dots, not the U+22EF glyph: that character relies on font fallback
+  // and rendered as a blank pill on some machines.
+  const ns = "http://www.w3.org/2000/svg";
+  const icon = document.createElementNS(ns, "svg");
+  icon.setAttribute("viewBox", "0 0 16 16");
+  icon.setAttribute("width", "14");
+  icon.setAttribute("height", "14");
+  icon.setAttribute("aria-hidden", "true");
+  for (const cx of [3, 8, 13]) {
+    const dot = document.createElementNS(ns, "circle");
+    dot.setAttribute("cx", String(cx));
+    dot.setAttribute("cy", "8");
+    dot.setAttribute("r", "1.6");
+    dot.setAttribute("fill", "currentColor");
+    icon.append(dot);
+  }
+  btn.append(icon);
   btn.title = t().tileMenuLabel;
   btn.setAttribute("aria-label", t().tileMenuLabel);
   btn.addEventListener("click", (event) => {

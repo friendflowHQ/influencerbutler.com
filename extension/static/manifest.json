@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Influencer Butler",
-  "version": "0.1.27",
+  "version": "0.1.28",
   "description": "Free tools for Amazon and Walmart Influencers: money signals, video counts, content gaps, Butler Approved seals, storefront checks.",
   "permissions": [
     "storage",
@@ -80,6 +80,7 @@
         "https://www.amazon.com/shop/*",
         "https://www.amazon.com/ideas/*",
         "https://www.amazon.com/stores/*",
+        "https://www.amazon.com/creatorhub",
         "https://www.amazon.com/creatorhub/*",
 
         "https://www.amazon.com/create/post*",
@@ -102,6 +103,7 @@
         "https://www.amazon.ca/shop/*",
         "https://www.amazon.ca/ideas/*",
         "https://www.amazon.ca/stores/*",
+        "https://www.amazon.ca/creatorhub",
         "https://www.amazon.ca/creatorhub/*",
 
         "https://www.amazon.ca/create/post*",
@@ -124,6 +126,7 @@
         "https://www.amazon.co.uk/shop/*",
         "https://www.amazon.co.uk/ideas/*",
         "https://www.amazon.co.uk/stores/*",
+        "https://www.amazon.co.uk/creatorhub",
         "https://www.amazon.co.uk/creatorhub/*",
 
         "https://www.amazon.co.uk/create/post*",
@@ -146,6 +149,7 @@
         "https://www.amazon.com.au/shop/*",
         "https://www.amazon.com.au/ideas/*",
         "https://www.amazon.com.au/stores/*",
+        "https://www.amazon.com.au/creatorhub",
         "https://www.amazon.com.au/creatorhub/*",
 
         "https://www.amazon.com.au/create/post*",
@@ -167,6 +171,7 @@
         "https://www.amazon.de/shop/*",
         "https://www.amazon.de/ideas/*",
         "https://www.amazon.de/stores/*",
+        "https://www.amazon.de/creatorhub",
         "https://www.amazon.de/creatorhub/*",
 
         "https://www.amazon.de/create/post*",
@@ -188,6 +193,7 @@
         "https://www.amazon.fr/shop/*",
         "https://www.amazon.fr/ideas/*",
         "https://www.amazon.fr/stores/*",
+        "https://www.amazon.fr/creatorhub",
         "https://www.amazon.fr/creatorhub/*",
 
         "https://www.amazon.fr/create/post*",
@@ -209,6 +215,7 @@
         "https://www.amazon.it/shop/*",
         "https://www.amazon.it/ideas/*",
         "https://www.amazon.it/stores/*",
+        "https://www.amazon.it/creatorhub",
         "https://www.amazon.it/creatorhub/*",
 
         "https://www.amazon.it/create/post*",
@@ -230,6 +237,7 @@
         "https://www.amazon.es/shop/*",
         "https://www.amazon.es/ideas/*",
         "https://www.amazon.es/stores/*",
+        "https://www.amazon.es/creatorhub",
         "https://www.amazon.es/creatorhub/*",
 
         "https://www.amazon.es/create/post*",
@@ -251,6 +259,7 @@
         "https://www.amazon.co.jp/shop/*",
         "https://www.amazon.co.jp/ideas/*",
         "https://www.amazon.co.jp/stores/*",
+        "https://www.amazon.co.jp/creatorhub",
         "https://www.amazon.co.jp/creatorhub/*",
 
         "https://www.amazon.co.jp/create/post*",
@@ -272,6 +281,7 @@
         "https://www.amazon.in/shop/*",
         "https://www.amazon.in/ideas/*",
         "https://www.amazon.in/stores/*",
+        "https://www.amazon.in/creatorhub",
         "https://www.amazon.in/creatorhub/*",
 
         "https://www.amazon.in/create/post*",
@@ -293,6 +303,7 @@
         "https://www.amazon.com.mx/shop/*",
         "https://www.amazon.com.mx/ideas/*",
         "https://www.amazon.com.mx/stores/*",
+        "https://www.amazon.com.mx/creatorhub",
         "https://www.amazon.com.mx/creatorhub/*",
 
         "https://www.amazon.com.mx/create/post*",
@@ -314,6 +325,7 @@
         "https://www.amazon.com.br/shop/*",
         "https://www.amazon.com.br/ideas/*",
         "https://www.amazon.com.br/stores/*",
+        "https://www.amazon.com.br/creatorhub",
         "https://www.amazon.com.br/creatorhub/*",
 
         "https://www.amazon.com.br/create/post*",
@@ -326,6 +338,8 @@
         "https://www.amazon.com.br/*/zgbs/*",
         "https://www.amazon.com.br/deals*",
         "https://www.amazon.com.br/coupons*",
+        "https://www.walmart.com/",
+        "https://www.walmart.com/?*",
         "https://www.walmart.com/ip/*",
         "https://www.walmart.com/search*",
         "https://www.walmart.com/browse/*",

@@ -110,7 +110,11 @@ function detectAmazonPageType(parsed: URL): PageType {
   // The Creator Hub "Manage videos" list, where a creator reviews every video's
   // performance. Video Money badges each row with earnings, EPV, the live
   // commission rate, and demand. Distinct path from the /video/ edit page above.
-  if (/^\/creatorhub\/manage(?:\/|$)/.test(path)) return "creator-manage";
+  // Amazon now serves this same list at the bare /creatorhub path too (the hub
+  // landing page IS "Manage videos" under the Creator Experience Update).
+  if (/^\/creatorhub\/?$/.test(path) || /^\/creatorhub\/manage(?:\/|$)/.test(path)) {
+    return "creator-manage";
+  }
   // The video "Edit post" page (/create/post?id=amzn1.vse.video...), where a
   // single published video is edited. The content id is right in the ?id= query.
   // The YouTube-status overlay stamps this one video with its cross-post state.

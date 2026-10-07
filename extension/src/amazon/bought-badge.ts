@@ -53,7 +53,12 @@ const PLUS_FORM_RE = new RegExp(`${NUM}\\s*${MULT}\\s*(?:\\+|以上)`, "i");
 // wording. English is verified (US/UK/CA/AU/IN/SG share the exact phrase). The
 // non-English entries are UNVERIFIED best-effort: confirm each against a saved
 // live fixture (see __fixtures__/bought/) before claiming that marketplace.
-const EN = new RegExp(`${NUM}\\s*${MULT}\\+?\\s*bought in past month`, "i");
+// English is a tile/body scan, where an unrelated number (a rating "5.0", a review
+// count "8", a price "$246.99") often sits right before the badge. The loose NUM
+// would swallow it ("8 400+" -> 8,400), so English uses a strict number: no space
+// grouping, and it cannot start in the middle of another number.
+const NUM_STRICT = "(?<![\\d.,])(\\d{1,3}(?:,\\d{3})+|\\d+(?:\\.\\d+)?)";
+const EN = new RegExp(`${NUM_STRICT}\\s*${MULT}\\+?\\s*bought in past month`, "i");
 const DE = new RegExp(`${NUM}\\s*${MULT}\\+?\\s*mal im letzten monat gekauft`, "i"); // UNVERIFIED
 const FR = new RegExp(`${NUM}\\s*${MULT}\\+?\\s*achet[eé]s?\\s+au cours du mois dernier`, "i"); // UNVERIFIED
 const ES = new RegExp(`${NUM}\\s*${MULT}\\+?\\s*comprados?\\s+en el [uú]ltimo mes`, "i"); // UNVERIFIED

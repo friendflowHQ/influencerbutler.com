@@ -536,7 +536,13 @@ function extractFromDom(doc: Document): CarouselResult {
     const ariaLabel = card.getAttribute("aria-label");
     const { title: labelTitle, creator: labelCreator } = splitAriaLabel(ariaLabel);
     const creatorLink = query(card, "videoCardCreatorLink");
-    const byline = (query(card, "videoCardByline")?.textContent ?? "").trim();
+    // The byline wrapper also holds Amazon's "Earns commissions" disclosure, and
+    // textContent glues it to the name ("Court <3Earns commissions"): drop it and
+    // keep the spacing between any remaining parts.
+    const byline = (query(card, "videoCardByline")?.textContent ?? "")
+      .replace(/earns\s+commissions?/gi, " ")
+      .replace(/\s+/g, " ")
+      .trim();
     const cardText = (card.textContent ?? "").replace(/\s+/g, " ");
 
     let kind: CreatorClass = aci ? classifyVideoAci(aci) : "unknown";

@@ -88,3 +88,17 @@ describe("detectRetailerForUrl", () => {
     expect(detectRetailerForUrl("not a url")).toBeNull();
   });
 });
+
+describe("Creator Hub routing", () => {
+  it("routes the bare /creatorhub landing (the Manage videos list) to creator-manage", () => {
+    expect(detectPageType("https://www.amazon.com/creatorhub")).toBe("creator-manage");
+    expect(detectPageType("https://www.amazon.com/creatorhub/")).toBe("creator-manage");
+    expect(detectPageType("https://www.amazon.com/creatorhub/manage")).toBe("creator-manage");
+  });
+
+  it("still routes the Edit Video page to creator-upload", () => {
+    expect(detectPageType("https://www.amazon.com/creatorhub/video/amzn1.vse.video.abc")).toBe(
+      "creator-upload",
+    );
+  });
+});

@@ -3,6 +3,8 @@ import { watchNavigation } from "./nav";
 import {
   extractSignals as extractWalmartSignals,
   extractWalmartProduct,
+  fetchProductDoc,
+  needsFreshProductDoc,
 } from "../walmart/product-signals";
 import { initWalmartProduct } from "../tools/walmart-overlay/overlay";
 import { retailerModule } from "../retailers/module";
@@ -155,10 +157,10 @@ async function main(): Promise<void> {
     }
     // The toolbar icon only reaches onClicked (and this message) on tabs the
     // background has identified as HUD-capable, so there is no page-type check
-    // to make here; toggleHudVisibility() is a no-op if nothing rendered.
+    // to make here; the reply says whether a panel was there to toggle (search
+    // and home pages have none), so the background can open the settings popup.
     if (message.kind === "TOGGLE_HUD_PANEL") {
-      toggleHudVisibility();
-      sendResponse(undefined);
+      sendResponse({ handled: toggleHudVisibility() });
       return true;
     }
     // Standalone accept: the background opened this campaign tab and asks us to
@@ -429,9 +431,15 @@ async function runForPage(): Promise<void> {
       return;
     }
     if (pageType === "product") {
-      guard("walmart-product", () => {
-        const signals = extractWalmartSignals(document, currentUrl);
-        const product = extractWalmartProduct(document, currentUrl);
+      guard("walmart-product", async () => {
+        // After a client-side navigation the embedded __NEXT_DATA__ still holds
+        // the previous page, so read a fresh copy of this product page instead.
+        let doc: Document = document;
+        if (needsFreshProductDoc(document, currentUrl)) {
+          doc = (await fetchProductDoc(currentUrl)) ?? document;
+        }
+        const signals = extractWalmartSignals(doc, currentUrl);
+        const product = extractWalmartProduct(doc, currentUrl);
         initWalmartProduct(signals, product);
       });
     } else if (pageType === "search" || pageType === "discovery" || pageType === "brand-store") {

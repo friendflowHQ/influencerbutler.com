@@ -19,7 +19,9 @@ import { readNextData, pathInto, type NextData } from "./next-data";
 // parseWalmartSearchItems (the SSR-JSON reader) is kept for product-grid SSR
 // pages where the JSON is authoritative, but the overlay uses the DOM path.
 
-const PRICE_RE = /current price\s*\$?\s*([\d,]+\.\d{2})/i;
+// Matches the old hook ("current price Now $219.00") and the unified hook's
+// aria-label ("Price $ 219.00 Was $ 234.99").
+const PRICE_RE = /\bprice\s*(?:now\s*)?\$?\s*([\d,]+\.\d{2})/i;
 const PRICE_FALLBACK_RE = /\$\s?([\d,]+\.\d{2})/;
 const RATING_RE = /([\d.]+)\s*out of\s*5/i;
 
@@ -53,7 +55,19 @@ const NUMERIC_ID_RE = /^\d{3,15}$/;
 // A Walmart item id out of an /ip/<slug>/<id> (or /ip/<id>) url. Exported so the
 // link cleaner can rebuild a canonical /ip/ url from an arbitrary pasted link.
 export const IP_HREF_ID_RE = /\/ip\/(?:[^/]+\/)?(\d{3,15})/;
-const PRICE_SEL = '[data-automation-id="product-price"]';
+// Walmart is A/B testing tile layouts (verified live 2026-10-06: 66 of 70 laptop
+// tiles used the unified layout, so anchoring on the old hook alone decorated
+// 4). Both hooks are tile anchors; the unified one carries its text in its
+// aria-label ("Price $ 219.00 Was $ 234.99 Options from $177.00") because its
+// textContent glues the cents on ("$21900").
+const PRICE_SEL = '[data-automation-id="product-price"], [data-testid="unified-global-product-price"]';
+
+// The text to parse a price (and was price) from: the aria-label when present
+// (unified layout), else the node text (old layout).
+function priceHookText(priceEl: Element): string {
+  const aria = priceEl.getAttribute("aria-label");
+  return aria && /\$/.test(aria) ? aria : textOf(priceEl);
+}
 // The price hook's screen-reader text spells out the reference price, e.g.
 // "current price Now $4.97, Was $5.82" (verified live 2026-09-01). The tile
 // also renders it in a `.strike` node; the SR text is the reliable source.
@@ -69,7 +83,7 @@ export function parseWasPriceText(text: string): number | null {
 // Read the prior ("was") price cents off a tile, preferring the price hook's
 // spelled-out SR text and falling back to a strikethrough node.
 function extractWasPriceCents(tile: HTMLElement, priceEl: HTMLElement): number | null {
-  const fromHook = parseWasPriceText(textOf(priceEl));
+  const fromHook = parseWasPriceText(priceHookText(priceEl));
   if (fromHook != null) return fromHook;
   const strike = tile.querySelector<HTMLElement>(".strike");
   return strike ? parseWalmartPriceCents(textOf(strike)) : null;
@@ -136,7 +150,7 @@ export function parseSearchTiles(root: ParentNode): SearchTile[] {
     tiles.push({
       asin: itemId,
       title: textOf(tile.querySelector('[data-automation-id="product-title"]')) || null,
-      priceCents: parseWalmartPriceCents(textOf(priceEl)),
+      priceCents: parseWalmartPriceCents(priceHookText(priceEl)),
       currency: "USD",
       imageUrl: tile.querySelector<HTMLImageElement>("img")?.getAttribute("src") ?? null,
       href: `https://www.walmart.com/ip/${itemId}`,

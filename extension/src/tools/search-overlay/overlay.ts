@@ -12,6 +12,8 @@ import { resolveRatePct } from "../score/rate";
 import { computeButlerScore, type ButlerScore } from "../score/model";
 import { formatCents, formatCompactMoney } from "../calculator/model";
 import { resolveEstimate } from "../../amazon/bsr-revenue-estimator";
+import { dealDiscountPct } from "../../amazon/deal-kind";
+import { detectPageType } from "../../content/page-type";
 import { evaluateTileVerdict, type TileVerdict } from "../butler-approved/tile-verdict";
 import { formatMoney, tileTotals } from "../earnings-overlay/model";
 import { renderEarningsDetail } from "../earnings-overlay/detail";
@@ -111,6 +113,40 @@ let stopScan = false;
 let initEpoch = 0;
 let controller: AbortController | null = null;
 
+// Walmart renders (and re-renders) its grid client-side after our content script
+// first runs, and a client-side search from another Walmart page never reloads
+// the script. The first parse can therefore see no tiles, or tiles React later
+// replaces. This watcher re-runs the overlay (debounced, bounded) whenever
+// undecorated tiles show up on a search/browse grid. Amazon renders the grid
+// server-side and is handled by the navigation re-run, so it is not watched.
+const GRID_WATCH_DEBOUNCE_MS = 700;
+const GRID_WATCH_MAX_RERUNS = 25;
+let gridWatch: { observer: MutationObserver; timer: ReturnType<typeof setTimeout> | null; reruns: number } | null =
+  null;
+
+function watchGridRerenders(settings: Settings, module: RetailerModule): void {
+  if (gridWatch || module.retailer !== "walmart") return;
+  const state = { observer: null as unknown as MutationObserver, timer: null as ReturnType<typeof setTimeout> | null, reruns: 0 };
+  const check = (): void => {
+    state.timer = null;
+    const page = detectPageType(location.href);
+    if (page !== "search" && page !== "discovery" && page !== "brand-store") return;
+    if (state.reruns >= GRID_WATCH_MAX_RERUNS) return;
+    const fresh = module
+      .parseSearchTiles(document, location.href)
+      .some((tile) => !tile.el.getAttribute(DONE_ATTR));
+    if (!fresh) return;
+    state.reruns += 1;
+    void initSearchOverlay(settings, module);
+  };
+  state.observer = new MutationObserver(() => {
+    if (state.timer) clearTimeout(state.timer);
+    state.timer = setTimeout(check, GRID_WATCH_DEBOUNCE_MS);
+  });
+  state.observer.observe(document.body, { childList: true, subtree: true });
+  gridWatch = state;
+}
+
 export async function initSearchOverlay(
   settings: Settings,
   module: RetailerModule = retailerModule("amazon"),
@@ -139,6 +175,7 @@ export async function initSearchOverlay(
     tile.el.setAttribute(DONE_ATTR, "1");
     return true;
   });
+  watchGridRerenders(settings, module);
   if (tiles.length === 0) return;
 
   const [card, cache, state] = await Promise.all([
@@ -187,7 +224,8 @@ export async function initSearchOverlay(
       score: neutralScore(settings),
       verdict: neutralVerdict(settings),
       badgeBody,
-      showWatch: settings.tools.watchlist,
+      // The watchlist scans amazon /dp/ pages, so it is Amazon-only.
+      showWatch: settings.tools.watchlist && module.retailer === "amazon",
       watched: false,
       earnings: null,
       owned: false,
@@ -221,7 +259,7 @@ export async function initSearchOverlay(
       }
     }
     recompute(row, settings);
-    mountBadge(tile, badgeBody);
+    mountBadge(tile, badgeBody, module);
     renderBadge(row, settings);
     return row;
   });
@@ -290,10 +328,12 @@ export async function initSearchOverlay(
     sendToBackground<AuthStatus>({ kind: "GET_AUTH_STATUS" }),
   ]).then(([hudStatus, auth]) => {
     if (epoch !== initEpoch) return;
-    hud.connected = hudStatus.connected;
-    hud.signedIn = auth.signedIn;
-    hud.ideaLists = hudStatus.ideaLists;
-  });
+    // The worker can answer undefined (just reloaded, or asleep), so never
+    // dereference a reply unguarded: the menus just keep their defaults.
+    hud.connected = hudStatus?.connected ?? false;
+    hud.signedIn = auth?.signedIn ?? false;
+    hud.ideaLists = hudStatus?.ideaLists;
+  }).catch(() => undefined);
 
   // Shared-catalogue read for the whole page in one round trip: estimated
   // monthly sales/revenue + BSR rank per tile. No-op for signed-out users and
@@ -328,10 +368,19 @@ export async function initSearchOverlay(
     void sendToBackground<CcRatesResult>({ kind: "LOOKUP_CC_RATES", asins: campaignAsins }).then(
       (res) => {
         if (epoch !== initEpoch || !res.ok) return;
+        // The catalogue Bloom filter has ~1% false positives, and a campaign may
+        // have ended. When the rate table is serving data and has no row for a
+        // CC-flagged tile, drop the flag so it stops reading "Campaign" (and
+        // stops adding campaign points to its score).
+        const tableServing = Object.keys(res.rates).length > 0;
         for (const row of rows) {
           const rate = res.rates[row.tile.asin];
           if (rate) {
             row.ccRate = rate;
+            recompute(row, settings);
+            renderBadge(row, settings);
+          } else if (tableServing && row.flags.cc && campaignAsins.includes(row.tile.asin)) {
+            row.flags.cc = false;
             recompute(row, settings);
             renderBadge(row, settings);
           }
@@ -349,10 +398,15 @@ export async function initSearchOverlay(
     void sendToBackground<SpccRatesResult>({ kind: "LOOKUP_SPCC_RATES", asins: spccAsins }).then(
       (res) => {
         if (epoch !== initEpoch || !res.ok) return;
+        const tableServing = Object.keys(res.rates).length > 0;
         for (const row of rows) {
           const rate = res.rates[row.tile.asin];
           if (rate) {
             row.spccRate = rate;
+            renderBadge(row, settings);
+          } else if (tableServing && row.flags.spcc && !row.ccRate) {
+            row.flags.spcc = false;
+            recompute(row, settings);
             renderBadge(row, settings);
           }
         }
@@ -560,8 +614,9 @@ export async function initSearchOverlay(
   });
 
   mountToolbar(module.toolbarSlot(first.tile.el), toolbar.host);
-  // Lead with the best opportunities.
-  applySort("score");
+  // Lead with the best opportunities. Not on Walmart: reordering a
+  // React-managed grid at load fights its re-renders; the toolbar sort still works.
+  if (module.retailer !== "walmart") applySort("score");
 
   // Automatic tier-1 enrichment: shared 24h cache first, then viewport-first
   // static /dp/ fetches through the serialized chain. Each arrival upgrades
@@ -777,12 +832,14 @@ function videoChip(row: Row): HTMLElement | null {
   return chip;
 }
 
-function mountBadge(tile: SearchTile, body: HTMLElement): void {
+function mountBadge(tile: SearchTile, body: HTMLElement, module: RetailerModule): void {
   const { host, root } = createInlineShadow("tile-badge-host");
   const wrap = el("div", "tile-badge");
   wrap.append(body);
   root.append(wrap);
-  tile.el.append(host);
+  // Mount inside the tile card (see RetailerModule.badgeSlot), not the stretched
+  // tile root, or the chips paint over the next tile's title.
+  module.badgeSlot(tile.el).append(host);
 }
 
 function renderBadge(row: Row, settings: Settings): void {
@@ -857,7 +914,8 @@ function renderBadge(row: Row, settings: Settings): void {
   // by the dealSignals tool flag so the remote kill switch can disable it.
   if (settings.tools.dealSignals) {
     const { dealBadge, dealKind, wasPriceCents, priceCents } = row.tile;
-    const discounted = wasPriceCents != null && priceCents != null && wasPriceCents > priceCents;
+    const pct = dealDiscountPct(priceCents, wasPriceCents);
+    const discounted = pct != null;
     // A coupon-only dealKind is left to the coupon chip above, so it does not
     // trigger a second (unpriced) deal chip here.
     const amazonDeal = dealKind === "primeday" || dealKind === "lightning" || dealKind === "reduced";
@@ -869,7 +927,6 @@ function renderBadge(row: Row, settings: Settings): void {
         dealKind === "primeday" ? t().tileDealPrimeDay :
         dealKind === "lightning" ? t().tileDealLightning :
         t().tileDeal;
-      const pct = discounted ? Math.round((1 - priceCents! / wasPriceCents!) * 100) : null;
       body.append(el("span", "tile-chip good", pct != null ? `${label} -${pct}%` : label));
     }
   }

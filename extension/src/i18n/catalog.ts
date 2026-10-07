@@ -618,6 +618,9 @@ export interface Dict {
   // SPCC tab: keep only the strong (hot-band) picks. The commission / days /
   // budget floors do not apply to SPCC, so its toolbar shows this filter alone.
   radarOnlyStrong: string;
+  // Shown in place of the plain count while a filter is on, so an empty grid
+  // reads as "nothing qualifies" rather than "the page is broken".
+  radarShown: (shown: number, total: number) => string;
   radarSortLabel: string;
   radarSortScore: string;
   radarSortRate: string;
@@ -1681,6 +1684,10 @@ const en: Dict = {
   radarMinBudget: "Min budget ($)",
   radarOnlyPassing: "Only campaigns that pass",
   radarOnlyStrong: "Strong picks only",
+  radarShown: (shown, total) =>
+    shown === 0
+      ? `None of ${total} campaigns qualify - untick the filter to see them all`
+      : `Showing ${shown} of ${total} campaigns`,
   radarSortLabel: "Sort",
   radarSortScore: "Best match",
   radarSortRate: "Commission",
@@ -2774,6 +2781,10 @@ const es: Dict = {
   radarMinBudget: "Presupuesto mín. ($)",
   radarOnlyPassing: "Solo campañas que cumplen",
   radarOnlyStrong: "Solo las mejores",
+  radarShown: (shown, total) =>
+    shown === 0
+      ? `Ninguna de ${total} campañas cumple - desmarca el filtro para verlas todas`
+      : `Mostrando ${shown} de ${total} campañas`,
   radarSortLabel: "Ordenar",
   radarSortScore: "Mejor coincidencia",
   radarSortRate: "Comisión",
@@ -3867,6 +3878,10 @@ const fr: Dict = {
   radarMinBudget: "Budget min. ($)",
   radarOnlyPassing: "Seulement les campagnes qui passent",
   radarOnlyStrong: "Seulement les meilleures",
+  radarShown: (shown, total) =>
+    shown === 0
+      ? `Aucune des ${total} campagnes ne correspond - décochez le filtre pour toutes les voir`
+      : `${shown} campagnes affichées sur ${total}`,
   radarSortLabel: "Trier",
   radarSortScore: "Meilleure correspondance",
   radarSortRate: "Commission",

@@ -251,6 +251,7 @@ export async function initCampaignRadar(
         renderBadge(row);
         applyHighlight(row, thresholds);
       }
+      applyFilter();
     })
     .catch((error) => log("campaign-radar", "owned lookup failed", error));
 
@@ -272,6 +273,7 @@ export async function initCampaignRadar(
           renderBadge(row);
           applyHighlight(row, thresholds);
         }
+        applyFilter();
       })
       .catch((error) => log("campaign-radar", "earnings lookup failed", error));
   }
@@ -310,17 +312,22 @@ export async function initCampaignRadar(
   if (!first) return;
   let filterPassingOnly = false;
 
+  let setShown: (text: string) => void = () => {};
+
   const applyFilter = (): void => {
+    let shown = 0;
     for (const row of rows) {
       const hide = filterPassingOnly && !passesRadar(row, thresholds);
+      if (!hide) shown++;
       // Hide the card's own wrapper (its distinct parent) so filtering leaves no
       // empty grid cell; fall back to the card element itself.
       const target = (row.campaign.el.parentElement as HTMLElement | null) ?? row.campaign.el;
       target.style.display = hide ? "none" : "";
     }
+    setShown(filterPassingOnly ? t().radarShown(shown, rows.length) : t().radarCount(rows.length));
   };
 
-  const toolbar = renderToolbar({
+  const { host: toolbar, setCount } = renderToolbar({
     count: rows.length,
     thresholds,
     isSpcc: isSpccGrid,
@@ -335,6 +342,7 @@ export async function initCampaignRadar(
       applyFilter();
     },
   });
+  setShown = setCount;
   mountToolbar(rows.map((r) => r.campaign.el), toolbar);
 }
 
@@ -887,8 +895,15 @@ function applyHighlight(row: Row, thresholds: RadarThresholds): void {
 // when it clears the bar. SPCC cards carry none of the CC floors (commission /
 // days / budget), so they qualify on score band instead: a hot SPCC card is the
 // pick. CC cards use the user's tunable thresholds as before.
+//
+// The SPCC bar is score >= 50, not the "hot" band (70): with no commission or
+// timing parts, an unowned product tops out near 74 and needs a ~$1 EPC plus
+// high budget availability to get there, so "hot" alone left the filter empty
+// for most creators.
+const SPCC_STRONG_SCORE = 50;
+
 function passesRadar(row: Row, thresholds: RadarThresholds): boolean {
-  if (row.campaign.isSpcc) return row.score.band === "hot";
+  if (row.campaign.isSpcc) return row.score.score >= SPCC_STRONG_SCORE;
   const inputs = inputsFor(row.campaign, row.daysRemaining, row.owned, row.provenEarner);
   return meetsRadarThresholds(inputs, thresholds);
 }
@@ -923,12 +938,16 @@ type ToolbarCallbacks = {
   onFilter: (on: boolean) => void;
 };
 
-function renderToolbar(cb: ToolbarCallbacks): HTMLElement {
+function renderToolbar(cb: ToolbarCallbacks): {
+  host: HTMLElement;
+  setCount: (text: string) => void;
+} {
   const { host, root } = createInlineShadow("radar-toolbar-host");
   const bar = el("div", "search-toolbar radar-toolbar");
 
   const brand = el("div", "search-brand");
-  brand.append(el("span", "search-count", t().radarCount(cb.count)));
+  const countEl = el("span", "search-count", t().radarCount(cb.count));
+  brand.append(countEl);
 
   bar.append(brand);
   // The tunable numeric floors apply only to the CC (Affiliate+) schema. The SPCC
@@ -961,7 +980,12 @@ function renderToolbar(cb: ToolbarCallbacks): HTMLElement {
   bar.append(filterWrap);
 
   root.append(bar);
-  return host;
+  return {
+    host,
+    setCount: (text) => {
+      countEl.textContent = text;
+    },
+  };
 }
 
 function numberControl(

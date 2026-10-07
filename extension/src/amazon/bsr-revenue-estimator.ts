@@ -118,8 +118,13 @@ export function resolveEstimate({
   category,
   boughtPastMonth,
 }: ResolveInput): { units: number | null; revenueDollars: number | null } {
+  // Amazon's own "N+ bought in past month" is a measured floor; a modelled
+  // figure (server curve or BSR) must never contradict it (a "400+" tile showing
+  // ~1,000), so when it is known it wins and the models only fill the gap.
+  const bought = Number(boughtPastMonth);
+  const hasBought = Number.isFinite(bought) && bought > 0;
   const units =
-    serverUnits != null && Number.isFinite(serverUnits) && serverUnits > 0
+    !hasBought && serverUnits != null && Number.isFinite(serverUnits) && serverUnits > 0
       ? Math.round(serverUnits)
       : estimateMonthlyUnits({ salesRank, category, boughtPastMonth });
   const revenueDollars =

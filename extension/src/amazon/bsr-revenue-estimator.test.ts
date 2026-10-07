@@ -95,6 +95,11 @@ describe("resolveEstimate", () => {
     expect(units).not.toBe(local);
   });
 
+  it("lets Amazon's bought-in-past-month figure beat the server model", () => {
+    const { units } = resolveEstimate({ serverUnits: 1000, boughtPastMonth: 400, priceCents: 24699 });
+    expect(units).toBe(400);
+  });
+
   it("falls back to the local estimate when there is no server value", () => {
     const local = estimateMonthlyUnits({ salesRank: 5919, category: "Home & Kitchen" })!;
     const { units } = resolveEstimate({

@@ -62,6 +62,14 @@ describe("parseBoughtFromBody (whole-body / tile fallback)", () => {
     expect(parseBoughtFromBody(tile, "amazon.com")).toBe(500);
   });
 
+  it("does not glue a preceding rating, review count or price onto the count", () => {
+    expect(parseBoughtFromBody("5.0 out of 5 stars 8 400+ bought in past month", "amazon.com")).toBe(400);
+    expect(parseBoughtFromBody("Laptop 15.6 400+ bought in past month", "amazon.com")).toBe(400);
+    expect(parseBoughtFromBody("2.5 1K+ bought in past month", "amazon.com")).toBe(1000);
+    expect(parseBoughtFromBody("$246.99 400+ bought in past month", "amazon.com")).toBe(400);
+    expect(parseBoughtFromBody("(1,234) 1,000+ bought in past month", "amazon.com")).toBe(1000);
+  });
+
   it("uses the host's localized phrase list, with English as a fallback", () => {
     // Host unknown -> tries every known phrase.
     expect(parseBoughtFromBody("... 300+ bought in past month ...", null)).toBe(300);

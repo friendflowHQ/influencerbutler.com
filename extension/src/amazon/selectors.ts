@@ -30,6 +30,7 @@ export type SelectorId =
   | "sellerOffers"
   | "siteStripeCommission"
   | "searchResultTile"
+  | "searchTileCard"
   | "searchTileTitle"
   | "searchTilePrice"
   | "searchTileImage"
@@ -279,6 +280,11 @@ const REGISTRY: Record<SelectorId, string[]> = {
     "div[data-component-type='s-search-result'][data-asin]",
     "div.s-result-item[data-asin]",
   ],
+  // The visual card inside a search tile. The tile root is stretched to its grid
+  // track, so anything appended to the ROOT lands below the tile and paints over
+  // the next tile's title; the card is position:relative and grows to fit what
+  // is appended, so per-tile badges mount here instead.
+  searchTileCard: [".puis-card-container", "[data-cy='asin-faceout-container']"],
   // Per-tile selectors (queried within a tile element, not the whole document).
   searchTileTitle: [
     "[data-cy='title-recipe'] h2 span",
@@ -437,6 +443,23 @@ export function applySelectorOverrides(map: Record<string, string[]>): void {
 
 function selectorsFor(id: SelectorId): string[] {
   return overrides[id] ?? REGISTRY[id];
+}
+
+// Like query(), but a miss is expected and not recorded as selector breakage
+// (optional anchors such as the search tile card, absent on ad/widget tiles).
+export function queryQuiet<T extends Element = HTMLElement>(
+  doc: ParentNode,
+  id: SelectorId,
+): T | null {
+  for (const sel of selectorsFor(id)) {
+    try {
+      const found = doc.querySelector<Element>(sel);
+      if (found) return found as T;
+    } catch {
+      // an invalid selector in one strategy must not kill the rest
+    }
+  }
+  return null;
 }
 
 type Miss = { id: string; count: number };

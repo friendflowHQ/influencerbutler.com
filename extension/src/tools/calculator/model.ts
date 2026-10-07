@@ -105,6 +105,8 @@ export function formatCompactMoney(cents: number, currency = "USD"): string {
   }
   if (dollars >= 1_000) {
     const k = dollars / 1_000;
+    // 999.6K would round to "1000K": roll that over to $1.0M.
+    if (Math.round(k) >= 1_000) return `${symbol}1.0M`;
     return `${symbol}${k >= 10 ? Math.round(k) : k.toFixed(1)}K`;
   }
   return `${symbol}${dollars.toLocaleString()}`;

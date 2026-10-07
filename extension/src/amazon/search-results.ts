@@ -1,7 +1,7 @@
 import { query, queryAll, queryMatchingText } from "./selectors";
 import { marketplaceFromUrl } from "./product-signals";
 import { parseBoughtFromBody } from "./bought-badge";
-import { parseDealBadgeText, type DealKind } from "./deal-kind";
+import { isTypicalPriceLabel, parseDealBadgeText, type DealKind } from "./deal-kind";
 
 // Reads the product tiles off an Amazon search-results page (/s?k=...). Each
 // tile keeps the fields the search overlay needs to score and sort: identity,
@@ -95,8 +95,12 @@ function extractPrice(el: HTMLElement): { priceCents: number | null; currency: s
 // current price: Amazon sometimes renders a decoy strike node equal to the
 // current price, which is not a discount. Returns null on full-price tiles.
 function extractListPrice(el: HTMLElement, currentCents: number | null): number | null {
-  const { priceCents } = parsePriceText(cleanText(query(el, "searchTileListPrice")?.textContent) ?? "");
+  const node = query(el, "searchTileListPrice");
+  const { priceCents } = parsePriceText(cleanText(node?.textContent) ?? "");
   if (priceCents == null || currentCents == null || priceCents <= currentCents) return null;
+  // "Typical price: $X" is a reference price, not a was/list price: not a discount.
+  const label = node?.parentElement?.parentElement?.textContent ?? node?.parentElement?.textContent ?? "";
+  if (isTypicalPriceLabel(label)) return null;
   return priceCents;
 }
 

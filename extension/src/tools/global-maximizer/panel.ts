@@ -53,6 +53,8 @@ type Strings = {
   summaryLoading: string;
   summary: (abroad: number, total: number) => string;
   summaryNone: string;
+  summaryUnchecked: string;
+  notChecked: string;
   summaryOffline: string;
   connectApi: string;
   syncPending: string;
@@ -74,7 +76,10 @@ const EN: Strings = {
   info: "See where this product sells and grab a localized affiliate link for each marketplace, so international viewers earn you a commission instead of hitting a dead link.",
   summaryLoading: "Checking marketplaces...",
   summary: (abroad, total) => `Available in ${total} markets (${abroad} beyond your home store).`,
-  summaryNone: "Not found in other marketplaces yet.",
+  summaryNone: "Not listed in the other marketplaces we checked.",
+  summaryUnchecked:
+    "Other countries not checked yet. Only your home store is confirmed. Connect the Creator API to see real availability and price per country.",
+  notChecked: "not checked",
   summaryOffline: "Could not reach the extension to check other marketplaces. Reload this page and try again.",
   connectApi: "Connect the Amazon Creator API in Settings to see price and availability per market.",
   syncPending:
@@ -99,7 +104,10 @@ const CATALOG: Record<string, Strings> = {
     info: "Mira dónde se vende este producto y consigue un enlace de afiliado localizado para cada tienda, para que el público internacional te genere comisión en vez de encontrar un enlace muerto.",
     summaryLoading: "Revisando tiendas...",
     summary: (abroad, total) => `Disponible en ${total} tiendas (${abroad} fuera de tu tienda local).`,
-    summaryNone: "Aún no se encontró en otras tiendas.",
+    summaryNone: "No listado en las otras tiendas revisadas.",
+    summaryUnchecked:
+      "Otros países sin revisar todavía. Solo tu tienda local está confirmada. Conecta la Creator API para ver disponibilidad y precio reales por país.",
+    notChecked: "sin revisar",
   summaryOffline: "No se pudo conectar con la extensión para revisar otras tiendas. Recarga esta página e inténtalo de nuevo.",
     connectApi: "Conecta la API de Creadores de Amazon en Ajustes para ver precio y disponibilidad por tienda.",
     syncPending:
@@ -121,7 +129,10 @@ const CATALOG: Record<string, Strings> = {
     info: "Voyez où ce produit se vend et récupérez un lien d'affiliation localisé pour chaque boutique, pour que votre audience internationale vous rapporte une commission au lieu d'un lien mort.",
     summaryLoading: "Vérification des boutiques...",
     summary: (abroad, total) => `Disponible dans ${total} boutiques (${abroad} hors de votre boutique locale).`,
-    summaryNone: "Pas encore trouvé dans d'autres boutiques.",
+    summaryNone: "Non listé dans les autres boutiques vérifiées.",
+    summaryUnchecked:
+      "Les autres pays ne sont pas encore vérifiés. Seule votre boutique locale est confirmée. Connectez la Creator API pour voir la disponibilité et le prix réels par pays.",
+    notChecked: "non vérifié",
   summaryOffline: "Impossible de joindre l'extension pour vérifier les autres boutiques. Rechargez cette page et réessayez.",
     connectApi: "Connectez l'API Créateurs d'Amazon dans les Réglages pour voir le prix et la disponibilité par boutique.",
     syncPending:
@@ -182,7 +193,8 @@ export async function renderGlobalMaximizer(signals: ProductSignals): Promise<vo
   });
   for (const market of ordered) {
     const code = codeFor(market.host);
-    const availEl = chip("warn", code);
+    const availEl = chip("warn", `${code} ?`);
+    availEl.title = s.notChecked;
     const priceEl = el("span", "gmm-price");
     const row: MarketRow = {
       host: market.host,
@@ -263,11 +275,11 @@ async function enrich(
   // from the server should surface the connect prompt, so a transient failure
   // never tells a connected user to go connect.
   if (!result || !result.ok) {
-    summary.textContent = s.summaryNone;
+    summary.textContent = s.summaryUnchecked;
     return;
   }
   if (!result.configured) {
-    summary.textContent = s.summaryNone;
+    summary.textContent = s.summaryUnchecked;
     // Telling someone who already pasted their keys to go connect is the wrong
     // instruction: when a push is still owed, name that instead.
     const connect = el("a", "inline-connect", result.syncPending ? s.syncPending : s.connectApi);
@@ -297,8 +309,13 @@ async function enrich(
     })),
     homeCode,
   );
+  const checkedAbroad = rows.some((r) => r.code !== homeCode && r.availability !== "unknown");
   summary.textContent =
-    reach.availableTotal > 0 ? s.summary(reach.availableAbroad, reach.availableTotal) : s.summaryNone;
+    reach.availableTotal > 0
+      ? s.summary(reach.availableAbroad, reach.availableTotal)
+      : checkedAbroad
+        ? s.summaryNone
+        : s.summaryUnchecked;
 }
 
 function paintRow(row: MarketRow, s: Strings, ratePct?: number, priceDisplay?: string | null): void {
@@ -328,7 +345,7 @@ function availWord(status: MarketAvailability | "unknown", s: Strings): string {
     case "notlisted":
       return s.notListed;
     case "unknown":
-      return "";
+      return s.notChecked;
   }
 }
 

@@ -94,11 +94,13 @@ export function getPanel(title: string): HTMLElement {
 
 // Shows/hides the panel in response to a toolbar-icon click (see the
 // TOGGLE_HUD_PANEL message in content/index.ts). A no-op if nothing has
-// rendered a panel on this page yet.
-export function toggleHudVisibility(): void {
-  if (!panel || !panel.isConnected) return;
+// rendered a panel on this page yet; returns whether there was a panel to toggle
+// so the toolbar click can fall back to the settings popup when there was not.
+export function toggleHudVisibility(): boolean {
+  if (!panel || !panel.isConnected) return false;
   hudVisible = !hudVisible;
   panel.classList.toggle("hud-hidden", !hudVisible);
+  return true;
 }
 
 // The green "Synced" chip in the header: at-a-glance confirmation that the

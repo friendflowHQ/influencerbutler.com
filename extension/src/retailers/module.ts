@@ -5,6 +5,7 @@ import type { SearchTile } from "../amazon/search-results";
 import type { Settings } from "../storage/schema";
 import { getRateCard, getWalmartRateCard, type StoredRateCard } from "../rate-card/cache";
 import { canonicalProductUrl } from "../integrations/url";
+import { queryQuiet } from "../amazon/selectors";
 
 import {
   ASIN_URL_RE,
@@ -64,6 +65,10 @@ export interface RetailerModule {
   capabilities: RetailerCapabilities;
   // The element the search toolbar mounts above (the results grid container).
   toolbarSlot(tileEl: HTMLElement): Element | null;
+  // The element a per-tile badge host is appended to. Must grow with its content
+  // (Amazon's tile root is stretched to its grid track, so a badge appended to
+  // it overflows onto the next tile).
+  badgeSlot(tileEl: HTMLElement): HTMLElement;
 }
 
 const amazonModule: RetailerModule = {
@@ -88,6 +93,7 @@ const amazonModule: RetailerModule = {
     sortStrategy: "anchor",
   },
   toolbarSlot: (tileEl) => tileEl.closest(".s-main-slot") ?? tileEl.parentElement,
+  badgeSlot: (tileEl) => queryQuiet(tileEl, "searchTileCard") ?? tileEl,
 };
 
 const walmartModule: RetailerModule = {
@@ -118,6 +124,7 @@ const walmartModule: RetailerModule = {
   // tileEl is already the grid cell (see the Walmart parser's reorderCell), so
   // the toolbar mounts above that cell's grid.
   toolbarSlot: (tileEl) => tileEl.parentElement,
+  badgeSlot: (tileEl) => tileEl,
 };
 
 const REGISTRY: Record<Retailer, RetailerModule> = {

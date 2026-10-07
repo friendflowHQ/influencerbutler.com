@@ -107,16 +107,45 @@ function toSignals(prod: WalmartProduct | null, url: string): ProductSignals {
   };
 }
 
+// The product in this document's __NEXT_DATA__, only when it is the product the
+// URL names. After a client-side navigation (search -> product, product ->
+// product) the script tag still holds the FIRST page's blob, so reading it would
+// show the previous product's price, title and id.
+function productForUrl(doc: Document, url: string): WalmartProduct | null {
+  const prod = parseWalmartProduct(readNextData(doc));
+  const urlId = extractItemId(url);
+  if (prod?.itemId && urlId && prod.itemId !== urlId) return null;
+  return prod;
+}
+
+// True when the document's embedded data does not describe the URL's product,
+// so the caller should read a fresh copy of the page instead.
+export function needsFreshProductDoc(doc: Document, url: string): boolean {
+  return productForUrl(doc, url) === null;
+}
+
+// Fetch and parse a fresh copy of the product page (the server-rendered HTML
+// carries the right __NEXT_DATA__). Null on any failure.
+export async function fetchProductDoc(url: string): Promise<Document | null> {
+  try {
+    const res = await fetch(url, { credentials: "include" });
+    if (!res.ok) return null;
+    return new DOMParser().parseFromString(await res.text(), "text/html");
+  } catch {
+    return null;
+  }
+}
+
 // The neutral extractor the content router calls, mirroring
 // amazon/product-signals extractSignals(doc, url).
 export function extractSignals(doc: Document, url: string): ProductSignals {
-  return toSignals(parseWalmartProduct(readNextData(doc)), url);
+  return toSignals(productForUrl(doc, url), url);
 }
 
 // The full Walmart product read (signals + Walmart-only demand fields), for the
 // market contribution and the review-velocity estimate.
 export function extractWalmartProduct(doc: Document, url: string): WalmartProduct | null {
-  const prod = parseWalmartProduct(readNextData(doc));
+  const prod = productForUrl(doc, url);
   if (prod && !prod.itemId) prod.itemId = extractItemId(url);
   return prod;
 }

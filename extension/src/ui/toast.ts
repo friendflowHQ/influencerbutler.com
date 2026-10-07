@@ -63,6 +63,11 @@ const TOAST_CSS = `
 `;
 
 export function showToast(opts: ToastOptions): void {
+  // One toast at a time: every toast sits at the same fixed corner, so a second
+  // one would paint exactly over the first. The newest message replaces it.
+  for (const stale of Array.from(document.querySelectorAll(`.${UI_PREFIX}-toast-host`))) {
+    stale.remove();
+  }
   const container = document.createElement("div");
   container.className = `${UI_PREFIX}-toast-host`;
   const root = container.attachShadow({ mode: "closed" });

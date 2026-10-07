@@ -1073,6 +1073,10 @@ a.tile-chip:hover { filter: brightness(0.97); }
 .tile-watch.on { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
 .tile-watch[disabled] { opacity: 0.55; cursor: default; }
 
+/* Never render a blank pill if a chip ends up with no content. */
+.tile-chip:empty,
+.chip:empty { display: none; }
+
 /* Per-tile "..." action menu trigger (styled like a round chip button). */
 .tile-menu-btn {
   display: inline-flex;
@@ -1087,9 +1091,9 @@ a.tile-chip:hover { filter: brightness(0.97); }
   line-height: 1;
   font-weight: 800;
   cursor: pointer;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  color: #64748b;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #475569;
 }
 .tile-menu-btn:hover { border-color: #fed7aa; color: #c2410c; background: #fff7ed; }
 
@@ -1559,7 +1563,7 @@ a.tile-chip:hover { filter: brightness(0.97); }
 .whats-new-card {
   position: fixed;
   right: 20px;
-  bottom: 20px;
+  bottom: 86px; /* clears the 54px chat launcher pinned at bottom: 20px */
   z-index: 2147483000;
   box-sizing: border-box;
   width: min(360px, calc(100vw - 32px));

@@ -93,5 +93,8 @@ function mountBadge(
   host.style.left = "6px";
   host.style.bottom = "6px";
   host.style.zIndex = "5";
+  // createInlineShadow makes the host full width; shrink it to the chip so the
+  // rest of the card's bottom strip (Amazon's own heart / link) stays clickable.
+  host.style.width = "auto";
   tile.el.append(host);
 }

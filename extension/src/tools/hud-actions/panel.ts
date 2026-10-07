@@ -358,11 +358,11 @@ function renderUpsell(body: HTMLElement, auth: AuthStatus): void {
   body.replaceChildren();
   const card = el("div", "seal fail");
   card.style.display = "block";
-  card.textContent = auth.signedIn ? t().upsellSignedIn : t().upsellSignedOut;
+  card.textContent = auth?.signedIn ? t().upsellSignedIn : t().upsellSignedOut;
   body.append(card);
 
   const cta = el("a", "btn");
-  cta.textContent = auth.signedIn ? t().ctaOpenApp : t().ctaStartTrial;
+  cta.textContent = auth?.signedIn ? t().ctaOpenApp : t().ctaStartTrial;
   // href is kept for middle-click / open-in-new-tab and accessibility, but a
   // plain anchor does not reliably navigate from inside the overlay's shadow
   // DOM, so a normal click routes through the background worker instead.
