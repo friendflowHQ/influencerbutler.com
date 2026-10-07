@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { NodeHtmlMarkdown } from "node-html-markdown";
+import { csrfForApiRequest } from "@/lib/csrf-guard";
 
 // Web Bot Auth (RFC 9421) verification is delegated to the edge proxy
 // (Cloudflare's "Verified Bots" feature sets `cf-verified-bot: true`).
@@ -46,6 +47,13 @@ function estimateTokens(text: string): number {
 
 export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+
+  // CSRF guard for cookie-authenticated, state-changing API routes. The matcher
+  // below already excludes webhook / cron / bearer-token / extension / desktop
+  // surfaces, which authenticate by signature or Authorization header.
+  if (pathname.startsWith("/api/")) {
+    return csrfForApiRequest(request, pathname) ?? NextResponse.next();
+  }
 
   // Auth gate runs first. Normalize a trailing slash so the public-path
   // allowlist matches regardless of how the link was written.
@@ -129,5 +137,8 @@ export const config = {
     "/affiliates/portal/:path*",
     "/help",
     "/help/:path*",
+    // Every /api route EXCEPT the ones that never use cookie auth (signed
+    // webhooks, cron, Bearer-token clients, public upload, email one-click).
+    "/api/((?!webhooks/|cron/|extension/|desktop/|mcp/|mcp$|ai-concierge/|licenses/|profiles/|app-trial/|health|grow-together/upload|email/).*)",
   ],
 };

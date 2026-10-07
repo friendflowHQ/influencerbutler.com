@@ -10,11 +10,13 @@
 /** True when the request is safe to treat as same-origin. */
 export function isSameOrigin(request: Request): boolean {
   // Fetch metadata is the strongest signal when the browser sends it.
+  // NOTE: "same-site" is NOT safe. Users host arbitrary HTML on
+  // links.influencerbutler.com, which is same-site with www. Only same-origin
+  // (or none, a direct navigation) counts; same-site falls through to the
+  // Origin host check below.
   const site = request.headers.get("sec-fetch-site");
-  if (site) {
-    // same-origin / same-site / none (direct nav) are fine; only cross-site is not.
-    return site !== "cross-site";
-  }
+  if (site === "same-origin" || site === "none") return true;
+  if (site === "cross-site") return false;
 
   const origin = request.headers.get("origin");
   if (origin) {
@@ -26,9 +28,11 @@ export function isSameOrigin(request: Request): boolean {
     }
   }
 
-  // No Origin and no Sec-Fetch-Site: not a browser cross-site form POST
+  // No Origin and no usable Sec-Fetch-Site: not a browser cross-site form POST
   // (those always carry Origin). Allow it; the permission gate still applies.
-  return true;
+  // A same-site signal with no Origin is not allowed, though: that is the
+  // hosted-page case this function exists to stop.
+  return site !== "same-site";
 }
 
 /**

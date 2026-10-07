@@ -15,6 +15,11 @@ describe("isSameOrigin", () => {
     expect(isSameOrigin(req({ "sec-fetch-site": "same-origin" }))).toBe(true);
   });
 
+  it("blocks Sec-Fetch-Site: same-site unless Origin matches the host (hosted pages on links.*)", () => {
+    expect(isSameOrigin(req({ "sec-fetch-site": "same-site", origin: "https://links.influencerbutler.com", host: "www.influencerbutler.com" }))).toBe(false);
+    expect(isSameOrigin(req({ "sec-fetch-site": "same-site" }))).toBe(false);
+  });
+
   it("blocks Sec-Fetch-Site: cross-site", () => {
     expect(isSameOrigin(req({ "sec-fetch-site": "cross-site" }))).toBe(false);
   });
