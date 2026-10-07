@@ -21,8 +21,8 @@ export type PageType =
   | "idea-list"
   | "other";
 
-// The retailer for a URL, or null when it is neither Amazon nor Walmart (so a
-// caller can skip a page the extension has no adapter for).
+// The retailer for a URL, or null when it is none of Amazon, Walmart or Target
+// (so a caller can skip a page the extension has no adapter for).
 export function detectRetailerForUrl(url: string): Retailer | null {
   let host: string;
   try {
@@ -33,7 +33,9 @@ export function detectRetailerForUrl(url: string): Retailer | null {
   const bare = host.replace(/^www\./, "").toLowerCase();
   const isAmazon = bare === "amazon.com" || /(^|\.)amazon\.[a-z.]+$/.test(bare);
   const isWalmart = bare === "walmart.com" || bare.endsWith(".walmart.com");
+  const isTarget = bare === "target.com" || bare.endsWith(".target.com");
   if (isWalmart) return "walmart";
+  if (isTarget) return "target";
   if (isAmazon) return "amazon";
   return null;
 }
@@ -84,9 +86,17 @@ export function detectPageType(url: string): PageType {
   } catch {
     return "other";
   }
-  return retailerFromHost(parsed.hostname) === "walmart"
-    ? detectWalmartPageType(parsed)
-    : detectAmazonPageType(parsed);
+  const retailer = retailerFromHost(parsed.hostname);
+  if (retailer === "walmart") return detectWalmartPageType(parsed);
+  if (retailer === "target") return detectTargetPageType(parsed);
+  return detectAmazonPageType(parsed);
+}
+
+// Target has only product pages: /p/<slug>/-/A-<tcin> (the slug is optional, and
+// Target also serves the bare /p/-/A-<tcin>). Everything else is "other", since
+// no search, store or deals overlay exists for Target.
+function detectTargetPageType(parsed: URL): PageType {
+  return /^\/p\/(?:[^/]+\/)?-\/A-\d{7,10}(?:[/?]|$)/.test(parsed.pathname) ? "product" : "other";
 }
 
 function detectAmazonPageType(parsed: URL): PageType {

@@ -48,6 +48,7 @@ import type {
   StatsResult,
 } from "../integrations/ib-links-client";
 import type { LinkNotice } from "../integrations/link-notice";
+import type { CrossSource } from "../tools/cross-retailer/model";
 import type { BrandedMintInput, BulkMintResult } from "../background/links";
 import type {
   RelayClaimResult,
@@ -185,6 +186,12 @@ export type RuntimeMessage =
       marketplace: string;
       retailer?: "amazon" | "walmart";
     }
+  // "Also on Walmart / Also on Target": is the product on this page also sold by
+  // the other retailer, and where? Target pages are resolved by our server (Walmart
+  // Affiliate API, by UPC); Walmart pages by a lookup against Target from the
+  // browser. The reply is a CrossResult (tools/cross-retailer/model.ts); it is
+  // "unchecked", never "none", whenever the lookup could not complete.
+  | { kind: "LOOKUP_CROSS_RETAILER"; source: CrossSource }
   // Per-video "passport" read from the shared video-placement pool: presence,
   // rotation, and daily visibility for one creator video over 90 days.
   | { kind: "GET_VIDEO_INTEL"; videoId: string; marketplace: string }
@@ -417,6 +424,10 @@ export type RuntimeMessage =
   | { kind: "RELAY_LIST_TARGETS" }
   | { kind: "RELAY_SEND"; command: HudCommand; targetInstanceId: string }
   | { kind: "RELAY_GET_STATE" }
+  // The Settings "Desktop app activity" log: what was sent to / received from the
+  // desktop app and the result. CLEAR wipes it.
+  | { kind: "GET_DESKTOP_ACTIVITY" }
+  | { kind: "CLEAR_DESKTOP_ACTIVITY" }
   | { kind: "RELAY_SET_DEFAULT_TARGET"; target: { instanceId: string; label: string | null } | null }
   // Settings sync with the paired desktop app (integration providers, affiliate
   // tags, storefront id). PREVIEW does the non-destructive both-ways fill and
@@ -464,6 +475,30 @@ export type RuntimeMessage =
   // Options page / content -> background: today's accept ledger plus the
   // robot-check cooldown, for "Today: n of cap" and "Paused until <time>".
   | { kind: "GET_ACCEPT_LEDGER" }
+  // ---- Storefront content-link submit (background/content-link.ts) ------------
+  // Background -> a tab it opened: on the ACTIVE grid filtered to this ASIN, pick
+  // the best active campaign and reply with its detail URL (FindActiveResult).
+  | { kind: "RUN_LINK_FIND"; asin: string }
+  // Background -> the campaign's detail tab: type this URL into Amazon's content
+  // form under this dropdown option and press Submit (replies SubmitLinkOutcome).
+  | { kind: "RUN_LINK_SUBMIT"; url: string; contentType: string }
+  // Content -> background: the creator's video for an ASIN, whether its link was
+  // already submitted, and how many accepted campaigns still wait for a link.
+  | { kind: "GET_LINK_STATUS"; asin?: string }
+  // Content -> background: submit the creator's own storefront video as the link
+  // for this ASIN's best active campaign (the product-page one-off).
+  | { kind: "SUBMIT_LINK_ONE"; asin: string }
+  // Content -> background: submit links for the accepted campaigns still waiting
+  // (the Storefront Check button). Capped per call.
+  | { kind: "RUN_LINK_PASS"; max?: number }
+  // Content -> background: persist the creator's storefront as an ASIN ->
+  // own-video-URL map (storefront/index-store.ts) at the end of a harvest, so
+  // the Auto-accept pass and the content-link submit can use it with no
+  // storefront on screen. Fire and forget.
+  | { kind: "SAVE_STOREFRONT_INDEX"; handle: string | null; items: StorefrontIndexItem[] }
+  // Content -> background: the "matched products" ASINs (storefront index +
+  // order history) Auto mode is allowed to accept in its default scope.
+  | { kind: "GET_MATCHED_ASINS" }
   // ---- In-browser video bump (no desktop app) --------------------------------
   // See tools/my-video/bump-badge.ts (content, entry point) and
   // background/video-bump.ts (the job: open tabs, download, wait out Amazon's
@@ -487,7 +522,65 @@ export type AcceptSource = "manual" | "auto";
 
 // One campaign the rule-based pass accepted, for the ledger and the summary
 // notification ("Accepted 2 campaigns: Brand A, Brand B").
-export type AutoAcceptedItem = { campaignId: string; brand: string | null };
+//
+// `kind` / `asin` are absent on a plain CC item from an older run. An SPCC card
+// has no campaign id, so its ledger key is `spcc:<ASIN>` (see spccLedgerKey).
+export type AutoAcceptedItem = {
+  campaignId: string;
+  brand: string | null;
+  kind?: "cc" | "spcc";
+  asin?: string | null;
+};
+
+// Why a content-link submit did not go through: local gates (disabled, cooldown,
+// no storefront video for the ASIN), the tab (could not open / never answered),
+// or the page ("no-campaign" = no ACTIVE campaign for the ASIN yet, "form" = the
+// content form was not as expected, "no-confirm" = Submit was pressed but Amazon
+// never confirmed).
+export type LinkFailReason =
+  | "disabled"
+  | "cooldown"
+  | "no-video"
+  | "no-campaign"
+  | "blocked"
+  | "not-found"
+  | "form"
+  | "no-confirm"
+  | "timeout"
+  | "tab"
+  | "error";
+
+export type LinkOneResult =
+  | { ok: true; state: "submitted" | "already" }
+  | { ok: false; reason: LinkFailReason };
+
+export type LinkPassResult = {
+  attempted: number;
+  submitted: number;
+  stoppedReason: LinkFailReason | null;
+  // Accepted campaigns still waiting for a link after this call (past the cap).
+  remaining: number;
+};
+
+export type LinkStatusResult = {
+  hasIndex: boolean;
+  storefrontCount: number;
+  hasVideo: boolean;
+  url: string | null;
+  submitted: boolean;
+  pending: number;
+};
+
+// One storefront video as SAVE_STOREFRONT_INDEX carries it.
+export type StorefrontIndexItem = {
+  type: string;
+  title: string;
+  url: string;
+  taggedAsins: string[];
+};
+
+// The reply to GET_MATCHED_ASINS: upper-cased ASINs, deduped.
+export type MatchedAsinsResult = { asins: string[]; storefrontCount: number; orderCount: number };
 
 // Why a rule-based pass stopped before its picks were exhausted: any accept
 // failure, or "timeout" when the run's own time budget (inside the tab dwell)
@@ -501,8 +594,8 @@ export type AutoAcceptStopReason = AcceptFailReason;
 export type AcceptLedgerView = {
   day: string;
   count: number;
-  items: Array<{ campaignId: string; at: number; source: AcceptSource }>;
-  history: Array<{ campaignId: string; at: number }>;
+  items: Array<{ campaignId: string; at: number; source: AcceptSource; asin?: string }>;
+  history: Array<{ campaignId: string; at: number; asin?: string }>;
   cooldownUntil: number | null;
 };
 

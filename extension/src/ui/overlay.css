@@ -785,6 +785,40 @@ a.tile-chip:hover { filter: brightness(0.97); }
 .tile-chip.yt-upload-btn:hover { filter: brightness(0.97); }
 .tile-chip.yt-upload-btn:disabled { opacity: 0.6; cursor: default; }
 
+/* Idea List campaign chips (Creator Connections rate + end date, SPCC $/click)
+   and their hover card. The chips are buttons so keyboard users can open the
+   card; the card is an overlay under the chip row (never in the flow), so the
+   product image stays clear until someone asks for the details. */
+.tile-chip.camp-chip {
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tile-chip.camp-chip.open { outline: 2px solid #15803d; outline-offset: 1px; }
+.tile-chip.camp-chip:focus-visible { outline: 2px solid #15803d; outline-offset: 1px; }
+.camp-card {
+  display: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 5;
+  min-width: 200px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.2);
+  padding: 9px 11px;
+  text-align: left;
+  color: #334155;
+}
+.camp-card.open { display: block; }
+.camp-sec + .camp-sec { margin-top: 8px; padding-top: 8px; border-top: 1px solid #e2e8f0; }
+.camp-title { font-weight: 800; font-size: 12px; color: #0f172a; }
+.camp-line { margin-top: 3px; font-size: 11.5px; line-height: 1.4; font-weight: 600; }
+.camp-note { margin-top: 5px; font-size: 10.5px; line-height: 1.4; color: #64748b; }
+
 /* Improve Reach chip + advisory: the "not on detail pages" state becomes a
    clickable amber chip that expands a card naming Amazon's reason and a concrete
    fix checklist. The card drops onto its own line under the chip row. */
@@ -1055,6 +1089,152 @@ a.tile-chip:hover { filter: brightness(0.97); }
   cursor: pointer;
 }
 .mtpl-actions { display: flex; gap: 6px; }
+/* The template that best answers the brand's latest message. */
+.mtpl-suggested {
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #f0fdfa;
+  border: 1px solid #99f6e4;
+  color: #0f766e;
+  font-size: 10.5px;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+/* Message Cards: the status strip under each conversation's brand name, the brand
+   card above an open thread, the inbox filter bar, and the folded-duplicate bar.
+   Text colors are the AA-safe 700 shades on tinted fills (see CLAUDE.md). */
+.ccm-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 2px 0 4px;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.ccm-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 220px;
+  border-radius: 999px;
+  padding: 1px 8px;
+  font: 700 11px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  white-space: nowrap;
+  cursor: default;
+}
+.ccm-pill .ccm-glyph { flex: none; font-size: 10px; opacity: 0.9; }
+.ccm-pill .ccm-pill-text { overflow: hidden; text-overflow: ellipsis; }
+.ccm-pill.kw { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
+.ccm-pill.rate { background: #f0fdfa; border-color: #99f6e4; color: #0f766e; }
+.ccm-pill.warn { background: #fffbeb; border-color: #fde68a; color: #b45309; }
+.ccm-pill.good { background: #f0fdf4; border-color: #bbf7d0; color: #15803d; }
+.ccm-pill.note { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+
+.ccm-card {
+  box-sizing: border-box;
+  margin: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #0f172a;
+  font: 400 12.5px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ccm-card-head, .ccm-facts, .ccm-links, .ccm-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ccm-fact { font-weight: 600; color: #334155; }
+.ccm-fact + .ccm-fact::before { content: "\00b7"; margin-right: 6px; color: #94a3b8; }
+.ccm-hint { margin: 0; color: #475569; }
+.ccm-meter { height: 6px; border-radius: 999px; background: #e2e8f0; overflow: hidden; }
+.ccm-meter-fill { height: 100%; border-radius: 999px; background: #c2410c; }
+.ccm-row-label { font-weight: 700; font-size: 11px; color: #475569; text-transform: uppercase; letter-spacing: 0.04em; }
+.ccm-link {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 8px;
+  border: 1px solid #fed7aa;
+  background: #fff7ed;
+  color: #9a3412;
+  font-weight: 700;
+  text-decoration: none;
+}
+.ccm-link:hover { background: #ffedd5; }
+.ccm-link.sample { border-color: #99f6e4; background: #f0fdfa; color: #0f766e; }
+.ccm-link.sample:hover { background: #ccfbf1; }
+.ccm-btn {
+  font: 700 12px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #0f172a;
+  cursor: pointer;
+  text-decoration: none;
+}
+.ccm-btn:hover { background: #f1f5f9; }
+.ccm-btn.primary { background: #c2410c; border-color: #c2410c; color: #ffffff; }
+.ccm-btn.primary:hover { background: #9a3412; }
+.ccm-btn[disabled] { opacity: 0.6; cursor: default; }
+.ccm-status { font-weight: 600; color: #475569; }
+.ccm-note { display: flex; align-items: center; gap: 8px; }
+.ccm-note-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 4px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font: 400 12.5px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #0f172a;
+  background: #ffffff;
+}
+.ccm-btn:focus-visible, .ccm-link:focus-visible, .ccm-note-input:focus-visible,
+.ccm-filter:focus-visible, .ccm-dupe:focus-visible { outline: 2px solid #c2410c; outline-offset: 1px; }
+
+.ccm-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #e2e8f0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.ccm-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  font: 700 11.5px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  cursor: pointer;
+}
+.ccm-filter:hover { background: #f8fafc; }
+.ccm-filter.on { background: #c2410c; border-color: #c2410c; color: #ffffff; }
+.ccm-filter-count { font-variant-numeric: tabular-nums; opacity: 0.85; }
+.ccm-filter.ccm-next { margin-left: auto; border-color: #c2410c; color: #9a3412; }
+.ccm-dupe {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 4px 0;
+  padding: 4px 10px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #475569;
+  font: 600 12px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+.ccm-dupe:hover { background: #f1f5f9; }
 .tile-watch {
   display: inline-flex;
   align-items: center;
@@ -1137,6 +1317,16 @@ a.tile-chip:hover { filter: brightness(0.97); }
   cursor: pointer;
 }
 .tile-menu-item:hover { background: #f8fafc; color: #c2410c; }
+/* "Sent" notice on a control that pushed something to the desktop app. The
+   control stays clickable so the creator can send again. #15803d on white is AA. */
+.sent-badge {
+  float: right;
+  margin-left: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #15803d;
+}
+.btn.sent, .tile-menu-create.sent { color: #15803d; background: #f0fdf4; border-color: #bbf7d0; }
 .tile-menu-item.has-sub::after { content: " \203A"; color: #94a3b8; float: right; }
 .tile-menu-item.tile-menu-cta { color: #c2410c; font-weight: 800; }
 .tile-menu-sub {
@@ -1797,4 +1987,44 @@ a.tile-chip:hover { filter: brightness(0.97); }
   .update-banner-close,
   .whats-new-close { width: 36px; height: 36px; }
   .btn { min-height: 40px; }
+}
+
+/* Storefront "campaigns and deals first" bar (tools/storefront-money): a toggle
+   pill above the content grid plus how many cards it moved to the top. */
+.sfmoney-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0 12px;
+  font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.sfmoney-float {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #15803d;
+  font: 600 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  cursor: pointer;
+}
+.sfmoney-float[aria-pressed="false"] { background: #f1f5f9; border-color: #e2e8f0; color: #475569; }
+.sfmoney-float:focus-visible { outline: 2px solid #15803d; outline-offset: 2px; }
+.sfmoney-dot { width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+.sfmoney-float[aria-pressed="false"] .sfmoney-dot { background: transparent; box-shadow: inset 0 0 0 2px currentColor; }
+.sfmoney-count { color: #475569; font-size: 12.5px; }
+
+/* Search tile "Accept campaign" chip: a button that reads like the other chips. */
+.tile-accept {
+  cursor: pointer;
+  font: inherit;
+  border: 1px solid currentColor;
+  background: transparent;
+}
+.tile-accept:disabled {
+  cursor: default;
+  opacity: 0.6;
 }

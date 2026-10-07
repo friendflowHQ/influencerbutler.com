@@ -5,6 +5,7 @@
 // list, media list) in one paginated feed. Mechanics mirror the desktop
 // repo's storefront-butler-scraper.js (verified live 2026-07-06).
 
+import { sendToBackground } from "../../shared/messages";
 import {
   STOREFRONT_CARD_SELECTOR,
   cardContentType,
@@ -208,6 +209,23 @@ export async function harvestStorefront(
     pageToken = nextToken;
     await sleep(PAGE_DELAY_MS);
   }
+
+  // Persist the ASIN -> own-video map for Auto-accept ("matched products only")
+  // and the content-link submit. Fire and forget: a harvest never fails because
+  // the worker was asleep. Only the creator's OWN storefront is indexed (a
+  // creatorOverride handle is also the creator's, per the upload helper).
+  void sendToBackground({
+    kind: "SAVE_STOREFRONT_INDEX",
+    handle: creator,
+    items: items
+      .filter((item) => item.type === "video" && item.taggedAsins.length > 0)
+      .map((item) => ({
+        type: item.type,
+        title: item.title,
+        url: item.url,
+        taggedAsins: item.taggedAsins,
+      })),
+  }).catch(() => undefined);
 
   return { counts, items, pages, capped, stopReason, droppedCards, reportedPostCount };
 }

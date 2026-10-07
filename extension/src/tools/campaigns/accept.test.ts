@@ -35,9 +35,11 @@ describe("chooseAcceptRoute", () => {
     expect(chooseAcceptRoute({ connected: false }, "cc", "")).toBe("needs-lookup");
   });
 
-  it("needs the app for SPCC without a paired bridge, id or not", () => {
-    expect(chooseAcceptRoute({ connected: false }, "spcc", ID)).toBe("needs-app");
-    expect(chooseAcceptRoute({ connected: false }, "spcc", null)).toBe("needs-app");
-    expect(chooseAcceptRoute({ connected: true, paired: false }, "spcc", ID)).toBe("needs-app");
+  it("accepts SPCC standalone by its spcc:<ASIN> key, no lookup needed", () => {
+    expect(chooseAcceptRoute({ connected: false }, "spcc", "spcc:B000000001")).toBe("standalone");
+    expect(chooseAcceptRoute({ connected: true, paired: false }, "spcc", "spcc:B000000001")).toBe(
+      "standalone",
+    );
+    expect(chooseAcceptRoute(null, "spcc", null)).toBe("needs-id");
   });
 });

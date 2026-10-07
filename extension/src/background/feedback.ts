@@ -1,6 +1,7 @@
 import { ENDPOINTS } from "../shared/constants";
 import { getState } from "../storage/store";
 import { collectBridgeDiagnostics } from "./bridge-diagnostics";
+import { activityLogText } from "./desktop-activity";
 import type {
   FeedbackInput,
   FeedbackResult,
@@ -244,7 +245,15 @@ async function collectLogs(pageUrl?: string): Promise<string> {
   } catch {
     bridge = "== Desktop connection ==\n(diagnostics unavailable)";
   }
-  return `${lines.join("\n")}\n\n${bridge}`;
+  // What the extension actually sent to / received from the app recently, so a
+  // "nothing happened when I clicked Send" report shows the attempt and its result.
+  let activity = "";
+  try {
+    activity = await activityLogText();
+  } catch {
+    activity = "== Desktop app activity ==\n(unavailable)";
+  }
+  return `${lines.join("\n")}\n\n${bridge}\n\n${activity}`;
 }
 
 export async function submitFeedbackRich(input: RichFeedbackInput): Promise<RichFeedbackResult> {

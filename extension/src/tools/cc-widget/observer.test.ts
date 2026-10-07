@@ -5,6 +5,7 @@ import {
   createWidgetObserverHub,
   isInsideOwnHost,
   isOwnMutation,
+  OWN_HOST_CLASSES,
   type DocumentLike,
   type ElementLike,
   type NodeLike,
@@ -292,5 +293,13 @@ describe("createWidgetObserverHub", () => {
     h.hub.subscribe(() => b++);
     h.clock.advance(DEBOUNCE_MS);
     expect(b).toBe(1);
+  });
+});
+
+describe("OWN_HOST_CLASSES", () => {
+  it("covers every Message Cards host so mounting one never wakes the sweeps", () => {
+    for (const cls of ["ccm-strip-host", "ccm-card-host", "ccm-filter-host", "ccm-dupe-host"]) {
+      expect(OWN_HOST_CLASSES).toContain(cls);
+    }
   });
 });

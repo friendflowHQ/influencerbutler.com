@@ -22,7 +22,9 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const CAMPAIGN_ID_RE = /^amzn1\.campaign\.[A-Za-z0-9]+$/;
+// CC campaigns carry an Amazon id; SPCC cards have none in the DOM, so the extension
+// keys them `spcc:<ASIN>`.
+const CAMPAIGN_ID_RE = /^(amzn1\.campaign\.[A-Za-z0-9]+|spcc:[A-Z0-9]{10})$/;
 
 export async function OPTIONS() {
   return optionsResponse();

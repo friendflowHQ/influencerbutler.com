@@ -1,6 +1,7 @@
 import { isPaired, pollNotifications } from "./hud-bridge";
 import type { AppNotification } from "../transport/hud-commands";
 import { log } from "../shared/log";
+import { recordActivity } from "./desktop-activity";
 
 // The extension half of the reverse channel: on the sync alarm, poll the paired
 // app for anything it wants to show the creator (a butler run finished, earnings
@@ -46,6 +47,15 @@ export async function pollAppNotifications(): Promise<void> {
   }
 
   for (const entry of res.entries) fireNotification(entry);
+  if (res.entries.length > 0) {
+    recordActivity({
+      dir: "from-app",
+      action: "notifications",
+      outcome: "ok",
+      route: "local",
+      detail: `${res.entries.length} from the app`,
+    });
+  }
   if (res.cursor !== cursor) await setCursor(res.cursor);
 }
 

@@ -18,6 +18,8 @@ import {
   WALMART_MARKETPLACE,
 } from "../walmart/product-signals";
 import { IP_HREF_ID_RE, parseSearchTiles as parseWalmartTiles } from "../walmart/search-results";
+import { extractSignals as extractTargetSignals } from "../target/product-signals";
+import { TARGET_MARKETPLACE, extractTcin, targetProductUrl } from "../target/redsky";
 
 // The retailer abstraction the shared money layer resolves once per page. Both
 // Amazon and Walmart implement it, so the overlays read signals, tiles, the
@@ -127,9 +129,38 @@ const walmartModule: RetailerModule = {
   badgeSlot: (tileEl) => tileEl,
 };
 
+// Target is a product-page-only retailer: the cross-retailer card and price
+// chips. There is no search grid parser, rate card, pooled market data or
+// affiliate routing for it, so every capability is off and the grid hooks are
+// inert (the search overlay is never mounted on a Target page).
+const targetModule: RetailerModule = {
+  retailer: "target",
+  marketplaceFor: () => TARGET_MARKETPLACE,
+  extractSignals: (doc, url) => extractTargetSignals(doc, url),
+  parseSearchTiles: () => [],
+  canonicalProductUrl: (id) => targetProductUrl(id),
+  extractProductId: (url) => extractTcin(url),
+  productIdValid: (id) => productIdValid("target", id),
+  getRateCard: () => Promise.resolve(null),
+  defaultRatePct: () => 0,
+  capabilities: {
+    ccRates: false,
+    catalogueBloom: false,
+    dpEnrich: false,
+    videoScan: false,
+    earnings: false,
+    hideStrayDupes: false,
+    campaignFilter: false,
+    sortStrategy: "grouped",
+  },
+  toolbarSlot: (tileEl) => tileEl.parentElement,
+  badgeSlot: (tileEl) => tileEl,
+};
+
 const REGISTRY: Record<Retailer, RetailerModule> = {
   amazon: amazonModule,
   walmart: walmartModule,
+  target: targetModule,
 };
 
 export function retailerModule(retailer: Retailer): RetailerModule {

@@ -94,6 +94,15 @@ La même installation fonctionne dans Chrome, Microsoft Edge et Brave, sur Windo
 1. Ouvrez une campagne pour lire **The Butler's Brief**: un verdict, pourquoi la prendre, quoi filmer et avec quel produit commencer
 1. Dans le rédacteur de messages de la campagne, utilisez la barre **Templates** pour insérer un message enregistré avec les espaces réservés remplis, ou enregistrez ce que vous avez tapé comme nouveau modèle; **Brand Keywords** fait remonter les termes demandés par une marque pour que vous les intégriez
 
+## Cartes dans le panneau Messages
+
+1. Ouvrez le panneau **Messages** sur Creator Connections. Sous chaque marque, de petites pastilles affichent le meilleur taux de commission, les jours restants, les places ouvertes et, avec l'application de bureau ouverte, le mot-clé sous lequel vous l'avez contactée
+1. Utilisez la barre de filtres au-dessus de la liste (**Unread**, **Live campaign**, **Pitched by me**, **10%+ rate**) et **Next unread** pour parcourir la boîte de réception
+1. Ouvrez une conversation : la carte de la marque affiche le taux, les jours restants et une jauge de places, transforme en boutons les liens du formulaire d'échantillon et du contenu présents dans le message de la marque, et vous laisse noter une ligne sur la marque
+1. **Accept best campaign** sur la carte accepte la meilleure campagne active de la marque (la liste des campagnes doit avoir été chargée une fois, et Standalone accept doit être activé)
+1. Un message envoyé deux fois par la marque est replié derrière une barre **Show it**, et le sélecteur **Templates** met en avant la réponse enregistrée la mieux adaptée à son dernier message
+1. Cela fonctionne avec les campagnes que votre navigateur a déjà chargées, donc sans l'application de bureau. Désactivez-le sous **Amazon : messages Creator Connections** dans le popup de l'extension
+
 ## Noter l'onglet Sponsored Products for Creators
 
 1. Sur la page Creator Connections, passez à l'onglet **Sponsored Products for Creators**
@@ -103,7 +112,25 @@ La même installation fonctionne dans Chrome, Microsoft Edge et Brave, sur Windo
 
 ## Accepter une campagne depuis l'extension
 
-Accepter nécessite aujourd'hui l'application de bureau associée; l'extension seule n'accepte ni ne refuse jamais une campagne.
+Vous n'avez pas besoin de l'application de bureau pour accepter des campagnes ni pour envoyer votre lien de contenu. L'extension clique sur les boutons d'Amazon dans un onglet en arrière-plan, exactement comme vous, et s'arrête si Amazon affiche une vérification anti-robot.
+
+**Actions ponctuelles, à tout moment:**
+
+1. Sur une page produit, le bloc **Campagnes** en bas de l'aperçu du produit indique si le produit a une campagne Creator Connections ou Sponsored Products for Creators (SPCC), avec un bouton **Accepter** pour chacune disponible. Cliquez et le Butler accepte cette campagne pour vous
+1. Sur une page de recherche Amazon, un produit avec une campagne Creator Connections affiche une pastille **Accepter la campagne** à côté de son taux, et la barre d'outils affiche **Accepter les campagnes de cette page (N)** pour accepter celles qui sont visibles (jusqu'à 10 par clic, après confirmation)
+1. Dès qu'une de vos propres vidéos de boutique tague un produit que vous avez accepté, la page produit affiche **Envoyer le lien de ma boutique**. Un clic place cette vidéo dans le formulaire de contenu d'Amazon sur la meilleure campagne active du produit
+
+**Mode automatique, sans y toucher:**
+
+1. Ouvrez les réglages de l'extension (l'engrenage du popup) et trouvez **Acceptation automatique et liens de contenu**, ou utilisez l'interrupteur **Accepter les campagnes automatiquement** du popup
+1. Activez-le et confirmez. Tant que Chrome est ouvert et que vous êtes connecté à Amazon Associates, le Butler vérifie Creator Connections toutes les 30 minutes et accepte les campagnes qui respectent vos règles, dans la limite de vos plafonds quotidien et par vérification
+1. Choisissez quoi accepter: **seulement les produits déjà dans votre boutique ou vos commandes** (recommandé et par défaut) ou **toute campagne qui respecte vos règles**. Renseignez votre **Mon pseudo de storefront** dans le popup pour que le Butler sache quelle boutique est la vôtre, puis ouvrez votre boutique et lancez une fois le **contrôle de boutique** pour qu'il sache quels produits vous mettez en avant
+1. Laissez activée l'option **Envoyer aussi le lien de ma boutique** pour que le Butler saisisse votre propre vidéo de boutique comme lien de contenu de chaque campagne acceptée, et **Accepter aussi les campagnes SPCC** pour inclure l'onglet Sponsored Products for Creators
+1. Après un contrôle de boutique, le bouton **Envoyer les liens de contenu des campagnes acceptées** envoie les liens encore en attente
+
+Le mode automatique est désactivé tant que vous ne l'activez pas. Si Amazon affiche une vérification anti-robot, il se met en pause 12 heures et vous prévient. Associer l'application de bureau reste facultatif: lorsqu'elle est associée, les clics ponctuels sur Accepter passent par l'application.
+
+**Facultatif: associer l'application de bureau** (accepte via l'application et affiche le badge Inscrit)
 
 1. Ouvrez l'application de bureau Influencer Butler. **Sur Windows:** lancez-la depuis le menu Démarrer, ou cliquez sur son icône dans la zone de notification si elle tourne déjà. **Sur Mac:** lancez-la depuis Applications, ou cliquez sur son icône dans la barre de menus ou le Dock si elle tourne déjà
 1. Cliquez sur l'icône de l'extension dans Chrome, descendez jusqu'à la section **Desktop app** du popup et cliquez sur **Connect the desktop app**; l'application de bureau affiche un code à 6 chiffres

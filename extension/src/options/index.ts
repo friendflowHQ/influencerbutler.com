@@ -7,10 +7,20 @@ import {
 } from "../integrations/registry";
 import type { IntegrationAdapter, IntegrationCategory } from "../integrations/types";
 import { OPTIONS_CATALOG, type OptionsDict } from "./strings";
-import { resolveLocale } from "../i18n";
+import { resolveLocale, setLocale, t } from "../i18n";
 import { getSettings, patchSettings } from "../storage/store";
-import { DEAL_PLACEMENTS, EVENT_ALSO_SEND_MODES, type EventAlsoSend } from "../storage/schema";
-import { DEAL_WORKSPACES } from "../shared/constants";
+import {
+  DEAL_PLACEMENTS,
+  EVENT_ALSO_SEND_MODES,
+  normalizeAutoAccept,
+  type AutoAcceptScope,
+  type EventAlsoSend,
+} from "../storage/schema";
+import {
+  AUTO_ACCEPT_DAILY_HARD_CAP,
+  AUTO_ACCEPT_PER_RUN_HARD_CAP,
+  DEAL_WORKSPACES,
+} from "../shared/constants";
 import type { DealPlacement } from "../transport/hud-commands";
 import type {
   DealsSettings,
@@ -28,11 +38,13 @@ import {
 } from "../tools/my-link/voiceover-prompt";
 import {
   sendToBackground,
+  type AcceptLedgerView,
   type CreatorApiBackupStatus,
   type HudStatus,
   type IntegrationsView,
   type IntegrationTestOutcome,
   type IntegrationView,
+  type MatchedAsinsResult,
 } from "../shared/messages";
 import {
   ONBOARDING_VIDEO_ID,
@@ -40,6 +52,7 @@ import {
   OPENAI_SETUP_TUTORIAL_URL,
 } from "../shared/constants";
 import { INCOMPLETE_CREDS_MESSAGE } from "../integrations/adapters/creators-api";
+import { formatActivityLog, type DesktopActivityEntry } from "../shared/desktop-activity";
 
 // The API Integrations options page. All credentials are handled by the
 // background worker; this page only shows non-secret values and status, and
@@ -64,6 +77,7 @@ void init();
 async function init(): Promise<void> {
   settings = await getSettings();
   D = OPTIONS_CATALOG[resolveLocale(settings.locale)];
+  setLocale(settings.locale);
   view = await sendToBackground<IntegrationsView>({ kind: "GET_INTEGRATIONS" });
   // The live workspace list comes from the running app. A dead worker or a
   // closed app must not blank the whole page, so this failure is swallowed and
@@ -74,7 +88,9 @@ async function init(): Promise<void> {
   renderAffiliateRoutingStrategy();
   renderCategories();
   renderVoiceover();
+  void renderAutoAccept();
   renderDeals();
+  renderActivity();
   // Nav depends on the sections above already being in the DOM.
   renderSideNav();
   setupScrollSpy();
@@ -108,7 +124,9 @@ function renderSideNav(): void {
       ],
     },
     { title: null, items: [{ id: "sec-voiceover", text: D.voHeading }] },
+    { title: null, items: [{ id: "sec-auto-accept", text: t().autoCardTitle }] },
     { title: null, items: [{ id: "sec-deals", text: D.dealsHeading }] },
+    { title: null, items: [{ id: "sec-activity", text: D.activityNav }] },
   ];
 
   for (const group of groups) {
@@ -180,6 +198,13 @@ function providerView(id: string): IntegrationView {
 function renderChrome(): void {
   document.title = `Influencer Butler: ${D.pageTitle}`;
   byId("page-title").textContent = D.pageTitle;
+  const chatBtn = byId<HTMLButtonElement>("open-chat");
+  chatBtn.textContent = D.openChat;
+  chatBtn.title = D.openChatHint;
+  chatBtn.setAttribute("aria-label", D.openChatHint);
+  chatBtn.onclick = () => {
+    void chrome.tabs.create({ url: chrome.runtime.getURL("chat.html") });
+  };
   byId("page-intro").textContent = D.pageIntro;
   byId("security-note").textContent = D.securityNote;
   byId("affiliate-disclosure").textContent = D.affiliateDisclosure;
@@ -239,6 +264,9 @@ const SESSION_PROVIDERS = new Set([IB_LINKS, "mavely", "walmartCreator"]);
 // Map a provider's connection state to a routing status pill (text + state key).
 function routingStatus(providerId: string): { text: string; state: "success" | "error" | "idle" } {
   const pv = providerView(providerId);
+  // Connected in the desktop app: links mint there, so a failed or missing test in
+  // THIS browser is not a problem to flag.
+  if (pv.viaDesktop) return { text: D.statusViaApp, state: "success" };
   if (pv.lastTest.status === "fail") return { text: D.statusFail, state: "error" };
   if (!pv.configured) return { text: D.statusNotConnected, state: "idle" };
   if (pv.lastTest.status === "ok") {
@@ -246,9 +274,6 @@ function routingStatus(providerId: string): { text: string; state: "success" | "
       ? { text: D.statusSignedIn, state: "success" }
       : { text: D.statusOk, state: "success" };
   }
-  // Connected in the desktop app: links mint there, so a failed or missing test in
-  // THIS browser is not a problem to flag.
-  if (pv.viaDesktop) return { text: D.statusViaApp, state: "success" };
   // Configured but not yet tested.
   return SESSION_PROVIDERS.has(providerId)
     ? { text: D.statusSignedIn, state: "success" }
@@ -765,6 +790,294 @@ function renderVoiceover(): void {
 // Where the on-page "Send to Deals" chip sends a deal, and whether that chip
 // is shown at all. Mirrors renderVoiceover: one Save that writes the whole
 // nested object, because patchSettings shallow-merges.
+// Desktop app activity: the log of what the extension sent to / got from the
+// desktop app. The same text (newest 60 entries) rides along on feedback reports
+// and chat-bubble logs, so this is also what support will see.
+function renderActivity(): void {
+  const root = byId("activity");
+  root.replaceChildren();
+
+  const section = document.createElement("section");
+  section.className = "settings-section";
+  section.id = "sec-activity";
+  const heading = document.createElement("h3");
+  heading.className = "section-title";
+  heading.textContent = D.activityHeading;
+  const card = document.createElement("section");
+  card.className = "card";
+
+  const intro = document.createElement("p");
+  intro.className = "muted small";
+  intro.textContent = D.activityIntro;
+
+  const actions = document.createElement("div");
+  actions.className = "row";
+  const refreshBtn = document.createElement("button");
+  refreshBtn.type = "button";
+  refreshBtn.className = "ghost";
+  refreshBtn.textContent = D.activityRefresh;
+  const copyBtn = document.createElement("button");
+  copyBtn.type = "button";
+  copyBtn.className = "ghost";
+  copyBtn.textContent = D.activityCopy;
+  const clearBtn = document.createElement("button");
+  clearBtn.type = "button";
+  clearBtn.className = "ghost";
+  clearBtn.textContent = D.activityClear;
+  actions.append(refreshBtn, copyBtn, clearBtn);
+
+  const list = document.createElement("ul");
+  list.className = "activity-list";
+  // Announce refreshes/clears to screen readers without stealing focus.
+  list.setAttribute("aria-live", "polite");
+
+  card.append(intro, actions, list);
+  section.append(heading, card);
+  root.append(section);
+
+  let entries: DesktopActivityEntry[] = [];
+
+  const outcomeText = (e: DesktopActivityEntry): string => {
+    if (e.outcome === "failed") return D.activityFailed;
+    if (e.outcome === "queued") return D.activityQueued;
+    if (e.outcome === "info") return D.activityInfo;
+    return e.dir === "from-app" ? D.activityReceived : D.activitySent;
+  };
+  const dirText = (e: DesktopActivityEntry): string =>
+    e.dir === "to-app" ? D.activityToApp : e.dir === "from-app" ? D.activityFromApp : D.activityConnection;
+
+  const draw = (): void => {
+    list.replaceChildren();
+    copyBtn.disabled = entries.length === 0;
+    clearBtn.disabled = entries.length === 0;
+    if (entries.length === 0) {
+      const empty = document.createElement("li");
+      empty.className = "muted small";
+      empty.textContent = D.activityEmpty;
+      list.append(empty);
+      return;
+    }
+    for (const e of entries) {
+      const li = document.createElement("li");
+      li.className = `activity-row activity-${e.outcome}`;
+      const when = document.createElement("time");
+      when.dateTime = new Date(e.at).toISOString();
+      when.textContent = new Date(e.at).toLocaleString();
+      const main = document.createElement("span");
+      main.className = "activity-main";
+      const parts = [dirText(e), e.action];
+      if (e.detail) parts.push(e.detail);
+      main.textContent = parts.join(" · ");
+      const result = document.createElement("strong");
+      result.className = "activity-result";
+      result.textContent = outcomeText(e);
+      li.append(when, main, result);
+      if (e.message) {
+        const note = document.createElement("span");
+        note.className = "muted small activity-note";
+        note.textContent = e.message;
+        li.append(note);
+      }
+      if ((e.count ?? 1) > 1) {
+        const rep = document.createElement("span");
+        rep.className = "muted small";
+        rep.textContent = `x${e.count} ${D.activityRepeat}`;
+        li.append(rep);
+      }
+      list.append(li);
+    }
+  };
+
+  const load = async (): Promise<void> => {
+    entries = await sendToBackground<DesktopActivityEntry[]>({ kind: "GET_DESKTOP_ACTIVITY" }).catch(() => []);
+    draw();
+  };
+
+  refreshBtn.onclick = () => void load();
+  copyBtn.onclick = () => {
+    void navigator.clipboard
+      .writeText(formatActivityLog(entries, entries.length))
+      .then(() => {
+        copyBtn.textContent = D.activityCopied;
+        setTimeout(() => (copyBtn.textContent = D.activityCopy), 1800);
+      })
+      .catch(() => {});
+  };
+  clearBtn.onclick = () => {
+    void sendToBackground<void>({ kind: "CLEAR_DESKTOP_ACTIVITY" })
+      .catch(() => {})
+      .then(() => load());
+  };
+  void load();
+}
+
+// Auto-accept and content links (background/auto-accept.ts). Opt-in; the master
+// toggle asks for confirmation the first time it is turned on.
+async function renderAutoAccept(): Promise<void> {
+  const root = byId("auto-accept");
+  root.replaceChildren();
+  const T = t();
+  const current = settings.autoAccept;
+
+  const section = document.createElement("section");
+  section.className = "settings-section";
+  section.id = "sec-auto-accept";
+  const heading = document.createElement("h3");
+  heading.className = "section-title";
+  heading.textContent = T.autoCardTitle;
+  const card = document.createElement("section");
+  card.className = "card";
+
+  const intro = document.createElement("p");
+  intro.className = "muted small";
+  intro.textContent = T.autoCardIntro;
+  card.append(intro);
+
+  const field = (labelText: string, control: HTMLElement): void => {
+    const wrap = document.createElement("label");
+    wrap.className = "field";
+    const span = document.createElement("span");
+    span.textContent = labelText;
+    wrap.append(span, control);
+    card.append(wrap);
+  };
+  const checkbox = (labelText: string, checked: boolean): HTMLInputElement => {
+    const wrap = document.createElement("label");
+    wrap.className = "toggle";
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.checked = checked;
+    const span = document.createElement("span");
+    span.textContent = labelText;
+    wrap.append(box, span);
+    card.append(wrap);
+    return box;
+  };
+  const numberInput = (value: number, min: number, max: number): HTMLInputElement => {
+    const input = document.createElement("input");
+    input.type = "number";
+    input.min = String(min);
+    input.max = String(max);
+    input.value = String(value);
+    return input;
+  };
+  const note = (text: string): HTMLParagraphElement => {
+    const p = document.createElement("p");
+    p.className = "muted small";
+    p.textContent = text;
+    card.append(p);
+    return p;
+  };
+
+  const enabledBox = checkbox(T.autoEnable, current.enabled);
+
+  const scopeSelect = document.createElement("select");
+  const scopes: Array<[AutoAcceptScope, string]> = [
+    ["matched", T.autoScopeMatched],
+    ["rules", T.autoScopeRules],
+  ];
+  for (const [value, label] of scopes) {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = label;
+    scopeSelect.append(option);
+  }
+  scopeSelect.value = current.scope;
+  field(T.autoScopeLabel, scopeSelect);
+
+  const commission = numberInput(current.minCommissionPct, 0, 100);
+  field(T.autoMinCommission, commission);
+  const dailyCap = numberInput(current.dailyCap, 1, AUTO_ACCEPT_DAILY_HARD_CAP);
+  field(T.autoDailyCap, dailyCap);
+  const perRunCap = numberInput(current.perRunCap, 1, AUTO_ACCEPT_PER_RUN_HARD_CAP);
+  field(T.autoPerRunCap, perRunCap);
+  const spccEpc = numberInput(current.spccMinEpcCents, 0, 10_000);
+  field(T.autoSpccMinEpc, spccEpc);
+  const spccBudget = document.createElement("select");
+  for (const level of ["high", "medium", "low"] as const) {
+    const option = document.createElement("option");
+    option.value = level;
+    option.textContent = level.charAt(0).toUpperCase() + level.slice(1);
+    spccBudget.append(option);
+  }
+  spccBudget.value = current.spccMinBudget;
+  field(T.autoSpccMinBudget, spccBudget);
+  const spccBox = checkbox(T.autoIncludeSpcc, current.includeSpcc);
+  const linksBox = checkbox(T.autoSubmitLinks, current.submitLinks);
+
+  const actions = document.createElement("div");
+  actions.className = "actions";
+  const saveBtn = document.createElement("button");
+  saveBtn.className = "primary";
+  saveBtn.textContent = D.save;
+  actions.append(saveBtn);
+  card.append(actions);
+
+  const statusToday = note("");
+  const statusMatched = note("");
+
+  const refreshStatus = async (): Promise<void> => {
+    try {
+      const [ledger, matched] = await Promise.all([
+        sendToBackground<AcceptLedgerView>({ kind: "GET_ACCEPT_LEDGER" }),
+        sendToBackground<MatchedAsinsResult>({ kind: "GET_MATCHED_ASINS" }),
+      ]);
+      const paused =
+        ledger.cooldownUntil !== null
+          ? ` ${T.autoPausedUntil(new Date(ledger.cooldownUntil).toLocaleString())}`
+          : "";
+      statusToday.textContent = `${T.autoTodayLine(ledger.count, settings.autoAccept.dailyCap)}${paused}`;
+      const needHandle = !settings.storefrontHandle?.trim();
+      statusMatched.textContent =
+        matched.asins.length === 0 || needHandle
+          ? T.autoMatchedEmpty
+          : T.autoMatchedLine(matched.storefrontCount, matched.orderCount);
+    } catch {
+      // A sleeping worker must not blank the card; the status lines just stay empty.
+    }
+  };
+
+  const save = async (): Promise<void> => {
+    saveBtn.disabled = true;
+    saveBtn.textContent = D.saving;
+    settings = await patchSettings({
+      autoAccept: normalizeAutoAccept({
+        enabled: enabledBox.checked,
+        minCommissionPct: Number(commission.value),
+        bands: current.bands,
+        excludeEndingWithinHours: current.excludeEndingWithinHours,
+        dailyCap: Number(dailyCap.value),
+        perRunCap: Number(perRunCap.value),
+        scope: scopeSelect.value,
+        submitLinks: linksBox.checked,
+        includeSpcc: spccBox.checked,
+        spccMinEpcCents: Number(spccEpc.value),
+        spccMinBudget: spccBudget.value,
+      }),
+    });
+    saveBtn.disabled = false;
+    saveBtn.textContent = T.autoSaved;
+    window.setTimeout(() => (saveBtn.textContent = D.save), 1200);
+    void refreshStatus();
+  };
+  saveBtn.onclick = () => void save();
+
+  // Turning Auto mode ON is the one consequential click: confirm once, and save
+  // right away so the switch is never half-applied.
+  enabledBox.onchange = () => {
+    if (enabledBox.checked && !window.confirm(T.autoEnableConfirm)) {
+      enabledBox.checked = false;
+      return;
+    }
+    void save();
+  };
+
+  void refreshStatus();
+
+  section.append(heading, card);
+  root.append(section);
+}
+
 function renderDeals(): void {
   const root = byId("deals");
   root.replaceChildren();
@@ -1071,13 +1384,6 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
     block.append(desc);
   }
 
-  // The Creators API card carries the setup walkthrough, matching the desktop
-  // app's API Integrations screen.
-  let backupControls: ReturnType<typeof renderCreatorsBackup> | null = null;
-  if (adapter.id === CREATORS_API) {
-    block.append(renderSetupVideo());
-    backupControls = renderCreatorsBackup();
-    block.append(backupControls.el);
   if (pv.viaDesktop) {
     const viaApp = document.createElement("p");
     viaApp.className = "test-result ok";
@@ -1087,6 +1393,13 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
     block.append(viaApp);
   }
 
+  // The Creators API card carries the setup walkthrough, matching the desktop
+  // app's API Integrations screen.
+  let backupControls: ReturnType<typeof renderCreatorsBackup> | null = null;
+  if (adapter.id === CREATORS_API) {
+    block.append(renderSetupVideo());
+    backupControls = renderCreatorsBackup();
+    block.append(backupControls.el);
   }
 
   // Inputs. Associates gets a per-country tag grid; everything else gets fields.

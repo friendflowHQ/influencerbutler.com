@@ -2,6 +2,8 @@ import { IB_RELAY_ENDPOINTS } from "../shared/constants";
 import { getState, getSettings } from "../storage/store";
 import { getClientId, sendHudCommand } from "./hud-bridge";
 import type { HudCommand, HudCommandResult } from "../transport/hud-commands";
+import { describeOutcome, isAutomaticCommand, summarizeCommand } from "../shared/desktop-activity";
+import { recordActivity } from "./desktop-activity";
 
 // Cross-device command relay (sender side). The local bridge (hud-bridge.ts)
 // only reaches the desktop app on THIS machine; these calls send the same
@@ -69,10 +71,13 @@ export async function relayClaimLink(code: string, label?: string): Promise<Rela
       | { ok?: boolean; receiverInstanceId?: string; receiverLabel?: string | null; error?: string }
       | null;
     if (json && json.ok && json.receiverInstanceId) {
+      recordActivity({ dir: "connection", action: "relay.link", outcome: "ok", route: "relay", detail: json.receiverLabel ?? undefined });
       return { ok: true, receiverInstanceId: json.receiverInstanceId, receiverLabel: json.receiverLabel ?? null };
     }
+    recordActivity({ dir: "connection", action: "relay.link", outcome: "failed", route: "relay", message: friendly(json?.error) });
     return { ok: false, error: friendly(json?.error) };
   } catch {
+    recordActivity({ dir: "connection", action: "relay.link", outcome: "failed", route: "relay", message: "Network error" });
     return { ok: false, error: "Network error. Are you online?" };
   }
 }
@@ -153,6 +158,27 @@ export async function resolveDefaultRelayTarget(): Promise<{ instanceId: string;
 // token / pairing problem (the local app is here but not connected) also
 // never falls back: the fix is to reconnect locally, not to send it elsewhere.
 export async function sendCommandPreferLocal(
+  command: HudCommand,
+): Promise<HudCommandResult & { viaRemote?: boolean; deviceLabel?: string | null }> {
+  const result = await dispatchCommand(command);
+  // Every send leaves a line in the Settings > Desktop app activity log (and so
+  // in feedback reports). Routine background reports only log when they fail.
+  const { action, detail } = summarizeCommand(command);
+  if (result.ok && isAutomaticCommand(action)) return result;
+  const { outcome, message } = describeOutcome(result);
+  recordActivity({
+    dir: "to-app",
+    action,
+    detail: result.viaRemote && result.deviceLabel ? `${detail ?? ""} -> ${result.deviceLabel}`.trim() : detail,
+    // A relay send is only queued on the other computer; the app there reports back later.
+    outcome: result.viaRemote && outcome === "ok" ? "queued" : outcome,
+    route: result.viaRemote ? "relay" : "local",
+    message,
+  });
+  return result;
+}
+
+async function dispatchCommand(
   command: HudCommand,
 ): Promise<HudCommandResult & { viaRemote?: boolean; deviceLabel?: string | null }> {
   const local = await sendHudCommand(command);

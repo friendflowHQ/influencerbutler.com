@@ -171,6 +171,24 @@ export interface OptionsDict {
   voDenyGroup: string;
   voDenyLabel: string;
   voDenyHint: string;
+  // Desktop app activity log
+  activityHeading: string;
+  activityNav: string;
+  activityIntro: string;
+  activityEmpty: string;
+  activityRefresh: string;
+  activityCopy: string;
+  activityCopied: string;
+  activityClear: string;
+  activityToApp: string;
+  activityFromApp: string;
+  activityConnection: string;
+  activitySent: string;
+  activityReceived: string;
+  activityFailed: string;
+  activityQueued: string;
+  activityInfo: string;
+  activityRepeat: string;
   // Deals section (the on-page "Send to Deals" chip)
   dealsHeading: string;
   dealsIntro: string;
@@ -388,6 +406,23 @@ const en: OptionsDict = {
   voDenyLabel: "Brands to never mention (comma separated)",
   voDenyHint:
     "Scripts are told to avoid these brand names, and every draft is checked afterward: if one slips through you get a warning under the script.",
+  activityHeading: "Desktop app activity",
+  activityNav: "Desktop app activity",
+  activityIntro: "A log of what this extension sent to the Influencer Butler desktop app, and what came back. It is attached to feedback reports and chat logs, so support can see why something did not reach the app. It never includes your keys or pairing token.",
+  activityEmpty: "Nothing yet. When you send a product to the app, sync settings, or pair, it shows up here.",
+  activityRefresh: "Refresh",
+  activityCopy: "Copy log",
+  activityCopied: "Copied",
+  activityClear: "Clear log",
+  activityToApp: "To app",
+  activityFromApp: "From app",
+  activityConnection: "Connection",
+  activitySent: "Sent",
+  activityReceived: "Received",
+  activityFailed: "Failed",
+  activityQueued: "Queued on another computer",
+  activityInfo: "Info",
+  activityRepeat: "times",
   dealsHeading: "Deals",
   dealsIntro:
     "When you are browsing a deal site the extension knows, each product gets a Send to Deals button. These settings decide where those deals go.",
@@ -607,6 +642,23 @@ const es: OptionsDict = {
   voDenyLabel: "Marcas que nunca se deben mencionar (separadas por comas)",
   voDenyHint:
     "Se indica a los guiones que eviten estas marcas y cada borrador se revisa después: si alguna se cuela, verás un aviso debajo del guion.",
+  activityHeading: "Actividad con la app de escritorio",
+  activityNav: "Actividad con la app",
+  activityIntro: "Un registro de lo que esta extension envio a la app de escritorio de Influencer Butler y lo que respondio. Se adjunta a los informes y registros del chat para que soporte vea por que algo no llego a la app. Nunca incluye tus claves ni el token de emparejamiento.",
+  activityEmpty: "Aun no hay nada. Cuando envies un producto a la app, sincronices ajustes o la emparejes, aparecera aqui.",
+  activityRefresh: "Actualizar",
+  activityCopy: "Copiar registro",
+  activityCopied: "Copiado",
+  activityClear: "Borrar registro",
+  activityToApp: "A la app",
+  activityFromApp: "Desde la app",
+  activityConnection: "Conexion",
+  activitySent: "Enviado",
+  activityReceived: "Recibido",
+  activityFailed: "Fallo",
+  activityQueued: "En cola en otro equipo",
+  activityInfo: "Info",
+  activityRepeat: "veces",
   dealsHeading: "Ofertas",
   dealsIntro:
     "Cuando navegas por un sitio de ofertas que la extension conoce, cada producto muestra un boton Enviar a Ofertas. Estos ajustes deciden a donde van esas ofertas.",
@@ -826,6 +878,23 @@ const fr: OptionsDict = {
   voDenyLabel: "Marques à ne jamais mentionner (séparées par des virgules)",
   voDenyHint:
     "Les scripts reçoivent la consigne d'éviter ces marques et chaque brouillon est vérifié ensuite : si l'une d'elles passe, un avertissement s'affiche sous le script.",
+  activityHeading: "Activite avec l'app de bureau",
+  activityNav: "Activite avec l'app",
+  activityIntro: "Un journal de ce que cette extension a envoye a l'app de bureau Influencer Butler et de ce qu'elle a repondu. Il est joint aux signalements et aux journaux du chat pour que le support voie pourquoi quelque chose n'est pas arrive dans l'app. Il n'inclut jamais vos cles ni le jeton d'appairage.",
+  activityEmpty: "Rien pour l'instant. Quand vous envoyez un produit a l'app, synchronisez des reglages ou l'appairez, cela apparait ici.",
+  activityRefresh: "Actualiser",
+  activityCopy: "Copier le journal",
+  activityCopied: "Copie",
+  activityClear: "Effacer le journal",
+  activityToApp: "Vers l'app",
+  activityFromApp: "Depuis l'app",
+  activityConnection: "Connexion",
+  activitySent: "Envoye",
+  activityReceived: "Recu",
+  activityFailed: "Echec",
+  activityQueued: "En file sur un autre ordinateur",
+  activityInfo: "Info",
+  activityRepeat: "fois",
   dealsHeading: "Offres",
   dealsIntro:
     "Quand vous parcourez un site d'offres que l'extension connait, chaque produit recoit un bouton Envoyer aux offres. Ces reglages decident ou vont ces offres.",

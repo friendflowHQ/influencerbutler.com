@@ -15,11 +15,17 @@ import { SCAN_CACHE_TTL_MS } from "../../shared/constants";
 import { query } from "../../amazon/selectors";
 import {
   sendToBackground,
+  type CcRate,
+  type CcRatesResult,
   type EarningsLookupResult,
+  type SpccRate,
+  type SpccRatesResult,
   type WatchlistResult,
 } from "../../shared/messages";
+import { formatMoney } from "../earnings-overlay/model";
 import { enrichStoreTiles } from "../store-overlay/enrich";
 import { renderIdeaListToolbar, type IdeaListToolbar } from "./toolbar";
+import { budgetLevel, campaignEnd, formatEndDay, perSaleCents } from "./campaign-detail";
 import type { Settings } from "../../storage/schema";
 
 // Idea List money signals: badges every product on an Idea List detail page
@@ -46,6 +52,10 @@ type Row = {
   ratePct: number;
   commissionCents: number | null;
   flags: { cc: boolean; spcc: boolean };
+  // Real campaign terms from the daily rate tables (best active CC campaign
+  // for the ASIN, and Amazon's SPCC forecast). null until the lookup lands.
+  ccRate: CcRate | null;
+  spccRate: SpccRate | null;
   dp: DpStaticSignals | null;
   influencerVideos: number | null;
   score: ButlerScore;
@@ -106,6 +116,8 @@ export async function initIdeaListOverlay(settings: Settings): Promise<void> {
       commissionCents:
         tile.priceCents !== null ? Math.round((tile.priceCents * defaultRate) / 100) : null,
       flags: { cc: flags.cc, spcc: flags.spcc },
+      ccRate: null,
+      spccRate: null,
       dp: null,
       influencerVideos: null,
       score: { score: 0, band: "cool", parts: { commission: 0, slot: 0, demand: 0, availability: 0, price: 0, campaign: 0 } },
@@ -163,6 +175,64 @@ export async function initIdeaListOverlay(settings: Settings): Promise<void> {
     }
   });
 
+  // Real campaign terms for the campaign-flagged tiles: the CC commission rate
+  // and end date, and Amazon's SPCC $/click forecast. Bloom membership keeps the
+  // batches tiny. A real CC rate also replaces the category-rate commission
+  // estimate on its tile.
+  // No usable CC membership filter (a saturated one is skipped by loadFilters):
+  // ask the rate table about every tile and set the flag from its answer.
+  const ccFromRates = !loaded.cc;
+  const campaignAsins = ccFromRates
+    ? rows.map((r) => r.tile.asin)
+    : rows.filter((r) => r.flags.cc || r.flags.spcc).map((r) => r.tile.asin);
+  if (campaignAsins.length > 0) {
+    void sendToBackground<CcRatesResult>({ kind: "LOOKUP_CC_RATES", asins: campaignAsins })
+      .then((res) => {
+        if (run.signal.aborted || !res.ok) return;
+        // The Bloom filter has ~1% false positives and a campaign may have
+        // ended: when the rate table is serving data and has no row for a
+        // CC-flagged tile, drop the flag so it stops reading "Campaign".
+        const tableServing = Object.keys(res.rates).length > 0;
+        for (const row of rows) {
+          const rate = res.rates[row.tile.asin];
+          if (rate) {
+            row.ccRate = rate;
+            if (ccFromRates) row.flags.cc = true;
+            row.ratePct = rate.ratePct;
+            row.commissionCents = perSaleCents(row.tile.priceCents, rate.ratePct);
+          } else if (tableServing && row.flags.cc && campaignAsins.includes(row.tile.asin)) {
+            row.flags.cc = false;
+          } else {
+            continue;
+          }
+          row.score = scoreFor(row, settings);
+          renderBadge(row);
+        }
+      })
+      .catch(() => undefined);
+  }
+  const spccAsins = rows.filter((r) => r.flags.spcc).map((r) => r.tile.asin);
+  if (spccAsins.length > 0) {
+    void sendToBackground<SpccRatesResult>({ kind: "LOOKUP_SPCC_RATES", asins: spccAsins })
+      .then((res) => {
+        if (run.signal.aborted || !res.ok) return;
+        const tableServing = Object.keys(res.rates).length > 0;
+        for (const row of rows) {
+          const rate = res.rates[row.tile.asin];
+          if (rate) {
+            row.spccRate = rate;
+          } else if (tableServing && row.flags.spcc && !row.ccRate) {
+            row.flags.spcc = false;
+            row.score = scoreFor(row, settings);
+          } else {
+            continue;
+          }
+          renderBadge(row);
+        }
+      })
+      .catch(() => undefined);
+  }
+
   // Re-decorate tiles a re-render replaced and pick up lazy-loaded ones.
   watchGridRerenders(rows, buildRow, run.signal);
 
@@ -184,16 +254,16 @@ export async function initIdeaListOverlay(settings: Settings): Promise<void> {
     if (!row || signals === null) return;
     row.dp = signals;
     const category = signals.category ?? signals.bestsellerRank?.category ?? null;
-    row.ratePct = resolveRatePct({
-      liveRatePct: null,
-      category,
-      card,
-      defaultRatePct: settings.commissionRatePct,
-    });
-    row.commissionCents =
-      row.tile.priceCents !== null
-        ? Math.round((row.tile.priceCents * row.ratePct) / 100)
-        : null;
+    // A real campaign rate beats the category-rate estimate.
+    row.ratePct =
+      row.ccRate?.ratePct ??
+      resolveRatePct({
+        liveRatePct: null,
+        category,
+        card,
+        defaultRatePct: settings.commissionRatePct,
+      });
+    row.commissionCents = perSaleCents(row.tile.priceCents, row.ratePct);
     // A page with no video carousel at all cannot have influencer videos.
     if (!signals.upperCarousel && !signals.lowerCarousel && !signals.totalVideos) {
       row.influencerVideos = 0;
@@ -286,9 +356,7 @@ function renderBadge(row: Row): void {
       ),
     );
   }
-  if (row.flags.cc || row.flags.spcc) {
-    body.append(el("span", "tile-chip good", t().tileCampaign));
-  }
+  if (row.flags.cc || row.flags.spcc) appendCampaignChips(row, body);
   if (row.dp) {
     if (row.dp.upperCarousel) {
       body.append(el("span", "tile-chip good", t().tileHeroSlot));
@@ -304,6 +372,137 @@ function renderBadge(row: Row): void {
   }
   appendEstimateChips(row, body);
   if (row.showWatch) body.append(watchControl(row));
+}
+
+// Campaign chips: one for Creator Connections (rate + end date) and one for
+// SPCC (Amazon's $/click ceiling). Hovering or focusing either opens a card
+// with the full terms. The card is an overlay below the chip row, so it only
+// covers the product image while the user is looking at it.
+function appendCampaignChips(row: Row, body: HTMLElement): void {
+  const now = new Date();
+  const currency = row.tile.currency ?? "USD";
+  const end = campaignEnd(row.ccRate?.endsAt, now);
+
+  const triggers: HTMLElement[] = [];
+  const chip = (label: string): HTMLElement => {
+    const btn = el("button", "tile-chip good camp-chip", label) as HTMLButtonElement;
+    btn.type = "button";
+    btn.setAttribute("aria-expanded", "false");
+    triggers.push(btn);
+    return btn;
+  };
+
+  if (row.flags.cc) {
+    const rate = row.ccRate;
+    body.append(
+      chip(
+        !rate
+          ? t().tileCampaign
+          : end
+            ? t().tileCampaignRateEnds(rate.ratePct, formatEndDay(end.day, now))
+            : t().tileCampaignRate(rate.ratePct),
+      ),
+    );
+  }
+  if (row.flags.spcc && (row.spccRate || !row.flags.cc)) {
+    const spcc = row.spccRate;
+    const btn = chip(
+      spcc ? t().tileSpccClicks(formatMoney(spcc.epc, currency)) : t().tileCampaign,
+    );
+    if (spcc) btn.title = t().tileCampaignEpcTip;
+    body.append(btn);
+  }
+
+  const ccRate = row.flags.cc ? row.ccRate : null;
+  const spccRate = row.flags.spcc ? row.spccRate : null;
+  if (!ccRate && !spccRate) return;
+
+  const card = el("div", "camp-card");
+  card.setAttribute("role", "group");
+  if (ccRate) {
+    const section = el("div", "camp-sec");
+    section.append(
+      el(
+        "div",
+        "camp-title",
+        ccRate.brand ? `${t().campCardCcTitle}: ${ccRate.brand}` : t().campCardCcTitle,
+      ),
+    );
+    const cents = perSaleCents(row.tile.priceCents, ccRate.ratePct);
+    section.append(
+      el(
+        "div",
+        "camp-line",
+        cents !== null
+          ? t().campCardCcRate(ccRate.ratePct, formatCents(cents, currency))
+          : t().campCardCcRateOnly(ccRate.ratePct),
+      ),
+    );
+    section.append(
+      el(
+        "div",
+        "camp-line",
+        end ? t().campCardEnds(formatEndDay(end.day, now), end.daysLeft) : t().campCardEndsUnknown,
+      ),
+    );
+    card.append(section);
+  }
+  if (spccRate) {
+    const section = el("div", "camp-sec");
+    section.append(el("div", "camp-title", t().campCardSpccTitle));
+    section.append(el("div", "camp-line", t().campCardSpccEpc(formatMoney(spccRate.epc, currency))));
+    const level = budgetLevel(spccRate.budgetAvailability);
+    if (level) section.append(el("div", "camp-line", t().campCardSpccBudget(level)));
+    section.append(el("div", "camp-note", t().campCardSpccNoEnd));
+    card.append(section);
+  }
+  card.append(el("div", "camp-note", t().campCardOnlyBest));
+  body.append(card);
+  wireCampaignCard(triggers, card);
+}
+
+// Open on hover/focus/click, close on leave/blur/Escape. A short close delay lets
+// the pointer travel from a chip to the card without it flickering shut.
+function wireCampaignCard(triggers: HTMLElement[], card: HTMLElement): void {
+  let timer: number | null = null;
+  const set = (open: boolean): void => {
+    card.classList.toggle("open", open);
+    for (const trigger of triggers) {
+      trigger.classList.toggle("open", open);
+      trigger.setAttribute("aria-expanded", String(open));
+    }
+  };
+  const show = (): void => {
+    if (timer !== null) {
+      window.clearTimeout(timer);
+      timer = null;
+    }
+    set(true);
+  };
+  const hideSoon = (): void => {
+    if (timer !== null) window.clearTimeout(timer);
+    timer = window.setTimeout(() => {
+      timer = null;
+      set(false);
+    }, 180);
+  };
+  for (const trigger of triggers) {
+    trigger.addEventListener("mouseenter", show);
+    trigger.addEventListener("mouseleave", hideSoon);
+    trigger.addEventListener("focus", show);
+    trigger.addEventListener("blur", hideSoon);
+    // Never let a chip click reach the tile's own product link.
+    trigger.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      show();
+    });
+    trigger.addEventListener("keydown", (event) => {
+      if ((event as KeyboardEvent).key === "Escape") set(false);
+    });
+  }
+  card.addEventListener("mouseenter", show);
+  card.addEventListener("mouseleave", hideSoon);
 }
 
 // Estimated monthly units + revenue from the per-tile /dp/ enrichment BSR + the

@@ -232,7 +232,7 @@ function renderConnected(
         })
         .catch(() => {});
     }
-    run({ type: "deal.push", workspace: picker.value, product, placement }, t().pushingDeals);
+    run({ type: "deal.push", workspace: picker.value, product, placement }, t().pushingDeals, dealBtn);
   });
 
   // Non-Amazon retailers only get the retailer-ready actions above for now; the
@@ -249,20 +249,20 @@ function renderConnected(
   const contentBtn = el("button", "btn secondary");
   contentBtn.textContent = t().sendToContentButler;
   contentBtn.addEventListener("click", () =>
-    run({ type: "content.push", product }, t().sendingContent),
+    run({ type: "content.push", product }, t().sendingContent, contentBtn),
   );
 
   const collabBtn = el("button", "btn secondary");
   collabBtn.textContent = t().addToCollab;
   collabBtn.addEventListener("click", () =>
-    run({ type: "collaboration.add", product }, t().addingCollab),
+    run({ type: "collaboration.add", product }, t().addingCollab, collabBtn),
   );
 
   // Send to Voiceover Butler: enqueue the product for a shoppable-video script.
   const voiceoverBtn = el("button", "btn secondary");
   voiceoverBtn.textContent = t().sendToVoiceover;
   voiceoverBtn.addEventListener("click", () =>
-    run({ type: "voiceover.push", product }, t().sendingVoiceover),
+    run({ type: "voiceover.push", product }, t().sendingVoiceover, voiceoverBtn),
   );
 
   const grid = el("div", "row");
@@ -274,7 +274,7 @@ function renderConnected(
   const linkBtn = el("button", "btn secondary");
   linkBtn.textContent = t().saveToLinkButler;
   linkBtn.addEventListener("click", () =>
-    run({ type: "link.mint", product }, t().savingLink),
+    run({ type: "link.mint", product }, t().savingLink, linkBtn),
   );
   grid.append(linkBtn);
 
@@ -283,7 +283,7 @@ function renderConnected(
   const photoBtn = el("button", "btn secondary");
   photoBtn.textContent = t().generatePhoto;
   photoBtn.addEventListener("click", () =>
-    run({ type: "photo.generate", product, style: "shoppable" }, t().generatingPhoto),
+    run({ type: "photo.generate", product, style: "shoppable" }, t().generatingPhoto, photoBtn),
   );
   grid.append(photoBtn);
 
@@ -294,14 +294,14 @@ function renderConnected(
     const pitchBtn = el("button", "btn secondary");
     pitchBtn.textContent = t().pitchThisBrand(brand.trim());
     pitchBtn.addEventListener("click", () =>
-      run({ type: "pitch.add", brand: brand.trim(), product }, t().pitchingBrand),
+      run({ type: "pitch.add", brand: brand.trim(), product }, t().pitchingBrand, pitchBtn),
     );
     grid.append(pitchBtn);
 
     const sampleBtn = el("button", "btn secondary");
     sampleBtn.textContent = t().requestSample;
     sampleBtn.addEventListener("click", () =>
-      run({ type: "sample.request", brand: brand.trim(), product }, t().requestingSample),
+      run({ type: "sample.request", brand: brand.trim(), product }, t().requestingSample, sampleBtn),
     );
     grid.append(sampleBtn);
   }
@@ -343,7 +343,7 @@ function renderConnected(
       nameInput.focus();
       return;
     }
-    run({ type: "idealist.push", product, target }, t().addingToIdeaList);
+    run({ type: "idealist.push", product, target }, t().addingToIdeaList, ideaBtn);
   });
   ideaRow.append(ideaPicker, nameInput, ideaBtn);
   body.append(ideaRow);

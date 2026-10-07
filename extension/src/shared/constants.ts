@@ -46,6 +46,9 @@ export const ENDPOINTS = {
   // Shared product catalogue ("internal Keepa"): POST contributes product facts
   // (opt-in), GET reads pooled price/rank history + estimated monthly sales.
   market: `${API_BASE}/api/extension/market`,
+  // "Also on Walmart": POST a Target product's UPC / title, get the matching
+  // Walmart product (Walmart Affiliate API, server-side). License Bearer.
+  crossRetailer: `${API_BASE}/api/extension/cross-retailer`,
   // Campaign Butler: POST one campaign's signals + demand, get a butler-voiced
   // brief (verdict / why-take / what-to-film / best product / audiences). The
   // score + confidence are computed locally; this only writes the prose.
@@ -454,7 +457,7 @@ export const ACCEPT_COOLDOWN_KEY = "ib-accept-cooldown";
 // grid's fill report lands, the worker asks the tab to run the creator's rules
 // (tools/campaign-radar/auto-accept.ts) and keeps the tab open this long for
 // the clicks to finish; the tab reports AUTO_ACCEPT_DONE and is closed.
-export const AUTO_ACCEPT_TAB_DWELL_MS = 60_000;
+export const AUTO_ACCEPT_TAB_DWELL_MS = 110_000;
 // A human-paced gap between two accepts in one run (jittered in this range).
 export const AUTO_ACCEPT_DELAY_MIN_MS = 4_000;
 export const AUTO_ACCEPT_DELAY_MAX_MS = 9_000;
@@ -469,6 +472,12 @@ export const AUTO_ACCEPT_PER_RUN_HARD_CAP = 5;
 // long, so the rule-based pass never re-tries a campaign it already took
 // (Amazon may keep showing an accepted card with a "pending" state).
 export const ACCEPT_HISTORY_MS = 30 * 24 * 60 * 60 * 1000;
+// The requests page an SPCC accept opens. NOT type=spcc: Amazon's SPA rewrites a
+// cold ?type=spcc load back to affiliate-plus and drops the keyword (verified by
+// the desktop app 2026-07-30), so the tab's runner clicks the "Sponsored Products
+// for Creators" tab itself (tools/campaign-radar/spcc-runner.ts).
+export const SPCC_REQUESTS_URL =
+  "https://affiliate-program.amazon.com/p/connect/requests?status=opportunity";
 export const CAMPAIGN_DETAIL_URL = (campaignId: string): string =>
   `https://affiliate-program.amazon.com/p/connect/request?adId=${encodeURIComponent(
     campaignId,

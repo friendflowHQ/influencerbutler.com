@@ -431,7 +431,8 @@ export async function generateAffiliateLink(
   try {
     const [integrations, settings] = await Promise.all([getIntegrations(), getSettings()]);
     // Retailer is explicit when the caller knows it, else derived from the host.
-    const resolvedRetailer = retailer ?? retailerFromHost(marketplace);
+    const resolvedRetailer: "amazon" | "walmart" =
+      retailer ?? (retailerFromHost(marketplace) === "walmart" ? "walmart" : "amazon");
     const roster = integrations.global.routingProviders ?? {};
     // Affiliate networks that are enabled, take part in routing, have saved
     // credentials, and can mint their own link. Tried before the deeplink

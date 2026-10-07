@@ -17,6 +17,7 @@ import { authSnapshot, signIn, signOut } from "./auth";
 import { captureAffiliateReferral } from "./affiliate";
 import { getHudStatus, lookupEarnings, fetchDesktopHistory, fetchOutreachKeywords, fetchMessageTemplates, fetchBrandEnrichment, fetchOwnership, fetchCampaignStatus, fetchYouTubeStatus, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
 import { relayClaimLink, relayListTargets, relaySend, sendCommandPreferLocal } from "./relay";
+import { clearActivity, getActivity, recordActivity } from "./desktop-activity";
 import type { RelayClaimResult } from "./relay";
 import type { RelayStateView } from "../shared/messages";
 import {
@@ -39,6 +40,7 @@ import { lookupCcRates } from "./cc-rates";
 import { lookupSpccRates } from "./spcc-rates";
 import { enrichRows } from "./row-enrich";
 import { getMarket, getMarketBatch } from "./market";
+import { lookupCrossRetailer } from "./cross-retailer";
 import { getVideoIntel } from "./video-intel";
 import { fetchCampaignBrief } from "./campaign-brief";
 import {
@@ -112,7 +114,15 @@ import {
   noteAccept,
   noteAcceptResult,
   noteAcceptTabReady,
+  loadAcceptLedgerView,
 } from "./campaign-accept";
+import {
+  noteAutoAcceptDone,
+  noteAutoAcceptTabReady,
+  runAutoAcceptPass,
+} from "./auto-accept";
+import { getMatchedAsins, saveStorefrontIndexFromHarvest } from "./matched-asins";
+import { getLinkStatus, noteLinkTabReady, runLinkPass, submitLinkOne } from "./content-link";
 import {
   noteBumpStepResult,
   noteBumpTabReady,
@@ -147,6 +157,7 @@ import { API_BASE } from "../shared/constants";
 import { getState, patchIntegrationsGlobal, getSettings, patchSettings } from "../storage/store";
 import type { AuthStatus, RuntimeMessage } from "../shared/messages";
 import { warn } from "../shared/log";
+import { summarizeCommand } from "../shared/desktop-activity";
 import { isAndroid } from "../shared/platform";
 
 // Wire the debounced extension -> desktop settings push. Cheap for the common
@@ -360,7 +371,14 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   // and suspend them when the app is backgrounded, so these stay desktop-only.
   // The manual, button-triggered versions still run everywhere.
   if (alarm.name === WATCHLIST_ALARM) void skipOnAndroid(refreshWatchlist);
-  if (alarm.name === CAMPAIGN_WATCH_ALARM) void skipOnAndroid(refreshLastCall);
+  // The Last Call poll, then the rule-based accept pass: sequential, so the two
+  // never hold a grid tab open at the same time.
+  if (alarm.name === CAMPAIGN_WATCH_ALARM) {
+    void skipOnAndroid(async () => {
+      await refreshLastCall();
+      await runAutoAcceptPass();
+    });
+  }
   if (alarm.name === DEAL_AUTO_HARVEST_ALARM) {
     void skipOnAndroid(runAutoHarvest);
     // Piggyback the badge registration resync here too: it is cheap/idempotent
@@ -500,6 +518,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
     case "GET_MARKET_BATCH":
       void getMarketBatch(message.asins, message.marketplace, message.retailer).then(sendResponse);
       return true;
+    case "LOOKUP_CROSS_RETAILER":
+      void lookupCrossRetailer(message.source).then(sendResponse);
+      return true;
     case "GET_VIDEO_INTEL":
       void getVideoIntel(message.videoId, message.marketplace).then(sendResponse);
       return true;
@@ -539,7 +560,22 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       void relayListTargets().then(sendResponse);
       return true;
     case "RELAY_SEND":
-      void relaySend(message.command, message.targetInstanceId).then(sendResponse);
+      void relaySend(message.command, message.targetInstanceId).then((res) => {
+        recordActivity({
+          dir: "to-app",
+          ...summarizeCommand(message.command),
+          outcome: res.ok ? "queued" : "failed",
+          route: "relay",
+          message: res.ok ? undefined : res.error,
+        });
+        sendResponse(res);
+      });
+      return true;
+    case "GET_DESKTOP_ACTIVITY":
+      void getActivity().then(sendResponse);
+      return true;
+    case "CLEAR_DESKTOP_ACTIVITY":
+      void clearActivity().then(() => sendResponse(undefined));
       return true;
     case "RELAY_GET_STATE":
       void (async (): Promise<RelayStateView> => {
@@ -845,8 +881,40 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "ACCEPT_TAB_READY":
       noteAcceptTabReady(sender.tab?.id);
+      noteAutoAcceptTabReady(sender.tab?.id);
+      noteLinkTabReady(sender.tab?.id, message.pageType);
       sendResponse(undefined);
       return false;
+    // Rule-based accept (background/auto-accept.ts).
+    case "AUTO_ACCEPT_DONE":
+      noteAutoAcceptDone(sender.tab?.id, {
+        accepted: message.accepted,
+        stoppedReason: message.stoppedReason,
+      });
+      sendResponse(undefined);
+      return false;
+    case "GET_ACCEPT_LEDGER":
+      void loadAcceptLedgerView().then(sendResponse);
+      return true;
+    case "GET_LINK_STATUS":
+      void getLinkStatus(message.asin).then(sendResponse);
+      return true;
+    case "SUBMIT_LINK_ONE":
+      void submitLinkOne(message.asin).then(sendResponse);
+      return true;
+    case "RUN_LINK_PASS":
+      void runLinkPass(typeof message.max === "number" ? Math.min(10, message.max) : 10, true).then(
+        sendResponse,
+      );
+      return true;
+    case "GET_MATCHED_ASINS":
+      void getMatchedAsins().then(sendResponse);
+      return true;
+    case "SAVE_STOREFRONT_INDEX":
+      void saveStorefrontIndexFromHarvest(message.handle, message.items).then(() =>
+        sendResponse(undefined),
+      );
+      return true;
     case "ACCEPT_RESULT":
       noteAcceptResult(sender.tab?.id, message.campaignId, message.outcome);
       sendResponse(undefined);
@@ -909,6 +977,17 @@ async function openDealsPage(query?: string): Promise<void> {
   });
 }
 
+function isCrossRetailerUrl(url: URL): boolean {
+  if (url.protocol !== "https:") return false;
+  if (url.hostname === "www.walmart.com") {
+    return /^\/ip\/(?:[^/]+\/)?\d{3,15}\/?$/.test(url.pathname) || url.pathname === "/search";
+  }
+  if (url.hostname === "www.target.com") {
+    return /^\/p\/(?:[^/]+\/)?-\/A-\d{7,10}\/?$/.test(url.pathname) || url.pathname === "/s";
+  }
+  return false;
+}
+
 async function openAllowedUrl(url: string): Promise<void> {
   try {
     const target = new URL(url, API_BASE);
@@ -917,7 +996,9 @@ async function openAllowedUrl(url: string): Promise<void> {
     // Allow that one exact destination, nothing else, so the "no arbitrary URL"
     // guarantee holds.
     const isFacebookGroup = target.href === FACEBOOK_GROUP_URL;
-    if (!sameOrigin && !isFacebookGroup) return;
+    // The cross-retailer card links to the same product on the other store:
+    // exactly a Walmart /ip/ page or search, or a Target /p/ page or search.
+    if (!sameOrigin && !isFacebookGroup && !isCrossRetailerUrl(target)) return;
     await chrome.tabs.create({ url: target.toString() });
   } catch {
     // malformed url: ignore rather than open anything

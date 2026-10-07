@@ -217,6 +217,16 @@ export type Settings = {
     // bridge) so both sides share one library. On by default; backfilled to true
     // for existing users by the tools shallow-merge in migrate().
     messageTemplates: boolean;
+    // Message Cards: the richer Creator Connections Messages drawer. A tidy status
+    // strip under each conversation's brand name (rate, days left, open slots,
+    // pitched keyword), a brand card above an open thread (slots meter, the
+    // sample-form / content links pulled out of the brand's message, a per-brand
+    // note, Accept), folded duplicate brand blasts, and an inbox filter bar. Runs
+    // from the campaigns the page already loaded, so it works without the desktop
+    // app; the app only adds keyword and cadence extras. On by default; the
+    // kill-flag key is "messageCards" in disabledTools. Backfilled to true by the
+    // tools shallow-merge in migrate().
+    messageCards: boolean;
     // Ownership: a live "you already own this / you already posted this" badge on
     // product pages and search/deals tiles, read from the desktop Orders Butler
     // (order history) + content-coverage (Storefront / Deals / YouTube) over
@@ -254,6 +264,12 @@ export type Settings = {
     // one a support flow can flip off without touching the creator's rules.
     // Backfilled to true by the tools shallow-merge in migrate().
     autoAccept: boolean;
+    // Storefront content-link submit: after a CC campaign is accepted, submit the
+    // creator's own storefront video / post URL to that campaign (Auto mode, the
+    // Storefront Check panel, and the product-page one-off). On by default; the
+    // kill-flag key is "contentLinkSubmit" in disabledTools. Backfilled to true
+    // by the tools shallow-merge in migrate().
+    contentLinkSubmit: boolean;
     // Social Posting scheduler: the "click an image, schedule a post" flow (the
     // right-click menu + the retailer tile / product "Schedule" action, both
     // opening the compose window). On by default; the kill-flag key is
@@ -273,6 +289,16 @@ export type Settings = {
     // The kill-flag key is "dealSignals" in disabledTools. On by default;
     // backfilled to true by the tools shallow-merge in migrate().
     dealSignals: boolean;
+    // Target support: the product-page panel on target.com (price / rating chips
+    // plus the cross-retailer card). Product pages only. The kill-flag key is
+    // "target" in disabledTools. On by default; backfilled to true by the tools
+    // shallow-merge in migrate().
+    target: boolean;
+    // Also on Walmart / Also on Target: on a Target or Walmart product page, shows
+    // whether the same product (matched by UPC) is sold by the other retailer with
+    // a link to it. The kill-flag key is "crossRetailer" in disabledTools. On by
+    // default; backfilled to true by the tools shallow-merge in migrate().
+    crossRetailer: boolean;
     // YouTube status: per-video "On YouTube / Not on YouTube" chip plus an
     // "Upload to YouTube" action on the creator's own Amazon video surfaces
     // (Creator Hub manage list, the /create/post edit page, the /manage-content
@@ -655,7 +681,23 @@ export type AutoAcceptSettings = {
   dailyCap: number;
   // At most this many accepts per 30-minute pass (1..AUTO_ACCEPT_PER_RUN_HARD_CAP).
   perRunCap: number;
+  // What Auto mode may accept. "matched" (default): only campaigns for a product
+  // already in the creator's storefront or order history, like the desktop app.
+  // "rules": any campaign passing the rules above.
+  scope: AutoAcceptScope;
+  // After an accept, also submit the creator's storefront content link to the
+  // campaign (CC only; see background/content-link.ts).
+  submitLinks: boolean;
+  // Also run the SPCC ("Sponsored Products for Creators") tab in each pass.
+  includeSpcc: boolean;
+  // SPCC cards carry no commission rate, so SPCC picks use these instead: a
+  // minimum estimated EPC (cents, a ceiling Amazon shows) and a minimum budget
+  // availability score.
+  spccMinEpcCents: number;
+  spccMinBudget: "high" | "medium" | "low";
 };
+
+export type AutoAcceptScope = "matched" | "rules";
 
 export const AUTO_ACCEPT_BANDS: readonly CampaignScoreBand[] = ["hot", "warm", "cool"];
 
@@ -699,6 +741,12 @@ export function normalizeAutoAccept(raw: unknown): AutoAcceptSettings {
     ),
     dailyCap: clampAutoAcceptDailyCap(obj.dailyCap),
     perRunCap: clampAutoAcceptPerRunCap(obj.perRunCap),
+    scope: obj.scope === "rules" ? "rules" : "matched",
+    submitLinks: typeof obj.submitLinks === "boolean" ? obj.submitLinks : DEFAULT_AUTO_ACCEPT.submitLinks,
+    includeSpcc: typeof obj.includeSpcc === "boolean" ? obj.includeSpcc : DEFAULT_AUTO_ACCEPT.includeSpcc,
+    spccMinEpcCents: clampInt(obj.spccMinEpcCents, 0, 10_000, DEFAULT_AUTO_ACCEPT.spccMinEpcCents),
+    spccMinBudget:
+      obj.spccMinBudget === "high" || obj.spccMinBudget === "low" ? obj.spccMinBudget : "medium",
   };
 }
 
@@ -791,10 +839,15 @@ const DEFAULT_AUTO_ACCEPT: AutoAcceptSettings = {
   excludeEndingWithinHours: 48,
   dailyCap: 5,
   perRunCap: 2,
+  scope: "matched",
+  submitLinks: true,
+  includeSpcc: true,
+  spccMinEpcCents: 25,
+  spccMinBudget: "medium",
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 36,
+  schemaVersion: 37,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -878,15 +931,19 @@ export const DEFAULTS: StorageShape = {
       videoMoney: true,
       brandKeywords: true,
       messageTemplates: true,
+      messageCards: true,
       ownership: true,
       enrolledBadge: true,
       walmart: true,
       standaloneAccept: true,
       uploadCampaignPrompt: true,
       autoAccept: true,
+      contentLinkSubmit: true,
       socialSchedule: true,
       benableBadge: true,
       dealSignals: true,
+      target: true,
+      crossRetailer: true,
       youtubeStatus: true,
       myVideoPlacement: true,
       videoBump: true,
@@ -1052,6 +1109,10 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // missing own video, on by default; the tools shallow-merge backfills it)
   // and settings.videoBump (the remembered run-on/mode picker, both null
   // until the creator's first click); normalizeVideoBumpSettings backfills it.
+  // v36 -> v37 added settings.autoAccept.{scope,submitLinks,spccMinEpcCents,
+  // spccMinBudget} (normalizeAutoAccept backfills them; scope defaults to
+  // "matched") and the contentLinkSubmit tool flag (the tools shallow-merge
+  // backfills it).
   const migratedProviders = { ...(raw.integrations?.providers ?? {}) };
   delete migratedProviders.impact;
   if (migratedProviders.walmartCreator) {
@@ -1149,7 +1210,7 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
     variantParents:
       raw.variantParents && typeof raw.variantParents === "object" ? raw.variantParents : {},
-    schemaVersion: 36,
+    schemaVersion: 37,
   };
 }
 

@@ -107,15 +107,7 @@ type Fill = {
     return { ordersLast30, salesLast30Cents, roas, ordersTotal, clicksLast30, clicksTotal };
   };
 
-  const buildMap = (text: string): Record<string, Fill> | null => {
-    let json: unknown;
-    try {
-      json = JSON.parse(text);
-    } catch {
-      return null;
-    }
-    const records: Record<string, unknown>[] = [];
-    collect(json, 0, records);
+  const buildMap = (records: Record<string, unknown>[]): Record<string, Fill> | null => {
     if (!records.length) return null;
     const map: Record<string, Fill> = {};
     for (const rec of records) {
@@ -129,6 +121,96 @@ type Fill = {
       map[id] = { accepted, required, fullyClaimed, stats };
     }
     return Object.keys(map).length ? map : null;
+  };
+
+  // Brand-level facts for the Messages drawer's brand index (tools/cc-messages):
+  // the drawer thinks in brand names while this API is keyed by campaign id. The
+  // field names below are UNVERIFIED probes (the fill fields above were verified
+  // live, these were not), so every one is best-effort and a record is published
+  // only when a brand AND a rate or end date resolved. The drawer treats the
+  // rendered grid cards as the source of truth on any conflict.
+  const pickStr = (rec: Record<string, unknown>, keys: string[]): string | null => {
+    for (const k of keys) {
+      const v = rec[k];
+      if (typeof v === "string" && v.trim()) return v.trim();
+      if (v && typeof v === "object") {
+        const o = v as Record<string, unknown>;
+        const name = o.name ?? o.displayName;
+        if (typeof name === "string" && name.trim()) return name.trim();
+      }
+    }
+    return null;
+  };
+  const pickRatePct = (rec: Record<string, unknown>): number | null => {
+    const raw = pickNum(rec, [
+      "commissionRate",
+      "commissionRatePercent",
+      "commissionRatePercentage",
+      "commissionPercentage",
+      "commissionPercent",
+    ]);
+    if (raw === null || raw <= 0) return null;
+    // Some payloads carry a fraction (0.12), others a percent (12).
+    return raw <= 1 ? Math.round(raw * 1000) / 10 : raw;
+  };
+  const toMs = (v: unknown): number | null => {
+    if (typeof v === "number" && isFinite(v) && v > 0) return v > 1e11 ? v : v * 1000;
+    if (typeof v === "string" && v.trim()) {
+      const ms = Date.parse(v);
+      return isFinite(ms) ? ms : null;
+    }
+    return null;
+  };
+  const pickEndsAt = (rec: Record<string, unknown>): number | null => {
+    for (const k of ["endDate", "endDateTime", "endTime", "campaignEndDate", "endsAt", "expiryDate"]) {
+      const ms = toMs(rec[k]);
+      if (ms !== null) return ms;
+    }
+    return null;
+  };
+
+  type BrandRecord = {
+    campaignId: string;
+    brand: string;
+    ratePct: number | null;
+    endsAt: number | null;
+  };
+  const buildBrandRecords = (records: Record<string, unknown>[]): BrandRecord[] => {
+    const out: BrandRecord[] = [];
+    for (const rec of records) {
+      const brand = pickStr(rec, ["brandName", "brand", "advertiserName", "merchantName", "sellerName"]);
+      if (!brand) continue;
+      const ratePct = pickRatePct(rec);
+      const endsAt = pickEndsAt(rec);
+      if (ratePct === null && endsAt === null) continue;
+      out.push({ campaignId: rec.campaignId as string, brand, ratePct, endsAt });
+    }
+    return out;
+  };
+
+  const emitBrandRecords = (brands: BrandRecord[]) => {
+    try {
+      document.dispatchEvent(new CustomEvent("ib-ext-campaign-records", { detail: { records: brands } }));
+    } catch {
+      // never let the shim surface an error on the page
+    }
+  };
+
+  // Parse one campaign/search body once and publish both the fill map and the
+  // brand records.
+  const handleBody = (text: string) => {
+    let json: unknown;
+    try {
+      json = JSON.parse(text);
+    } catch {
+      return;
+    }
+    const records: Record<string, unknown>[] = [];
+    collect(json, 0, records);
+    const map = buildMap(records);
+    if (map) emit(map);
+    const brands = buildBrandRecords(records);
+    if (brands.length) emitBrandRecords(brands);
   };
 
   const emit = (map: Record<string, Fill>) => {
@@ -149,10 +231,7 @@ type Fill = {
       if (URL_RE.test(url)) {
         result
           .then((response) => response.clone().text())
-          .then((text) => {
-            const map = buildMap(text);
-            if (map) emit(map);
-          })
+          .then((text) => handleBody(text))
           .catch(() => undefined);
       }
     } catch {
@@ -179,10 +258,7 @@ type Fill = {
         this.addEventListener("load", () => {
           try {
             const text = this.responseText;
-            if (typeof text === "string") {
-              const map = buildMap(text);
-              if (map) emit(map);
-            }
+            if (typeof text === "string") handleBody(text);
           } catch {
             // responseType may not be text; ignore
           }

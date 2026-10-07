@@ -6,6 +6,7 @@ import {
   ACCEPT_TAB_DWELL_MS,
   CAMPAIGN_DETAIL_URL,
   CAMPAIGN_GRID_URL,
+  SPCC_REQUESTS_URL,
 } from "../shared/constants";
 import { getFlags } from "../flags/cache";
 import { getState } from "../storage/store";
@@ -36,6 +37,9 @@ import type { AcceptLedgerView, AcceptOutcome, AcceptSource } from "../shared/me
 // ledger records what was accepted, for the popup and for support.
 
 const CAMPAIGN_ID_RE = /^amzn1\.campaign\.[A-Za-z0-9]+$/;
+// An SPCC card has no campaign id in the DOM, so it travels as `spcc:<ASIN>`
+// (tools/campaign-radar/spcc-runner.ts spccKey).
+const SPCC_KEY_RE = /^spcc:[A-Z0-9]{10}$/;
 // The ledger keeps at most this many items for the day (a safety valve; a real
 // creator accepts a handful).
 const LEDGER_ITEM_CAP = 200;
@@ -45,11 +49,13 @@ const HISTORY_ITEM_CAP = 1_000;
 
 // ---- Daily ledger (pure helpers + storage wrappers) ---------------------------
 
-export type AcceptLedgerItem = { campaignId: string; at: number; source: AcceptSource };
+// `asin` (when known) is the product the campaign was for: it is how the
+// content-link pass finds the creator's own video for an accepted campaign.
+export type AcceptLedgerItem = { campaignId: string; at: number; source: AcceptSource; asin?: string };
 // One accepted campaign in the rolling history: kept for ACCEPT_HISTORY_MS
 // across day rollovers, so the rule-based pass (auto-accept) never re-tries a
 // campaign it already took, even after the daily count resets.
-export type AcceptHistoryItem = { campaignId: string; at: number };
+export type AcceptHistoryItem = { campaignId: string; at: number; asin?: string };
 export type AcceptLedger = {
   day: string;
   count: number;
@@ -86,6 +92,13 @@ export function ledgerHasCampaign(
   );
 }
 
+// Pure: `{ asin }` for a valid ASIN, else nothing (so a junk stored value never
+// survives a read).
+function cleanAsin(raw: unknown): { asin?: string } {
+  const asin = typeof raw === "string" ? raw.trim().toUpperCase() : "";
+  return /^[A-Z0-9]{10}$/.test(asin) ? { asin } : {};
+}
+
 // Pure: coerce an untrusted stored value into a ledger for `now`'s day. A
 // malformed blob yields a fresh empty ledger; one from an earlier day rolls
 // over (count and items reset, the pruned history carries across).
@@ -106,6 +119,7 @@ export function readAcceptLedger(raw: unknown, now: number): AcceptLedger {
           campaignId: i.campaignId,
           at: i.at,
           source: i.source === "auto" ? "auto" : "manual",
+          ...cleanAsin((i as { asin?: unknown }).asin),
         }))
     : [];
   const history: AcceptHistoryItem[] = Array.isArray(obj.history)
@@ -118,7 +132,11 @@ export function readAcceptLedger(raw: unknown, now: number): AcceptLedger {
             typeof (h as AcceptHistoryItem).at === "number" &&
             Number.isFinite((h as AcceptHistoryItem).at),
         )
-        .map((h) => ({ campaignId: h.campaignId, at: h.at }))
+        .map((h) => ({
+          campaignId: h.campaignId,
+          at: h.at,
+          ...cleanAsin((h as { asin?: unknown }).asin),
+        }))
     : [];
   const ledger: AcceptLedger = {
     day: typeof obj.day === "string" ? obj.day : "",
@@ -144,11 +162,13 @@ export function recordAccept(
   campaignId: string,
   source: AcceptSource,
   now: number,
+  asin?: string | null,
 ): AcceptLedger {
   const base = rolloverIfNeeded(ledger, now);
-  const items = [...base.items, { campaignId, at: now, source }].slice(-LEDGER_ITEM_CAP);
+  const known = cleanAsin(asin);
+  const items = [...base.items, { campaignId, at: now, source, ...known }].slice(-LEDGER_ITEM_CAP);
   const history = pruneHistory(
-    [...base.history.filter((h) => h.campaignId !== campaignId), { campaignId, at: now }],
+    [...base.history.filter((h) => h.campaignId !== campaignId), { campaignId, at: now, ...known }],
     now,
   );
   return { day: base.day, count: base.count + 1, items, history };
@@ -179,22 +199,44 @@ async function reportAccept(campaignId: string, source: AcceptSource): Promise<v
 
 // Record an accept (from our own tab, or an in-page click reported by the grid
 // overlay) into today's ledger.
-export async function noteAccept(campaignId: string, source: AcceptSource): Promise<AcceptLedger> {
+export async function noteAccept(
+  campaignId: string,
+  source: AcceptSource,
+  asin?: string | null,
+): Promise<AcceptLedger> {
   const now = Date.now();
-  const next = recordAccept(await loadAcceptLedger(now), campaignId, source, now);
+  const next = recordAccept(await loadAcceptLedger(now), campaignId, source, now, asin);
   await chrome.storage.local.set({ [ACCEPT_LEDGER_KEY]: next });
   await reportAccept(campaignId, source);
   return next;
 }
 
 // Record several accepts from one rule-based pass in a single storage write.
-export async function noteAccepts(campaignIds: string[], source: AcceptSource): Promise<AcceptLedger> {
+export async function noteAccepts(
+  accepted: Array<string | { campaignId: string; asin?: string | null }>,
+  source: AcceptSource,
+): Promise<AcceptLedger> {
   const now = Date.now();
+  const items = accepted.map((a) => (typeof a === "string" ? { campaignId: a, asin: null } : a));
   let ledger = await loadAcceptLedger(now);
-  for (const id of campaignIds) ledger = recordAccept(ledger, id, source, now);
-  if (campaignIds.length) await chrome.storage.local.set({ [ACCEPT_LEDGER_KEY]: ledger });
-  for (const id of campaignIds) await reportAccept(id, source);
+  for (const item of items) ledger = recordAccept(ledger, item.campaignId, source, now, item.asin);
+  if (items.length) await chrome.storage.local.set({ [ACCEPT_LEDGER_KEY]: ledger });
+  for (const item of items) await reportAccept(item.campaignId, source);
   return ledger;
+}
+
+// Pure: the ASINs of accepted Creator Connections campaigns (newest first, no
+// repeats), from the rolling history. SPCC keys (`spcc:...`) are excluded: the
+// content-link flow is CC-only.
+export function acceptedCcAsins(history: AcceptHistoryItem[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const h of history.slice().sort((a, b) => b.at - a.at)) {
+    if (!h.asin || !h.campaignId.startsWith("amzn1.campaign.") || seen.has(h.asin)) continue;
+    seen.add(h.asin);
+    out.push(h.asin);
+  }
+  return out;
 }
 
 // The ledger + cooldown as one plain view (GET_ACCEPT_LEDGER): what the options
@@ -262,6 +304,15 @@ export type AcceptInTabInput = {
   source?: AcceptSource;
 };
 
+// Run `fn` after every queued accept and before the next: the rule-based pass
+// (background/auto-accept.ts) and the content-link submit use this so no two
+// background accept tabs ever run at once.
+export function runInAcceptQueue<T>(fn: () => Promise<T>): Promise<T> {
+  const run = chain.then(fn, fn);
+  chain = run.catch(() => undefined);
+  return run;
+}
+
 export function acceptCampaignInTab(input: AcceptInTabInput): Promise<AcceptOutcome> {
   const run = chain.then(
     () => runAccept(input),
@@ -273,11 +324,24 @@ export function acceptCampaignInTab(input: AcceptInTabInput): Promise<AcceptOutc
 
 async function runAccept(input: AcceptInTabInput): Promise<AcceptOutcome> {
   const campaignId = String(input.campaignId ?? "").trim();
-  if (!CAMPAIGN_ID_RE.test(campaignId)) return { ok: false, reason: "needs-id" };
+  const isSpcc = SPCC_KEY_RE.test(campaignId);
+  if (!isSpcc && !CAMPAIGN_ID_RE.test(campaignId)) return { ok: false, reason: "needs-id" };
   if (!(await standaloneAcceptEnabled())) return { ok: false, reason: "disabled" };
 
   const now = Date.now();
   if (cooldownActive(await loadCooldown(), now)) return { ok: false, reason: "cooldown" };
+
+  // SPCC has no per-campaign page: open the requests page and let the tab's
+  // runner switch to the SPCC tab and find the card by ASIN.
+  if (isSpcc) {
+    const spccOutcome = await driveTab(SPCC_REQUESTS_URL, campaignId);
+    if (!spccOutcome.ok && spccOutcome.reason === "blocked") {
+      await startCooldown(Date.now());
+    } else if (spccOutcome.ok) {
+      await noteAccept(campaignId, input.source ?? "manual", input.asin);
+    }
+    return spccOutcome;
+  }
 
   // Attempt 1: the campaign's own page. UNVERIFIED URL shape (see
   // CAMPAIGN_DETAIL_URL); if that page never shows the campaign, fall back to
@@ -291,7 +355,7 @@ async function runAccept(input: AcceptInTabInput): Promise<AcceptOutcome> {
   if (!outcome.ok && outcome.reason === "blocked") {
     await startCooldown(Date.now());
   } else if (outcome.ok) {
-    await noteAccept(campaignId, input.source ?? "manual");
+    await noteAccept(campaignId, input.source ?? "manual", input.asin);
   }
   return outcome;
 }

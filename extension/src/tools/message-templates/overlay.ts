@@ -5,6 +5,7 @@ import type { Settings } from "../../storage/schema";
 import { findComposer, findMessagesWidget, findThreadHeader, readThreadBrand } from "./selectors";
 import { buildToolbar, HOST_CLASS, type ToolbarContext } from "./toolbar";
 import { subscribeMessagesWidget } from "../cc-widget/observer";
+import { readThreadBubbles } from "../cc-messages/dom";
 
 // Message Templates: a Save + one-click "load a template into the message"
 // toolbar on the Creator Connections Messages composer. Saves templates locally
@@ -100,6 +101,17 @@ function mountToolbar(widget: HTMLElement): void {
       return header ? readThreadBrand(header) : null;
     },
     getDesktop: () => ({ templates: desktopTemplates, values: desktopValues, paired: desktopPaired }),
+    // The brand's latest message, read live from the open thread, so the picker
+    // can highlight the template that answers it.
+    getLastBrandMessage: () => {
+      const w = findMessagesWidget(document);
+      const header = w ? findThreadHeader(w) : null;
+      const brand = header ? readThreadBrand(header) : null;
+      if (!w || !brand) return null;
+      const bubbles = readThreadBubbles(w, brand).filter((b) => b.sender === "brand");
+      const last = bubbles[bubbles.length - 1];
+      return last ? last.text : null;
+    },
   };
 
   const host = buildToolbar(ctx);

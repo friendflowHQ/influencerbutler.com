@@ -33,6 +33,7 @@ import type {
   SyncSettingsPayload,
 } from "../transport/sync-settings";
 import { coerceSyncPayload } from "../tools/settings-sync/merge";
+import { recordActivity } from "./desktop-activity";
 
 // Where the pairing token + this extension install's stable client id live.
 // The client id is generated once and reused so re-pairing rotates the token
@@ -314,9 +315,13 @@ export async function fetchDesktopSettings(): Promise<DesktopSettingsResult> {
   if (!token) return { status: "not-paired" };
   for (const port of BRIDGE_PORTS) {
     const payload = await fetchSettingsOnPort(port, token);
-    if (payload) return { status: "ok", payload };
+    if (payload) {
+      recordActivity({ dir: "from-app", action: "settings.pull", outcome: "ok", route: "local" });
+      return { status: "ok", payload };
+    }
   }
   cached = null; // nothing answered; refresh status next time
+  recordActivity({ dir: "from-app", action: "settings.pull", outcome: "failed", route: "local", message: "App did not answer" });
   return { status: "app-unavailable" };
 }
 
@@ -379,9 +384,13 @@ export async function pushDesktopSettings(
   if (!token) return { status: "not-paired" };
   for (const port of BRIDGE_PORTS) {
     const applied = await pushSettingsOnPort(port, payload, mode, token);
-    if (applied !== null) return { status: "ok", applied };
+    if (applied !== null) {
+      recordActivity({ dir: "to-app", action: "settings.push", outcome: "ok", route: "local", detail: `${applied} settings applied (${mode})` });
+      return { status: "ok", applied };
+    }
   }
   cached = null;
+  recordActivity({ dir: "to-app", action: "settings.push", outcome: "failed", route: "local", detail: mode, message: "App did not answer or rejected the push" });
   return { status: "app-unavailable" };
 }
 
@@ -463,9 +472,20 @@ export async function mintViaDesktop(
   if (!token) return { status: "not-paired" };
   for (const port of BRIDGE_PORTS) {
     const result = await mintOnPort(port, provider, url, token);
-    if (result) return result;
+    if (result) {
+      recordActivity({
+        dir: "to-app",
+        action: "affiliate.mint",
+        outcome: result.status === "ok" ? "ok" : "failed",
+        route: "local",
+        detail: provider,
+        message: result.status === "ok" ? undefined : result.status === "needs-signin" ? "Sign in inside the app first" : result.status === "failed" ? result.message : undefined,
+      });
+      return result;
+    }
   }
   cached = null; // nothing answered; refresh status next time
+  recordActivity({ dir: "to-app", action: "affiliate.mint", outcome: "failed", route: "local", detail: provider, message: "App did not answer" });
   return { status: "app-unavailable" };
 }
 
@@ -561,9 +581,20 @@ export async function sendFindings(findings: Finding[]): Promise<{ ok: boolean; 
   if (!token) return { ok: false, retry: false }; // not paired: nothing to deliver to
   for (const port of BRIDGE_PORTS) {
     const result = await sendFindingsToPort(port, findings, token);
-    if (result) return result;
+    if (result) {
+      recordActivity({
+        dir: "to-app",
+        action: "findings",
+        outcome: result.ok ? "ok" : "failed",
+        route: "local",
+        detail: `${findings.length} findings`,
+        message: result.ok ? undefined : result.retry ? "App asked to retry" : "App rejected the pairing token (re-pair needed)",
+      });
+      return result;
+    }
   }
   cached = null; // nothing answered; refresh status next time
+  recordActivity({ dir: "to-app", action: "findings", outcome: "failed", route: "local", detail: `${findings.length} findings`, message: "App did not answer (will retry)" });
   return { ok: false, retry: true };
 }
 
@@ -1376,8 +1407,12 @@ export async function requestPairing(): Promise<PairResult> {
   const clientId = await getClientId();
   for (const port of BRIDGE_PORTS) {
     const r = await pairRoundTrip(port, { type: "pair.request", clientId }, "pair.pending");
-    if (r) return r;
+    if (r) {
+      recordActivity({ dir: "connection", action: "pairing.request", outcome: r.ok ? "ok" : "failed", route: "local", message: r.ok ? undefined : r.message });
+      return r;
+    }
   }
+  recordActivity({ dir: "connection", action: "pairing.request", outcome: "failed", route: "local", message: "The app is not running" });
   return { ok: false, stage: "error", message: "The Influencer Butler app is not running." };
 }
 
@@ -1386,8 +1421,12 @@ export async function submitPairingCode(code: string): Promise<PairResult> {
   const clientId = await getClientId();
   for (const port of BRIDGE_PORTS) {
     const r = await pairRoundTrip(port, { type: "pair", clientId, code }, "paired");
-    if (r) return r;
+    if (r) {
+      recordActivity({ dir: "connection", action: "pairing.code", outcome: r.ok ? "ok" : "failed", route: "local", message: r.ok ? undefined : r.message });
+      return r;
+    }
   }
+  recordActivity({ dir: "connection", action: "pairing.code", outcome: "failed", route: "local", message: "The app is not running" });
   return { ok: false, stage: "error", message: "The Influencer Butler app is not running." };
 }
 
@@ -1458,6 +1497,7 @@ function pairRoundTrip(
 export async function unpair(): Promise<void> {
   try {
     await chrome.storage.local.remove(TOKEN_KEY);
+    recordActivity({ dir: "connection", action: "unpair", outcome: "ok", route: "local" });
   } catch {
     // best effort
   }

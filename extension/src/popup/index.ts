@@ -593,7 +593,8 @@ async function wireQuickLink(locale: Settings["locale"]): Promise<void> {
   const tab = await activePageTab();
   const url = tab?.url ?? "";
   const retailer = url ? detectRetailerForUrl(url) : null;
-  if (!retailer) return; // not Amazon/Walmart: card stays hidden
+  // Not Amazon/Walmart (Target has no link routing): card stays hidden.
+  if (!retailer || retailer === "target") return;
   const mod = retailerModule(retailer);
   const productId = mod.extractProductId(url);
   if (!productId || !mod.productIdValid(productId)) return; // not a product page
@@ -1182,6 +1183,25 @@ async function renderSettings(): Promise<void> {
   bindNumber("set-minutes", settings.minutesPerVideo, (v) => ({ minutesPerVideo: v }));
   bindNumber("set-gap", settings.contentGapThreshold, (v) => ({ contentGapThreshold: v }));
 
+  // Auto-accept master switch (the full rules live on the options page). Turning
+  // it ON asks once, because it acts on the creator's Amazon account in the
+  // background; turning it off is immediate.
+  const autoAccept = byId<HTMLInputElement>("auto-accept-enabled");
+  autoAccept.checked = settings.autoAccept.enabled;
+  autoAccept.onchange = () => {
+    if (autoAccept.checked && !window.confirm(t().autoEnableConfirm)) {
+      autoAccept.checked = false;
+      return;
+    }
+    void getSettings().then((current) =>
+      patchSettings({ autoAccept: { ...current.autoAccept, enabled: autoAccept.checked } }),
+    );
+  };
+  byId<HTMLAnchorElement>("auto-accept-settings").onclick = (event) => {
+    event.preventDefault();
+    void chrome.tabs.create({ url: chrome.runtime.getURL("options.html#sec-auto-accept") });
+  };
+
   const storefront = byId<HTMLInputElement>("set-storefront");
   storefront.value = settings.storefrontHandle ?? "";
   storefront.onchange = () =>
@@ -1189,6 +1209,8 @@ async function renderSettings(): Promise<void> {
 
   for (const tool of [
     "walmart",
+    "target",
+    "crossRetailer",
     "videoCounts",
     "videoLandscape",
     "videoLikes",
@@ -1208,6 +1230,9 @@ async function renderSettings(): Promise<void> {
     "campaignRadar",
     "earningsOverlay",
     "watchlist",
+    "messageCards",
+    "brandKeywords",
+    "messageTemplates",
     "benableBadge",
   ] as const) {
     const box = byId<HTMLInputElement>(`tool-${tool}`);

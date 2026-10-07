@@ -28,20 +28,20 @@ const SUPPRESS_MS = 7 * 24 * 60 * 60 * 1000;
 // needs the app running.
 export function mountAppHint(
   widget: HTMLElement,
-  opts: { paired: boolean },
+  opts: { paired: boolean; extrasOnly?: boolean },
   onDismiss: () => void,
 ): void {
   if (widget.querySelector(`.${HINT_HOST_CLASS}`)) return;
   const { host, root } = createInlineShadow(HINT_HOST_CLASS);
   const bar = el("div", "bkw-hint");
 
-  const text = el(
-    "span",
-    "bkw-hint-text",
-    opts.paired
-      ? "Open the InfluencerButler desktop app to see keyword and commission insights on these conversations."
-      : "Connect the InfluencerButler desktop app to see keyword and commission insights on these conversations.",
-  );
+  const verb = opts.paired ? "Open" : "Connect";
+  // With Message Cards on, the drawer already works without the app; the app only
+  // adds the keyword you pitched each brand under and how often it renews.
+  const what = opts.extrasOnly
+    ? "to also see the keyword you pitched each brand under and how often it renews."
+    : "to see keyword and commission insights on these conversations.";
+  const text = el("span", "bkw-hint-text", `${verb} the InfluencerButler desktop app ${what}`);
 
   const dismiss = el("button", "bkw-hint-x", "×"); // multiplication sign
   dismiss.type = "button";

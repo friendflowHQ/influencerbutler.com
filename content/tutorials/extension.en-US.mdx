@@ -94,6 +94,15 @@ The same install works in Chrome, Microsoft Edge, and Brave on both Windows and 
 1. Open a campaign to read **The Butler's Brief**: a verdict, why to take it, what to film, and which product to lead with
 1. In the campaign message composer, use the **Templates** toolbar to insert a saved message with the placeholders filled in, or save what you typed as a new template; **Brand Keywords** surfaces the terms a brand asked for so you can work them in
 
+## Messages drawer cards
+
+1. Open the **Messages** drawer on Creator Connections. Under each brand you see small pills: the best commission rate, days left, open slots and, with the desktop app running, the keyword you pitched them under
+1. Use the filter bar above the list (**Unread**, **Live campaign**, **Pitched by me**, **10%+ rate**) and **Next unread** to work through the inbox
+1. Open a conversation: the brand card shows the rate, days left and a slots meter, turns the sample-form and content links in the brand's message into buttons, and lets you jot a one-line note about the brand
+1. **Accept best campaign** on the card accepts the brand's top live campaign (the campaign list must have loaded once, and Standalone accept must be on)
+1. A message the brand sent twice is folded behind a **Show it** bar, and the **Templates** picker highlights the saved reply that best fits their last message
+1. It works from the campaigns your browser has already loaded, so it does not need the desktop app. Turn it off under **Amazon: Creator Connections messages** in the extension popup
+
 ## Score the Sponsored Products for Creators tab
 
 1. On the Creator Connections page, switch to the **Sponsored Products for Creators** tab
@@ -103,7 +112,25 @@ The same install works in Chrome, Microsoft Edge, and Brave on both Windows and 
 
 ## Accept a campaign from the extension
 
-Accepting needs the desktop app paired today; the extension itself never accepts or declines a campaign on its own.
+You do not need the desktop app to accept campaigns or submit your content link. The extension clicks Amazon's own buttons in a background tab, exactly as you would, and stops if Amazon shows a robot check.
+
+**One-offs, any time:**
+
+1. On a product page, the **Campaigns** block at the bottom of the product snapshot shows whether the product has a Creator Connections or Sponsored Products for Creators (SPCC) campaign, with an **Accept** button for each one that is available. Click it and the Butler accepts that campaign for you
+1. On an Amazon search page, a tile that has a Creator Connections campaign shows an **Accept campaign** chip next to its rate, and the toolbar shows **Accept campaigns on this page (N)** to accept the visible ones (up to 10 per click, after you confirm)
+1. Once one of your own storefront videos tags a product you accepted, the product page shows **Submit my storefront link**. One click puts that video into Amazon's content form on the product's best active campaign
+
+**Auto mode, hands-free:**
+
+1. Open the extension's settings (the gear in the popup) and find **Auto-accept and content links**, or use the **Auto-accept campaigns** switch in the popup
+1. Turn it on and confirm. While Chrome is open and you are signed in to Amazon Associates, the Butler checks Creator Connections every 30 minutes and accepts campaigns that match your rules, within your daily and per-check caps
+1. Choose what to accept: **only products already in your storefront or orders** (recommended, and the default) or **any campaign that passes your rules**. Set your **My storefront handle** in the popup so the Butler knows which storefront is yours, then open your storefront and run **Storefront Check** once so it learns which products you feature
+1. Keep **Also submit my storefront link** on to have the Butler enter your own storefront video as the content link for each accepted campaign, and **Also accept SPCC campaigns** to include the Sponsored Products for Creators tab
+1. After a **Storefront Check** run, the **Submit content links for accepted campaigns** button submits the links that are still waiting
+
+Auto mode is off until you turn it on. If Amazon shows a robot check, it pauses for 12 hours and tells you. Pairing the desktop app is still optional: when it is paired, one-off Accept clicks go through the app.
+
+**Optional: pair the desktop app** (accepts through the app instead, and shows an Enrolled badge)
 
 1. Open the Influencer Butler desktop app. **On Windows:** launch it from the Start menu, or click its icon in the system tray if it is already running. **On Mac:** launch it from Applications, or click its icon in the menu bar or Dock if it is already running
 1. Click the extension icon in Chrome, scroll to the **Desktop app** section of the popup, and click **Connect the desktop app**; the desktop app shows a 6-digit code

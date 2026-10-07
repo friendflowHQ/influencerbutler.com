@@ -1,4 +1,7 @@
-import { bloomHas, decodeBits, type LoadedFilter } from "./bloom";
+import { bloomHas, decodeBits, fillRatio, type LoadedFilter } from "./bloom";
+
+// A healthy 1%-error filter is about half full; past this it is unusable.
+const SATURATED_FILL = 0.9;
 
 // Cached campaign-membership filters, kept in a dedicated chrome.storage.local
 // key (separate from the main extension state so it stays self-contained).
@@ -40,7 +43,13 @@ export function loadFilters(cache: CatalogueCache): Partial<Record<CatalogueKind
   const out: Partial<Record<CatalogueKind, LoadedFilter>> = {};
   for (const kind of ["cc", "spcc", "deals"] as const) {
     const f = cache[kind];
-    if (f) out[kind] = { m: f.m, k: f.k, bits: decodeBits(f.bitsBase64) };
+    if (!f) continue;
+    const filter = { m: f.m, k: f.k, bits: decodeBits(f.bitsBase64) };
+    // A saturated filter says "in a campaign" for every ASIN, which paints a
+    // bare Campaign chip on every tile. Treat it as absent so callers fall back
+    // to the per-ASIN rate lookups (the rate tables are the real truth).
+    if (fillRatio(filter) > SATURATED_FILL) continue;
+    out[kind] = filter;
   }
   return out;
 }

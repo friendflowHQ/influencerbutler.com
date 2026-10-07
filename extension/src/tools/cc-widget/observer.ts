@@ -26,13 +26,19 @@ export const DEBOUNCE_MS = 250;
 export const CONNECTED_CHECK_MS = 5_000;
 
 // Our own injected hosts: the Brand Keywords chip host (chip.ts), its
-// "open the desktop app" hint banner (hint.ts), and the Message Templates
-// toolbar host (toolbar.ts). Mounting or tearing any of these down must not
-// wake the sweeps that made them.
+// "open the desktop app" hint banner (hint.ts), the Message Templates toolbar
+// host (toolbar.ts), and the Message Cards hosts. Mounting or tearing any of
+// these down must not wake the sweeps that made them.
 export const OWN_HOST_CLASSES: readonly string[] = [
   "bkw-chip-host",
   "bkw-hint-host",
   TEMPLATES_HOST_CLASS,
+  // Message Cards (tools/cc-messages): row status strips, the thread brand card,
+  // the inbox filter bar, and the folded-duplicate bar.
+  "ccm-strip-host",
+  "ccm-card-host",
+  "ccm-filter-host",
+  "ccm-dupe-host",
 ];
 
 // Structural slices of the DOM so a test can drive the hub with plain objects.

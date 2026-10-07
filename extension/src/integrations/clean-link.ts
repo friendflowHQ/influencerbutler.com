@@ -7,13 +7,13 @@
 // This module is pure (no network, no chrome apis) so it unit-tests directly.
 // Short-link expansion (which needs a network round-trip) lives in the
 // background; see background/clean-link.ts.
-import type { Retailer } from "../shared/retailer";
+import type { AffiliateRetailer } from "../shared/retailer";
 import { retailerModule } from "../retailers/module";
 
 export type CleanResult = {
   // The retailer the url belongs to, or null when the host is not a known
   // retailer (the fallback strip path).
-  retailer: Retailer | null;
+  retailer: AffiliateRetailer | null;
   // The product id, present only when one was extracted (the canonical path).
   productId: string | null;
   // The marketplace host (e.g. "amazon.com"), present with a product id.
@@ -116,7 +116,7 @@ function hostOf(url: string): string | null {
 // The retailer for a url, or null when the host is not a known retailer. Unlike
 // retailerFromUrl (which defaults to Amazon) this returns null for a stranger
 // host, so the cleaner knows when it cannot build a canonical product url.
-function detectRetailer(url: string): Retailer | null {
+function detectRetailer(url: string): AffiliateRetailer | null {
   const host = hostOf(url);
   if (!host) return null;
   if (host === "walmart.com" || host.endsWith(".walmart.com")) return "walmart";

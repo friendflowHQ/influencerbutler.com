@@ -15,6 +15,7 @@ import { deleteLocalTemplate, listLocalTemplates, saveLocalTemplate } from "./st
 import { sendToBackground, type HudCommandResult } from "../../shared/messages";
 import type { DesktopTemplate } from "../../transport/hud-commands";
 import { log } from "../../shared/log";
+import { detectIntent, suggestTemplateId } from "../cc-messages/suggest";
 
 export const HOST_CLASS = "mtpl-host";
 
@@ -30,6 +31,9 @@ export type ToolbarContext = {
   resolveComposer: () => HTMLElement | null;
   resolveBrand: () => string | null;
   getDesktop: () => { templates: DesktopTemplate[]; values: Record<string, string>; paired: boolean };
+  // The text of the brand's latest message in the open thread, used only to
+  // highlight the template that best answers it. Optional: no suggestion without it.
+  getLastBrandMessage?: () => string | null;
 };
 
 export function buildToolbar(ctx: ToolbarContext): HTMLElement {
@@ -118,13 +122,33 @@ function renderPicker(menu: HTMLElement, ctx: ToolbarContext, close: () => void)
       return;
     }
 
+    const desktopUsable = desktop.templates.filter((t) => firstVariation(t).length > 0);
+    // Highlight the template that best answers the brand's latest message (a
+    // suggestion only; nothing is inserted until the creator picks one).
+    const lastMessage = ctx.getLastBrandMessage?.() ?? null;
+    const suggested = suggestTemplateId(
+      [
+        ...local.map((t) => ({ id: `local:${t.id}`, label: t.label, body: t.body })),
+        ...desktopUsable.map((t) => ({ id: `desk:${t.id}`, label: t.label, body: firstVariation(t) })),
+      ],
+      lastMessage ? detectIntent(lastMessage) : null,
+    );
+    const labelFor = (id: string, label: string): HTMLElement => {
+      const node = el("span", "mtpl-label", label);
+      if (suggested === id) {
+        node.append(el("span", "mtpl-suggested", "Suggested"));
+      }
+      return node;
+    };
+
     if (local.length > 0) {
       menu.append(el("p", "mtpl-group", "Your templates"));
-      for (const tpl of local) {
+      const ordered = local.slice().sort((a, b) => Number(suggested === `local:${b.id}`) - Number(suggested === `local:${a.id}`));
+      for (const tpl of ordered) {
         const row = el("div", "mtpl-row");
         const pick = el("button", "mtpl-pick");
         pick.type = "button";
-        pick.append(el("span", "mtpl-label", tpl.label), el("span", "mtpl-preview", preview(tpl.body)));
+        pick.append(labelFor(`local:${tpl.id}`, tpl.label), el("span", "mtpl-preview", preview(tpl.body)));
         pick.title = tpl.body;
         pick.addEventListener("click", () => insert(tpl.body));
 
@@ -143,15 +167,15 @@ function renderPicker(menu: HTMLElement, ctx: ToolbarContext, close: () => void)
       }
     }
 
-    const desktopUsable = desktop.templates.filter((t) => firstVariation(t).length > 0);
     if (desktopUsable.length > 0) {
       menu.append(el("p", "mtpl-group", "From desktop app"));
-      for (const tpl of desktopUsable) {
+      const orderedDesktop = desktopUsable.slice().sort((a, b) => Number(suggested === `desk:${b.id}`) - Number(suggested === `desk:${a.id}`));
+      for (const tpl of orderedDesktop) {
         const body = firstVariation(tpl);
         const row = el("div", "mtpl-row");
         const pick = el("button", "mtpl-pick");
         pick.type = "button";
-        pick.append(el("span", "mtpl-label", tpl.label), el("span", "mtpl-preview", preview(body)));
+        pick.append(labelFor(`desk:${tpl.id}`, tpl.label), el("span", "mtpl-preview", preview(body)));
         pick.title = body;
         pick.addEventListener("click", () => insert(body));
         row.append(pick);

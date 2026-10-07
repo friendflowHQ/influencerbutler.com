@@ -82,8 +82,52 @@ const enrichedBrands = new Set<string>();
 // do not hammer the bridge on every mutation burst.
 let enrichBackoffUntil = 0;
 
-export function initBrandKeywords(_settings: Settings): void {
+// When the richer Message Cards tool is on, it draws the pills itself (one strip
+// per row, in the right place) and this tool becomes the data layer only: it keeps
+// fetching the outreach keywords and inbound enrichment from the desktop app and
+// the "open the app" hint, but mounts no chips of its own.
+let chipsEnabled = true;
+
+// Consumers (the Message Cards tool) that want to know when new keyword or
+// enrichment data has arrived, so they can repaint.
+const signalListeners = new Set<() => void>();
+
+export function onBrandSignalsChanged(cb: () => void): () => void {
+  signalListeners.add(cb);
+  return () => signalListeners.delete(cb);
+}
+
+function notifySignals(): void {
+  for (const cb of Array.from(signalListeners)) {
+    try {
+      cb();
+    } catch {
+      // a listener's failure must not break the sweep
+    }
+  }
+}
+
+// What the desktop app has told us about one brand (either or both may be null,
+// and both are null with the app closed or unpaired).
+export function getBrandSignals(brand: string): {
+  keyword: OutreachRecord | null;
+  enrichment: BrandEnrichmentRecord | null;
+} {
+  return {
+    keyword: outreachMap ? lookupKeyword(outreachMap, brand) : null,
+    enrichment: lookupBrand(enrichmentMap, brand),
+  };
+}
+
+// Whether the last bridge answer says the app is reachable (drives copy in the
+// Message Cards hint and extras).
+export function isAppReachable(): boolean {
+  return appReachable;
+}
+
+export function initBrandKeywords(settings: Settings): void {
   teardownBrandKeywords();
+  chipsEnabled = !settings.tools.messageCards;
   const myEpoch = ++epoch;
   // Load the hint's dismissal deadline before any sweep is allowed to mount it,
   // so a hint the creator dismissed does not flash back on every page load.
@@ -132,7 +176,7 @@ function updateHint(widget: HTMLElement): void {
     return;
   }
   if (hintDismissedThisPage || !hintConfigLoaded || Date.now() < hintSuppressedUntil) return;
-  mountAppHint(widget, { paired: lastPaired }, () => {
+  mountAppHint(widget, { paired: lastPaired, extrasOnly: !chipsEnabled }, () => {
     hintDismissedThisPage = true;
   });
 }
@@ -160,6 +204,7 @@ async function sweep(myEpoch: number): Promise<void> {
       records: res?.records?.length ?? 0,
       mapped: outreachMap.exact.size,
     });
+    notifySignals();
   }
 
   // 2. Paint every conversation we can resolve now; collect the inbound brands
@@ -203,6 +248,7 @@ async function sweep(myEpoch: number): Promise<void> {
   enrichmentMap = buildEnrichmentMap(enrichmentRecords);
   // Re-run to paint the brands the fetch just resolved.
   decorate(widget, outreachMap, enrichmentMap);
+  notifySignals();
 }
 
 // Decorate every conversation row and the open thread header. A row resolves to
@@ -212,7 +258,10 @@ async function sweep(myEpoch: number): Promise<void> {
 // can fetch it. Returns the display names of those pending brands (deduped).
 function decorate(widget: HTMLElement, oMap: OutreachMap, eMap: EnrichmentMap): string[] {
   const pending = new Set<string>();
-  for (const row of findConversationRows(widget)) {
+  // An open thread's message time labels ("10:31 AM") look like list timestamps,
+  // so only treat leaves as conversation rows in the list view.
+  const header = findThreadHeader(widget);
+  for (const row of header ? [] : findConversationRows(widget)) {
     if (row.hasAttribute(DONE_ATTR)) continue;
     const brand = readListRowBrand(row);
     if (!brand) {
@@ -223,7 +272,6 @@ function decorate(widget: HTMLElement, oMap: OutreachMap, eMap: EnrichmentMap): 
     pending.add(brand);
   }
 
-  const header = findThreadHeader(widget);
   if (header && !header.hasAttribute(DONE_ATTR)) {
     const brand = readThreadBrand(header);
     if (!brand) {
@@ -250,13 +298,13 @@ function resolveAnchor(
   const keyword = lookupKeyword(oMap, brand);
   if (keyword) {
     anchor.setAttribute(DONE_ATTR, "1");
-    mountKeyword(anchor, keyword);
+    if (chipsEnabled) mountKeyword(anchor, keyword);
     return true;
   }
   const enrichment = lookupBrand(eMap, brand);
   if (enrichment) {
     anchor.setAttribute(DONE_ATTR, "1");
-    mountEnrichment(anchor, enrichment);
+    if (chipsEnabled) mountEnrichment(anchor, enrichment);
     return true;
   }
   // No match. If we have already asked the app about this brand, it is a

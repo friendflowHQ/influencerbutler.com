@@ -19,6 +19,7 @@ import { renderScore } from "../score/badge";
 import { evaluateApproved } from "../butler-approved/criteria";
 import { renderSeal } from "../butler-approved/seal";
 import { renderCalculator } from "../calculator/panel";
+import { renderCrossRetailer } from "../cross-retailer/panel";
 
 // The Walmart PRODUCT-PAGE panel. Walmart search / browse / seller grids reuse
 // the shared Amazon search overlay via the Walmart RetailerModule (see
@@ -86,12 +87,34 @@ async function copyText(text: string): Promise<boolean> {
   }
 }
 
-export function initWalmartProduct(signals: ProductSignals, product: WalmartProduct | null): void {
+export type WalmartOverlayOptions = {
+  // The "Also on Target" card (tool flag + remote kill switch, resolved by the caller).
+  crossRetailer?: boolean;
+};
+
+export function initWalmartProduct(
+  signals: ProductSignals,
+  product: WalmartProduct | null,
+  opts: WalmartOverlayOptions = {},
+): void {
   const itemId = signals.asin;
   if (!itemId) return;
   const section = addSection("Walmart");
   const row = el("div", "wm-row");
   section.append(row);
+
+  // Added right after the Walmart section, before the async score / calculator
+  // sections, so it sits near the top of the panel and does not jump later.
+  if (opts.crossRetailer) {
+    renderCrossRetailer({
+      retailer: "walmart",
+      id: itemId,
+      upc: product?.upc ?? null,
+      title: product?.title ?? signals.title,
+      brand: product?.brand ?? signals.brand,
+      priceCents: product?.priceCents ?? signals.priceCents,
+    });
+  }
 
   const status = el("span", "muted small");
   const btn = el("button", "btn wm-link-btn") as HTMLButtonElement;

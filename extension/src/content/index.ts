@@ -7,6 +7,8 @@ import {
   needsFreshProductDoc,
 } from "../walmart/product-signals";
 import { initWalmartProduct } from "../tools/walmart-overlay/overlay";
+import { extractTargetProductSync, readTargetProduct, targetToSignals } from "../target/product-signals";
+import { initTargetProduct } from "../tools/target-overlay/overlay";
 import { retailerModule } from "../retailers/module";
 import {
   carouselBreakdown,
@@ -59,12 +61,25 @@ import { initStoreOverlay } from "../tools/store-overlay/overlay";
 import { initTrendRadar } from "../tools/trend-radar/overlay";
 import { initDealsOverlay } from "../tools/deals-overlay/overlay";
 import { initIdeaListOverlay } from "../tools/idea-list/overlay";
+import { initStorefrontMoney } from "../tools/storefront-money/overlay";
 import { initCampaignMatcher } from "../tools/campaign-matcher/panel";
 import { hasUndecoratedCampaignCards, initCampaignRadar } from "../tools/campaign-radar/overlay";
 import { initCampaignDetail } from "../tools/campaign-radar/detail-overlay";
 import { runAcceptOnPage } from "../tools/campaign-radar/accept-runner";
+import { asinFromSpccKey, runAcceptSpccByAsin } from "../tools/campaign-radar/spcc-runner";
+import {
+  findBestActiveCampaign,
+  submitContentLinkOnPage,
+} from "../tools/campaign-radar/content-link-runner";
+import type { ContentType } from "../tools/campaign-radar/content-link";
+import {
+  runAutoAccept,
+  waitForGridReady,
+  type AutoAcceptRunResult,
+} from "../tools/campaign-radar/auto-accept";
 import { initBrandKeywords, teardownBrandKeywords } from "../tools/brand-keywords/overlay";
 import { initMessageTemplates, teardownMessageTemplates } from "../tools/message-templates/overlay";
+import { initMessageCards, teardownMessageCards } from "../tools/cc-messages/overlay";
 import { renderWatchButton } from "../tools/watchlist/panel";
 import { renderProductListsPanel } from "../tools/product-lists/panel";
 import { maybeShowNudge } from "../tools/nudges/prompts";
@@ -178,9 +193,12 @@ async function main(): Promise<void> {
             settings.tools.standaloneAccept &&
             !flags?.disableAll &&
             !flags?.disabledTools.includes("standaloneAccept");
-          outcome = enabled
-            ? await runAcceptOnPage(message.campaignId)
-            : { ok: false, reason: "disabled" };
+          const spccAsin = asinFromSpccKey(message.campaignId);
+          outcome = !enabled
+            ? { ok: false, reason: "disabled" }
+            : spccAsin
+              ? await runAcceptSpccByAsin(spccAsin, { search: true })
+              : await runAcceptOnPage(message.campaignId);
         } catch (error) {
           log("content", "accept runner failed", error);
           outcome = { ok: false, reason: "error" };
@@ -191,6 +209,66 @@ async function main(): Promise<void> {
           outcome,
         }).catch(() => undefined);
         sendResponse(outcome);
+      })();
+      return true;
+    }
+    // Content-link submit: the background opened this tab and drives it in two
+    // steps (find the best active campaign, then fill the detail page's form).
+    // The tool toggle and remote flag are re-read here, like the accept runners.
+    if (message.kind === "RUN_LINK_FIND" || message.kind === "RUN_LINK_SUBMIT") {
+      void (async () => {
+        try {
+          const settings = await getSettings();
+          const flags = await getFlags();
+          const enabled =
+            settings.tools.contentLinkSubmit &&
+            !flags?.disableAll &&
+            !flags?.disabledTools.includes("contentLinkSubmit");
+          if (!enabled) {
+            sendResponse({ ok: false, reason: "error" });
+            return;
+          }
+          if (message.kind === "RUN_LINK_FIND") {
+            sendResponse(await findBestActiveCampaign(message.asin, campaignFills));
+          } else {
+            sendResponse(
+              await submitContentLinkOnPage(message.url, message.contentType as ContentType),
+            );
+          }
+        } catch (error) {
+          log("content", "content-link runner failed", error);
+          sendResponse({ ok: false, reason: "error" });
+        }
+      })();
+      return true;
+    }
+    // Rule-based accept (Auto mode): the background opened this grid tab and asks
+    // us to run the creator's rules over it. Settings + remote flags are re-read
+    // here so a kill switch flipped after load still holds. runAutoAccept posts
+    // AUTO_ACCEPT_DONE itself; the killed / failed paths post it here so the
+    // worker never waits out the whole dwell.
+    if (message.kind === "RUN_AUTO_ACCEPT") {
+      void (async () => {
+        let result: AutoAcceptRunResult = { accepted: [], stoppedReason: "error" };
+        let reported = false;
+        try {
+          const settings = await getSettings();
+          const flags = await getFlags();
+          const killed = !!flags?.disableAll || !!flags?.disabledTools.includes("autoAccept");
+          if (killed) {
+            result = { accepted: [], stoppedReason: "disabled" };
+          } else {
+            await waitForGridReady(document, () => Object.keys(campaignFills).length);
+            result = await runAutoAccept(settings, campaignFills);
+            reported = true;
+          }
+        } catch (error) {
+          log("content", "auto-accept runner failed", error);
+        }
+        if (!reported) {
+          void sendToBackground({ kind: "AUTO_ACCEPT_DONE", ...result }).catch(() => undefined);
+        }
+        sendResponse(result);
       })();
       return true;
     }
@@ -388,6 +466,14 @@ function watchStorefrontVideoLikes(): void {
 // rebuild, so the panel and the fingerprint above see the same snapshot.
 let ownVideoIndex: OwnVideoIndex | null = null;
 
+// Whether the "Also on Target" card may run on a Walmart page: the user's setting
+// AND no remote kill (a hard disableAll, or "crossRetailer" in disabledTools).
+async function crossRetailerEnabled(settings: Settings): Promise<boolean> {
+  if (!settings.tools.crossRetailer) return false;
+  const flags = await getFlags();
+  return !flags?.disableAll && !(flags?.disabledTools.includes("crossRetailer") ?? false);
+}
+
 async function runForPage(): Promise<void> {
   currentUrl = location.href;
   // Leaving the grid (or re-entering it) resets the grid watcher; the
@@ -431,6 +517,10 @@ async function runForPage(): Promise<void> {
       return;
     }
     if (pageType === "product") {
+      // The Walmart branch predates the remote flags and does not read them for
+      // its other tools; the cross-retailer card is new, so it honors both its
+      // setting and the remote kill switch.
+      const crossRetailer = await crossRetailerEnabled(settings);
       guard("walmart-product", async () => {
         // After a client-side navigation the embedded __NEXT_DATA__ still holds
         // the previous page, so read a fresh copy of this product page instead.
@@ -440,7 +530,7 @@ async function runForPage(): Promise<void> {
         }
         const signals = extractWalmartSignals(doc, currentUrl);
         const product = extractWalmartProduct(doc, currentUrl);
-        initWalmartProduct(signals, product);
+        initWalmartProduct(signals, product, { crossRetailer });
       });
     } else if (pageType === "search" || pageType === "discovery" || pageType === "brand-store") {
       // Walmart grids reuse the exact Amazon search overlay (Butler Score badge,
@@ -453,6 +543,32 @@ async function runForPage(): Promise<void> {
     return;
   }
 
+  // Target.com: product pages only (price / rating chips + the cross-retailer
+  // card). Reads the remote flags itself, like the Benable branch, so the kill
+  // switch ("target" / "crossRetailer" in disabledTools) works here too. None of
+  // the Amazon extractors ever run against a Target page.
+  if (retailer === "target") {
+    const flags = await getFlags();
+    if (flags?.disableAll) {
+      log("content", "all tools disabled by remote flag");
+      return;
+    }
+    const killed = (tool: string) => flags?.disabledTools.includes(tool) ?? false;
+    if (!settings.tools.target || killed("target")) {
+      log("content", "target support disabled by setting or remote flag");
+      return;
+    }
+    if (pageType === "product") {
+      const crossRetailer = settings.tools.crossRetailer && !killed("crossRetailer");
+      guard("target-product", async () => {
+        const product = await readTargetProduct(document, currentUrl);
+        const signals = targetToSignals(product ?? extractTargetProductSync(document, currentUrl), currentUrl);
+        initTargetProduct(signals, product, { crossRetailer });
+      });
+    }
+    return;
+  }
+
   // Brand Keywords and Message Templates each own a persistent MutationObserver
   // on the Messages widget, so unlike the once-per-view tools they must be
   // explicitly torn down on every SPA navigation. Tear them down here up front;
@@ -460,6 +576,7 @@ async function runForPage(): Promise<void> {
   // Connections.
   teardownBrandKeywords();
   teardownMessageTemplates();
+  teardownMessageCards();
 
   // Remote operational flags win over the user's own settings: they are the
   // site's kill switch for when a tool misbehaves in the wild. Apply selector
@@ -744,6 +861,14 @@ async function runForPage(): Promise<void> {
           lastStatus.toolSummaries.push({ label: t().sumEarningsOverlay, value: t().ready });
         });
       }
+      // Campaign and deal chips (best CC rate / SPCC $/click among a card's tagged
+      // products, plus a deal flag) on each storefront video card, with those cards
+      // floated to the top behind a toggle. The storefront twin of the Idea List and
+      // search chips. Shares the Idea List overlay's switch; the deal flag follows
+      // the dealSignals switch.
+      if (settings.tools.ideaListOverlay) {
+        guard("storefront-money", () => initStorefrontMoney({ deals: settings.tools.dealSignals }));
+      }
       // Orange like-count heart badge on each content card, read from Amazon's own
       // rendered .heart-count. The storefront is where Amazon exposes these counts,
       // so this is the overlay's primary surface. Re-runs on the storefront's React
@@ -891,7 +1016,7 @@ async function runForPage(): Promise<void> {
     // Tell the background this tab's accept runner is armed (it only acts on a
     // tab it opened itself). Before the onsite guard: a background accept tab
     // must report regardless of the creator's channel setting.
-    if (settings.tools.standaloneAccept) {
+    if (settings.tools.standaloneAccept || settings.tools.autoAccept || settings.tools.contentLinkSubmit) {
       void sendToBackground({ kind: "ACCEPT_TAB_READY", pageType: "campaign-grid" }).catch(
         () => undefined,
       );
@@ -919,8 +1044,15 @@ async function runForPage(): Promise<void> {
     guard("message-templates", () => {
       if (settings.tools.messageTemplates) initMessageTemplates(settings);
     });
+    // Status strips, the brand card, folded duplicates and the inbox filter bar on
+    // the same widget. Works from the campaigns this page already loaded, so it
+    // needs no desktop app; Brand Keywords (above) supplies the app's extras and
+    // stops drawing its own chips when this is on.
+    guard("message-cards", () => {
+      if (settings.tools.messageCards) initMessageCards(settings);
+    });
   } else if (pageType === "campaign-detail") {
-    if (settings.tools.standaloneAccept) {
+    if (settings.tools.standaloneAccept || settings.tools.contentLinkSubmit) {
       void sendToBackground({ kind: "ACCEPT_TAB_READY", pageType: "campaign-detail" }).catch(
         () => undefined,
       );
@@ -941,6 +1073,9 @@ async function runForPage(): Promise<void> {
     });
     guard("message-templates", () => {
       if (settings.tools.messageTemplates) initMessageTemplates(settings);
+    });
+    guard("message-cards", () => {
+      if (settings.tools.messageCards) initMessageCards(settings);
     });
   }
 }

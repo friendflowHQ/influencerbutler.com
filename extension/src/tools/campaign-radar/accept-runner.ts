@@ -29,7 +29,7 @@ const CONFIRM_TICK_MS = 250;
 const BLOCKED_SCAN_CHARS = 300_000;
 // Text on a button that means "accept" (the card's own accept button, or a
 // dialog's confirm), matched against the button's trimmed text.
-const ACCEPT_BTN_RE = /^accept/i;
+export const ACCEPT_BTN_RE = /^accept/i;
 const CONFIRM_BTN_RE = /accept|confirm/i;
 // Card text that means the accept went through. "Pending" covers a brand that
 // approves creators manually (the request is queued, the button is gone).
@@ -63,7 +63,10 @@ export function classifyAcceptState(
   return "waiting";
 }
 
-type Located = { region: HTMLElement; button: HTMLElement; testid: string | null };
+// The card (or detail region) and the Accept button inside it. `testid` is set
+// when the button was found by its verified CC testid (re-queried by it after the
+// click, since React may replace the node); SPCC cards have no testid.
+export type Located = { region: HTMLElement; button: HTMLElement; testid: string | null };
 
 export async function runAcceptOnPage(campaignId: string): Promise<AcceptOutcome> {
   if (isBlockedHtml(document.documentElement.outerHTML.slice(0, BLOCKED_SCAN_CHARS))) {
@@ -72,9 +75,16 @@ export async function runAcceptOnPage(campaignId: string): Promise<AcceptOutcome
 
   const found = await waitFor(() => locateAccept(campaignId), FIND_TIMEOUT_MS, FIND_TICK_MS);
   if (!found) return { ok: false, reason: "not-found" };
+  return clickAcceptAndConfirm(found, campaignId);
+}
 
+// Click the located Accept button exactly as the creator would, confirm a dialog
+// if Amazon shows one, and read Amazon's own confirmation off the card. Shared by
+// the CC runner above and the SPCC-by-ASIN runner (spcc-runner.ts). `label` is
+// only for the log line.
+export async function clickAcceptAndConfirm(found: Located, label: string): Promise<AcceptOutcome> {
   const baseline = regionText(found.region);
-  log("accept-runner", `clicking accept for ${campaignId}`);
+  log("accept-runner", `clicking accept for ${label}`);
   found.button.click();
 
   let dialogClicked = false;
@@ -149,12 +159,12 @@ function acceptButtonPresent(found: Located): boolean {
   return !!again && isVisible(again);
 }
 
-function findDialog(): HTMLElement | null {
+export function findDialog(): HTMLElement | null {
   const dialogs = Array.from(document.querySelectorAll<HTMLElement>('[role="dialog"], dialog[open]'));
   return dialogs.find(isVisible) ?? null;
 }
 
-function findButton(root: ParentNode, re: RegExp): HTMLElement | null {
+export function findButton(root: ParentNode, re: RegExp): HTMLElement | null {
   const candidates = Array.from(
     root.querySelectorAll<HTMLElement>('button, [role="button"], input[type="submit"], input[type="button"]'),
   );
@@ -172,7 +182,7 @@ function findButton(root: ParentNode, re: RegExp): HTMLElement | null {
 
 // Visible alert / toast text anywhere on the page (Amazon's a-alert boxes and
 // ARIA live regions), folded into the classification so an error surfaces.
-function alertText(): string {
+export function alertText(): string {
   const nodes = Array.from(
     document.querySelectorAll<HTMLElement>('[role="alert"], .a-alert-error, .a-alert-warning, [aria-live="assertive"]'),
   );
@@ -182,7 +192,7 @@ function alertText(): string {
     .join(" ");
 }
 
-function regionText(el: HTMLElement): string {
+export function regionText(el: HTMLElement): string {
   return (el.textContent ?? "").replace(/\s+/g, " ").trim();
 }
 
@@ -194,7 +204,7 @@ function climb(el: HTMLElement): HTMLElement {
   return node ?? el;
 }
 
-function isVisible(el: HTMLElement): boolean {
+export function isVisible(el: HTMLElement): boolean {
   if (!el.isConnected) return false;
   const style = window.getComputedStyle(el);
   if (style.display === "none" || style.visibility === "hidden") return false;
@@ -215,7 +225,7 @@ function cssEscape(value: string): string {
   return esc ? esc(value) : value.replace(/["\\]/g, "\\$&");
 }
 
-async function waitFor<T>(probe: () => T | null, timeoutMs: number, tickMs: number): Promise<T | null> {
+export async function waitFor<T>(probe: () => T | null, timeoutMs: number, tickMs: number): Promise<T | null> {
   const deadline = Date.now() + timeoutMs;
   for (;;) {
     const hit = probe();
@@ -225,6 +235,6 @@ async function waitFor<T>(probe: () => T | null, timeoutMs: number, tickMs: numb
   }
 }
 
-function sleep(ms: number): Promise<void> {
+export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }

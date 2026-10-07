@@ -1,4 +1,5 @@
 import { chip, copyButton, el } from "../../ui/components";
+import { flashSent, resetSent } from "../../ui/sent-state";
 import { createInlineShadow } from "../../ui/host";
 import { query } from "../../amazon/selectors";
 import { t } from "../../i18n";
@@ -72,6 +73,7 @@ export function renderInlineCard(signals: ProductSignals): void {
   collabBtn.textContent = t().addToCollab;
   const status = el("p", "progress");
   collabBtn.addEventListener("click", () => {
+    resetSent(collabBtn);
     collabBtn.disabled = true;
     status.textContent = t().addingCollab;
     void sendToBackground<HudCommandResult>({
@@ -80,6 +82,7 @@ export function renderInlineCard(signals: ProductSignals): void {
     })
       .then((r) => {
         status.textContent = r.ok ? (r.message ?? t().sentToApp) : (r.message ?? t().couldNotReachApp);
+        if (r.ok) flashSent(collabBtn);
       })
       .catch(() => (status.textContent = t().couldNotReachApp))
       .finally(() => (collabBtn.disabled = false));

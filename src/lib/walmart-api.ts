@@ -118,6 +118,7 @@ type RawWalmartItem = {
   customerRating?: string;
   bestSellerRank?: number;
   salesRank?: number;
+  upc?: string;
 };
 
 // Walmart's price is a dollar amount; convert to integer cents like PA-API.
@@ -248,6 +249,53 @@ export async function lookupItems(
         id,
       }),
     );
+  }
+}
+
+// A barcode with leading zeros dropped and non-digits removed, so a 12-digit
+// UPC-A, its 13-digit EAN form ("0" + UPC) and a zero-padded GTIN-14 all compare
+// equal. Exported for the route and its test.
+export function normalizeBarcode(raw: unknown): string | null {
+  if (typeof raw !== "string" && typeof raw !== "number") return null;
+  const digits = String(raw).replace(/\D/g, "").replace(/^0+/, "");
+  return digits.length >= 8 ? digits : null;
+}
+
+export type UpcLookupResult = {
+  // The matching item, or null when Walmart has none for this barcode.
+  item: EnrichedItem | null;
+  // True only when the request completed. A network or API failure returns
+  // ok:false so the caller reports "couldn't check", never "not on Walmart".
+  ok: boolean;
+};
+
+/**
+ * Walmart Product Lookup by UPC. The hit is only returned when the item's own
+ * `upc` equals the requested barcode, so a loose server-side match can never
+ * surface as an exact claim. Never throws.
+ */
+export async function lookupByUpc(
+  creds: WalmartCreds,
+  upc: string,
+  now: number = Date.now(),
+): Promise<UpcLookupResult> {
+  const wanted = normalizeBarcode(upc);
+  if (!wanted) return { item: null, ok: true };
+  const url = `${WALMART_API_BASE}/items?upc=${encodeURIComponent(upc)}`;
+  try {
+    const res = await fetch(url, { headers: walmartHeaders(creds, now) });
+    const json = (await res.json().catch(() => null)) as RawLookup | null;
+    if (!json) return { item: null, ok: false };
+    const items = json.items ?? [];
+    if (items.length === 0) {
+      // An empty answer with an error body is a failure; an empty answer on a
+      // 2xx is a genuine "not found".
+      return { item: null, ok: res.ok && !json.errors?.length };
+    }
+    const hit = items.find((i) => normalizeBarcode(i.upc) === wanted);
+    return { item: hit ? normalizeWalmartItem(hit) : null, ok: true };
+  } catch {
+    return { item: null, ok: false };
   }
 }
 

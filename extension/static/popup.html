@@ -265,6 +265,12 @@
         <label class="row toggle"><input id="tool-walmart" type="checkbox" /><span data-i18n="toolWalmart">Walmart support</span></label>
         <p class="muted small" data-i18n="toolWalmartHint">Turns on money signals and overlays on Walmart.com. Search results overlay (below) also works on Walmart grids.</p>
 
+        <h4 id="grp-target" class="tool-group">Target</h4>
+        <label class="row toggle"><input id="tool-target" type="checkbox" /><span data-i18n="toolTarget">Target support</span></label>
+        <p class="muted small" data-i18n="toolTargetHint">Show a panel on Target product pages (price, rating, and whether it is also on Walmart).</p>
+        <label class="row toggle"><input id="tool-crossRetailer" type="checkbox" /><span data-i18n="toolCrossRetailer">Also on Walmart / Target</span></label>
+        <p class="muted small" data-i18n="toolCrossRetailerHint">On a Target or Walmart product page, show whether the same product (matched by UPC) is sold by the other store, with a link.</p>
+
         <h4 id="grp-cross" class="tool-group" data-i18n="groupCrossPlatform">Amazon &amp; Walmart</h4>
         <label class="row toggle"><input id="tool-searchOverlay" type="checkbox" /><span data-i18n="toolSearchOverlay">Search results overlay</span></label>
         <label class="row toggle"><input id="tool-dealSignals" type="checkbox" /><span data-i18n="toolDealSignals">Sale &amp; deal price signals</span></label>
@@ -300,9 +306,18 @@
         <p class="muted small avail-hint" data-i18n="popupAvailabilityHint">Campaign Radar checks each campaign product against these countries' Amazon stores and shows a chip per country.</p>
         <p id="avail-au-denied" class="muted small" hidden data-i18n="popupAvailabilityAuDenied">Australia needs permission to read amazon.com.au. Allow it when Chrome asks, then try again.</p>
 
+        <label class="row toggle"><input id="auto-accept-enabled" type="checkbox" /><span data-i18n="autoPopupLabel">Auto-accept campaigns</span></label>
+        <p class="row small"><a id="auto-accept-settings" href="#" data-i18n="autoCardTitle">Auto-accept and content links</a></p>
+
         <h4 id="grp-earnings" class="tool-group" data-i18n="groupAmazonEarnings">Amazon: earnings &amp; alerts</h4>
         <label class="row toggle"><input id="tool-earningsOverlay" type="checkbox" /><span data-i18n="toolEarningsOverlay">Earnings overlay (storefront badges)</span></label>
         <label class="row toggle"><input id="tool-watchlist" type="checkbox" /><span data-i18n="toolWatchlist">Watchlist alerts</span></label>
+
+        <h4 id="grp-ccmessages" class="tool-group" data-i18n="groupCcMessages">Amazon: Creator Connections messages</h4>
+        <label class="row toggle"><input id="tool-messageCards" type="checkbox" /><span data-i18n="toolMessageCards">Message cards (brand summary, links, filters)</span></label>
+        <p class="muted small" data-i18n="toolMessageCardsHint">In the Creator Connections Messages drawer, shows each brand's rate, days left and open slots, pulls the sample-form and content links out of their message, folds repeated messages, and adds filters. Works without the desktop app.</p>
+        <label class="row toggle"><input id="tool-brandKeywords" type="checkbox" /><span data-i18n="toolBrandKeywords">Keyword you pitched each brand under</span></label>
+        <label class="row toggle"><input id="tool-messageTemplates" type="checkbox" /><span data-i18n="toolMessageTemplates">Message templates (save and load)</span></label>
 
         <h4 id="grp-benable" class="tool-group" data-i18n="groupBenable">Benable</h4>
         <label class="row toggle"><input id="tool-benableBadge" type="checkbox" /><span data-i18n="toolBenableBadge">Amazon money signals on Benable lists</span></label>

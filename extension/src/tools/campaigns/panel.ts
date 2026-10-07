@@ -4,8 +4,10 @@ import { sendToBackground } from "../../shared/messages";
 import { getCache, loadFilters, membership } from "../../catalogue/cache";
 import { makeCommandRunner, toProductRef } from "../hud-actions/runner";
 import { resolveCampaignStatus } from "./status";
-import { describeAcceptResult, lookupCampaignId, requestAccept } from "./accept";
+import { describeAcceptResult, lookupCampaignId, lookupSpccPresent, requestAccept } from "./accept";
 import { showToast } from "../../ui/toast";
+import { getSettings } from "../../storage/store";
+import type { LinkOneResult, LinkStatusResult } from "../../shared/messages";
 import type { CampaignStatusRecord, HudStatus } from "../../shared/messages";
 import type { ProductSignals } from "../../amazon/product-signals";
 
@@ -31,11 +33,23 @@ export async function renderCampaigns(
 
   const cache = await getCache();
   const loaded = loadFilters(cache);
-  // No filters downloaded yet: stay quiet rather than show a misleading status.
-  // We cannot honestly say "not available" for a filter we never fetched.
-  if (!loaded.cc && !loaded.spcc && !loaded.deals) return;
-
   const flags = membership(loaded, signals.asin);
+
+  // A membership filter that is missing or was dropped as unusable (the CC one
+  // is saturated, see catalogue/cache.ts) cannot say yes OR no, so ask the
+  // per-ASIN rate tables, which are the real truth. A hit makes the program
+  // "available" and gives the Accept button a campaign id to act on.
+  let ccCampaignIdFromRates: string | null = null;
+  if (!loaded.cc) {
+    ccCampaignIdFromRates = await lookupCampaignId(signals.asin);
+    if (ccCampaignIdFromRates) flags.cc = true;
+  }
+  if (!loaded.spcc && (await lookupSpccPresent(signals.asin))) flags.spcc = true;
+
+  // Nothing to say: no filter downloaded and no rate hit. Stay quiet rather than
+  // show a misleading status; we cannot honestly say "not available" for a
+  // source we never read.
+  if (!loaded.cc && !loaded.spcc && !loaded.deals && !flags.cc && !flags.spcc) return;
 
   // Personal enrollment from the desktop accepted-history ledger (kept fresh by
   // the app's hourly sync). Empty for unpaired users / when the app is closed.
@@ -101,7 +115,9 @@ export async function renderCampaigns(
     // paired route uses it to tell a confirmed campaign (show a definite "Accept
     // CC campaign" button) from a bare Bloom hint with no known campaign yet
     // (show the softer "Check for CC campaign" instead of over-promising).
-    const ccCampaignId = canAcceptCc ? await lookupCampaignId(signals.asin) : null;
+    const ccCampaignId = canAcceptCc
+      ? (ccCampaignIdFromRates ?? (await lookupCampaignId(signals.asin)))
+      : null;
     await renderAcceptActions(
       block,
       signals,
@@ -116,7 +132,57 @@ export async function renderCampaigns(
     block.append(el("p", "note", t().dealPushNote));
   }
 
+  await appendLinkSubmit(block, signals.asin);
   section.append(block);
+}
+
+// "Submit my storefront link": one click puts the creator's own storefront video
+// for this product into Amazon's content form on the product's best active
+// campaign. Shown only when one of their videos tags the product and the link is
+// not already submitted; the click names Amazon's answer (or why it could not).
+async function appendLinkSubmit(block: HTMLElement, asin: string): Promise<void> {
+  try {
+    const settings = await getSettings();
+    if (!settings.tools.contentLinkSubmit) return;
+    const status = await sendToBackground<LinkStatusResult>({ kind: "GET_LINK_STATUS", asin });
+    if (!status.hasVideo) return;
+    if (status.submitted) {
+      block.append(el("p", "note", t().submitLinkDone));
+      return;
+    }
+    const row = el("div", "row");
+    const line = el("p", "progress");
+    const btn = el("button", "btn secondary");
+    btn.textContent = t().submitLinkButton;
+    btn.addEventListener("click", () => {
+      void (async () => {
+        btn.disabled = true;
+        line.textContent = t().submitLinkWorking;
+        let result: LinkOneResult;
+        try {
+          result = await sendToBackground<LinkOneResult>({ kind: "SUBMIT_LINK_ONE", asin });
+        } catch {
+          result = { ok: false, reason: "error" };
+        }
+        if (result.ok) {
+          line.textContent = t().submitLinkDone;
+          btn.remove();
+          return;
+        }
+        line.textContent =
+          result.reason === "no-campaign"
+            ? t().submitLinkNoCampaign
+            : result.reason === "no-video"
+              ? t().submitLinkNoVideo
+              : t().submitLinkFailed(result.reason);
+        btn.disabled = false;
+      })();
+    });
+    row.append(btn);
+    block.append(row, line);
+  } catch {
+    // The worker was asleep or the tool is off: no button.
+  }
 }
 
 // Inline Accept buttons, right next to the availability chips, so accepting
@@ -140,8 +206,16 @@ async function renderAcceptActions(
   }
 
   if (!hud.connected || hud.paired === false) {
-    if (flags.cc && opts.standaloneAccept && opts.ccCampaignId) {
-      renderStandaloneAccept(section, signals, opts.ccCampaignId, flags.spcc);
+    const ccReady = flags.cc && opts.standaloneAccept && !!opts.ccCampaignId;
+    const spccReady = flags.spcc && opts.standaloneAccept;
+    if (ccReady || spccReady) {
+      const body = el("div", "row");
+      const status = el("p", "progress");
+      if (ccReady && opts.ccCampaignId) {
+        body.append(standaloneAcceptButton(signals, "cc", opts.ccCampaignId, status));
+      }
+      if (spccReady) body.append(standaloneAcceptButton(signals, "spcc", null, status));
+      section.append(body, status);
       return;
     }
     section.append(el("p", "note", t().campaignConnectNote));
@@ -182,16 +256,14 @@ async function renderAcceptActions(
 // to drive Amazon's Accept in a tab. The button disappears on success; a
 // failure is named in the status line and raised as a toast, like the bridge
 // runner does.
-function renderStandaloneAccept(
-  section: HTMLElement,
+function standaloneAcceptButton(
   signals: ProductSignals,
-  campaignId: string,
-  spccAlsoAvailable: boolean,
-): void {
-  const body = el("div", "row");
-  const status = el("p", "progress");
+  kind: "cc" | "spcc",
+  campaignId: string | null,
+  status: HTMLElement,
+): HTMLElement {
   const btn = el("button", "btn secondary");
-  btn.textContent = t().acceptCc;
+  btn.textContent = kind === "cc" ? t().acceptCc : t().acceptSpcc;
   btn.addEventListener("click", () => {
     void (async () => {
       btn.disabled = true;
@@ -199,7 +271,7 @@ function renderStandaloneAccept(
       const result = await requestAccept({
         asin: signals.asin,
         marketplace: signals.marketplace,
-        kind: "cc",
+        kind,
         campaignId,
         brand: signals.brand ?? null,
       });
@@ -213,8 +285,5 @@ function renderStandaloneAccept(
       }
     })();
   });
-  body.append(btn);
-  section.append(body, status);
-  // SPCC still needs the app; say so under the button rather than hiding it.
-  if (spccAlsoAvailable) section.append(el("p", "note", t().campaignConnectNote));
+  return btn;
 }

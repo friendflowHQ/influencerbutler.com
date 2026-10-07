@@ -1,4 +1,5 @@
 import { addSection, chip, el } from "../../ui/components";
+import { flashSent, resetSent } from "../../ui/sent-state";
 import { t } from "../../i18n";
 import { getCache, loadFilters } from "../../catalogue/cache";
 import { harvestStorefront } from "../storefront-check/harvest";
@@ -138,6 +139,7 @@ export function initCampaignMatcher(source: MatchSource): void {
       const accept = el("button", "btn");
       accept.textContent = t().campaignMatcherAcceptAll(items.length);
       accept.addEventListener("click", () => {
+        resetSent(accept);
         accept.disabled = true;
         status.textContent = t().sfAcceptingCampaigns;
         void sendToBackground<HudCommandResult>({
@@ -146,6 +148,7 @@ export function initCampaignMatcher(source: MatchSource): void {
         }).then((result) => {
           accept.disabled = false;
           status.textContent = result.message ?? (result.ok ? t().sentToApp : t().couldNotReachApp);
+          if (result.ok) flashSent(accept);
         });
       });
       actions.append(accept, status);

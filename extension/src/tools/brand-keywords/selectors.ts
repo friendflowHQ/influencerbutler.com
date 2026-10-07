@@ -10,8 +10,18 @@
 // Relative/absolute timestamps Amazon renders on the right of each list row
 // ("1 hour ago", "12:41 AM", "Yesterday", "2 days ago"). Used to strip the
 // timestamp when isolating the brand name from a row's text.
+// Older conversations switch from relative to absolute dates: the drawer shows
+// "09/29/2026" for anything past a few days (seen live 2026-10-07). A row whose
+// date this misses is invisible to every Messages tool, so keep the absolute
+// shapes here too: M/D/YYYY, D-M-YYYY, YYYY-MM-DD, "Sep 29", "Sep 29, 2026",
+// and weekday names.
 const TIMESTAMP_RE =
-  /^(?:\d{1,2}:\d{2}\s*(?:am|pm)?|(?:a|\d+)\s+(?:second|minute|hour|day|week|month|year)s?\s+ago|yesterday|today|just now)$/i;
+  /^(?:\d{1,2}:\d{2}\s*(?:am|pm)?|(?:a|\d+)\s+(?:second|minute|hour|day|week|month|year)s?\s+ago|yesterday|today|just now|\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4}|\d{4}-\d{2}-\d{2}|(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{4})?|monday|tuesday|wednesday|thursday|friday|saturday|sunday)$/i;
+
+// Whether a leaf's text is a list-row timestamp. Exported for tests.
+export function isTimestampText(text: string): boolean {
+  return TIMESTAMP_RE.test(text.trim());
+}
 
 // The floating panel. Anchor on its "Messages" title, then climb to the panel
 // container that holds both the conversation list and the open thread.
@@ -55,11 +65,21 @@ export function findConversationRows(widget: HTMLElement): HTMLElement[] {
 // The brand name shown on one list row: the row's text minus its timestamp and
 // any preview snippet. Reads the most prominent (first) non-timestamp text leaf.
 export function readListRowBrand(row: HTMLElement): string | null {
+  const leaf = findListRowBrandEl(row);
+  return leaf ? (leaf.textContent ?? "").trim() : null;
+}
+
+// The element that holds the brand name on one list row (the same leaf
+// readListRowBrand reads), so a caller can place something relative to the name
+// rather than at the end of the whole row.
+export function findListRowBrandEl(row: HTMLElement): HTMLElement | null {
   for (const leaf of Array.from(row.querySelectorAll<HTMLElement>("*"))) {
     if (leaf.children.length > 0) continue;
     const text = (leaf.textContent ?? "").trim();
     if (!text || TIMESTAMP_RE.test(text)) continue;
-    return text;
+    // Skip the host elements of our own injected UI.
+    if (leaf.closest(".bkw-chip-host, .ccm-strip-host")) continue;
+    return leaf;
   }
   return null;
 }

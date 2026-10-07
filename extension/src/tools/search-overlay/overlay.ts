@@ -33,7 +33,8 @@ import {
 } from "../../shared/messages";
 import { resolveOwnership } from "../ownership/resolve";
 import { enrichSearchTiles } from "./enrich";
-import { renderToolbar, type FilterState, type SortKey } from "./toolbar";
+import { renderToolbar, type FilterState, type SearchToolbar, type SortKey } from "./toolbar";
+import { describeAcceptResult, requestAccept } from "../campaigns/accept";
 import { mountTileMenuButton, type HudRef } from "./tile-menu";
 import type { AuthStatus } from "../../shared/messages";
 import type { HudStatus } from "../../transport/hud-commands";
@@ -79,6 +80,10 @@ type Row = {
   // so repeated Scan clicks advance to the next unscanned batch instead of
   // re-scanning the same top rows and silently ignoring the rest of the page.
   scanned: boolean;
+  // One-off "Accept campaign" state for a tile with a known CC campaign (see
+  // acceptRow): idle, in flight, accepted, or failed (the chip then retries).
+  accept: "idle" | "working" | "done" | "failed";
+  acceptNote: string | null;
   score: ButlerScore;
   verdict: TileVerdict;
   badgeBody: HTMLElement;
@@ -209,7 +214,7 @@ export async function initSearchOverlay(
       tile,
       order: i,
       marketplace,
-      retailer: module.retailer,
+      retailer: module.retailer === "walmart" ? "walmart" : "amazon",
       ratePct: defaultRate,
       ccRate: null,
       spccRate: null,
@@ -221,6 +226,8 @@ export async function initSearchOverlay(
       dp: null,
       cachedInStock: null,
       scanned: false,
+      accept: "idle",
+      acceptNote: null,
       score: neutralScore(settings),
       verdict: neutralVerdict(settings),
       badgeBody,
@@ -344,7 +351,7 @@ export async function initSearchOverlay(
     kind: "GET_MARKET_BATCH",
     asins: rows.map((r) => r.tile.asin),
     marketplace,
-    retailer: module.retailer,
+    retailer: module.retailer === "walmart" ? "walmart" : "amazon",
   }).then((res) => {
     if (epoch !== initEpoch || !res.ok) return;
     const byAsin = new Map(res.products.map((p) => [p.asin.toUpperCase(), p]));
@@ -358,12 +365,27 @@ export async function initSearchOverlay(
     }
   });
 
+  // The accept-all button's count follows the rows: recomputed whenever a rate
+  // lands or an accept finishes. `toolbarApi` is set once the toolbar exists
+  // (the rate lookups can resolve before or after that).
+  let toolbarApi: SearchToolbar | null = null;
+  const refreshAcceptAll = (): void => {
+    toolbarApi?.setAcceptCount(acceptableRows(rows, settings).length);
+  };
+  onAcceptChange = refreshAcceptAll;
+
   // Real Creator Connections rates for the campaign-flagged tiles, so the
   // campaign chip shows the actual percent and the commission estimate uses
   // it. Bloom membership keeps the batch tiny.
-  const campaignAsins = caps.ccRates
-    ? rows.filter((r) => r.flags.cc || r.flags.spcc).map((r) => r.tile.asin)
-    : [];
+  // With no usable CC membership filter (it was saturated and is skipped by
+  // loadFilters), ask the rate table about every tile: a row there IS the
+  // campaign, so the flag is set from the answer instead of from the filter.
+  const ccFromRates = caps.ccRates && !loaded?.cc;
+  const campaignAsins = !caps.ccRates
+    ? []
+    : ccFromRates
+      ? rows.map((r) => r.tile.asin)
+      : rows.filter((r) => r.flags.cc || r.flags.spcc).map((r) => r.tile.asin);
   if (campaignAsins.length > 0) {
     void sendToBackground<CcRatesResult>({ kind: "LOOKUP_CC_RATES", asins: campaignAsins }).then(
       (res) => {
@@ -377,6 +399,7 @@ export async function initSearchOverlay(
           const rate = res.rates[row.tile.asin];
           if (rate) {
             row.ccRate = rate;
+            if (ccFromRates) row.flags.cc = true;
             recompute(row, settings);
             renderBadge(row, settings);
           } else if (tableServing && row.flags.cc && campaignAsins.includes(row.tile.asin)) {
@@ -385,6 +408,7 @@ export async function initSearchOverlay(
             renderBadge(row, settings);
           }
         }
+        refreshAcceptAll();
       },
     );
   }
@@ -546,17 +570,17 @@ export async function initSearchOverlay(
   // clearance / reduced badge, or a strikethrough was-price) into the desktop
   // Deals Butler in one click. On the rollback hub every tile
   // qualifies; on a plain search only the marked-down ones do.
-  async function sendDealsToApp(setStatus: (text: string) => void): Promise<void> {
+  async function sendDealsToApp(setStatus: (text: string) => void): Promise<boolean> {
     const dealRows = rows.filter(
       (r) => r.tile.dealBadge != null || r.tile.wasPriceCents != null,
     );
     if (dealRows.length === 0) {
       setStatus(t().searchNoDeals);
-      return;
+      return false;
     }
     if (!hud.connected) {
       setStatus(t().connectAppToPair);
-      return;
+      return false;
     }
     const products: ProductRef[] = dealRows.map((r) => ({
       asin: r.tile.asin,
@@ -592,8 +616,28 @@ export async function initSearchOverlay(
             ? t().connectAppToPair
             : res.message ?? t().couldNotReachApp,
       );
+      return res.ok === true;
     } catch {
       setStatus(t().couldNotReachApp);
+      return false;
+    }
+  }
+
+  // Accept every visible tile that has a known Creator Connections campaign, one
+  // at a time through the worker's serialized accept queue (one background tab
+  // at a time, robot-check cooldown honored), after a single confirm. Capped so
+  // one click never queues dozens of tabs; click again for the next batch.
+  async function acceptAllOnPage(setStatus: (text: string) => void): Promise<void> {
+    const batch = acceptableRows(rows, settings).slice(0, ACCEPT_ALL_CAP);
+    if (batch.length === 0) return;
+    if (!window.confirm(t().acceptAllConfirm(batch.length))) return;
+    let done = 0;
+    for (const row of batch) {
+      const result = await acceptRow(row, settings);
+      if (result.ok) done += 1;
+      setStatus(t().acceptAllDone(done, batch.length));
+      // A robot check / local gate ends the whole batch; the rest would only fail.
+      if (!result.ok && ["blocked", "cooldown", "disabled"].includes(result.reason ?? "")) break;
     }
   }
 
@@ -611,7 +655,11 @@ export async function initSearchOverlay(
     // desktop; the deal.push.batch receiver is retailer-aware.
     showSendDeals: module.retailer === "walmart",
     onSendDeals: sendDealsToApp,
+    onAcceptAll:
+      module.retailer === "amazon" && settings.tools.standaloneAccept ? acceptAllOnPage : undefined,
   });
+  toolbarApi = toolbar;
+  refreshAcceptAll();
 
   mountToolbar(module.toolbarSlot(first.tile.el), toolbar.host);
   // Lead with the best opportunities. Not on Walmart: reordering a
@@ -842,6 +890,74 @@ function mountBadge(tile: SearchTile, body: HTMLElement, module: RetailerModule)
   module.badgeSlot(tile.el).append(host);
 }
 
+// At most this many tiles per "Accept campaigns on this page" click.
+const ACCEPT_ALL_CAP = 10;
+
+// Set by initSearchOverlay: keeps the toolbar's accept-all count current when a
+// tile's accept state changes.
+let onAcceptChange: () => void = () => undefined;
+
+// Tiles the accept-all button would act on: Amazon tiles that are on screen, not
+// yet accepted, and carry a known Creator Connections campaign id.
+function acceptableRows(rows: Row[], settings: Settings): Row[] {
+  if (!settings.tools.standaloneAccept) return [];
+  return rows.filter(
+    (r) =>
+      r.retailer === "amazon" &&
+      r.accept !== "done" &&
+      r.accept !== "working" &&
+      !!r.ccRate?.campaignId &&
+      r.tile.el.isConnected &&
+      r.tile.el.style.display !== "none",
+  );
+}
+
+// Accept one tile's campaign through the shared requestAccept route (the desktop
+// bridge when paired, else our background-tab driver).
+async function acceptRow(
+  row: Row,
+  settings: Settings,
+): Promise<{ ok: boolean; reason?: string }> {
+  const campaignId = row.ccRate?.campaignId;
+  if (!campaignId) return { ok: false, reason: "needs-id" };
+  row.accept = "working";
+  row.acceptNote = null;
+  renderBadge(row, settings);
+  onAcceptChange();
+  const result = await requestAccept({
+    asin: row.tile.asin,
+    marketplace: row.marketplace,
+    kind: "cc",
+    campaignId,
+    brand: row.ccRate?.brand ?? null,
+  });
+  row.accept = result.ok ? "done" : "failed";
+  row.acceptNote = describeAcceptResult(result);
+  renderBadge(row, settings);
+  onAcceptChange();
+  return result.ok ? { ok: true } : { ok: false, reason: result.reason };
+}
+
+// The per-tile "Accept campaign" chip next to the campaign rate. Only for a tile
+// whose Creator Connections campaign id is known (the rate lookup carries it).
+function acceptChip(row: Row, settings: Settings): HTMLElement | null {
+  if (row.retailer !== "amazon" || !settings.tools.standaloneAccept) return null;
+  if (!row.ccRate?.campaignId) return null;
+  if (row.accept === "done") return el("span", "tile-chip good", t().tileAccepted);
+  const btn = el("button", "tile-chip tile-accept") as HTMLButtonElement;
+  btn.type = "button";
+  btn.textContent = row.accept === "working" ? t().acceptWorking : t().tileAccept;
+  btn.disabled = row.accept === "working";
+  if (row.accept === "failed" && row.acceptNote) btn.title = row.acceptNote;
+  btn.addEventListener("click", (event) => {
+    // The badge sits inside the product tile's link area: do not navigate.
+    event.preventDefault();
+    event.stopPropagation();
+    void acceptRow(row, settings);
+  });
+  return btn;
+}
+
 function renderBadge(row: Row, settings: Settings): void {
   const body = row.badgeBody;
   body.replaceChildren();
@@ -902,6 +1018,8 @@ function renderBadge(row: Row, settings: Settings): void {
     const chip = el("span", "tile-chip good", label);
     if (row.spccRate && !row.ccRate) chip.title = t().tileCampaignEpcTip;
     body.append(chip);
+    const accept = acceptChip(row, settings);
+    if (accept) body.append(accept);
   } else if (row.flags.deals) {
     // Only when no campaign chip is up: two green chips in a row read as noise.
     body.append(el("span", "tile-chip good", t().tileDeal));
@@ -943,6 +1061,7 @@ function renderBadge(row: Row, settings: Settings): void {
       marketplace: row.marketplace,
       title: row.tile.title,
       imageUrl: row.tile.imageUrl,
+      priceCents: row.tile.priceCents ?? row.market?.priceCents ?? null,
       href: row.tile.href,
       retailer: row.retailer,
     },

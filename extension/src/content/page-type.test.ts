@@ -84,8 +84,26 @@ describe("detectRetailerForUrl", () => {
     );
     expect(detectRetailerForUrl("https://www.amazon.co.uk/dp/B01JGG5CH4")).toBe("amazon");
     expect(detectRetailerForUrl("https://www.walmart.com/ip/10450114")).toBe("walmart");
+    expect(detectRetailerForUrl("https://www.target.com/p/x/-/A-79344798")).toBe("target");
     expect(detectRetailerForUrl("https://example.com/x")).toBeNull();
     expect(detectRetailerForUrl("not a url")).toBeNull();
+  });
+});
+
+describe("detectPageType (Target)", () => {
+  it("recognizes a product page with or without a slug", () => {
+    expect(detectPageType("https://www.target.com/p/cheerios-cereal/-/A-79344798")).toBe("product");
+    expect(detectPageType("https://www.target.com/p/-/A-79344798")).toBe("product");
+    expect(detectPageType("https://www.target.com/p/some-slug/-/A-79344798?preselect=1")).toBe(
+      "product",
+    );
+  });
+
+  it("treats every other Target page as other", () => {
+    expect(detectPageType("https://www.target.com/")).toBe("other");
+    expect(detectPageType("https://www.target.com/s?searchTerm=cereal")).toBe("other");
+    expect(detectPageType("https://www.target.com/c/cereal/-/N-5xt1d")).toBe("other");
+    expect(detectPageType("https://www.target.com/p/some-slug/-/A-12")).toBe("other");
   });
 });
 

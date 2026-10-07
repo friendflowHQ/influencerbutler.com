@@ -24,6 +24,22 @@ export function decodeBits(bitsBase64: string): Uint8Array {
   return bytes;
 }
 
+// Share of bits set. A filter sized for its item count sits near 0.5; one that
+// was sized for far fewer items than it holds (the CC filter was built for the
+// campaign count but fed every ASIN in the asin-index) climbs toward 1.0 and
+// answers "yes" for every ASIN.
+export function fillRatio(filter: LoadedFilter): number {
+  let ones = 0;
+  for (let i = 0; i < filter.bits.length; i++) {
+    let v = filter.bits[i] ?? 0;
+    while (v) {
+      ones += v & 1;
+      v >>= 1;
+    }
+  }
+  return ones / filter.m;
+}
+
 export function bloomHas(filter: LoadedFilter, key: string): boolean {
   const [h1, h2] = bloomHashes(key);
   for (let i = 0; i < filter.k; i++) {

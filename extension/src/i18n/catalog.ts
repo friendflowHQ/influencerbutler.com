@@ -417,6 +417,20 @@ export interface Dict {
   // guaranteed CC commission rate is known for the same ASIN.
   tileCampaignEpc: (epc: string) => string;
   tileCampaignEpcTip: string;
+  // Idea List campaign chips + hover card: the CC chip carries the rate and end
+  // date, the SPCC chip the $/click ceiling, and the card spells both out.
+  tileCampaignRateEnds: (pct: number, date: string) => string;
+  tileSpccClicks: (epc: string) => string;
+  campCardCcTitle: string;
+  campCardCcRate: (pct: number, perSale: string) => string;
+  campCardCcRateOnly: (pct: number) => string;
+  campCardEnds: (date: string, daysLeft: number) => string;
+  campCardEndsUnknown: string;
+  campCardSpccTitle: string;
+  campCardSpccEpc: (epc: string) => string;
+  campCardSpccBudget: (level: "high" | "medium" | "low") => string;
+  campCardSpccNoEnd: string;
+  campCardOnlyBest: string;
   tileProvenEarner: string;
   tileEarned: (money: string) => string;
   tileInfluencer: (n: number) => string;
@@ -437,10 +451,31 @@ export interface Dict {
   // reduced deal reuses tileDeal.
   tileDealPrimeDay: string;
   tileDealLightning: string;
+  // Storefront "float to top" bar: toggle for pulling campaign and deal content
+  // ahead of the rest of the grid, with how many cards it moved.
+  sfFloatLabel: string;
+  sfFloatCount: (n: number) => string;
   // Sale / deal signals section on the product panel: the section title and the
   // "List <was>, now <now>" line under it.
   dealSignalsTitle: string;
   dealSignalsWasNow: (was: string, now: string) => string;
+  // Also on Walmart / Also on Target (cross-retailer card) and the Target panel.
+  crossTitle: (store: string) => string;
+  crossChecking: string;
+  crossNotFound: (store: string) => string;
+  crossUnchecked: (store: string) => string;
+  crossOpen: (store: string) => string;
+  crossSearch: (store: string) => string;
+  crossPossible: string;
+  crossInStock: string;
+  crossOutOfStock: string;
+  crossCheaper: (amount: string, store: string) => string;
+  crossPricier: (amount: string, store: string) => string;
+  crossSamePrice: string;
+  toolTarget: string;
+  toolTargetHint: string;
+  toolCrossRetailer: string;
+  toolCrossRetailerHint: string;
   // Estimated monthly revenue (modeled sales x price) and best-seller rank,
   // shown per search tile from the shared catalogue. Revenue tooltip reuses
   // salesEstModeled / salesEstCalibrated.
@@ -493,6 +528,11 @@ export interface Dict {
   groupBenable: string;
   toolBenableBadge: string;
   toolBenableBadgeHint: string;
+  groupCcMessages: string;
+  toolMessageCards: string;
+  toolMessageCardsHint: string;
+  toolBrandKeywords: string;
+  toolMessageTemplates: string;
   sumBenableBadge: string;
   benableChipCc: (pct: number) => string;
   benableChipSpcc: (money: string) => string;
@@ -662,6 +702,47 @@ export interface Dict {
   lastCallNotifTitle: string;
   lastCallNotifNearFull: (name: string, pct: number) => string;
   lastCallNotifFilled: (name: string) => string;
+  // Auto-accept (rule-based accept + content-link submit): notifications, the
+  // options card, and the one-off buttons.
+  autoAcceptNotifTitle: string;
+  autoAcceptNotifBody: (count: number, names: string) => string;
+  autoAcceptNotifPaused: string;
+  linkNotifBody: (count: number) => string;
+  autoCardTitle: string;
+  autoCardIntro: string;
+  autoEnable: string;
+  autoEnableConfirm: string;
+  autoScopeLabel: string;
+  autoScopeMatched: string;
+  autoScopeRules: string;
+  autoMinCommission: string;
+  autoDailyCap: string;
+  autoPerRunCap: string;
+  autoSubmitLinks: string;
+  autoIncludeSpcc: string;
+  autoSpccMinEpc: string;
+  autoSpccMinBudget: string;
+  autoTodayLine: (count: number, cap: number) => string;
+  autoPausedUntil: (when: string) => string;
+  autoMatchedLine: (storefront: number, orders: number) => string;
+  autoMatchedEmpty: string;
+  autoSaved: string;
+  autoPopupLabel: string;
+  autoPopupOn: string;
+  autoPopupOff: string;
+  acceptAllOnPage: (count: number) => string;
+  acceptAllConfirm: (count: number) => string;
+  acceptAllDone: (done: number, total: number) => string;
+  tileAccept: string;
+  tileAccepted: string;
+  submitLinkButton: string;
+  submitLinkWorking: string;
+  submitLinkDone: string;
+  submitLinkFailed: (reason: string) => string;
+  submitLinkNoVideo: string;
+  submitLinkNoCampaign: string;
+  sfSubmitLinks: (count: number) => string;
+  sfSubmitLinksDone: (done: number, total: number) => string;
   // Android (Lemur): the background re-check is desktop-only.
   lastCallMobileNote: string;
 
@@ -904,6 +985,7 @@ export interface Dict {
   checkingCc: string;
   checkingSpcc: string;
   sentToApp: string;
+  sentLabel: string;
   couldNotReachApp: string;
   connectAppToPair: string;
   // Toast title shown when a "send to your butler app" action fails. The status
@@ -1498,6 +1580,25 @@ const en: Dict = {
   tileCampaignEpc: (epc) => `Campaign - up to ${epc}/click`,
   tileCampaignEpcTip:
     "Amazon's own Earn on Clicks forecast for this product, not a guaranteed rate - it depends on the clicks you drive and on Amazon's budget for the campaign.",
+  tileCampaignRateEnds: (pct, date) => `Campaign ${pct}% - ends ${date}`,
+  tileSpccClicks: (epc) => `Clicks: up to ${epc}/click`,
+  campCardCcTitle: "Creator Connections",
+  campCardCcRate: (pct, perSale) => `${pct}% commission, about ${perSale} per sale at this price`,
+  campCardCcRateOnly: (pct) => `${pct}% commission`,
+  campCardEnds: (date, daysLeft) =>
+    daysLeft <= 0
+      ? `Ends today (${date})`
+      : daysLeft === 1
+        ? `Ends ${date} (1 day left)`
+        : `Ends ${date} (${daysLeft} days left)`,
+  campCardEndsUnknown: "End date not listed",
+  campCardSpccTitle: "Earn on Clicks (SPCC)",
+  campCardSpccEpc: (epc) => `Earn up to ${epc} per click`,
+  campCardSpccBudget: (level) =>
+    `Budget availability: ${level === "high" ? "High" : level === "medium" ? "Medium" : "Low"}`,
+  campCardSpccNoEnd:
+    "No end date: Amazon does not publish one. It runs while the brand's budget lasts.",
+  campCardOnlyBest: "Showing the best active campaign for this product.",
   tileProvenEarner: "Proven earner",
   tileEarned: (money) => `Earned ${money}`,
   tileInfluencer: (n) => `${n} infl. videos`,
@@ -1513,8 +1614,27 @@ const en: Dict = {
   tileCoupon: "Coupon",
   tileDealPrimeDay: "Prime Day",
   tileDealLightning: "Lightning",
+  sfFloatLabel: "Campaigns and deals first",
+  sfFloatCount: (n) => `${n} moved to the top`,
   dealSignalsTitle: "On sale",
   dealSignalsWasNow: (was, now) => `List ${was}, now ${now}`,
+  crossTitle: (store) => `Also on ${store}`,
+  crossChecking: "Checking...",
+  crossNotFound: (store) => `Not found on ${store}`,
+  crossUnchecked: (store) => `Could not check ${store} right now.`,
+  crossOpen: (store) => `Open on ${store}`,
+  crossSearch: (store) => `Search ${store}`,
+  crossPossible: "Possible match, check the size and pack count",
+  crossInStock: "In stock",
+  crossOutOfStock: "Out of stock",
+  crossCheaper: (amount, store) => `${amount} cheaper on ${store}`,
+  crossPricier: (amount, store) => `${amount} more on ${store}`,
+  crossSamePrice: "Same price",
+  toolTarget: "Target support",
+  toolTargetHint: "Show a panel on Target product pages (price, rating, and whether it is also on Walmart).",
+  toolCrossRetailer: "Also on Walmart / Target",
+  toolCrossRetailerHint:
+    "On a Target or Walmart product page, show whether the same product (matched by UPC) is sold by the other store, with a link.",
   tileRevenue: (money) => `~${money}/mo`,
   tileBsr: (rank, category) => (category ? `#${rank} ${category}` : `#${rank}`),
   tileEstUnits: (n) => `~${n} units/mo`,
@@ -1560,6 +1680,11 @@ const en: Dict = {
   toolBenableBadge: "Amazon money signals on Benable lists",
   toolBenableBadgeHint:
     "On benable.com, badges each Amazon item with its Creator Connections / SPCC status and commission. Click a badge for enrollment, earnings, and ownership.",
+  groupCcMessages: "Amazon: Creator Connections messages",
+  toolMessageCards: "Message cards (brand summary, links, filters)",
+  toolMessageCardsHint: "In the Creator Connections Messages drawer, shows each brand's rate, days left and open slots, pulls the sample-form and content links out of their message, folds repeated messages, and adds filters. Works without the desktop app.",
+  toolBrandKeywords: "Keyword you pitched each brand under",
+  toolMessageTemplates: "Message templates (save and load)",
   sumBenableBadge: "Benable money signals",
   benableChipCc: (pct) => `${pct}% CC`,
   benableChipSpcc: (money) => `SPCC ${money}/clk`,
@@ -1737,6 +1862,51 @@ const en: Dict = {
   lastCallNotifNearFull: (name, pct) =>
     `Last Call: ${name} is ${pct}% full. Accept before it closes.`,
   lastCallNotifFilled: (name) => `${name} just filled up.`,
+  autoAcceptNotifTitle: "Auto-accept",
+  autoAcceptNotifBody: (count, names) =>
+    `Accepted ${count} campaign${count === 1 ? "" : "s"}: ${names}`,
+  autoAcceptNotifPaused: "Auto-accept paused: Amazon showed a robot check. It will retry in 12 hours.",
+  linkNotifBody: (count) => `Submitted your storefront link to ${count} campaign${count === 1 ? "" : "s"}.`,
+  autoCardTitle: "Auto-accept and content links",
+  autoCardIntro:
+    "While Chrome is open and you are signed in to Amazon Associates, the Butler checks Creator Connections every 30 minutes, accepts campaigns that match your rules, and submits your storefront link for them. It clicks Amazon's own buttons, never more than your daily cap.",
+  autoEnable: "Turn on Auto-accept",
+  autoEnableConfirm:
+    "Auto-accept will accept campaigns on your Amazon Associates account in a background tab while Chrome is open. You can turn it off any time. Turn it on?",
+  autoScopeLabel: "What to accept",
+  autoScopeMatched: "Only products already in my storefront or orders (recommended)",
+  autoScopeRules: "Any campaign that passes my rules below",
+  autoMinCommission: "Minimum commission rate (%)",
+  autoDailyCap: "Most accepts per day",
+  autoPerRunCap: "Most accepts per check",
+  autoSubmitLinks: "Also submit my storefront link for accepted campaigns",
+  autoIncludeSpcc: "Also accept Sponsored Products for Creators (SPCC) campaigns",
+  autoSpccMinEpc: "SPCC: minimum estimated EPC (cents)",
+  autoSpccMinBudget: "SPCC: minimum budget availability",
+  autoTodayLine: (count, cap) => `Today: ${count} of ${cap} accepted`,
+  autoPausedUntil: (when) => `Paused until ${when} (robot check)`,
+  autoMatchedLine: (storefront, orders) =>
+    `Matched products: ${storefront} from your storefront, ${orders} from your orders`,
+  autoMatchedEmpty:
+    "No matched products yet. Open your storefront and run Storefront Check so Auto-accept knows which products you feature.",
+  autoSaved: "Saved",
+  autoPopupLabel: "Auto-accept campaigns",
+  autoPopupOn: "On",
+  autoPopupOff: "Off",
+  acceptAllOnPage: (count) => `Accept campaigns on this page (${count})`,
+  acceptAllConfirm: (count) =>
+    `Accept ${count} campaign${count === 1 ? "" : "s"} on your Amazon Associates account?`,
+  acceptAllDone: (done, total) => `Accepted ${done} of ${total}`,
+  tileAccept: "Accept campaign",
+  tileAccepted: "Accepted",
+  submitLinkButton: "Submit my storefront link",
+  submitLinkWorking: "Submitting...",
+  submitLinkDone: "Link submitted",
+  submitLinkFailed: (reason) => `Could not submit (${reason})`,
+  submitLinkNoVideo: "No video of yours tags this product yet. Run Storefront Check first.",
+  submitLinkNoCampaign: "No active campaign for this product yet. Accept one first.",
+  sfSubmitLinks: (count) => `Submit content links for accepted campaigns (${count})`,
+  sfSubmitLinksDone: (done, total) => `Submitted ${done} of ${total} links`,
   lastCallMobileNote:
     "On Android, Last Call alerts fire when you open Creator Connections. Automatic background checks run on a Windows or Mac computer.",
 
@@ -1993,6 +2163,7 @@ const en: Dict = {
   checkingCc: "Checking Creator Connections...",
   checkingSpcc: "Checking Sponsored Products...",
   sentToApp: "Sent to your app.",
+  sentLabel: "Sent",
   couldNotReachApp: "Could not reach the app. Is it still running?",
   connectAppToPair:
     "Connect the app first: open the extension popup and pair with the 6-digit code.",
@@ -2597,6 +2768,25 @@ const es: Dict = {
   tileCampaignEpc: (epc) => `Campaña - hasta ${epc}/clic`,
   tileCampaignEpcTip:
     "Previsión de Amazon de Earn on Clicks para este producto, no es una tasa garantizada: depende de los clics que generes y del presupuesto de Amazon para la campaña.",
+  tileCampaignRateEnds: (pct, date) => `Campaña ${pct}% - termina ${date}`,
+  tileSpccClicks: (epc) => `Clics: hasta ${epc}/clic`,
+  campCardCcTitle: "Creator Connections",
+  campCardCcRate: (pct, perSale) => `${pct}% de comisión, unos ${perSale} por venta a este precio`,
+  campCardCcRateOnly: (pct) => `${pct}% de comisión`,
+  campCardEnds: (date, daysLeft) =>
+    daysLeft <= 0
+      ? `Termina hoy (${date})`
+      : daysLeft === 1
+        ? `Termina el ${date} (queda 1 día)`
+        : `Termina el ${date} (quedan ${daysLeft} días)`,
+  campCardEndsUnknown: "Fecha de fin no indicada",
+  campCardSpccTitle: "Earn on Clicks (SPCC)",
+  campCardSpccEpc: (epc) => `Gana hasta ${epc} por clic`,
+  campCardSpccBudget: (level) =>
+    `Disponibilidad de presupuesto: ${level === "high" ? "Alta" : level === "medium" ? "Media" : "Baja"}`,
+  campCardSpccNoEnd:
+    "Sin fecha de fin: Amazon no publica ninguna. Dura mientras haya presupuesto de la marca.",
+  campCardOnlyBest: "Se muestra la mejor campaña activa para este producto.",
   tileProvenEarner: "Ya te ha pagado",
   tileEarned: (money) => `Ganaste ${money}`,
   tileInfluencer: (n) => `${n} videos de infl.`,
@@ -2612,8 +2802,28 @@ const es: Dict = {
   tileCoupon: "Cupón",
   tileDealPrimeDay: "Prime Day",
   tileDealLightning: "Oferta flash",
+  sfFloatLabel: "Campañas y ofertas primero",
+  sfFloatCount: (n) => `${n} al principio`,
   dealSignalsTitle: "En oferta",
   dealSignalsWasNow: (was, now) => `Precio de lista ${was}, ahora ${now}`,
+  crossTitle: (store) => `También en ${store}`,
+  crossChecking: "Comprobando...",
+  crossNotFound: (store) => `No se encontró en ${store}`,
+  crossUnchecked: (store) => `No se pudo comprobar ${store} ahora.`,
+  crossOpen: (store) => `Abrir en ${store}`,
+  crossSearch: (store) => `Buscar en ${store}`,
+  crossPossible: "Posible coincidencia, revisa el tamaño y la cantidad",
+  crossInStock: "Disponible",
+  crossOutOfStock: "Agotado",
+  crossCheaper: (amount, store) => `${amount} más barato en ${store}`,
+  crossPricier: (amount, store) => `${amount} más caro en ${store}`,
+  crossSamePrice: "Mismo precio",
+  toolTarget: "Soporte de Target",
+  toolTargetHint:
+    "Muestra un panel en las páginas de producto de Target (precio, valoración y si también está en Walmart).",
+  toolCrossRetailer: "También en Walmart / Target",
+  toolCrossRetailerHint:
+    "En una página de producto de Target o Walmart, muestra si la otra tienda vende el mismo producto (por UPC), con un enlace.",
   tileRevenue: (money) => `~${money}/mes`,
   tileBsr: (rank, category) => (category ? `#${rank} ${category}` : `#${rank}`),
   tileEstUnits: (n) => `~${n} uds./mes`,
@@ -2659,6 +2869,11 @@ const es: Dict = {
   toolBenableBadge: "Señales de dinero de Amazon en listas de Benable",
   toolBenableBadgeHint:
     "En benable.com, marca cada producto de Amazon con su estado de Creator Connections / SPCC y su comisión. Haz clic en una insignia para ver inscripción, ganancias y propiedad.",
+  groupCcMessages: "Amazon: mensajes de Creator Connections",
+  toolMessageCards: "Tarjetas de mensajes (resumen de la marca, enlaces, filtros)",
+  toolMessageCardsHint: "En el panel de Mensajes de Creator Connections, muestra la tasa, los días restantes y los cupos de cada marca, saca los enlaces del formulario de muestra y del contenido, pliega los mensajes repetidos y añade filtros. Funciona sin la app de escritorio.",
+  toolBrandKeywords: "Palabra clave con la que contactaste a cada marca",
+  toolMessageTemplates: "Plantillas de mensajes (guardar y cargar)",
   sumBenableBadge: "Señales de dinero en Benable",
   benableChipCc: (pct) => `${pct}% CC`,
   benableChipSpcc: (money) => `SPCC ${money}/clic`,
@@ -2837,6 +3052,53 @@ const es: Dict = {
   lastCallNotifNearFull: (name, pct) =>
     `Última Llamada: ${name} está ${pct}% ocupada. Acepta antes de que se cierre.`,
   lastCallNotifFilled: (name) => `${name} acaba de completarse.`,
+  autoAcceptNotifTitle: "Aceptación automática",
+  autoAcceptNotifBody: (count, names) =>
+    `${count === 1 ? "Se aceptó 1 campaña" : `Se aceptaron ${count} campañas`}: ${names}`,
+  autoAcceptNotifPaused:
+    "Aceptación automática en pausa: Amazon mostró una verificación de robot. Reintentará en 12 horas.",
+  linkNotifBody: (count) =>
+    `Se envió el enlace de tu tienda a ${count} campaña${count === 1 ? "" : "s"}.`,
+  autoCardTitle: "Aceptación automática y enlaces de contenido",
+  autoCardIntro:
+    "Mientras Chrome esté abierto y hayas iniciado sesión en Amazon Associates, el Butler revisa Creator Connections cada 30 minutos, acepta las campañas que cumplen tus reglas y envía el enlace de tu tienda. Hace clic en los botones propios de Amazon y nunca supera tu límite diario.",
+  autoEnable: "Activar la aceptación automática",
+  autoEnableConfirm:
+    "La aceptación automática aceptará campañas en tu cuenta de Amazon Associates en una pestaña en segundo plano mientras Chrome esté abierto. Puedes desactivarla cuando quieras. ¿Activarla?",
+  autoScopeLabel: "Qué aceptar",
+  autoScopeMatched: "Solo productos que ya están en mi tienda o mis pedidos (recomendado)",
+  autoScopeRules: "Cualquier campaña que cumpla mis reglas",
+  autoMinCommission: "Comisión mínima (%)",
+  autoDailyCap: "Máximo de aceptaciones por día",
+  autoPerRunCap: "Máximo de aceptaciones por revisión",
+  autoSubmitLinks: "Enviar también el enlace de mi tienda en las campañas aceptadas",
+  autoIncludeSpcc: "Aceptar también campañas de Sponsored Products for Creators (SPCC)",
+  autoSpccMinEpc: "SPCC: EPC estimado mínimo (centavos)",
+  autoSpccMinBudget: "SPCC: disponibilidad de presupuesto mínima",
+  autoTodayLine: (count, cap) => `Hoy: ${count} de ${cap} aceptadas`,
+  autoPausedUntil: (when) => `En pausa hasta ${when} (verificación de robot)`,
+  autoMatchedLine: (storefront, orders) =>
+    `Productos coincidentes: ${storefront} de tu tienda, ${orders} de tus pedidos`,
+  autoMatchedEmpty:
+    "Aún no hay productos coincidentes. Abre tu tienda y ejecuta la revisión de tienda para que la aceptación automática sepa qué productos destacas.",
+  autoSaved: "Guardado",
+  autoPopupLabel: "Aceptar campañas automáticamente",
+  autoPopupOn: "Activado",
+  autoPopupOff: "Desactivado",
+  acceptAllOnPage: (count) => `Aceptar las campañas de esta página (${count})`,
+  acceptAllConfirm: (count) =>
+    `¿Aceptar ${count} campaña${count === 1 ? "" : "s"} en tu cuenta de Amazon Associates?`,
+  acceptAllDone: (done, total) => `Aceptadas ${done} de ${total}`,
+  tileAccept: "Aceptar campaña",
+  tileAccepted: "Aceptada",
+  submitLinkButton: "Enviar el enlace de mi tienda",
+  submitLinkWorking: "Enviando...",
+  submitLinkDone: "Enlace enviado",
+  submitLinkFailed: (reason) => `No se pudo enviar (${reason})`,
+  submitLinkNoVideo: "Ningún video tuyo etiqueta este producto todavía. Ejecuta primero la revisión de tienda.",
+  submitLinkNoCampaign: "Aún no hay una campaña activa para este producto. Acepta una primero.",
+  sfSubmitLinks: (count) => `Enviar enlaces de contenido de las campañas aceptadas (${count})`,
+  sfSubmitLinksDone: (done, total) => `Enviados ${done} de ${total} enlaces`,
   lastCallMobileNote:
     "En Android, las alertas de Última Llamada saltan cuando abres Creator Connections. Las comprobaciones automáticas en segundo plano se ejecutan en un ordenador con Windows o Mac.",
 
@@ -3093,6 +3355,7 @@ const es: Dict = {
   checkingCc: "Comprobando Creator Connections...",
   checkingSpcc: "Comprobando Sponsored Products...",
   sentToApp: "Enviado a tu app.",
+  sentLabel: "Enviado",
   couldNotReachApp: "No se pudo contactar la app. ¿Sigue abierta?",
   connectAppToPair:
     "Conecta la app primero: abre la ventana de la extensión y vincula con el código de 6 dígitos.",
@@ -3697,6 +3960,25 @@ const fr: Dict = {
   tileCampaignEpc: (epc) => `Campagne - jusqu'à ${epc}/clic`,
   tileCampaignEpcTip:
     "Prévision Earn on Clicks d'Amazon pour ce produit, pas un taux garanti : cela dépend des clics que vous générez et du budget d'Amazon pour la campagne.",
+  tileCampaignRateEnds: (pct, date) => `Campagne ${pct}% - se termine le ${date}`,
+  tileSpccClicks: (epc) => `Clics : jusqu'à ${epc}/clic`,
+  campCardCcTitle: "Creator Connections",
+  campCardCcRate: (pct, perSale) => `${pct}% de commission, environ ${perSale} par vente à ce prix`,
+  campCardCcRateOnly: (pct) => `${pct}% de commission`,
+  campCardEnds: (date, daysLeft) =>
+    daysLeft <= 0
+      ? `Se termine aujourd'hui (${date})`
+      : daysLeft === 1
+        ? `Se termine le ${date} (1 jour restant)`
+        : `Se termine le ${date} (${daysLeft} jours restants)`,
+  campCardEndsUnknown: "Date de fin non indiquée",
+  campCardSpccTitle: "Earn on Clicks (SPCC)",
+  campCardSpccEpc: (epc) => `Gagnez jusqu'à ${epc} par clic`,
+  campCardSpccBudget: (level) =>
+    `Disponibilité du budget : ${level === "high" ? "Élevée" : level === "medium" ? "Moyenne" : "Faible"}`,
+  campCardSpccNoEnd:
+    "Pas de date de fin : Amazon n'en publie pas. Elle dure tant que le budget de la marque le permet.",
+  campCardOnlyBest: "La meilleure campagne active pour ce produit est affichée.",
   tileProvenEarner: "Déjà rentable",
   tileEarned: (money) => `${money} gagnés`,
   tileInfluencer: (n) => `${n} vidéos d'infl.`,
@@ -3712,8 +3994,28 @@ const fr: Dict = {
   tileCoupon: "Coupon",
   tileDealPrimeDay: "Prime Day",
   tileDealLightning: "Vente flash",
+  sfFloatLabel: "Campagnes et offres en premier",
+  sfFloatCount: (n) => `${n} en haut`,
   dealSignalsTitle: "En promo",
   dealSignalsWasNow: (was, now) => `Prix de liste ${was}, maintenant ${now}`,
+  crossTitle: (store) => `Aussi chez ${store}`,
+  crossChecking: "Vérification...",
+  crossNotFound: (store) => `Introuvable chez ${store}`,
+  crossUnchecked: (store) => `Impossible de vérifier ${store} pour le moment.`,
+  crossOpen: (store) => `Ouvrir chez ${store}`,
+  crossSearch: (store) => `Rechercher chez ${store}`,
+  crossPossible: "Correspondance possible, vérifiez la taille et la quantité",
+  crossInStock: "En stock",
+  crossOutOfStock: "Rupture de stock",
+  crossCheaper: (amount, store) => `${amount} moins cher chez ${store}`,
+  crossPricier: (amount, store) => `${amount} plus cher chez ${store}`,
+  crossSamePrice: "Même prix",
+  toolTarget: "Prise en charge de Target",
+  toolTargetHint:
+    "Affiche un panneau sur les pages produit Target (prix, note et présence éventuelle chez Walmart).",
+  toolCrossRetailer: "Aussi chez Walmart / Target",
+  toolCrossRetailerHint:
+    "Sur une page produit Target ou Walmart, indique si l'autre enseigne vend le même produit (par UPC), avec un lien.",
   tileRevenue: (money) => `~${money}/mois`,
   tileBsr: (rank, category) => (category ? `#${rank} ${category}` : `#${rank}`),
   tileEstUnits: (n) => `~${n} unités/mois`,
@@ -3759,6 +4061,11 @@ const fr: Dict = {
   toolBenableBadge: "Signaux d'argent Amazon sur les listes Benable",
   toolBenableBadgeHint:
     "Sur benable.com, marque chaque produit Amazon avec son statut Creator Connections / SPCC et sa commission. Cliquez sur un badge pour l'inscription, les gains et la possession.",
+  groupCcMessages: "Amazon : messages Creator Connections",
+  toolMessageCards: "Cartes de messages (résumé de la marque, liens, filtres)",
+  toolMessageCardsHint: "Dans le panneau Messages de Creator Connections, affiche le taux, les jours restants et les places de chaque marque, extrait les liens du formulaire d'échantillon et du contenu, replie les messages répétés et ajoute des filtres. Fonctionne sans l'application de bureau.",
+  toolBrandKeywords: "Mot-clé sous lequel vous avez contacté chaque marque",
+  toolMessageTemplates: "Modèles de messages (enregistrer et charger)",
   sumBenableBadge: "Signaux d'argent Benable",
   benableChipCc: (pct) => `${pct}% CC`,
   benableChipSpcc: (money) => `SPCC ${money}/clic`,
@@ -3937,6 +4244,53 @@ const fr: Dict = {
   lastCallNotifNearFull: (name, pct) =>
     `Dernier Appel : ${name} est remplie à ${pct}%. Acceptez avant la fermeture.`,
   lastCallNotifFilled: (name) => `${name} vient de se remplir.`,
+  autoAcceptNotifTitle: "Acceptation automatique",
+  autoAcceptNotifBody: (count, names) =>
+    `${count} campagne${count === 1 ? " acceptée" : "s acceptées"} : ${names}`,
+  autoAcceptNotifPaused:
+    "Acceptation automatique en pause : Amazon a affiché une vérification anti-robot. Nouvel essai dans 12 heures.",
+  linkNotifBody: (count) =>
+    `Lien de votre boutique envoyé à ${count} campagne${count === 1 ? "" : "s"}.`,
+  autoCardTitle: "Acceptation automatique et liens de contenu",
+  autoCardIntro:
+    "Tant que Chrome est ouvert et que vous êtes connecté à Amazon Associates, le Butler vérifie Creator Connections toutes les 30 minutes, accepte les campagnes qui respectent vos règles et envoie le lien de votre boutique. Il clique sur les boutons d'Amazon et ne dépasse jamais votre limite quotidienne.",
+  autoEnable: "Activer l'acceptation automatique",
+  autoEnableConfirm:
+    "L'acceptation automatique acceptera des campagnes sur votre compte Amazon Associates dans un onglet en arrière-plan tant que Chrome est ouvert. Vous pouvez la désactiver à tout moment. L'activer ?",
+  autoScopeLabel: "Quoi accepter",
+  autoScopeMatched: "Seulement les produits déjà dans ma boutique ou mes commandes (recommandé)",
+  autoScopeRules: "Toute campagne qui respecte mes règles",
+  autoMinCommission: "Commission minimale (%)",
+  autoDailyCap: "Maximum d'acceptations par jour",
+  autoPerRunCap: "Maximum d'acceptations par vérification",
+  autoSubmitLinks: "Envoyer aussi le lien de ma boutique pour les campagnes acceptées",
+  autoIncludeSpcc: "Accepter aussi les campagnes Sponsored Products for Creators (SPCC)",
+  autoSpccMinEpc: "SPCC : EPC estimé minimum (centimes)",
+  autoSpccMinBudget: "SPCC : disponibilité budgétaire minimale",
+  autoTodayLine: (count, cap) => `Aujourd'hui : ${count} sur ${cap} acceptées`,
+  autoPausedUntil: (when) => `En pause jusqu'à ${when} (vérification anti-robot)`,
+  autoMatchedLine: (storefront, orders) =>
+    `Produits correspondants : ${storefront} de votre boutique, ${orders} de vos commandes`,
+  autoMatchedEmpty:
+    "Aucun produit correspondant pour l'instant. Ouvrez votre boutique et lancez le contrôle de boutique pour que l'acceptation automatique connaisse vos produits.",
+  autoSaved: "Enregistré",
+  autoPopupLabel: "Accepter les campagnes automatiquement",
+  autoPopupOn: "Activé",
+  autoPopupOff: "Désactivé",
+  acceptAllOnPage: (count) => `Accepter les campagnes de cette page (${count})`,
+  acceptAllConfirm: (count) =>
+    `Accepter ${count} campagne${count === 1 ? "" : "s"} sur votre compte Amazon Associates ?`,
+  acceptAllDone: (done, total) => `${done} acceptées sur ${total}`,
+  tileAccept: "Accepter la campagne",
+  tileAccepted: "Acceptée",
+  submitLinkButton: "Envoyer le lien de ma boutique",
+  submitLinkWorking: "Envoi...",
+  submitLinkDone: "Lien envoyé",
+  submitLinkFailed: (reason) => `Envoi impossible (${reason})`,
+  submitLinkNoVideo: "Aucune de vos vidéos ne tague encore ce produit. Lancez d'abord le contrôle de boutique.",
+  submitLinkNoCampaign: "Aucune campagne active pour ce produit pour l'instant. Acceptez-en une d'abord.",
+  sfSubmitLinks: (count) => `Envoyer les liens de contenu des campagnes acceptées (${count})`,
+  sfSubmitLinksDone: (done, total) => `${done} liens envoyés sur ${total}`,
   lastCallMobileNote:
     "Sur Android, les alertes Dernier Appel se déclenchent quand vous ouvrez Creator Connections. Les vérifications automatiques en arrière-plan fonctionnent sur un ordinateur Windows ou Mac.",
 
@@ -4193,6 +4547,7 @@ const fr: Dict = {
   checkingCc: "Vérification de Creator Connections...",
   checkingSpcc: "Vérification de Sponsored Products...",
   sentToApp: "Envoyé à votre app.",
+  sentLabel: "Envoyé",
   couldNotReachApp: "Impossible de joindre l'app. Est-elle toujours ouverte?",
   connectAppToPair:
     "Connectez l'app d'abord : ouvrez la fenetre de l'extension et associez avec le code a 6 chiffres.",

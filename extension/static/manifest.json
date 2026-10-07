@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Influencer Butler",
-  "version": "0.1.29",
+  "version": "0.1.30",
   "description": "Free tools for Amazon and Walmart Influencers: money signals, video counts, content gaps, Butler Approved seals, storefront checks.",
   "permissions": [
     "storage",
@@ -29,6 +29,8 @@
     "https://affiliate-program.amazon.ca/*",
     "https://affiliate-program.amazon.co.uk/*",
     "https://www.walmart.com/*",
+    "https://www.target.com/*",
+    "https://redsky.target.com/*",
     "https://benable.com/*",
     "https://www.benable.com/*",
     "https://www.savewithcindy.shop/*",
@@ -348,6 +350,11 @@
         "https://www.walmart.com/seller/*",
         "https://www.walmart.com/brand/*",
         "https://www.walmart.com/orders*",
+        "https://www.target.com/",
+        "https://www.target.com/?*",
+        "https://www.target.com/p/*",
+        "https://www.target.com/s*",
+        "https://www.target.com/c/*",
         "https://benable.com/*",
         "https://www.benable.com/*"
       ],

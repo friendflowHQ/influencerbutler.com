@@ -37,6 +37,8 @@ const productFixture = {
             averageRating: 4.6,
             numberOfReviews: 365792,
             sellerName: "Walmart.com",
+            upc: "078742013011",
+            model: "  ",
             priceInfo: { currentPrice: { price: 3.13, currencyUnit: "USD" } },
             category: {
               path: [
@@ -66,6 +68,12 @@ describe("parseWalmartProduct", () => {
     expect(p?.category).toBe("Whole Milk");
     expect(p?.averageRating).toBe(4.6);
     expect(p?.numReviews).toBe(365792);
+  });
+
+  it("reads the UPC and drops a blank model", () => {
+    const p = parseWalmartProduct(productFixture);
+    expect(p?.upc).toBe("078742013011");
+    expect(p?.model).toBeNull();
   });
 
   it("returns null when the product blob is absent", () => {

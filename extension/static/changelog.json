@@ -2,6 +2,29 @@
   "lastUpdated": "2026-10-07",
   "releases": [
     {
+      "version": "0.1.30",
+      "date": "October 7, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "Accept campaigns without the desktop app: Accept buttons on product pages and Amazon search tiles, plus an optional Auto mode that checks Creator Connections every 30 minutes and accepts campaigns that match your rules, within your daily caps. Auto mode is off until you turn it on",
+            "Submit my storefront link: once one of your own storefront videos tags a product you accepted, one click enters it as the content link on the product's best active campaign",
+            "Creator Connections Messages drawer cards: best commission rate, days left and open slots under each brand, filters for Unread, Live campaign, Pitched by me and 10%+ rate, a brand card in each conversation with Accept best campaign, and a Templates picker that highlights the best-fitting saved reply",
+            "Also on Walmart and Also on Target: product pages now show whether the same product (matched by UPC) is sold by the other retailer, with the price difference and a link",
+            "Target product pages now show price and social proof, and your storefront shows money signals on each product tile"
+          ]
+        },
+        {
+          "heading": "Other notable changes",
+          "items": [
+            "The extension now asks for access to target.com for the Target product panel and the Also on Target card",
+            "Creator Connections matching is more reliable when the campaign list is full, and the Brand Keywords hint on the Messages page is more resilient to Amazon layout changes"
+          ]
+        }
+      ]
+    },
+    {
       "version": "0.1.29",
       "date": "October 7, 2026",
       "sections": [

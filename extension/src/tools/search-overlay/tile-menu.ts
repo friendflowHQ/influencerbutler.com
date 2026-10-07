@@ -1,5 +1,6 @@
 import { createInlineShadow } from "../../ui/host";
 import { el } from "../../ui/components";
+import { noteSent, showSentBadge, wasSent } from "../../ui/sent-state";
 import { t } from "../../i18n";
 import { APP_TRIAL_URL } from "../../shared/constants";
 import {
@@ -24,6 +25,9 @@ export type TileMenuTarget = {
   marketplace: string;
   title: string | null;
   imageUrl: string | null;
+  // Price read off the tile, sent so a pushed card lands with it. Optional: a
+  // tile that printed none leaves it unset and the desktop backfills it.
+  priceCents?: number | null;
   href: string | null;
   retailer?: "amazon" | "walmart";
 };
@@ -66,6 +70,7 @@ function productRefOf(target: TileMenuTarget): ProductRef {
     marketplace: target.marketplace,
     title: target.title?.slice(0, 200),
     imageUrl: target.imageUrl ?? undefined,
+    ...(target.priceCents != null ? { priceCents: target.priceCents } : {}),
   };
 }
 
@@ -332,17 +337,24 @@ function buildAppSection(
 
   const product = productRefOf(target);
   for (const action of APP_ACTIONS) {
-    section.append(
-      menuItem(t()[action.labelKey] as string, () => {
-        setStatus(t().tileMenuWorking);
-        void sendToBackground<HudCommandResult>({
-          kind: "SEND_HUD_COMMAND",
-          command: action.command(product),
-        }).then((res) => {
+    const command = action.command(product);
+    // Remembered for the life of the page, so reopening this tile's menu still
+    // shows what was already sent. The row stays clickable: send again any time.
+    const sentKey = `${product.marketplace}:${product.asin}:${command.type}`;
+    const item = menuItem(t()[action.labelKey] as string, () => {
+      setStatus(t().tileMenuWorking);
+      void sendToBackground<HudCommandResult>({ kind: "SEND_HUD_COMMAND", command })
+        .then((res) => {
           setStatus(res.ok ? (res.message ?? t().sentToApp) : (res.message ?? t().couldNotReachApp));
-        });
-      }),
-    );
+          if (res.ok) {
+            noteSent(sentKey);
+            showSentBadge(item);
+          }
+        })
+        .catch(() => setStatus(t().couldNotReachApp));
+    });
+    if (wasSent(sentKey)) showSentBadge(item);
+    section.append(item);
   }
 
   // Add to Amazon Idea List: expands inline into the app's known lists plus a
@@ -372,20 +384,34 @@ function populateIdeaLists(
 ): void {
   sub.replaceChildren();
 
-  const queueFor = (target: { listId?: string; newListTitle?: string }): void => {
+  const queueFor = (
+    target: { listId?: string; newListTitle?: string },
+    row?: { item: HTMLElement; key: string },
+  ): void => {
     setStatus(t().tileMenuWorking);
     void sendToBackground<HudCommandResult>({
       kind: "SEND_HUD_COMMAND",
       command: { type: "idealist.push", product, target },
-    }).then((res) => {
-      setStatus(res.ok ? (res.message ?? t().sentToApp) : (res.message ?? t().couldNotReachApp));
-    });
+    })
+      .then((res) => {
+        setStatus(res.ok ? (res.message ?? t().sentToApp) : (res.message ?? t().couldNotReachApp));
+        if (res.ok && row) {
+          noteSent(row.key);
+          showSentBadge(row.item);
+        }
+      })
+      .catch(() => setStatus(t().couldNotReachApp));
   };
 
   for (const list of hud.ideaLists ?? []) {
-    sub.append(
-      menuItem(list.title, () => queueFor({ listId: list.listId }), "tile-menu-sub-item"),
+    const sentKey = `${product.marketplace}:${product.asin}:idealist.push:${list.listId}`;
+    const item = menuItem(
+      list.title,
+      () => queueFor({ listId: list.listId }, { item, key: sentKey }),
+      "tile-menu-sub-item",
     );
+    if (wasSent(sentKey)) showSentBadge(item);
+    sub.append(item);
   }
 
   // "New list" row: inline name input + Create, same controls as product lists.

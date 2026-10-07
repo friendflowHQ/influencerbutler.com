@@ -1,6 +1,40 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULTS, migrate, type StorageShape } from "./schema";
 
+describe("migrate: v36 -> v37 auto-accept scope", () => {
+  it("backfills scope / link-submit / SPCC fields without enabling Auto mode", () => {
+    const v36 = {
+      schemaVersion: 36,
+      settings: structuredClone(DEFAULTS.settings),
+    } as unknown as Partial<StorageShape>;
+    // A v36 store had the older autoAccept block (no scope etc.) and no
+    // contentLinkSubmit tool flag.
+    const old = v36.settings as unknown as {
+      autoAccept: Record<string, unknown>;
+      tools: Record<string, unknown>;
+    };
+    old.autoAccept = { enabled: true, minCommissionPct: 18, bands: ["hot"], dailyCap: 7, perRunCap: 2 };
+    delete old.tools.contentLinkSubmit;
+
+    const out = migrate(v36);
+    expect(out.schemaVersion).toBe(DEFAULTS.schemaVersion);
+    // The creator's own choices survive...
+    expect(out.settings.autoAccept.enabled).toBe(true);
+    expect(out.settings.autoAccept.minCommissionPct).toBe(18);
+    expect(out.settings.autoAccept.dailyCap).toBe(7);
+    // ...and the new fields land on their safe defaults.
+    expect(out.settings.autoAccept.scope).toBe("matched");
+    expect(out.settings.autoAccept.submitLinks).toBe(true);
+    expect(out.settings.autoAccept.includeSpcc).toBe(true);
+    expect(out.settings.autoAccept.spccMinBudget).toBe("medium");
+    expect(out.settings.tools.contentLinkSubmit).toBe(true);
+  });
+
+  it("a fresh install never has Auto mode on", () => {
+    expect(migrate(undefined).settings.autoAccept.enabled).toBe(false);
+  });
+});
+
 describe("migrate", () => {
   it("returns fresh defaults for empty or version-less state", () => {
     expect(migrate(undefined).schemaVersion).toBe(DEFAULTS.schemaVersion);

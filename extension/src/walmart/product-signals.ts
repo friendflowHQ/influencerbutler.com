@@ -39,6 +39,11 @@ export type WalmartProduct = {
   averageRating: number | null;
   numReviews: number | null;
   sellerName: string | null;
+  // The product's barcode (product.upc in __NEXT_DATA__, verified live
+  // 2026-10-07 as a 12-digit string) and manufacturer model. They are the keys
+  // the cross-retailer lookup matches on.
+  upc: string | null;
+  model: string | null;
 };
 
 function centsOf(price: unknown): number | null {
@@ -71,6 +76,8 @@ export function parseWalmartProduct(nextData: NextData | null): WalmartProduct |
     averageRating: typeof p.averageRating === "number" ? p.averageRating : null,
     numReviews: typeof p.numberOfReviews === "number" ? p.numberOfReviews : null,
     sellerName: typeof p.sellerName === "string" ? p.sellerName : null,
+    upc: typeof p.upc === "string" && p.upc.trim() ? p.upc.trim() : null,
+    model: typeof p.model === "string" && p.model.trim() ? p.model.trim() : null,
   };
 }
 

@@ -7,8 +7,10 @@ import {
   type CcRatesResult,
   type HudCommandResult,
   type HudStatus,
+  type SpccRatesResult,
 } from "../../shared/messages";
 import type { ProductRef } from "../../transport/hud-commands";
+import { spccKey } from "../campaign-radar/spcc-runner";
 
 // Content-side entry for accepting a campaign, from any page that knows a
 // product (the product panel's Campaigns block, the Creator Hub upload page).
@@ -20,7 +22,7 @@ import type { ProductRef } from "../../transport/hud-commands";
 // without the app they report needs-app and the panel keeps its connect note.
 
 export type AcceptKind = "cc" | "spcc";
-export type AcceptRoute = "bridge" | "standalone" | "needs-lookup" | "needs-app";
+export type AcceptRoute = "bridge" | "standalone" | "needs-lookup" | "needs-app" | "needs-id";
 
 export type AcceptRequest = {
   asin: string | null;
@@ -46,7 +48,9 @@ export function chooseAcceptRoute(
   campaignId: string | null | undefined,
 ): AcceptRoute {
   if (hud && hud.connected && hud.paired !== false) return "bridge";
-  if (kind !== "cc") return "needs-app";
+  // SPCC is keyed by ASIN (its cards carry no campaign id), so it never needs a
+  // lookup: the caller passes `spcc:<ASIN>` and the tab runner finds the card.
+  if (kind === "spcc") return campaignId ? "standalone" : "needs-id";
   return campaignId ? "standalone" : "needs-lookup";
 }
 
@@ -60,6 +64,7 @@ export async function requestAccept(input: AcceptRequest): Promise<AcceptResult>
 
   const asin = input.asin ? input.asin.trim().toUpperCase() : null;
   let campaignId = input.campaignId ?? null;
+  if (input.kind === "spcc" && asin) campaignId = spccKey(asin);
   let route = chooseAcceptRoute(hud, input.kind, campaignId);
 
   if (route === "needs-lookup" && asin && input.allowStandalone !== false) {
@@ -127,6 +132,18 @@ export async function lookupCampaignId(asin: string): Promise<string | null> {
     return typeof id === "string" && id ? id : null;
   } catch {
     return null;
+  }
+}
+
+// Does this ASIN have an SPCC ("Earn on Clicks") row in the daily rate build?
+// The real truth when the SPCC membership filter is missing or unusable (the
+// filter is only a hint); false on a miss or when the server is unreachable.
+export async function lookupSpccPresent(asin: string): Promise<boolean> {
+  try {
+    const res = await sendToBackground<SpccRatesResult>({ kind: "LOOKUP_SPCC_RATES", asins: [asin] });
+    return !!res.rates[asin];
+  } catch {
+    return false;
   }
 }
 

@@ -5,6 +5,7 @@ import type { ProductRef, HudCommand } from "../../transport/hud-commands";
 import type { ProductSignals } from "../../amazon/product-signals";
 import { canonicalProductUrl } from "../../integrations/url";
 import { showToast } from "../../ui/toast";
+import { flashSent, resetSent } from "../../ui/sent-state";
 
 // Shared plumbing for panels that send HudCommands to the desktop app (the
 // Send-to-app section and the Campaigns section's inline Accept buttons).
@@ -59,7 +60,9 @@ export function makeCommandRunner(
   // that triggers a command but does not live inside `body` (the Deals Butler
   // push now sits in the pinned quick-links bar, not this section's body).
   extraControls: Array<HTMLButtonElement | HTMLSelectElement> = [],
-): (command: HudCommand, pending: string) => void {
+  // `trigger` (third arg of the returned runner) is the button the creator
+  // clicked: on a successful send it flips to "Sent" and stays clickable.
+): (command: HudCommand, pending: string, trigger?: HTMLElement) => void {
   // A failed command only wrote to the small status line under the buttons,
   // which scrolls out of view on a tall panel, so a click that didn't go
   // through (app not running, unpaired, no image key) read as "nothing
@@ -74,7 +77,8 @@ export function makeCommandRunner(
   const setExtraDisabled = (disabled: boolean): void => {
     for (const control of extraControls) control.disabled = disabled;
   };
-  return (command, pending) => {
+  return (command, pending, trigger) => {
+    resetSent(trigger);
     status.textContent = pending;
     disableAll(body, true);
     setExtraDisabled(true);
@@ -84,6 +88,7 @@ export function makeCommandRunner(
         setExtraDisabled(false);
         if (result.ok) {
           status.textContent = result.message ?? t().sentToApp;
+          flashSent(trigger);
         } else if (result.needsPairing) {
           // The app answered but the extension is not paired, so the command was
           // never sent. Without this, an unpaired click just looked like nothing

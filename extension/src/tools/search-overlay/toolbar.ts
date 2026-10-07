@@ -1,3 +1,4 @@
+import { flashSent, resetSent } from "../../ui/sent-state";
 import { createInlineShadow } from "../../ui/host";
 import { el } from "../../ui/components";
 import { t } from "../../i18n";
@@ -29,7 +30,14 @@ export type ToolbarCallbacks = {
   // Walmart rollback/deals + search grids); the overlay owns the row model and
   // the bridge call, and reports progress through setStatus.
   showSendDeals?: boolean;
-  onSendDeals?: (setStatus: (text: string) => void) => Promise<void>;
+  // Resolves true when the app took the batch (the button then shows "Sent").
+  onSendDeals?: (setStatus: (text: string) => void) => Promise<boolean | void>;
+  // "Accept campaigns on this page (N)": the search-results one-off for
+  // Creator Connections. The overlay owns the row model, the confirm step and
+  // the (serialized, capped) accept loop; the button appears once at least one
+  // visible tile has a known campaign, and its count is kept current through
+  // SearchToolbar.setAcceptCount.
+  onAcceptAll?: (setStatus: (text: string) => void) => Promise<void>;
 };
 
 export type SearchToolbar = {
@@ -37,6 +45,9 @@ export type SearchToolbar = {
   // Progress line for the automatic detail enrichment ("Checking details
   // 3/12" / the paused notice); empty string clears it.
   setEnrichStatus: (text: string) => void;
+  // Update the accept-all button: hidden at 0, otherwise "Accept campaigns on
+  // this page (N)".
+  setAcceptCount: (count: number) => void;
 };
 
 export function renderToolbar(cb: ToolbarCallbacks): SearchToolbar {
@@ -131,14 +142,39 @@ export function renderToolbar(cb: ToolbarCallbacks): SearchToolbar {
   const sendStatus = el("span", "search-status");
   sendBtn.addEventListener("click", () => {
     if (!cb.onSendDeals) return;
+    resetSent(sendBtn);
     sendBtn.disabled = true;
     void cb.onSendDeals((text) => {
       sendStatus.textContent = text;
+    }).then((sent) => {
+      if (sent === true) flashSent(sendBtn);
     }).finally(() => {
       sendBtn.disabled = false;
     });
   });
   sendWrap.append(sendBtn, sendStatus);
+
+  // "Accept campaigns on this page": one confirmed click accepts the tiles that
+  // carry a known Creator Connections campaign, one at a time through the
+  // worker's accept queue. Hidden until the rate lookup finds one.
+  const acceptWrap = el("div", "search-control search-accept-all");
+  const acceptBtn = el("button", "btn secondary") as HTMLButtonElement;
+  acceptBtn.type = "button";
+  const acceptStatus = el("span", "search-status");
+  let acceptCount = 0;
+  acceptWrap.style.display = "none";
+  acceptBtn.addEventListener("click", () => {
+    if (!cb.onAcceptAll) return;
+    acceptBtn.disabled = true;
+    void cb
+      .onAcceptAll((text) => {
+        acceptStatus.textContent = text;
+      })
+      .finally(() => {
+        acceptBtn.disabled = false;
+      });
+  });
+  acceptWrap.append(acceptBtn, acceptStatus);
 
   // Automatic-enrichment progress, separate from the scan status so the two
   // never overwrite each other.
@@ -149,12 +185,18 @@ export function renderToolbar(cb: ToolbarCallbacks): SearchToolbar {
   bar.append(priceWrap);
   if (cb.showScan !== false) bar.append(scanWrap);
   if (cb.showSendDeals && cb.onSendDeals) bar.append(sendWrap);
+  if (cb.onAcceptAll) bar.append(acceptWrap);
   bar.append(enrichStatus);
   root.append(bar);
   return {
     host,
     setEnrichStatus: (text: string) => {
       enrichStatus.textContent = text;
+    },
+    setAcceptCount: (count: number) => {
+      acceptCount = count;
+      acceptBtn.textContent = t().acceptAllOnPage(acceptCount);
+      acceptWrap.style.display = acceptCount > 0 ? "" : "none";
     },
   };
 }

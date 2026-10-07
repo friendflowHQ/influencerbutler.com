@@ -79,6 +79,10 @@ body {
   z-index: 5;
 }
 
+.head-chat {
+  margin-left: auto;
+}
+
 .brand {
   display: flex;
   align-items: center;
@@ -790,3 +794,14 @@ button[disabled] {
     border-left: none;
   }
 }
+
+/* Desktop app activity log. Outcome colors are AA on white: #15803d / #b91c1c. */
+.activity-list { list-style: none; margin: 12px 0 0; padding: 0; max-height: 360px; overflow-y: auto; }
+.activity-row { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; padding: 6px 0; border-top: 1px solid #e2e8f0; }
+.activity-row time { color: #475569; font-size: 12px; white-space: nowrap; }
+.activity-main { font-size: 13px; overflow-wrap: anywhere; }
+.activity-result { font-size: 12px; }
+.activity-ok .activity-result { color: #15803d; }
+.activity-queued .activity-result { color: #1d4ed8; }
+.activity-failed .activity-result { color: #b91c1c; }
+.activity-note { flex-basis: 100%; }

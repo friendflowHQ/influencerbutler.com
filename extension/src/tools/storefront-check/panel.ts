@@ -1,4 +1,5 @@
 import { addSection, chip, el } from "../../ui/components";
+import { flashSent, resetSent } from "../../ui/sent-state";
 import { harvestStorefront, type ContentType, type HarvestResult } from "./harvest";
 import {
   enrichContentProducts,
@@ -9,7 +10,13 @@ import {
 import { enrichWithCreatorApi } from "./creator-enrich";
 import { buildCsv, downloadCsv, OVER_TAGGED_THRESHOLD } from "./csv";
 import { t } from "../../i18n";
-import { sendToBackground, type EnrichedProduct } from "../../shared/messages";
+import {
+  sendToBackground,
+  type EnrichedProduct,
+  type LinkPassResult,
+  type LinkStatusResult,
+} from "../../shared/messages";
+import { getSettings } from "../../storage/store";
 import type { HudStatus, HudCommandResult, IntegrationsView } from "../../shared/messages";
 import type { Finding, StorefrontIssueFinding } from "../../transport/types";
 import type { RetagIssue, ProductRef } from "../../transport/hud-commands";
@@ -276,6 +283,10 @@ function render(
     for (const [asin, p] of enriched) if (p.title) titles.set(asin, p.title);
   }
 
+  // Works without the desktop app: submit the creator's own storefront video as
+  // the content link for accepted Creator Connections campaigns still waiting.
+  void renderLinkSubmit(nodes.exportRow);
+
   void renderButlerActions(nodes.exportRow, {
     untagged,
     overTagged,
@@ -284,6 +295,48 @@ function render(
     titles,
     marketplace: location.host.replace(/^www\./, ""),
   });
+}
+
+// "Submit content links for accepted campaigns (N)": N is the accepted CC
+// campaigns that have one of the creator's storefront videos and no submitted
+// link yet (background/content-link.ts getLinkStatus). The harvest that just
+// finished handed the worker the storefront map, so give that write a moment
+// before asking. Chunks of 3 so progress shows and a block stops the loop.
+const LINK_CHUNK = 3;
+
+async function renderLinkSubmit(exportRow: HTMLElement): Promise<void> {
+  try {
+    const settings = await getSettings();
+    if (!settings.tools.contentLinkSubmit) return;
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    const status = await sendToBackground<LinkStatusResult>({ kind: "GET_LINK_STATUS" });
+    if (status.pending <= 0) return;
+
+    const note = el("p", "note");
+    const btn = el("button", "btn secondary");
+    btn.textContent = t().sfSubmitLinks(status.pending);
+    btn.addEventListener("click", () => {
+      btn.disabled = true;
+      void (async () => {
+        let done = 0;
+        let total = status.pending;
+        note.textContent = t().sfSubmitLinksDone(done, total);
+        for (;;) {
+          const r = await sendToBackground<LinkPassResult>({ kind: "RUN_LINK_PASS", max: LINK_CHUNK });
+          done += r.submitted;
+          total = Math.max(total, done + r.remaining);
+          note.textContent = t().sfSubmitLinksDone(done, total);
+          if (r.stoppedReason || r.attempted === 0 || r.remaining === 0) break;
+        }
+        btn.disabled = false;
+      })().catch(() => {
+        btn.disabled = false;
+      });
+    });
+    exportRow.append(btn, note);
+  } catch {
+    // The worker was asleep or the tool is off: the panel just omits the button.
+  }
 }
 
 type ButlerActionInput = {
@@ -307,6 +360,7 @@ async function renderButlerActions(exportRow: HTMLElement, input: ButlerActionIn
     const retagBtn = el("button", "btn secondary");
     retagBtn.textContent = t().sfSendToRetag(issues.length);
     retagBtn.addEventListener("click", () => {
+      resetSent(retagBtn);
       retagBtn.disabled = true;
       status.textContent = t().sfSendingToRetag;
       void sendToBackground<HudCommandResult>({
@@ -315,6 +369,7 @@ async function renderButlerActions(exportRow: HTMLElement, input: ButlerActionIn
       }).then((r) => {
         retagBtn.disabled = false;
         status.textContent = r.message ?? (r.ok ? t().sentToApp : t().couldNotReachApp);
+        if (r.ok) flashSent(retagBtn);
       });
     });
     exportRow.append(retagBtn);
@@ -333,6 +388,7 @@ async function renderButlerActions(exportRow: HTMLElement, input: ButlerActionIn
     const contentBtn = el("button", "btn secondary");
     contentBtn.textContent = t().sfSendToContent(products.length);
     contentBtn.addEventListener("click", () => {
+      resetSent(contentBtn);
       contentBtn.disabled = true;
       status.textContent = t().sfSendingToContent;
       void sendToBackground<HudCommandResult>({
@@ -341,6 +397,7 @@ async function renderButlerActions(exportRow: HTMLElement, input: ButlerActionIn
       }).then((r) => {
         contentBtn.disabled = false;
         status.textContent = r.message ?? (r.ok ? t().sentToApp : t().couldNotReachApp);
+        if (r.ok) flashSent(contentBtn);
       });
     });
     exportRow.append(contentBtn);
@@ -350,6 +407,7 @@ async function renderButlerActions(exportRow: HTMLElement, input: ButlerActionIn
     const voiceoverBtn = el("button", "btn secondary");
     voiceoverBtn.textContent = t().sfSendToVoiceover(products.length);
     voiceoverBtn.addEventListener("click", () => {
+      resetSent(voiceoverBtn);
       voiceoverBtn.disabled = true;
       status.textContent = t().sfSendingToVoiceover;
       void sendToBackground<HudCommandResult>({
@@ -358,6 +416,7 @@ async function renderButlerActions(exportRow: HTMLElement, input: ButlerActionIn
       }).then((r) => {
         voiceoverBtn.disabled = false;
         status.textContent = r.message ?? (r.ok ? t().sentToApp : t().couldNotReachApp);
+        if (r.ok) flashSent(voiceoverBtn);
       });
     });
     exportRow.append(voiceoverBtn);
@@ -369,6 +428,7 @@ async function renderButlerActions(exportRow: HTMLElement, input: ButlerActionIn
     const acceptBtn = el("button", "btn secondary");
     acceptBtn.textContent = t().sfAcceptAllCampaigns(campaignItems.length);
     acceptBtn.addEventListener("click", () => {
+      resetSent(acceptBtn);
       acceptBtn.disabled = true;
       status.textContent = t().sfAcceptingCampaigns;
       void sendToBackground<HudCommandResult>({
@@ -377,6 +437,7 @@ async function renderButlerActions(exportRow: HTMLElement, input: ButlerActionIn
       }).then((r) => {
         acceptBtn.disabled = false;
         status.textContent = r.message ?? (r.ok ? t().sentToApp : t().couldNotReachApp);
+        if (r.ok) flashSent(acceptBtn);
       });
     });
     exportRow.append(acceptBtn);
@@ -412,21 +473,50 @@ function buildRetagIssues(input: ButlerActionInput): RetagIssue[] {
 }
 
 // Check the storefront's tagged products against the downloaded CC/SPCC
-// membership filters. A hit means "campaign likely available"; the app confirms
-// on accept. Prefers CC when a product hits both filters.
+// membership filters, then confirm the hits against the daily rate tables. The
+// Bloom filters only say "this ASIN was ever in a campaign" (and have false
+// positives), so on their own they badly overcount: the rate tables hold only
+// ASINs with a currently active campaign. The app still re-confirms on accept.
+// Prefers CC when a product hits both filters.
 async function buildCampaignAcceptItems(
   asins: string[],
   marketplace: string,
 ): Promise<Array<{ kind: "cc" | "spcc"; product: ProductRef }>> {
   const loaded = loadFilters(await getCache());
   if (!loaded.cc && !loaded.spcc) return [];
-  const items: Array<{ kind: "cc" | "spcc"; product: ProductRef }> = [];
+  const ccHits: string[] = [];
+  const spccHits: string[] = [];
   for (const asin of asins) {
     const flags = membership(loaded, asin);
-    if (flags.cc) items.push({ kind: "cc", product: { asin, marketplace } });
-    else if (flags.spcc) items.push({ kind: "spcc", product: { asin, marketplace } });
+    if (flags.cc) ccHits.push(asin);
+    if (flags.spcc) spccHits.push(asin);
+  }
+  const [ccConfirmed, spccConfirmed] = await Promise.all([
+    confirmHits(ccHits, "LOOKUP_CC_RATES"),
+    confirmHits(spccHits, "LOOKUP_SPCC_RATES"),
+  ]);
+  const items: Array<{ kind: "cc" | "spcc"; product: ProductRef }> = [];
+  for (const asin of asins) {
+    if (ccConfirmed.has(asin)) items.push({ kind: "cc", product: { asin, marketplace } });
+    else if (spccConfirmed.has(asin)) items.push({ kind: "spcc", product: { asin, marketplace } });
   }
   return items;
+}
+
+// Keeps the Bloom hits that have a row in the rate table. When the lookup fails
+// or the table is serving nothing, nothing can be confirmed, so the hits stand
+// as-is (same fallback the on-page overlays use).
+async function confirmHits(
+  hits: string[],
+  kind: "LOOKUP_CC_RATES" | "LOOKUP_SPCC_RATES",
+): Promise<Set<string>> {
+  if (hits.length === 0) return new Set();
+  const res = await sendToBackground<{ ok: boolean; rates: Record<string, unknown> }>({
+    kind,
+    asins: hits,
+  }).catch(() => null);
+  if (!res || !res.ok || Object.keys(res.rates).length === 0) return new Set(hits);
+  return new Set(hits.filter((asin) => res.rates[asin]));
 }
 
 // Renders one collapsible-in-spirit issue block: a heading, then up to `cap`
