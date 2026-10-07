@@ -10,10 +10,21 @@ const SUPABASE_AUTH_BASE = "https://khutiiojhafblabtixpp.supabase.co/auth/v1";
 const CHROME_EXTENSION_URL =
   "https://chromewebstore.google.com/detail/influencer-butler/cnkfballfjhdijogkjjhdfmnkijcjgbc";
 
+// Exact Supabase project origin (read at build time) instead of the
+// https://*.supabase.co wildcard, which would let injected script talk to ANY
+// Supabase project (an attacker's included) as an exfiltration channel.
+const DEFAULT_SUPABASE_ORIGIN = "https://khutiiojhafblabtixpp.supabase.co";
+const SUPABASE_ORIGIN = (() => {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_SUPABASE_ORIGIN).origin;
+  } catch {
+    return DEFAULT_SUPABASE_ORIGIN;
+  }
+})();
+
 const connectSrc = [
   "'self'",
-  "https://*.supabase.co",
-  "https://khutiiojhafblabtixpp.supabase.co",
+  SUPABASE_ORIGIN,
   "https://api.lemonsqueezy.com",
   "https://www.google-analytics.com",
   "https://*.analytics.google.com",
@@ -26,8 +37,7 @@ const connectSrc = [
 const imgSrc = [
   "'self'",
   "data:",
-  "https://*.supabase.co",
-  "https://khutiiojhafblabtixpp.supabase.co",
+  SUPABASE_ORIGIN,
   "https://assets.lemonsqueezy.com",
   "https://www.google-analytics.com",
   "https://www.googletagmanager.com",
@@ -43,8 +53,52 @@ const contentSecurityPolicy = [
   "frame-src 'self' https://*.lemonsqueezy.com https://www.youtube.com https://www.youtube-nocookie.com https://challenges.cloudflare.com",
   "object-src 'none'",
   "base-uri 'self'",
+  "form-action 'self'",
   "frame-ancestors 'none'",
 ].join("; ");
+
+// Browser features the site never needs are switched off; microphone stays on
+// for the AI concierge voice call. (No payment= entry: Lemon Squeezy's overlay
+// is delegated by its own allow attribute and Permissions-Policy cannot
+// allow-list wildcard origins.)
+const permissionsPolicy = [
+  "camera=()",
+  "microphone=(self)",
+  "geolocation=()",
+  "usb=()",
+  "bluetooth=()",
+  "serial=()",
+  "hid=()",
+  "magnetometer=()",
+  "gyroscope=()",
+  "accelerometer=()",
+  "midi=()",
+  "interest-cohort=()",
+].join(", ");
+
+// Static HTML documents are served from public/ and Vercel gives static files
+// Access-Control-Allow-Origin: *. Pin them to this site so other origins cannot
+// read our documents cross-origin (CSRF-token style scraping, phishing clones
+// built from live HTML). API and .well-known resources are deliberately
+// untouched: agents and the extension need cross-origin access to those.
+const SITE_ORIGIN = "https://www.influencerbutler.com";
+const STATIC_HTML_SOURCES = [
+  "/:path*.html",
+  "/",
+  "/landing",
+  "/download",
+  "/stop-messaging-brands",
+  "/best-amazon-influencer-tools",
+  "/email-sequences",
+  "/brand-deal-rates",
+  "/unsubscribe",
+  "/features/:slug",
+  "/compare/:slug",
+  "/guides/:slug",
+  "/for-agencies",
+  "/for-agencies/:slug",
+  "/legal/:slug",
+];
 
 const agentDiscoveryLinkHeader = [
   '</sitemap.xml>; rel="sitemap"; type="application/xml"',
@@ -159,8 +213,32 @@ const nextConfig: NextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Content-Security-Policy", value: contentSecurityPolicy },
+          { key: "Permissions-Policy", value: permissionsPolicy },
+          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+          // same-origin-allow-popups: keeps window.opener for popups WE open
+          // (Lemon Squeezy / PayPal checkout, OAuth) while still isolating the
+          // page from windows opened by other sites. Admin gets full same-origin.
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
         ],
       },
+      {
+        source: "/dashboard/admin/:path*",
+        headers: [{ key: "Cross-Origin-Opener-Policy", value: "same-origin" }],
+      },
+      {
+        // Build output (JS/CSS chunks) is never embedded by other sites.
+        source: "/_next/static/:path*",
+        headers: [{ key: "Cross-Origin-Resource-Policy", value: "same-site" }],
+      },
+      // Static marketing/legal documents: no wildcard CORS. Covers direct .html
+      // URLs plus every rewrite above that maps to a public/*.html file.
+      ...STATIC_HTML_SOURCES.map((source) => ({
+        source,
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: SITE_ORIGIN },
+          { key: "Vary", value: "Origin" },
+        ],
+      })),
       {
         source: "/((?!api/|dashboard|affiliates/portal|welcome|login|signup|_next/).*)",
         headers: [
