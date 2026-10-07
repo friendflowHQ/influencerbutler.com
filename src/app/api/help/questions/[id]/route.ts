@@ -77,7 +77,7 @@ export async function GET(
   const { data: question, error: qErr } = await supabase
     .from("community_questions")
     .select(
-      "id, workspace_id, title, body, upvotes, answer_count, author_id, author_email, created_at",
+      "id, workspace_id, title, body, upvotes, answer_count, author_id, created_at",
     )
     .eq("id", id)
     .single();
@@ -87,7 +87,7 @@ export async function GET(
 
   const { data: answers } = await supabase
     .from("community_answers")
-    .select("id, question_id, body, author_id, author_email, parent_answer_id, created_at")
+    .select("id, question_id, body, author_id, parent_answer_id, created_at")
     .eq("question_id", id)
     .order("created_at", { ascending: true });
 

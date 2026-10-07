@@ -19,14 +19,14 @@ type QuestionRow = {
   answer_count: number | null;
   created_at: string;
   author_id: string | null;
-  author_email: string | null;
+  author_email?: string | null; // no longer selected on the public client (column revoked from anon)
 };
 
 type AnswerRow = {
   id: string;
   body: string;
   author_id: string | null;
-  author_email: string | null;
+  author_email?: string | null; // no longer selected on the public client (column revoked from anon)
   parent_answer_id: string | null;
   created_at: string;
 };
@@ -115,7 +115,7 @@ export default async function QuestionDetailPage({
   const questionPromise = (supabase
     .from("community_questions")
     .select(
-      "id, workspace_id, title, body, upvotes, answer_count, created_at, author_id, author_email",
+      "id, workspace_id, title, body, upvotes, answer_count, created_at, author_id",
     ) as unknown as {
     eq: (c: string, v: string) => {
       eq: (c: string, v: string) => {
@@ -129,7 +129,7 @@ export default async function QuestionDetailPage({
 
   const answersPromise = (supabase
     .from("community_answers")
-    .select("id, body, author_id, author_email, parent_answer_id, created_at") as unknown as {
+    .select("id, body, author_id, parent_answer_id, created_at") as unknown as {
     eq: (c: string, v: string) => {
       eq: (c: string, v: string) => {
         order: (

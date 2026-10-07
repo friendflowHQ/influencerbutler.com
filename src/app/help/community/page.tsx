@@ -32,7 +32,7 @@ type QuestionRow = {
   answer_count: number | null;
   created_at: string;
   author_id: string | null;
-  author_email: string | null;
+  author_email?: string | null; // no longer selected on the public client (column revoked from anon)
 };
 
 type Filterable = {
@@ -53,7 +53,7 @@ async function fetchQuestions(workspace?: string): Promise<ApiQuestion[]> {
     let query: Filterable = supabase
       .from("community_questions")
       .select(
-        "id, workspace_id, title, body, upvotes, answer_count, created_at, author_id, author_email",
+        "id, workspace_id, title, body, upvotes, answer_count, created_at, author_id",
       )
       .eq("status", "approved");
 
@@ -77,7 +77,7 @@ async function fetchQuestions(workspace?: string): Promise<ApiQuestion[]> {
       answerCount: row.answer_count ?? 0,
       createdAt: new Date(row.created_at).getTime(),
       authorId: row.author_id ?? null,
-      authorEmail: row.author_email ?? null,
+      authorEmail: null,
     }));
   } catch (err) {
     console.error("fetchQuestions failed", err);

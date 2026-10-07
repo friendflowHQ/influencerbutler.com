@@ -120,7 +120,7 @@ export async function GET(request: Request) {
 
   try {
     let builder = supabase.from("community_questions").select(
-      "id, workspace_id, title, body, upvotes, answer_count, author_id, author_email, created_at",
+      "id, workspace_id, title, body, upvotes, answer_count, author_id, created_at",
     ) as unknown as ListBuilder;
     if (workspaceParam) {
       builder = builder.eq("workspace_id", workspaceParam);
