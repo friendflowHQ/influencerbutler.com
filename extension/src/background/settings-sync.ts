@@ -1,4 +1,4 @@
-import { buildSyncPayload, writeSyncPayload } from "./integrations";
+import { applyDesktopConnections, buildSyncPayload, writeSyncPayload } from "./integrations";
 import { fetchDesktopSettings, isPaired, pushDesktopSettings } from "./hud-bridge";
 import { diffPayloads, fillEmpty, overwriteWith } from "../tools/settings-sync/merge";
 import { onStateChange } from "../storage/store";
@@ -23,6 +23,11 @@ export async function previewSync(): Promise<SyncPreviewResult> {
   }
   const ext = await buildSyncPayload();
 
+  // Session-based providers (Mavely, Walmart Creator) have no secret to copy, so
+  // record the app's connected verdicts instead: that is what keeps a creator who
+  // is already connected in the app from being asked to connect again here.
+  await applyDesktopConnections(desktop.payload.sessionConnections);
+
   const { merged, filled } = fillEmpty(ext, desktop.payload);
   if (filled > 0) await writeSyncPayload(merged);
 
@@ -43,6 +48,7 @@ export async function applySync(direction: "app-wins" | "ext-wins"): Promise<Syn
   const desktop = await fetchDesktopSettings();
   if (desktop.status !== "ok") return { status: desktop.status, changed: 0 };
   const ext = await buildSyncPayload();
+  await applyDesktopConnections(desktop.payload.sessionConnections);
 
   if (direction === "app-wins") {
     const { merged, changed } = overwriteWith(ext, desktop.payload);

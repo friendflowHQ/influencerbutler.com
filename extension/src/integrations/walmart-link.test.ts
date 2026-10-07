@@ -161,4 +161,61 @@ describe("buildAffiliateLink (Walmart)", () => {
     );
     expect(result.url).toBe("https://www.walmart.com/ip/10450114");
   });
+
+  describe("desktop fallback (connected in the app, signed out in this browser)", () => {
+    const input = { asin: "10450114", marketplace: "walmart.com", url: target.url, retailer: "walmart" as const };
+
+    it("mints through the app when this browser's session is signed out", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(401, {})));
+      const mintViaDesktop = vi.fn().mockResolvedValue("https://mave.ly/fromapp");
+      const result = await buildAffiliateLink(input, config, creds, { mintViaDesktop });
+      expect(result).toEqual({ url: "https://mave.ly/fromapp" });
+      expect(mintViaDesktop).toHaveBeenCalledWith("mavely", target.url);
+    });
+
+    it("also falls back for a non sign-in failure (offline, portal quirk)", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
+      const mintViaDesktop = vi.fn().mockResolvedValue("https://mave.ly/fromapp");
+      const result = await buildAffiliateLink(input, config, creds, { mintViaDesktop });
+      expect(result.url).toBe("https://mave.ly/fromapp");
+    });
+
+    it("never asks the app when this browser's own session minted the link", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(
+          jsonResponse(200, { data: { createAffiliateLink: { link: "https://mave.ly/local" } } }),
+        ),
+      );
+      const mintViaDesktop = vi.fn();
+      const result = await buildAffiliateLink(input, config, creds, { mintViaDesktop });
+      expect(result.url).toBe("https://mave.ly/local");
+      expect(mintViaDesktop).not.toHaveBeenCalled();
+    });
+
+    it("keeps the plain url and the sign-in notice when the app cannot mint either", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(401, {})));
+      const mintViaDesktop = vi.fn().mockResolvedValue(null);
+      const result = await buildAffiliateLink(input, config, creds, { mintViaDesktop });
+      expect(result.url).toBe("https://www.walmart.com/ip/10450114");
+      expect(result.notice).toBe("signInRequired");
+    });
+
+    it("survives the app fallback throwing", async () => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(401, {})));
+      const mintViaDesktop = vi.fn().mockRejectedValue(new Error("socket exploded"));
+      const result = await buildAffiliateLink(input, config, creds, { mintViaDesktop });
+      expect(result.url).toBe("https://www.walmart.com/ip/10450114");
+      expect(result.notice).toBe("signInRequired");
+    });
+
+    it("does not ask the app when no Walmart provider is chosen", async () => {
+      const mintViaDesktop = vi.fn();
+      const result = await buildAffiliateLink(input, { ...config, walmartLinkProvider: null }, creds, {
+        mintViaDesktop,
+      });
+      expect(result.url).toBe("https://www.walmart.com/ip/10450114");
+      expect(mintViaDesktop).not.toHaveBeenCalled();
+    });
+  });
 });

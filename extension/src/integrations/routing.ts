@@ -128,12 +128,23 @@ export type BuildLinkInput = {
 // can explain a fallback instead of leaving the user to guess. See link-notice.
 export type BuildLinkResult = { url: string; notice?: LinkNotice };
 
+// Optional capabilities injected by the background so this module stays free of
+// bridge/storage deps.
+export type RoutingDeps = {
+  // Ask the paired desktop app to mint a session-based link (Mavely / Walmart
+  // Creator) with ITS signed-in session. Resolves the minted url, or null when the
+  // app is absent, not paired, or itself signed out. Only consulted after this
+  // browser's own session failed, so a creator signed in here never touches the app.
+  mintViaDesktop?: (providerId: string, url: string) => Promise<string | null>;
+};
+
 // Resolve the final link. `getProviderCreds` decrypts a provider's stored
 // credentials (injected so this module stays free of storage/crypto deps).
 export async function buildAffiliateLink(
   input: BuildLinkInput,
   config: RoutingConfig,
   getProviderCreds: (id: string) => Promise<Record<string, string>>,
+  deps: RoutingDeps = {},
 ): Promise<BuildLinkResult> {
   const retailer = input.retailer ?? "amazon";
 
@@ -157,6 +168,18 @@ export async function buildAffiliateLink(
       const minted = await adapter.generateLink(target, await getProviderCreds(providerId));
       return { url: minted || wmUrl };
     } catch (error) {
+      // This browser's session could not mint (signed out, offline, portal quirk).
+      // If the desktop app is paired and signed in to the same provider, let it
+      // mint instead: the creator connected once, in the app, and must not be asked
+      // to connect again here. Any failure there keeps the original fallback.
+      if (deps.mintViaDesktop) {
+        try {
+          const viaApp = await deps.mintViaDesktop(providerId, wmUrl);
+          if (viaApp) return { url: viaApp };
+        } catch {
+          // fall through to the plain url + the original notice
+        }
+      }
       return { url: wmUrl, notice: noticeOf(error) };
     }
   }

@@ -27,6 +27,7 @@ import type {
 import type { Finding } from "../transport/types";
 import type {
   DesktopSettingsResult,
+  MintViaDesktopResult,
   PushSettingsResult,
   SyncMode,
   SyncSettingsPayload,
@@ -432,6 +433,108 @@ function pushSettingsOnPort(
         }
         if (frame.type === "auth.error") {
           done(null);
+          return;
+        }
+      } catch {
+        // fall through
+      }
+      done(null);
+    };
+    socket.onerror = () => done(null);
+    socket.onclose = () => done(null);
+  });
+}
+
+// ── Affiliate mint (session-based providers) ─────────────────────────────────
+// Ask the running app to mint a Mavely / Walmart Creator link with ITS signed-in
+// session. Those providers have no portable secret, so when this browser is signed
+// out but the app is connected, the app does the mint instead of making the creator
+// sign in a second time. Authed; the answer is a link, never a credential. A cold
+// app may have to open its browser (Walmart Creator drives a visible Chrome), so
+// the wait is far longer than the lookups; an app that opened the socket but never
+// answers reads as "failed", while nothing listening reads as "app-unavailable".
+const MINT_RESULT_TIMEOUT_MS = 60_000;
+
+export async function mintViaDesktop(
+  provider: string,
+  url: string,
+): Promise<MintViaDesktopResult> {
+  const token = await getToken();
+  if (!token) return { status: "not-paired" };
+  for (const port of BRIDGE_PORTS) {
+    const result = await mintOnPort(port, provider, url, token);
+    if (result) return result;
+  }
+  cached = null; // nothing answered; refresh status next time
+  return { status: "app-unavailable" };
+}
+
+function mintOnPort(
+  port: number,
+  provider: string,
+  url: string,
+  token: string,
+): Promise<MintViaDesktopResult | null> {
+  return new Promise((resolve) => {
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(`ws://127.0.0.1:${port}/butler`);
+    } catch {
+      resolve(null);
+      return;
+    }
+    let opened = false;
+    let settled = false;
+    const done = (value: MintViaDesktopResult | null) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // ignore
+      }
+      // A socket that connected but never answered is a busy app, not an absent
+      // one; a refused connection never fires onopen, so stays null.
+      resolve(value === null && opened ? { status: "failed", message: BUSY_MESSAGE } : value);
+    };
+    let timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 3);
+    socket.onopen = () => {
+      opened = true;
+      try {
+        socket.send(JSON.stringify({ type: "auth", token }));
+      } catch {
+        done(null);
+      }
+    };
+    socket.onmessage = (event) => {
+      try {
+        const frame = JSON.parse(String(event.data)) as {
+          type?: string;
+          ok?: boolean;
+          url?: unknown;
+          needsSignin?: boolean;
+          message?: unknown;
+        };
+        if (frame.type === "authed") {
+          clearTimeout(timer);
+          timer = setTimeout(() => done(null), MINT_RESULT_TIMEOUT_MS);
+          socket.send(JSON.stringify({ type: "affiliate.mint", provider, url }));
+          return;
+        }
+        if (frame.type === "auth.error") {
+          done({ status: "not-paired" });
+          return;
+        }
+        if (frame.type === "affiliate.mint.result") {
+          const message = typeof frame.message === "string" ? frame.message : undefined;
+          if (frame.ok === true && typeof frame.url === "string" && frame.url) {
+            done({ status: "ok", url: frame.url });
+          } else if (frame.needsSignin === true) {
+            done({ status: "needs-signin", message });
+          } else {
+            done({ status: "failed", message });
+          }
           return;
         }
       } catch {

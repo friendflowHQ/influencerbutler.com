@@ -375,6 +375,13 @@ export type IntegrationState = {
   lastTest: IntegrationTestResult;
   // Whether this provider takes part in affiliate routing when connected.
   routingParticipates: boolean;
+  // Session-based providers only (Mavely, Walmart Creator): the paired desktop
+  // app's last verdict on whether IT is signed in. Lets the options page say
+  // "connected through the app" and lets link minting fall back to the app, so a
+  // creator already connected there is never asked to connect again here. Absent
+  // until a settings sync (or a Test) has heard from the app; `label` is a display
+  // name (account email), never a credential.
+  desktopConnection?: { connected: boolean; label: string | null; at: number };
 };
 
 export type IntegrationsState = {

@@ -12,12 +12,18 @@ import {
 import { clearEnrichCache } from "../tools/inline-card/enrich-cache";
 import { ADAPTERS, AFFILIATE_NETWORK_IDS, getAdapter } from "../integrations/registry";
 import { buildAffiliateLink } from "../integrations/routing";
+import { fetchDesktopSettings, mintViaDesktop } from "./hud-bridge";
+import { SESSION_PROVIDER_IDS } from "../tools/settings-sync/merge";
 import { getRateCard, rateForCategory } from "../rate-card/cache";
 import { retailerFromHost } from "../shared/retailer";
 import { maybePublishGeneratedLink } from "./links";
 import { getIntegration, getIntegrations, getSettings, getState, patchIntegration, patchIntegrationsGlobal, patchSettings } from "../storage/store";
 import type { IntegrationState, IntegrationsState, IntegrationTestResult } from "../storage/schema";
-import type { SyncProviderPayload, SyncSettingsPayload } from "../transport/sync-settings";
+import type {
+  SessionConnection,
+  SyncProviderPayload,
+  SyncSettingsPayload,
+} from "../transport/sync-settings";
 import type {
   GenerateLinkResult,
   IntegrationsView,
@@ -66,6 +72,36 @@ function nonSecretValues(id: string, creds: Record<string, string>): Record<stri
   return out;
 }
 
+// The session-based providers the desktop app can vouch for (Mavely, Walmart
+// Creator): no credential fields, and a connection verdict from the app.
+function isSessionProvider(id: string): boolean {
+  return (SESSION_PROVIDER_IDS as readonly string[]).includes(id);
+}
+
+// Whether the paired desktop app last reported it is signed in to this provider.
+function connectedViaDesktop(state: IntegrationState | undefined): boolean {
+  return state?.desktopConnection?.connected === true;
+}
+
+// Record the desktop app's session verdicts on the matching providers. Called from
+// every settings sync (and a Test), so a creator who is connected in the app sees
+// the provider as connected here without signing in a second time. A provider the
+// app has no verdict for is left as it was (unknown is not "signed out"). The app's
+// verdict never flips `enabled` (that stays this browser's own Test result), so
+// disconnecting in the app cleanly reverts this side too.
+export async function applyDesktopConnections(
+  connections: Record<string, SessionConnection> | undefined,
+): Promise<void> {
+  if (!connections) return;
+  for (const id of SESSION_PROVIDER_IDS) {
+    const verdict = connections[id];
+    if (!verdict) continue;
+    await patchIntegration(id, (s) => {
+      s.desktopConnection = { connected: verdict.connected, label: verdict.label ?? null, at: Date.now() };
+    });
+  }
+}
+
 export async function buildIntegrationsView(): Promise<IntegrationsView> {
   const integrations = await getIntegrations();
   const vaultSync = await getVaultSyncState();
@@ -81,8 +117,9 @@ export async function buildIntegrationsView(): Promise<IntegrationsView> {
           : adapter.fields.length === 0
             ? // Session-based providers (the Walmart link providers) store no
               // credentials; Save or a passing Test marks them enabled, and that
-              // is what "set up" means for them.
-              (state?.enabled ?? false)
+              // is what "set up" means for them. The paired desktop app being
+              // signed in to the same provider counts too: it mints for us.
+              (state?.enabled ?? false) || (isSessionProvider(adapter.id) && connectedViaDesktop(state))
             : // "Configured" means a stored credential actually decrypts to a
               // value, not merely that a blob exists. After an update that resets
               // the wrapping key the blob is present but unreadable (credsFor
@@ -112,6 +149,12 @@ export async function buildIntegrationsView(): Promise<IntegrationsView> {
       // Only the Creator API mirrors its credentials to the server vault, so it
       // is the only card with a sync state to report.
       vaultSync: adapter.id === CREATORS_API ? vaultSync : undefined,
+      // Set only while this browser has no passing session of its own, so the card
+      // can say the connection is the app's and where to look if it lapses.
+      viaDesktop:
+        isSessionProvider(adapter.id) && connectedViaDesktop(state) && state?.lastTest.status !== "ok"
+          ? { label: state?.desktopConnection?.label ?? null }
+          : undefined,
     });
   }
   return { global: integrations.global, providers };
@@ -294,6 +337,17 @@ async function viewFor(id: string): Promise<IntegrationView> {
   return entry;
 }
 
+// Ask the paired desktop app, right now, whether it is signed in to a session
+// provider, and remember its answer. Null when the app is absent / not paired /
+// has no verdict (older app, or nothing probed yet), so a caller never reads
+// "could not ask" as "signed out".
+async function desktopConnectionFor(id: string): Promise<SessionConnection | null> {
+  const desktop = await fetchDesktopSettings();
+  if (desktop.status !== "ok") return null;
+  await applyDesktopConnections(desktop.payload.sessionConnections);
+  return desktop.payload.sessionConnections?.[id] ?? null;
+}
+
 export async function testIntegration(id: string): Promise<IntegrationTestOutcome> {
   const adapter = getAdapter(id);
   if (!adapter) return { ok: false, message: "Unknown integration." };
@@ -304,6 +358,20 @@ export async function testIntegration(id: string): Promise<IntegrationTestOutcom
     outcome = await adapter.test(creds);
   } catch {
     outcome = { ok: false, message: "Test failed unexpectedly. Try again." };
+  }
+  // A session provider that is not signed in HERE may still be connected in the
+  // paired desktop app, which mints for us. Ask the app live (a Test is an explicit
+  // user check, so a fresh answer beats the last sync's) before calling it a fail.
+  if (!outcome.ok && isSessionProvider(id)) {
+    const viaApp = await desktopConnectionFor(id);
+    if (viaApp?.connected) {
+      outcome = {
+        ok: true,
+        message: viaApp.label
+          ? `Connected through the Influencer Butler app as ${viaApp.label}. Links mint there, so you do not need to sign in here.`
+          : "Connected through the Influencer Butler app. Links mint there, so you do not need to sign in here.",
+      };
+    }
   }
   const lastTest: IntegrationTestResult = {
     status: outcome.ok ? "ok" : "fail",
@@ -333,6 +401,23 @@ export async function testAllIntegrations(): Promise<Record<string, IntegrationT
 export async function maybeTestAllOnStartup(): Promise<void> {
   const { global } = await getIntegrations();
   if (global.testOnStartup) await testAllIntegrations();
+}
+
+// Routing's fallback when this browser's own session could not mint: the paired
+// desktop app mints with its sign-in. Resolves the link, or null when it cannot
+// (not a session provider, app closed / not paired, or the app is signed out too).
+// A definite "the app is signed out" also updates the stored verdict so the card
+// stops claiming a connection that has lapsed.
+async function mintSessionLinkViaDesktop(providerId: string, url: string): Promise<string | null> {
+  if (!isSessionProvider(providerId)) return null;
+  const res = await mintViaDesktop(providerId, url);
+  if (res.status === "ok") return res.url;
+  if (res.status === "needs-signin") {
+    await patchIntegration(providerId, (s) => {
+      s.desktopConnection = { connected: false, label: null, at: Date.now() };
+    });
+  }
+  return null;
 }
 
 export async function generateAffiliateLink(
@@ -394,6 +479,7 @@ export async function generateAffiliateLink(
         appOpeningLinks: integrations.global.appOpeningLinks !== false,
       },
       async (providerId) => credsFor(providerId, integrations),
+      { mintViaDesktop: mintSessionLinkViaDesktop },
     );
     // When the resolved link is a branded short url and smart routing is on,
     // publish its routing definition so the edge does Passport / Best-Rate /

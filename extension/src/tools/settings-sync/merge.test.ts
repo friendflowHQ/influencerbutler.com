@@ -56,6 +56,47 @@ describe("fillEmpty", () => {
   });
 });
 
+describe("walmartLinkProvider is fill-only", () => {
+  it("fills a blank provider from the app (so Mavely/Creator carries over)", () => {
+    const { merged, filled } = fillEmpty(payload(), payload({ walmartLinkProvider: "mavely" }));
+    expect(merged.walmartLinkProvider).toBe("mavely");
+    expect(filled).toBe(1);
+  });
+
+  it("never reports a difference or overwrites an existing choice", () => {
+    const ext = payload({ walmartLinkProvider: "walmartCreator" });
+    const app = payload({ walmartLinkProvider: "mavely" });
+    expect(diffPayloads(ext, app)).toEqual([]);
+    const { merged, changed } = overwriteWith(ext, app);
+    expect(merged.walmartLinkProvider).toBe("walmartCreator");
+    expect(changed).toBe(0);
+  });
+});
+
+describe("coerceSyncPayload session connections", () => {
+  it("keeps well-formed verdicts for the two session providers only", () => {
+    const out = coerceSyncPayload({
+      sessionConnections: {
+        mavely: { connected: true, label: " me@example.com " },
+        walmartCreator: { connected: false },
+        levanta: { connected: true }, // not a session provider: dropped
+      },
+    });
+    expect(out?.sessionConnections).toEqual({
+      mavely: { connected: true, label: "me@example.com" },
+      walmartCreator: { connected: false },
+    });
+  });
+
+  it("drops malformed rows and tolerates an older app that sends none", () => {
+    expect(
+      coerceSyncPayload({ sessionConnections: { mavely: { connected: "yes" }, walmartCreator: null } })
+        ?.sessionConnections,
+    ).toEqual({});
+    expect(coerceSyncPayload({})?.sessionConnections).toEqual({});
+  });
+});
+
 describe("overwriteWith", () => {
   it("takes the incoming value on a conflict but keeps base where incoming is blank", () => {
     const ext = payload({ storefrontHandle: "mine", primaryDeeplinkProvider: "influencerbutler" });

@@ -1,4 +1,11 @@
-import type { SyncProviderPayload, SyncSettingsPayload } from "../../transport/sync-settings";
+import type {
+  SessionConnection,
+  SyncProviderPayload,
+  SyncSettingsPayload,
+} from "../../transport/sync-settings";
+
+// Session-based integrations the desktop app can vouch for (no portable secret).
+export const SESSION_PROVIDER_IDS = ["mavely", "walmartCreator"] as const;
 
 // Pure merge + diff for settings sync. No storage, no crypto, no network: the
 // background decrypts into a SyncSettingsPayload, these functions decide what to
@@ -63,6 +70,21 @@ export function coerceSyncPayload(raw: unknown): SyncSettingsPayload | null {
     }
   }
 
+  // Session verdicts from the app. Only the two known session providers, only
+  // well-formed booleans; anything else (an unknown id, a malformed row) is dropped
+  // so a version skew can never invent a connection.
+  const sessionConnections: Record<string, SessionConnection> = {};
+  if (o.sessionConnections && typeof o.sessionConnections === "object") {
+    for (const id of SESSION_PROVIDER_IDS) {
+      const raw = (o.sessionConnections as Record<string, unknown>)[id];
+      if (!raw || typeof raw !== "object") continue;
+      const r = raw as Record<string, unknown>;
+      if (typeof r.connected !== "boolean") continue;
+      const label = typeof r.label === "string" && r.label.trim() ? r.label.trim() : undefined;
+      sessionConnections[id] = label ? { connected: r.connected, label } : { connected: r.connected };
+    }
+  }
+
   return {
     storefrontHandle: strOrNull(o.storefrontHandle),
     primaryDeeplinkProvider: strOrNull(o.primaryDeeplinkProvider),
@@ -70,6 +92,7 @@ export function coerceSyncPayload(raw: unknown): SyncSettingsPayload | null {
     affiliateRoutingEnabled: o.affiliateRoutingEnabled === true,
     perCountryTags,
     providers,
+    sessionConnections,
   };
 }
 
@@ -92,7 +115,10 @@ export function diffPayloads(ext: SyncSettingsPayload, app: SyncSettingsPayload)
   };
   scalar("Storefront handle", ext.storefrontHandle, app.storefrontHandle);
   scalar("Primary deeplink provider", ext.primaryDeeplinkProvider, app.primaryDeeplinkProvider);
-  scalar("Walmart link provider", ext.walmartLinkProvider, app.walmartLinkProvider);
+  // The Walmart link provider is deliberately NOT diffed: the app reports its own
+  // choice read-only (the app never takes the extension's, since picking a provider
+  // there un-pauses Walmart deal posting), so a difference is a per-device
+  // preference, not a conflict the user could ever resolve here. See fillEmpty.
 
   if (ext.affiliateRoutingEnabled !== app.affiliateRoutingEnabled) {
     diffs.push("Affiliate link rewriting");
@@ -205,7 +231,9 @@ export function overwriteWith(
     providers: {},
   };
 
-  const scalar = (key: "storefrontHandle" | "primaryDeeplinkProvider" | "walmartLinkProvider") => {
+  // walmartLinkProvider is fill-only (see diffPayloads): an "app wins" reconcile
+  // must not silently switch which provider mints this browser's Walmart links.
+  const scalar = (key: "storefrontHandle" | "primaryDeeplinkProvider") => {
     if (!isBlank(incoming[key]) && incoming[key] !== base[key]) {
       merged[key] = incoming[key];
       changed += 1;
@@ -213,7 +241,6 @@ export function overwriteWith(
   };
   scalar("storefrontHandle");
   scalar("primaryDeeplinkProvider");
-  scalar("walmartLinkProvider");
 
   if (incoming.affiliateRoutingEnabled !== base.affiliateRoutingEnabled) {
     merged.affiliateRoutingEnabled = incoming.affiliateRoutingEnabled;

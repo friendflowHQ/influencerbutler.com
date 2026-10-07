@@ -246,6 +246,9 @@ function routingStatus(providerId: string): { text: string; state: "success" | "
       ? { text: D.statusSignedIn, state: "success" }
       : { text: D.statusOk, state: "success" };
   }
+  // Connected in the desktop app: links mint there, so a failed or missing test in
+  // THIS browser is not a problem to flag.
+  if (pv.viaDesktop) return { text: D.statusViaApp, state: "success" };
   // Configured but not yet tested.
   return SESSION_PROVIDERS.has(providerId)
     ? { text: D.statusSignedIn, state: "success" }
@@ -1055,7 +1058,9 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
   const name = document.createElement("span");
   name.className = "provider-name";
   name.textContent = label(adapter.labelKey);
-  head.append(name, makeBadge(pv.lastTest.status));
+  // Connected through the desktop app: show it as connected (a stale "failed" from
+  // a Test in this browser would contradict the working app connection).
+  head.append(name, makeBadge(pv.viaDesktop ? "ok" : pv.lastTest.status));
   block.append(head);
 
   // Optional one-line explainer (e.g. for providers with no credential fields).
@@ -1073,6 +1078,15 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
     block.append(renderSetupVideo());
     backupControls = renderCreatorsBackup();
     block.append(backupControls.el);
+  if (pv.viaDesktop) {
+    const viaApp = document.createElement("p");
+    viaApp.className = "test-result ok";
+    viaApp.textContent = pv.viaDesktop.label
+      ? D.viaAppNoteAs.replace("{account}", pv.viaDesktop.label)
+      : D.viaAppNote;
+    block.append(viaApp);
+  }
+
   }
 
   // Inputs. Associates gets a per-country tag grid; everything else gets fields.
@@ -1171,7 +1185,9 @@ function renderProvider(adapter: IntegrationAdapter): HTMLElement {
     msg.className = "test-result" + (status ? ` ${status}` : "");
     msg.hidden = !text;
   };
-  if (pv.lastTest.message) {
+  // A stale "sign in at ..." failure from this browser would contradict the app
+  // connection the note above reports, so it is not replayed while connected there.
+  if (pv.lastTest.message && !(pv.viaDesktop && pv.lastTest.status === "fail")) {
     setMsg(pv.lastTest.message, pv.lastTest.status === "ok" ? "ok" : "fail");
   }
   // When Influencer Butler's backup credentials are active, product data is

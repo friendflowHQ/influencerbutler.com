@@ -708,6 +708,12 @@ export type IntegrationView = {
   // `pending: true` means the credentials work locally but Amazon pages will
   // keep asking the user to connect until the push lands.
   vaultSync?: VaultSyncView;
+  // Session-based providers only (Mavely, Walmart Creator): present when the
+  // paired desktop app is signed in to this provider and this browser has no
+  // passing session of its own. Links then mint through the app, so the card says
+  // "connected through the app" instead of asking for a second sign-in. `label` is
+  // the app's account name (email), never a credential.
+  viaDesktop?: { label: string | null };
 };
 
 // Mirrors VaultSyncState in background/creator-api-sync.ts, minus anything
