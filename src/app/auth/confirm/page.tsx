@@ -5,13 +5,14 @@ import Link from "next/link";
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { resolveNext } from "@/lib/safe-next";
 
 type Phase = "ready" | "confirming" | "invalid";
 
 function ConfirmSignIn() {
   const params = useSearchParams();
   const tokenHash = params.get("token_hash");
-  const next = params.get("next") || "/dashboard";
+  const next = resolveNext(params.get("next"));
   const [phase, setPhase] = useState<Phase>(tokenHash ? "ready" : "invalid");
 
   // The sign-in link lands here but we redeem nothing on load. Only this click

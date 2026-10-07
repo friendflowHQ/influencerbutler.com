@@ -3,12 +3,14 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { captureSignupReferral } from "@/lib/referral-signup-capture";
 import { captureFriendReferral } from "@/lib/referral-program";
+import { resolveNext } from "@/lib/safe-next";
 import { hasAdsConsent, sendSignupMetaEvent } from "@/lib/meta-capi";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const next = url.searchParams.get("next") ?? "/dashboard";
+  // Never trust ?next=: an unvalidated value is an open redirect.
+  const next = resolveNext(url.searchParams.get("next"));
 
   try {
     if (code) {

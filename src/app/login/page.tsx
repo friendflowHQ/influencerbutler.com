@@ -5,22 +5,7 @@ import Image from "next/image";
 import { FormEvent, Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-
-const ALLOWED_NEXT_PREFIXES = [
-  "/dashboard",
-  "/affiliates/portal",
-  "/help/community",
-];
-
-function resolveNext(raw: string | null): string {
-  if (!raw) return "/dashboard";
-  if (!raw.startsWith("/")) return "/dashboard";
-  if (raw.startsWith("//")) return "/dashboard";
-  const ok = ALLOWED_NEXT_PREFIXES.some(
-    (p) => raw === p || raw.startsWith(`${p}/`) || raw.startsWith(`${p}?`),
-  );
-  return ok ? raw : "/dashboard";
-}
+import { resolveNext } from "@/lib/safe-next";
 
 type LinkMode = "signin" | "reset";
 
