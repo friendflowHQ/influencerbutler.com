@@ -101,6 +101,9 @@ async function sentInLastHour(db: SupabaseClient): Promise<number> {
 // emails (100, so small early batches are not paused on noise), pause it if the
 // bounce rate crosses 10% or the complaint rate crosses 0.3%.
 const MIN_HEALTH_SAMPLE = 100;
+// The cron runs every 5 minutes; checking only when the minute is below this
+// runs the health scan once per hour instead of every run.
+const HEALTH_CHECK_RUN_MINUTES = 5;
 const MAX_BOUNCE_RATE = 0.1; // 10%
 const MAX_COMPLAINT_RATE = 0.003; // 0.3%
 
@@ -849,8 +852,13 @@ export async function GET(request: Request) {
   } catch (err) {
     console.error("cron email-marketing: campaign send step threw", err);
   }
+  // The health check runs three exact-count LIKE scans of email_sends per active
+  // sequence. At 5-minute cadence that was ~19% of all database time, so it only
+  // runs in the first run of each hour (the cron fires on :00-:04).
   try {
-    await monitorSequenceHealth(db, summary);
+    if (new Date().getUTCMinutes() < HEALTH_CHECK_RUN_MINUTES) {
+      await monitorSequenceHealth(db, summary);
+    }
   } catch (err) {
     console.error("cron email-marketing: sequence health step threw", err);
   }
