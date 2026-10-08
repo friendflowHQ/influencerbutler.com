@@ -6,6 +6,8 @@ import {
   reviewClickUrl,
   reviewConfirmUrl,
   feedbackSurveyUrl,
+  reviewStepForRecipient,
+  SUBSCRIBER_REVIEW_STEPS,
 } from "../extension-review";
 
 // The token + URL helpers read the signing secret and site URL from the
@@ -70,5 +72,42 @@ describe("personalizeReviewBody", () => {
     const out = personalizeReviewBody("{{REVIEW_URL}}", "creator@example.com");
     expect(out).toContain("e=creator%40example.com");
     expect(out).toContain("/api/extension/review/click");
+  });
+});
+
+describe("reviewStepForRecipient", () => {
+  const stored = { position: 1, subject: "Gift", body: "99 percent off {{FEEDBACK_URL}}" };
+
+  it("sends the stored copy to non-subscribers", () => {
+    expect(reviewStepForRecipient(stored, false)).toEqual({
+      subject: stored.subject,
+      body: stored.body,
+    });
+  });
+
+  it("swaps in subscriber copy with no discount or survey link", () => {
+    const out = reviewStepForRecipient(stored, true);
+    expect(out).not.toBe("skip");
+    if (out === "skip") return;
+    expect(out.subject).not.toBe(stored.subject);
+    expect(out.body).not.toMatch(/percent off|99|{{FEEDBACK_URL}}/i);
+    expect(out.body).toContain("{{REVIEW_URL}}");
+  });
+
+  it("never couples a reward to the review in any subscriber copy", () => {
+    for (const copy of Object.values(SUBSCRIBER_REVIEW_STEPS)) {
+      if (!copy) continue;
+      expect(copy.body).not.toMatch(/percent off|discount|free month|gift/i);
+      expect(copy.body).not.toContain("—");
+    }
+  });
+
+  it("skips steps that have no subscriber variant", () => {
+    expect(reviewStepForRecipient({ ...stored, position: 3 }, true)).toBe("skip");
+  });
+
+  it("falls back to the stored copy for an unknown step position", () => {
+    const step = { ...stored, position: 9 };
+    expect(reviewStepForRecipient(step, true)).toEqual({ subject: step.subject, body: step.body });
   });
 });

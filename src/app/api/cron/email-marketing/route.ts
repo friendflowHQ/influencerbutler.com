@@ -34,7 +34,11 @@ import {
   plainTextToTrackableHtml,
 } from "@/lib/email-marketing";
 import { sendMarketingEmail } from "@/lib/marketing-email";
-import { EXT_REVIEW_TAG, personalizeReviewBody } from "@/lib/extension-review";
+import {
+  EXT_REVIEW_TAG,
+  personalizeReviewBody,
+  reviewStepForRecipient,
+} from "@/lib/extension-review";
 import { personalizePathBody } from "@/lib/email-path-select";
 import { personalizeBundleSubmitBody } from "@/lib/grow-together-submit";
 import { logSuppressedSkip, sendEmail } from "@/lib/email-send";
@@ -545,7 +549,8 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
     // exactly who we want a review from). Its self-report confirm link is what
     // cancels it. Every other sequence is a re-engagement drip that must stop.
     const trig = (seq.trigger ?? null) as { kind?: string; tag?: string } | null;
-    const stopOnSubscribe = !(trig?.kind === "tag_added" && trig.tag === EXT_REVIEW_TAG);
+    const isReviewSequence = trig?.kind === "tag_added" && trig.tag === EXT_REVIEW_TAG;
+    const stopOnSubscribe = !isReviewSequence;
 
     const { data: enrollData, error: enrollErr } = await db
       .from("email_sequence_enrollments")
@@ -609,6 +614,31 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
       const dueAt = nextSendTime(enrollment.enrolled_at, nextStep.day_offset, seq.send_hour);
       if (!Number.isFinite(dueAt) || dueAt > Date.now()) continue;
 
+      // The review sequence's stored copy offers 99% off Pro for the feedback
+      // survey, which is meaningless to someone who already has Pro. Decide per
+      // recipient at send time (a free user may have upgraded since enrolling):
+      // subscribers get their own copy, or are skipped for steps with none. If the
+      // subscriber lookup failed, hold this enrollment for the next run rather
+      // than risk sending the offer to a paying customer.
+      let subject = nextStep.subject;
+      let body = nextStep.body;
+      if (isReviewSequence) {
+        if (!liveEmails) continue;
+        const copy = reviewStepForRecipient(
+          nextStep,
+          liveEmails.has(enrollment.email.trim().toLowerCase()),
+        );
+        if (copy === "skip") {
+          await db
+            .from("email_sequence_enrollments")
+            .update({ completed_at: new Date().toISOString() })
+            .eq("id", enrollment.id);
+          continue;
+        }
+        subject = copy.subject;
+        body = copy.body;
+      }
+
       seqBudget -= 1;
       globalRemaining -= 1;
       // No-op unless the body carries placeholders: {{REVIEW_*}} (the review
@@ -617,7 +647,7 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
       // replaced with this recipient's signed links.
       const personalizedText = personalizeBundleSubmitBody(
         personalizePathBody(
-          personalizeReviewBody(nextStep.body, enrollment.email),
+          personalizeReviewBody(body, enrollment.email),
           enrollment.email,
         ),
         enrollment.email,
@@ -625,7 +655,7 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
       const ok = await sendMarketingEmail({
         from: seqFrom,
         to: enrollment.email,
-        subject: nextStep.subject,
+        subject,
         text: personalizedText,
         // Text-only by default (best cold-outreach deliverability). When this
         // sequence opts into open tracking, also send a minimal HTML body so
