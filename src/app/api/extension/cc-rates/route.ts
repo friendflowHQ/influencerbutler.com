@@ -1,27 +1,20 @@
 /**
  * POST /api/extension/cc-rates  { asins: string[] }
  *
- * Real Creator Connections commission rates for a batch of ASINs, from the
- * daily extension_cc_rates build. Public (no auth), same reasoning as the
- * catalogue Bloom endpoint: campaign availability is not user data and the
- * extension asks anonymously. The extension caches results a day and only
- * asks about ASINs whose Bloom membership already says "in a campaign", so
- * batches stay tiny.
+ * Real Creator Connections commission rates for a batch of ASINs, answered by
+ * the asin-lookup Worker (src/lib/asin-lookup.ts); Postgres holds no rate data.
+ * Public (no auth), same reasoning as the catalogue Bloom endpoint: campaign
+ * availability is not user data and the extension asks anonymously. The
+ * extension caches results a day and only asks about ASINs whose Bloom
+ * membership already says "in a campaign", so batches stay tiny.
  *
  * Response: { rates: { [asin]: { ratePct, brand, endsAt, campaignId } } } -
  * ASINs with no active campaign rate are simply absent. `campaignId` is the
- * campaign the rate came from (null until migration 20260911 is applied and
- * the next build runs); the extension uses it to open that campaign for its
- * standalone Accept flow.
+ * campaign the rate came from; the extension uses it to open that campaign for
+ * its standalone Accept flow.
  */
-import { createAdminClient } from "@/lib/supabase/admin";
-import {
-  isMissingColumnError,
-  isMissingTableError,
-  jsonWithCors,
-  migrationPendingResponse,
-  optionsResponse,
-} from "@/lib/extension-api";
+import { fetchCcRates } from "@/lib/asin-lookup";
+import { jsonWithCors, optionsResponse } from "@/lib/extension-api";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,45 +48,12 @@ export async function POST(request: Request) {
     return jsonWithCors({ rates: {} }, 200);
   }
 
-  const admin = createAdminClient();
-  // campaign_id arrived with migration 20260911; a prod schema that lags it
-  // answers with a missing-column error, so retry with the older column list
-  // and serve campaignId: null rather than failing the whole lookup.
-  let data: Record<string, unknown>[] | null = null;
-  let error: { code?: string; message?: string } | null = null;
-  const withId = await admin
-    .from("extension_cc_rates")
-    .select("asin, rate_pct, brand, ends_at, campaign_id")
-    .in("asin", asins);
-  data = withId.data;
-  error = withId.error;
-  if (error && isMissingColumnError(error)) {
-    const withoutId = await admin
-      .from("extension_cc_rates")
-      .select("asin, rate_pct, brand, ends_at")
-      .in("asin", asins);
-    data = withoutId.data;
-    error = withoutId.error;
+  try {
+    const rates = await fetchCcRates(asins);
+    return jsonWithCors({ rates }, 200);
+  } catch (error) {
+    // The extension treats a non-200 as "could not check" and asks again later.
+    console.error("extension/cc-rates: lookup failed", error);
+    return jsonWithCors({ error: "Could not load rates" }, 503);
   }
-
-  if (error) {
-    if (isMissingTableError(error)) return migrationPendingResponse();
-    console.error("extension/cc-rates: read failed", error);
-    return jsonWithCors({ error: "Could not load rates" }, 500);
-  }
-
-  const rates: Record<
-    string,
-    { ratePct: number; brand: string | null; endsAt: string | null; campaignId: string | null }
-  > = {};
-  for (const raw of data ?? []) {
-    const row = raw as Record<string, unknown>;
-    rates[row.asin as string] = {
-      ratePct: Number(row.rate_pct),
-      brand: (row.brand as string | null) ?? null,
-      endsAt: (row.ends_at as string | null) ?? null,
-      campaignId: typeof row.campaign_id === "string" && row.campaign_id ? row.campaign_id : null,
-    };
-  }
-  return jsonWithCors({ rates }, 200);
 }
