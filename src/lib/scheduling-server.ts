@@ -9,6 +9,7 @@ import {
   CALL_TYPES,
   activeRuleForDate,
   computeDaySlots,
+  hasConflict,
   horizonDates,
   decoyBusyRanges,
   recurringBlockBusyRanges,
@@ -120,17 +121,20 @@ export async function loadBusy(
   admin: Admin,
   fromMs: number,
   toMs: number,
-  opts?: { googleRefreshToken?: string | null },
+  opts?: { googleRefreshToken?: string | null; excludeBookingId?: string | null },
 ): Promise<BusyRange[]> {
   const fromIso = new Date(fromMs).toISOString();
   const toIso = new Date(toMs).toISOString();
   const busy: BusyRange[] = [];
-  const b = await admin
+  let bq = admin
     .from("call_bookings")
     .select("starts_at,ends_at")
     .eq("status", "confirmed")
     .lt("starts_at", toIso)
     .gt("ends_at", fromIso);
+  // A booking being moved must not conflict with its own current slot.
+  if (opts?.excludeBookingId) bq = bq.neq("id", opts.excludeBookingId);
+  const b = await bq;
   if (!b.error) for (const r of b.data ?? []) busy.push({ startMs: Date.parse(r.starts_at as string), endMs: Date.parse(r.ends_at as string) });
   const m = await admin
     .from("call_blocks")
@@ -213,6 +217,42 @@ export async function validateSlot(
   const match = slots.find((s) => s.startMs === startMs);
   if (!match) return { ok: false, reason: "That time is no longer available." };
   return { ok: true, endMs: match.endMs, userEndMs: match.userEndMs };
+}
+
+/**
+ * Owner-side move check for a booking. Unlike validateSlot this does NOT apply
+ * availability windows, decoys or the lead-time floor (the owner may place a
+ * call anywhere), but it still refuses a time in the past or one that overlaps
+ * another booking, a block, recurring protected time or the owner's Google busy.
+ */
+export async function checkMove(
+  admin: Admin,
+  callType: CallTypeKey,
+  bookingId: string,
+  startMs: number,
+  nowMs: number,
+  // The booking's own Google Calendar event (old slot). It shows as owner-busy
+  // in free/busy, so it is excluded or a small shift would conflict with itself.
+  ownEvent?: { startMs: number; endMs: number } | null,
+): Promise<{ ok: true; endMs: number; userEndMs: number } | { ok: false; reason: string }> {
+  const ct = CALL_TYPES[callType];
+  if (startMs < nowMs) return { ok: false, reason: "That time is in the past." };
+  const endMs = startMs + ct.blockMinutes * 60_000;
+  const userEndMs = startMs + ct.userMinutes * 60_000;
+  const config = await loadConfig(admin);
+  const from = startMs - 3600_000;
+  const to = endMs + 3600_000;
+  const busy = await loadBusy(admin, from, to, { excludeBookingId: bookingId });
+  if (config.googleRefreshToken && isGoogleConfigured()) {
+    try {
+      const own = ownEvent;
+      const near = (a: number, b: number) => Math.abs(a - b) < 60_000;
+      const g = await googleBusyCached(config.googleRefreshToken, from, to);
+      busy.push(...g.filter((r) => !(own && near(r.startMs, own.startMs) && near(r.endMs, own.endMs))));
+    } catch (e) { console.error("[scheduling] move google busy", e); }
+  }
+  if (hasConflict(startMs, endMs, busy)) return { ok: false, reason: "That time overlaps another call, a block or your calendar. Tick Allow overlap to move it anyway." };
+  return { ok: true, endMs, userEndMs };
 }
 
 export { decoyBusyRanges };

@@ -10,16 +10,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { DateTime } from "luxon";
 import { CALL_TYPES } from "@/lib/scheduling";
+import { topicsForBooking } from "@/lib/call-topics";
+import { TopicChips, TopicPicker } from "@/components/scheduling/TopicChips";
+import { WD, hhmm, fmtWhen, fmtTime, startOfWeekSun, callPillClass, toLocalInput, type Booking } from "./shared";
+import { CalendarDayView, CallCards, TopicFilterBar } from "./views";
 
-type AiNotes = { summary?: string; keyTopics?: string[]; actionItems?: string[]; followUps?: string[] };
-type Booking = {
-  id: string; user_email: string; user_name: string | null; call_type: "support" | "demo";
-  starts_at: string; user_ends_at: string; user_timezone: string | null; status: string;
-  topic: string | null; join_url: string | null; meeting_provider: string | null; host_notes: string | null;
-  recording_status?: string | null; recording_url?: string | null;
-  transcript?: string | null; ai_notes?: AiNotes | null; recorded_at?: string | null;
-  filed_ticket_ids?: string[] | null;
-};
+type View = "list" | "day" | "week" | "month";
+type Layout = "table" | "cards";
+
 type Prep = {
   booking: Booking & { user_id: string | null };
   displayName: string | null;
@@ -37,14 +35,6 @@ type RecurringBlock = { id: string; weekday: number; start_min: number; end_min:
 type Config = { booking_horizon_days: number; lead_time_hours: number; decoy_min_per_day: number; decoy_max_per_day: number; default_join_url: string | null };
 
 const REPO = "https://github.com/friendflowHQ/InfluencerButler";
-const WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-function hhmm(min: number): string { const h = Math.floor(min / 60), m = min % 60; return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`; }
-// Renders in the admin's own (browser) timezone, with a short zone label so
-// there's no ambiguity about whose clock the time is on.
-function fmtWhen(iso: string): string {
-  try { return new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" }).format(new Date(iso)); }
-  catch { return new Date(iso).toLocaleString("en-US"); }
-}
 // Renders in a specific IANA zone (used to show the customer's local time on the prep sheet).
 function fmtWhenIn(iso: string, tz: string | null): string {
   try { return new Intl.DateTimeFormat("en-US", { timeZone: tz || "UTC", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" }).format(new Date(iso)); }
@@ -52,17 +42,11 @@ function fmtWhenIn(iso: string, tz: string | null): string {
 }
 // The admin's own resolved timezone, used to decide whether the customer is in a different zone.
 function localTz(): string { try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return "UTC"; } }
-// Time-only, for compact calendar cells (the date is already shown by the cell itself).
-function fmtTime(iso: string): string {
-  try { return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(new Date(iso)); }
-  catch { return new Date(iso).toLocaleTimeString("en-US"); }
-}
-// Sunday-anchored week start (matches the WD labels below), in the admin's local zone.
-function startOfWeekSun(dt: DateTime): DateTime { return dt.startOf("day").minus({ days: dt.weekday % 7 }); }
 // The exact date span a week/month grid renders, so the calendar can fetch that
 // range directly instead of relying on the scope-filtered, 200-row-capped list
 // (which can silently omit calls once the admin navigates away from "now").
-function visibleRange(view: "week" | "month", anchor: DateTime): { from: DateTime; to: DateTime } {
+function visibleRange(view: "day" | "week" | "month", anchor: DateTime): { from: DateTime; to: DateTime } {
+  if (view === "day") { const start = anchor.startOf("day"); return { from: start, to: start.plus({ days: 1 }) }; }
   if (view === "week") { const start = startOfWeekSun(anchor); return { from: start, to: start.plus({ days: 7 }) }; }
   const gridStart = startOfWeekSun(anchor.startOf("month"));
   return { from: gridStart, to: gridStart.plus({ days: 42 }) };
@@ -81,7 +65,9 @@ function actLabel(action: string, emailSent: boolean, email: string): string {
       : `Call cancelled, but the cancellation email could not be sent (check email logs).`;
     case "notes": return "Notes saved.";
     case "link": return "Join link updated.";
-    case "reschedule": return "Call rescheduled.";
+    case "reschedule": return emailSent
+      ? `Call moved. An updated invite was emailed to ${email}.`
+      : `Call moved (no email sent to ${email}).`;
     default: return "Done.";
   }
 }
@@ -89,7 +75,12 @@ function actLabel(action: string, emailSent: boolean, email: string): string {
 export default function SchedulingAdminPage() {
   const [forbidden, setForbidden] = useState(false);
   const [scope, setScope] = useState<"upcoming" | "past" | "all">("upcoming");
-  const [view, setView] = useState<"list" | "week" | "month">("list");
+  const [view, setView] = useState<View>("list");
+  const [layout, setLayout] = useState<Layout>("table");
+  const [topicFilter, setTopicFilter] = useState<string | null>(null);
+  const [addPrefill, setAddPrefill] = useState<{ start: string; n: number } | null>(null);
+  const [reschedOpen, setReschedOpen] = useState(false);
+  const [showExpired, setShowExpired] = useState(false);
   const [calendarAnchor, setCalendarAnchor] = useState<DateTime>(() => DateTime.local());
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [listError, setListError] = useState<string | null>(null);
@@ -102,18 +93,29 @@ export default function SchedulingAdminPage() {
   const [addMsg, setAddMsg] = useState<string | null>(null);
   const [actMsg, setActMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
+  // Remember the view/layout between visits (a per-viewer convenience only).
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem("ib.sched.view"); const l = localStorage.getItem("ib.sched.layout");
+      if (v === "list" || v === "day" || v === "week" || v === "month") setView(v);
+      if (l === "table" || l === "cards") setLayout(l);
+    } catch { /* storage unavailable: defaults are fine */ }
+  }, []);
+  const chooseView = (v: View) => { setView(v); try { localStorage.setItem("ib.sched.view", v); } catch { /* ignore */ } };
+  const chooseLayout = (l: Layout) => { setLayout(l); try { localStorage.setItem("ib.sched.layout", l); } catch { /* ignore */ } };
+
   const loadList = useCallback(async () => {
     // The calendar views fetch their own exact visible window (uncapped) instead
     // of the scope-filtered, 200-row list, so navigating the grid doesn't run
     // into calls that were simply never fetched.
     const qs = view === "list"
-      ? `scope=${scope}`
+      ? `scope=${scope}${layout === "cards" ? "&enrich=1" : ""}`
       : (() => { const { from, to } = visibleRange(view, calendarAnchor); return `from=${from.toUTC().toJSDate().toISOString()}&to=${to.toUTC().toJSDate().toISOString()}`; })();
     const res = await fetch(`/api/admin/scheduling/list?${qs}`, { cache: "no-store" });
     if (res.status === 403) { setForbidden(true); return; }
     if (res.ok) { setBookings((await res.json()).bookings ?? []); setListError(null); }
     else { setBookings([]); setListError(`Couldn't load calls (server error ${res.status}). This is a load failure, not an empty schedule. Check the /api/admin/scheduling/list response.`); }
-  }, [scope, view, calendarAnchor]);
+  }, [scope, view, layout, calendarAnchor]);
 
   const loadSettings = useCallback(async () => {
     const res = await fetch("/api/admin/scheduling/settings", { cache: "no-store" });
@@ -135,10 +137,16 @@ export default function SchedulingAdminPage() {
       : "Could not connect Google Calendar. Please try again.");
   }, []);
 
-  // Buckets the loaded bookings by local calendar day for the week/month views.
+  // The topic chip filter applies to every view.
+  const shown = useMemo(
+    () => (topicFilter ? bookings.filter((b) => topicsForBooking(b).some((t) => t.key === topicFilter)) : bookings),
+    [bookings, topicFilter],
+  );
+
+  // Buckets the shown bookings by local calendar day for the day/week/month views.
   const byDay = useMemo(() => {
     const m = new Map<string, Booking[]>();
-    for (const b of bookings) {
+    for (const b of shown) {
       // A cancelled call never happened and the slot is free again, so it
       // doesn't belong on the calendar; showing it reads as a duplicate of
       // whatever real call (if any) replaced it.
@@ -148,10 +156,10 @@ export default function SchedulingAdminPage() {
     }
     for (const arr of m.values()) arr.sort((a, b) => a.starts_at.localeCompare(b.starts_at));
     return m;
-  }, [bookings]);
+  }, [shown]);
 
-  const openPrep = useCallback(async (id: string) => {
-    setActMsg(null);
+  const openPrep = useCallback(async (id: string, opts?: { reschedule?: boolean }) => {
+    setActMsg(null); setReschedOpen(!!opts?.reschedule);
     const res = await fetch(`/api/admin/scheduling/prep?bookingId=${id}`, { cache: "no-store" });
     if (!res.ok) return;
     const p = (await res.json()) as Prep;
@@ -168,7 +176,8 @@ export default function SchedulingAdminPage() {
       if (res.ok) {
         // Reload first (openPrep clears actMsg), then post the confirmation so it survives.
         await loadList(); if (prep?.booking.id === id) await openPrep(id);
-        setActMsg({ ok: true, text: actLabel(action, Boolean(j.emailSent), email) });
+        const warn = Array.isArray(j.warnings) && j.warnings.length ? ` ${j.warnings.join(" ")}` : "";
+        setActMsg({ ok: true, text: actLabel(action, Boolean(j.emailSent), email) + warn });
       } else {
         setActMsg({ ok: false, text: j.error || `Action failed (server error ${res.status}).` });
       }
@@ -239,60 +248,88 @@ export default function SchedulingAdminPage() {
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
               {view === "list" && (
-                <div className="flex gap-1">
-                  {(["upcoming", "past", "all"] as const).map((s) => (
-                    <button key={s} type="button" onClick={() => setScope(s)} className={`rounded-full px-3 py-1 text-sm ${scope === s ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-600"}`}>{s}</button>
+                <div className="flex gap-1" role="group" aria-label="Which calls">
+                  {(["upcoming", "past", "all"] as const).map((sc) => (
+                    <button key={sc} type="button" aria-pressed={scope === sc} onClick={() => setScope(sc)} className={`rounded-full px-3 py-1 text-sm ${scope === sc ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-600"}`}>{sc}</button>
                   ))}
                 </div>
               )}
-              <div className="flex gap-1">
-                {(["list", "week", "month"] as const).map((v) => (
-                  <button key={v} type="button" onClick={() => setView(v)} className={`rounded-full px-3 py-1 text-sm ${view === v ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-600"}`}>{v === "list" ? "List" : v === "week" ? "Week" : "Month"}</button>
+              <div className="flex gap-1" role="group" aria-label="Calendar view">
+                {(["list", "day", "week", "month"] as const).map((v) => (
+                  <button key={v} type="button" aria-pressed={view === v} onClick={() => chooseView(v)} className={`rounded-full px-3 py-1 text-sm ${view === v ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-600"}`}>{v === "list" ? "List" : v === "day" ? "Day" : v === "week" ? "Week" : "Month"}</button>
                 ))}
               </div>
+              {view === "list" && (
+                <div className="flex gap-1" role="group" aria-label="List layout">
+                  {(["table", "cards"] as const).map((l) => (
+                    <button key={l} type="button" aria-pressed={layout === l} onClick={() => chooseLayout(l)} className={`rounded-lg border px-2.5 py-1 text-sm ${layout === l ? "border-slate-800 bg-slate-800 text-white" : "border-slate-200 bg-white text-slate-600"}`}>{l === "table" ? "Table" : "Cards"}</button>
+                  ))}
+                </div>
+              )}
               {view !== "list" && (
                 <div className="flex items-center gap-1.5">
-                  <button type="button" onClick={() => setCalendarAnchor((a) => a.minus(view === "week" ? { weeks: 1 } : { months: 1 }))} className="rounded-lg border border-slate-200 px-2 py-1 text-sm text-slate-600 hover:bg-slate-50" aria-label="Previous">‹</button>
+                  <button type="button" onClick={() => setCalendarAnchor((a) => a.minus(view === "day" ? { days: 1 } : view === "week" ? { weeks: 1 } : { months: 1 }))} className="rounded-lg border border-slate-200 px-2 py-1 text-sm text-slate-600 hover:bg-slate-50" aria-label="Previous">‹</button>
                   <button type="button" onClick={() => setCalendarAnchor(DateTime.local())} className="rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50">Today</button>
-                  <button type="button" onClick={() => setCalendarAnchor((a) => a.plus(view === "week" ? { weeks: 1 } : { months: 1 }))} className="rounded-lg border border-slate-200 px-2 py-1 text-sm text-slate-600 hover:bg-slate-50" aria-label="Next">›</button>
+                  <button type="button" onClick={() => setCalendarAnchor((a) => a.plus(view === "day" ? { days: 1 } : view === "week" ? { weeks: 1 } : { months: 1 }))} className="rounded-lg border border-slate-200 px-2 py-1 text-sm text-slate-600 hover:bg-slate-50" aria-label="Next">›</button>
                   <span className="text-sm text-slate-600">
-                    {view === "week"
-                      ? `${startOfWeekSun(calendarAnchor).toFormat("MMM d")} – ${startOfWeekSun(calendarAnchor).plus({ days: 6 }).toFormat("MMM d, yyyy")}`
-                      : calendarAnchor.toFormat("MMMM yyyy")}
+                    {view === "day"
+                      ? calendarAnchor.toFormat("ccc, MMM d, yyyy")
+                      : view === "week"
+                        ? `${startOfWeekSun(calendarAnchor).toFormat("MMM d")} - ${startOfWeekSun(calendarAnchor).plus({ days: 6 }).toFormat("MMM d, yyyy")}`
+                        : calendarAnchor.toFormat("MMMM yyyy")}
                   </span>
                 </div>
               )}
             </div>
-            <button type="button" onClick={() => { setShowAdd((v) => !v); setAddMsg(null); }} className="rounded-lg bg-[#f97316] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#ea580c]">{showAdd ? "Close" : "Add call"}</button>
+            <button type="button" onClick={() => { setShowAdd((v) => !v); setAddMsg(null); setAddPrefill(null); }} className="rounded-lg bg-[#c2410c] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#9a3412]">{showAdd ? "Close" : "Add call"}</button>
           </div>
-          {showAdd && <AddCall busy={busy} msg={addMsg} onAdd={createCall} />}
-          {view === "list" ? (
+          <TopicFilterBar bookings={bookings} active={topicFilter} onChange={setTopicFilter} />
+          {showAdd && <AddCall busy={busy} msg={addMsg} onAdd={createCall} prefill={addPrefill} />}
+          {actMsg && !prep && (
+            <p role="status" className={`rounded-lg px-3 py-2 text-sm ${actMsg.ok ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-700"}`}>{actMsg.text}</p>
+          )}
+          {listError ? (
+            <div className="rounded-xl border border-slate-200 bg-white px-3 py-8 text-center text-rose-600">{listError}</div>
+          ) : view === "list" && layout === "cards" ? (
+            <CallCards
+              bookings={shown}
+              emptyText={topicFilter ? "No calls with that topic." : "No calls."}
+              a={{ onOpen: (id) => openPrep(id), onReschedule: (id) => openPrep(id, { reschedule: true }), onAct: (id, body) => act(id, body), busy }}
+            />
+          ) : view === "list" ? (
             <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
               <table className="min-w-full divide-y divide-slate-100 text-sm">
                 <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
                   <tr><th className="px-3 py-2">When</th><th className="px-3 py-2">Type</th><th className="px-3 py-2">Customer</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Topic</th></tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {listError ? <tr><td colSpan={5} className="px-3 py-8 text-center text-rose-600">{listError}</td></tr> :
-                    bookings.length === 0 ? <tr><td colSpan={5} className="px-3 py-8 text-center text-slate-400">No calls.</td></tr> :
-                    bookings.map((b) => (
+                  {shown.length === 0 ? <tr><td colSpan={5} className="px-3 py-8 text-center text-slate-500">{topicFilter ? "No calls with that topic." : "No calls."}</td></tr> :
+                    shown.map((b) => (
                       <tr key={b.id} onClick={() => openPrep(b.id)} className="cursor-pointer hover:bg-slate-50">
-                        <td className="px-3 py-2 text-slate-700">{fmtWhen(b.starts_at)}</td>
+                        <td className="px-3 py-2 text-slate-700"><button type="button" onClick={(e) => { e.stopPropagation(); openPrep(b.id); }} className="text-left hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-700">{fmtWhen(b.starts_at)}</button></td>
                         <td className="px-3 py-2">{b.call_type}</td>
                         <td className="px-3 py-2 text-slate-600">{b.user_email}</td>
                         <td className="px-3 py-2"><span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{b.status}</span>{b.recording_status === "ready" ? <span className="ml-1 text-xs" title="Recorded, transcript + notes ready">🎙</span> : null}</td>
-                        <td className="px-3 py-2 max-w-xs truncate text-slate-500">{b.topic || "—"}</td>
+                        <td className="max-w-sm px-3 py-2 text-slate-500">
+                          <TopicChips booking={b} size="xs" />
+                          {b.topic ? <div className="mt-0.5 truncate">{b.topic}</div> : (topicsForBooking(b).length === 0 ? "-" : null)}
+                        </td>
                       </tr>
                     ))}
                 </tbody>
               </table>
             </div>
-          ) : listError ? (
-            <div className="rounded-xl border border-slate-200 bg-white px-3 py-8 text-center text-rose-600">{listError}</div>
+          ) : view === "day" ? (
+            <CalendarDayView
+              anchor={calendarAnchor}
+              items={byDay.get(calendarAnchor.toFormat("yyyy-MM-dd")) ?? []}
+              onOpen={openPrep}
+              onSlot={(d) => { setAddPrefill({ start: toLocalInput(d.toMillis()), n: Date.now() }); setAddMsg(null); setShowAdd(true); }}
+            />
           ) : view === "week" ? (
-            <CalendarWeekView anchor={calendarAnchor} byDay={byDay} onOpen={openPrep} />
+            <CalendarWeekView anchor={calendarAnchor} byDay={byDay} onOpen={openPrep} onAddDay={(d) => { setAddPrefill({ start: toLocalInput(d.set({ hour: 10, minute: 0 }).toMillis()), n: Date.now() }); setAddMsg(null); setShowAdd(true); }} />
           ) : (
-            <CalendarMonthView anchor={calendarAnchor} byDay={byDay} onOpen={openPrep} onMore={(d) => { setCalendarAnchor(d); setView("week"); }} />
+            <CalendarMonthView anchor={calendarAnchor} byDay={byDay} onOpen={openPrep} onMore={(d) => { setCalendarAnchor(d); chooseView("week"); }} />
           )}
         </>
       )}
@@ -333,13 +370,19 @@ export default function SchedulingAdminPage() {
             <h2 className="text-sm font-semibold text-slate-700">Weekly availability</h2>
             <p className="mt-1 text-xs text-slate-500">Windows per weekday + timezone, with effective-date ranges (the Eastern to Mountain move is two sets of rows). A few random blocks inside each window are decoy-held automatically.</p>
             <ul className="mt-2 divide-y divide-slate-100 text-sm">
-              {settings.rules.map((r) => (
+              {settings.rules.filter((r) => showExpired || !isExpired(r)).map((r) => (
                 <li key={r.id} className="flex items-center justify-between py-1.5">
-                  <span className="text-slate-700">{WD[r.weekday]} {hhmm(r.start_min)}–{hhmm(r.end_min)} · {r.timezone} {r.effective_from ? `from ${r.effective_from}` : ""}{r.effective_to ? ` until ${r.effective_to}` : ""}</span>
+                  <span className={isExpired(r) ? "text-slate-500" : "text-slate-700"}>{WD[r.weekday]} {hhmm(r.start_min)}–{hhmm(r.end_min)} · {r.timezone} {r.effective_from ? `from ${r.effective_from}` : ""}{r.effective_to ? ` until ${r.effective_to}` : ""}{isExpired(r) ? " (expired)" : ""}</span>
                   <button type="button" disabled={busy} onClick={() => mutateSettings({ action: "deleteRule", id: r.id })} className="text-xs text-slate-400 hover:text-rose-600">remove</button>
                 </li>
               ))}
             </ul>
+            {settings.rules.some(isExpired) && (
+              <button type="button" onClick={() => setShowExpired((v) => !v)} className="mt-2 text-xs text-slate-600 underline hover:text-slate-900">
+                {showExpired ? "Hide" : "Show"} {settings.rules.filter(isExpired).length} expired {settings.rules.filter(isExpired).length === 1 ? "window" : "windows"}
+              </button>
+            )}
+            <AddRule timezones={Array.from(new Set(["America/Denver", "America/New_York", "America/Chicago", "America/Los_Angeles", ...settings.rules.map((r) => r.timezone)]))} defaultTz={settings.rules.find((r) => !isExpired(r))?.timezone || "America/Denver"} busy={busy} onAdd={(rule) => mutateSettings({ action: "addRule", rule })} />
           </section>
 
           <section className="rounded-xl border border-slate-200 bg-white p-4">
@@ -389,13 +432,19 @@ export default function SchedulingAdminPage() {
             </div>
 
             <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-              <div><dt className="text-slate-400">Customer</dt><dd className="text-slate-700">{prep.displayName || prep.booking.user_name || "—"} &lt;{prep.booking.user_email}&gt;</dd></div>
+              <div><dt className="text-slate-400">Customer</dt><dd className="text-slate-700">{prep.displayName || prep.booking.user_name || "-"} &lt;{prep.booking.user_email}&gt;</dd></div>
               <div><dt className="text-slate-400">Subscription</dt><dd>{prep.subscription ? <span className={`rounded px-1.5 py-0.5 text-xs ${prep.subscription.badge.className}`}>{prep.subscription.badge.label}</span> : <span className="text-slate-400">none</span>}{prep.subscription?.plan_name ? ` · ${prep.subscription.plan_name}` : ""}</dd></div>
               <div><dt className="text-slate-400">Status</dt><dd className="text-slate-700">{prep.booking.status}</dd></div>
               <div><dt className="text-slate-400">Join</dt><dd>{prep.booking.join_url ? <a className="text-[#f97316] hover:underline" href={prep.booking.join_url} target="_blank" rel="noreferrer">link ↗</a> : <span className="text-slate-400">none</span>}{prep.booking.join_url && prep.booking.meeting_provider === "google_meet" && settings?.googleEmail ? <span className="ml-1 text-xs text-slate-400">({settings.googleEmail})</span> : null}</dd></div>
             </dl>
 
-            {prep.booking.topic && <section className="mt-3"><h3 className="text-xs font-semibold uppercase text-slate-500">What they want to cover</h3><p className="mt-1 rounded-lg bg-slate-50 p-2 text-sm text-slate-700">{prep.booking.topic}</p></section>}
+            {(topicsForBooking(prep.booking).length > 0 || prep.booking.topic) && (
+              <section className="mt-3">
+                <h3 className="text-xs font-semibold uppercase text-slate-500">What they want to cover</h3>
+                <div className="mt-1"><TopicChips booking={prep.booking} /></div>
+                {prep.booking.topic && <p className="mt-1 rounded-lg bg-slate-50 p-2 text-sm text-slate-700">{prep.booking.topic}</p>}
+              </section>
+            )}
 
             <section className="mt-3">
               <h3 className="text-xs font-semibold uppercase text-slate-500">Support history ({prep.support.open} open / {prep.support.total} total)</h3>
@@ -487,8 +536,19 @@ export default function SchedulingAdminPage() {
               <button type="button" disabled={busy} onClick={() => act(prep.booking.id, { action: "no_show" })} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">No-show</button>
               <button type="button" disabled={busy} onClick={() => { if (confirm("Mark no-show and email the customer to rebook?")) act(prep.booking.id, { action: "no_show_email" }); }} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">No-show + email</button>
               <button type="button" disabled={busy} onClick={() => { const url = prompt("Join link:", prep.booking.join_url || ""); if (url != null) act(prep.booking.id, { action: "link", joinUrl: url }); }} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">Set link</button>
+              {prep.booking.status !== "cancelled" && prep.booking.status !== "completed" && (
+                <button type="button" disabled={busy} aria-expanded={reschedOpen} onClick={() => setReschedOpen((v) => !v)} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">Reschedule</button>
+              )}
               <button type="button" disabled={busy} onClick={() => { if (confirm("Cancel and email the customer?")) act(prep.booking.id, { action: "cancel" }); }} className="rounded-lg border border-rose-200 px-3 py-1.5 text-sm text-rose-700 hover:bg-rose-50">Cancel</button>
             </section>
+            {reschedOpen && prep.booking.status !== "cancelled" && prep.booking.status !== "completed" && (
+              <ReschedulePanel
+                key={prep.booking.starts_at}
+                currentStartMs={Date.parse(prep.booking.starts_at)}
+                busy={busy}
+                onMove={(newStartMs, force, sendEmail) => act(prep.booking.id, { action: "reschedule", newStartMs, force, sendEmail })}
+              />
+            )}
             {actMsg && (
               <p className={`mt-2 rounded-lg px-3 py-2 text-sm ${actMsg.ok ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"}`}>{actMsg.text}</p>
             )}
@@ -499,16 +559,8 @@ export default function SchedulingAdminPage() {
   );
 }
 
-// Color coding shared by the week and month grids: status first (a resolved
-// call reads very differently from a live one), then call type. Cancelled
-// calls never reach here (byDay drops them before grouping).
-function callPillClass(b: Booking): string {
-  if (b.status === "no_show") return "bg-amber-50 text-amber-700";
-  if (b.status === "completed") return "bg-slate-100 text-slate-500";
-  return b.call_type === "support" ? "bg-orange-50 text-orange-700" : "bg-emerald-50 text-emerald-700";
-}
-
-function CalendarWeekView({ anchor, byDay, onOpen }: { anchor: DateTime; byDay: Map<string, Booking[]>; onOpen: (id: string) => void }) {
+// Cancelled calls never reach the grids (byDay drops them before grouping).
+function CalendarWeekView({ anchor, byDay, onOpen, onAddDay }: { anchor: DateTime; byDay: Map<string, Booking[]>; onOpen: (id: string) => void; onAddDay: (day: DateTime) => void }) {
   const start = startOfWeekSun(anchor);
   const days = Array.from({ length: 7 }, (_, i) => start.plus({ days: i }));
   const today = DateTime.local().toFormat("yyyy-MM-dd");
@@ -521,13 +573,19 @@ function CalendarWeekView({ anchor, byDay, onOpen }: { anchor: DateTime; byDay: 
           const isToday = key === today;
           return (
             <div key={key} className={`min-h-[150px] rounded-lg border p-2 ${isToday ? "border-[#f97316] bg-orange-50/40" : "border-slate-200"}`}>
-              <div className="text-xs font-medium text-slate-500">{d.toFormat("ccc")}</div>
-              <div className={`text-sm font-semibold ${isToday ? "text-[#c2410c]" : "text-slate-700"}`}>{d.toFormat("d")}</div>
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-xs font-medium text-slate-500">{d.toFormat("ccc")}</div>
+                  <div className={`text-sm font-semibold ${isToday ? "text-[#c2410c]" : "text-slate-700"}`}>{d.toFormat("d")}</div>
+                </div>
+                <button type="button" onClick={() => onAddDay(d)} aria-label={`Add a call on ${d.toFormat("cccc LLLL d")}`} className="rounded px-1.5 text-sm text-slate-500 hover:bg-slate-100 hover:text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-700">+</button>
+              </div>
               <div className="mt-1.5 space-y-1">
                 {items.length === 0 && <div className="text-xs text-slate-300">No calls.</div>}
                 {items.map((b) => (
-                  <button key={b.id} type="button" onClick={() => onOpen(b.id)} className={`block w-full truncate rounded-lg px-1.5 py-1 text-left text-xs hover:opacity-80 ${callPillClass(b)}`}>
-                    {fmtTime(b.starts_at)} · {b.user_email}
+                  <button key={b.id} type="button" onClick={() => onOpen(b.id)} className={`block w-full rounded-lg px-1.5 py-1 text-left text-xs hover:opacity-80 ${callPillClass(b)}`}>
+                    <span className="block truncate">{fmtTime(b.starts_at)} · {b.user_email}</span>
+                    {topicsForBooking(b).length > 0 && <span className="mt-0.5 block"><TopicChips booking={b} size="xs" /></span>}
                   </button>
                 ))}
               </div>
@@ -561,7 +619,7 @@ function CalendarMonthView({ anchor, byDay, onOpen, onMore }: { anchor: DateTime
                 <div className={`text-xs ${!inMonth ? "text-slate-300" : isToday ? "font-semibold text-[#c2410c]" : "text-slate-600"}`}>{d.toFormat("d")}</div>
                 <div className="mt-1 space-y-0.5">
                   {items.slice(0, MAX_PER_CELL).map((b) => (
-                    <button key={b.id} type="button" onClick={() => onOpen(b.id)} className={`block w-full truncate rounded px-1 py-0.5 text-left text-[11px] hover:opacity-80 ${callPillClass(b)}`}>
+                    <button key={b.id} type="button" onClick={() => onOpen(b.id)} title={topicsForBooking(b).map((t) => t.label).join(", ") || undefined} className={`block w-full truncate rounded px-1 py-0.5 text-left text-[11px] hover:opacity-80 ${callPillClass(b)}`}>
                       {fmtTime(b.starts_at)} {b.user_email}
                     </button>
                   ))}
@@ -599,12 +657,13 @@ function AddBlock({ onAdd }: { onAdd: (b: { starts_at: string; ends_at: string; 
 // Manually add a call without the customer going through the front-end booking
 // flow. Times are entered in the admin's own browser timezone; the browser IANA
 // zone is sent along so the customer-facing invite renders in the same clock.
-function AddCall({ busy, msg, onAdd }: { busy: boolean; msg: string | null; onAdd: (body: Record<string, unknown>) => Promise<boolean> }) {
+function AddCall({ busy, msg, onAdd, prefill }: { busy: boolean; msg: string | null; onAdd: (body: Record<string, unknown>) => Promise<boolean>; prefill: { start: string; n: number } | null }) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [type, setType] = useState<"support" | "demo">("support");
   const [start, setStart] = useState("");
   const [topic, setTopic] = useState("");
+  const [topics, setTopics] = useState<string[]>([]);
   const [joinUrl, setJoinUrl] = useState("");
   const [meetingId, setMeetingId] = useState<string | null>(null); // set when the link is a generated Google Meet room
   const [gen, setGen] = useState(false);
@@ -612,6 +671,8 @@ function AddCall({ busy, msg, onAdd }: { busy: boolean; msg: string | null; onAd
   const [sendEmail, setSendEmail] = useState(false);
   const [force, setForce] = useState(false);
   const valid = email.includes("@") && start !== "";
+  // Clicking an empty slot in the Day/Week view opens this form with that time filled in.
+  useEffect(() => { if (prefill) setStart(prefill.start); }, [prefill]);
   const startInPast = start !== "" && new Date(start).getTime() < Date.now();
 
   const generateMeet = async () => {
@@ -642,7 +703,8 @@ function AddCall({ busy, msg, onAdd }: { busy: boolean; msg: string | null; onAd
           </select>
         </label>
         <label className="text-xs text-slate-500">Start<input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" />{startInPast && <span className="mt-0.5 block text-[11px] text-amber-600">This time is in the past, so the call will land under Past, not Upcoming.</span>}</label>
-        <label className="text-xs text-slate-500 sm:col-span-2">Topic (optional)<input value={topic} onChange={(e) => setTopic(e.target.value)} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" placeholder="What they want to cover" /></label>
+        <div className="sm:col-span-2"><TopicPicker value={topics} onChange={setTopics} legend="Topics" /></div>
+        <label className="text-xs text-slate-500 sm:col-span-2">Notes (optional)<input value={topic} onChange={(e) => setTopic(e.target.value)} className="mt-0.5 block w-full rounded-lg border border-slate-200 px-2 py-1 text-sm" placeholder="What they want to cover" /></label>
         <div className="text-xs text-slate-500 sm:col-span-2">
           <div className="flex items-center justify-between">
             <span>Join link (optional){meetingId ? <span className="ml-1 rounded bg-emerald-50 px-1 py-0.5 text-[10px] text-emerald-700">Google Meet</span> : null}</span>
@@ -662,10 +724,10 @@ function AddCall({ busy, msg, onAdd }: { busy: boolean; msg: string | null; onAd
         disabled={!valid || busy}
         onClick={async () => {
           const startMs = new Date(start).getTime();
-          const ok = await onAdd({ email: email.trim(), name: name.trim() || undefined, type, startMs, timezone: localTz(), topic: topic.trim() || undefined, joinUrl: joinUrl.trim() || undefined, meetingId: meetingId || undefined, meetingProvider: meetingId ? "google_meet" : undefined, sendEmail, force });
-          if (ok) { setEmail(""); setName(""); setStart(""); setTopic(""); setJoinUrl(""); setMeetingId(null); setGenMsg(null); setSendEmail(false); setForce(false); }
+          const ok = await onAdd({ email: email.trim(), name: name.trim() || undefined, type, startMs, timezone: localTz(), topic: topic.trim() || undefined, topics, joinUrl: joinUrl.trim() || undefined, meetingId: meetingId || undefined, meetingProvider: meetingId ? "google_meet" : undefined, sendEmail, force });
+          if (ok) { setEmail(""); setName(""); setStart(""); setTopic(""); setTopics([]); setJoinUrl(""); setMeetingId(null); setGenMsg(null); setSendEmail(false); setForce(false); }
         }}
-        className="mt-3 rounded-lg bg-[#f97316] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#ea580c] disabled:opacity-50"
+        className="mt-3 rounded-lg bg-[#c2410c] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#9a3412] disabled:opacity-50"
       >Add call</button>
     </div>
   );
@@ -690,6 +752,73 @@ function AddRecurringBlock({ defaultTz, onAdd }: { defaultTz: string; onAdd: (b:
       <label className="text-xs text-slate-500">End<input type="time" value={end} onChange={(e) => setEnd(e.target.value)} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm" /></label>
       <label className="text-xs text-slate-500">Label<input value={label} onChange={(e) => setLabel(e.target.value)} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm" placeholder="Deep work" /></label>
       <button type="button" disabled={!valid} onClick={() => { onAdd({ weekday, start_min: toMin(start), end_min: toMin(end), timezone: defaultTz, label }); setStart(""); setEnd(""); setLabel(""); }} className="rounded-lg bg-[#f97316] px-3 py-1.5 text-sm text-white disabled:opacity-50">Add protected time</button>
+    </div>
+  );
+}
+
+// A window whose effective_to is today or earlier never produces slots again
+// (effective_to is exclusive), so it only clutters the list.
+function isExpired(r: Rule): boolean {
+  return !!r.effective_to && r.effective_to <= DateTime.local().toFormat("yyyy-MM-dd");
+}
+
+// Move a call to a new time. The server refuses past times and overlaps unless
+// "Allow overlap" is ticked, moves the Meet event + recording bot, and (by
+// default) emails the customer an updated invite.
+function ReschedulePanel({ currentStartMs, busy, onMove }: { currentStartMs: number; busy: boolean; onMove: (newStartMs: number, force: boolean, sendEmail: boolean) => void }) {
+  const [start, setStart] = useState(toLocalInput(currentStartMs));
+  const [force, setForce] = useState(false);
+  const [sendEmail, setSendEmail] = useState(true);
+  const ms = start ? new Date(start).getTime() : NaN;
+  const valid = Number.isFinite(ms) && ms !== currentStartMs;
+  return (
+    <section className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3" aria-label="Reschedule this call">
+      <h3 className="text-xs font-semibold uppercase text-slate-500">Move to a new time</h3>
+      <p className="mt-1 text-xs text-slate-500">Your timezone ({localTz()}). This ignores your usual availability windows, but checks for conflicts.</p>
+      <div className="mt-2 flex flex-wrap items-end gap-3">
+        <label className="text-xs text-slate-600">New start<input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} className="mt-0.5 block rounded-lg border border-slate-200 bg-white px-2 py-1 text-sm" /></label>
+        <label className="flex items-center gap-1.5 text-xs text-slate-600"><input type="checkbox" checked={sendEmail} onChange={(e) => setSendEmail(e.target.checked)} />Email the customer the new time</label>
+        <label className="flex items-center gap-1.5 text-xs text-slate-600"><input type="checkbox" checked={force} onChange={(e) => setForce(e.target.checked)} />Allow overlap</label>
+        <button type="button" disabled={!valid || busy} onClick={() => onMove(ms, force, sendEmail)} className="rounded-lg bg-[#c2410c] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#9a3412] disabled:opacity-50">Move call</button>
+      </div>
+    </section>
+  );
+}
+
+// Add a weekly availability window (the API's addRule action had no UI before).
+function AddRule({ timezones, defaultTz, busy, onAdd }: { timezones: string[]; defaultTz: string; busy: boolean; onAdd: (r: { weekday: number; start_min: number; end_min: number; timezone: string; effective_from: string | null; effective_to: string | null }) => void }) {
+  const [days, setDays] = useState<number[]>([1, 2, 3, 4, 5]);
+  const [start, setStart] = useState("10:00");
+  const [end, setEnd] = useState("14:00");
+  const [tz, setTz] = useState(defaultTz);
+  const [from, setFrom] = useState("");
+  const [until, setUntil] = useState("");
+  const valid = days.length > 0 && start !== "" && end !== "" && toMin(end) > toMin(start) && (!from || !until || until > from);
+  return (
+    <div className="mt-3 border-t border-slate-100 pt-3">
+      <h3 className="text-xs font-semibold text-slate-600">Add a window</h3>
+      <fieldset className="mt-1">
+        <legend className="sr-only">Days of the week</legend>
+        <div className="flex flex-wrap gap-1">
+          {WD.map((d, i) => (
+            <button key={d} type="button" aria-pressed={days.includes(i)} onClick={() => setDays((cur) => (cur.includes(i) ? cur.filter((x) => x !== i) : [...cur, i]))}
+              className={`rounded-full px-2.5 py-0.5 text-xs ${days.includes(i) ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-600"}`}>{d}</button>
+          ))}
+        </div>
+      </fieldset>
+      <div className="mt-2 flex flex-wrap items-end gap-2">
+        <label className="text-xs text-slate-500">Start<input type="time" value={start} onChange={(e) => setStart(e.target.value)} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm" /></label>
+        <label className="text-xs text-slate-500">End<input type="time" value={end} onChange={(e) => setEnd(e.target.value)} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm" /></label>
+        <label className="text-xs text-slate-500">Timezone
+          <select value={tz} onChange={(e) => setTz(e.target.value)} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm">
+            {timezones.map((z) => <option key={z} value={z}>{z}</option>)}
+          </select>
+        </label>
+        <label className="text-xs text-slate-500">From (optional)<input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm" /></label>
+        <label className="text-xs text-slate-500">Until (optional)<input type="date" value={until} onChange={(e) => setUntil(e.target.value)} className="mt-0.5 block rounded-lg border border-slate-200 px-2 py-1 text-sm" /></label>
+        <button type="button" disabled={!valid || busy} onClick={() => { for (const wd of days) onAdd({ weekday: wd, start_min: toMin(start), end_min: toMin(end), timezone: tz, effective_from: from || null, effective_to: until || null }); }} className="rounded-lg bg-[#c2410c] px-3 py-1.5 text-sm text-white hover:bg-[#9a3412] disabled:opacity-50">Add window</button>
+      </div>
+      {from && until && until <= from && <p className="mt-1 text-xs text-rose-700">Until must be after From.</p>}
     </div>
   );
 }

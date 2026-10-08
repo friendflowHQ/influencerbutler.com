@@ -8,6 +8,7 @@ import { requirePermission } from "@/lib/admin";
 import { getAdmin } from "@/lib/scheduling-server";
 import { callSupportWorker } from "@/lib/support-worker";
 import { getStatusBadge } from "@/lib/subscription-status";
+import { isMissingTopicsColumn } from "@/lib/call-topics";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,11 +29,13 @@ export async function GET(request: Request) {
   const admin = getAdmin();
   if (!admin) return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
 
-  const { data: booking, error } = await admin
-    .from("call_bookings")
-    .select("id,user_id,user_email,user_name,call_type,starts_at,user_ends_at,user_timezone,status,topic,join_url,host_notes,recording_status,recording_url,transcript,ai_notes,recorded_at,filed_ticket_ids")
-    .eq("id", bookingId).maybeSingle();
-  if (error || !booking) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const PREP_COLS = "id,user_id,user_email,user_name,call_type,starts_at,user_ends_at,user_timezone,status,topic,join_url,meeting_provider,host_notes,recording_status,recording_url,transcript,ai_notes,recorded_at,filed_ticket_ids";
+  const load = (cols: string) => admin.from("call_bookings").select(cols).eq("id", bookingId).maybeSingle();
+  // The topics column is applied by hand in prod; retry without it if absent.
+  let bookingRes = await load(`${PREP_COLS},topics`);
+  if (bookingRes.error && isMissingTopicsColumn(bookingRes.error)) bookingRes = await load(PREP_COLS);
+  if (bookingRes.error || !bookingRes.data) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const booking = bookingRes.data as unknown as { user_id: string | null; user_email: string } & Record<string, unknown>;
 
   const email = booking.user_email as string;
 

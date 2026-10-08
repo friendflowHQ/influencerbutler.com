@@ -9,6 +9,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CALL_TYPES } from "@/lib/scheduling";
+import { getTopic } from "@/lib/call-topics";
+import { TopicPicker } from "@/components/scheduling/TopicChips";
 
 type Slot = { startMs: number; endMs: number; userEndMs: number };
 type DaySlots = { date: string; timezone: string; slots: Slot[] };
@@ -47,6 +49,7 @@ export default function BookCallPage() {
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [topic, setTopic] = useState("");
+  const [topics, setTopics] = useState<string[]>([]);
   const [name, setName] = useState("");
   const [consent, setConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -140,6 +143,12 @@ export default function BookCallPage() {
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [days]);
 
+  // Guides for the picked topics, so a self-serve answer is one click away.
+  const helpLinks = useMemo(
+    () => topics.flatMap((k) => { const t = getTopic(k); return t?.helpSlug ? [{ slug: t.helpSlug, label: t.label }] : []; }),
+    [topics],
+  );
+
   const daySlots = useMemo(() => byDay.find(([k]) => k === selectedDay)?.[1]?.slots ?? [], [byDay, selectedDay]);
 
   const book = useCallback(async () => {
@@ -148,7 +157,7 @@ export default function BookCallPage() {
     try {
       const res = await fetch("/api/booking/create", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ type: callType, startMs: selectedSlot.startMs, timezone: USER_TZ, topic, name }),
+        body: JSON.stringify({ type: callType, startMs: selectedSlot.startMs, timezone: USER_TZ, topic, topics, name }),
       });
       const j = await res.json();
       if (!res.ok || !j.ok) { setMsg(j.error || "Could not book that time."); return; }
@@ -156,7 +165,7 @@ export default function BookCallPage() {
       await Promise.all([loadSlots(callType), loadMine()]);
     } catch (e) { setMsg(e instanceof Error ? e.message : "Could not book."); }
     finally { setSubmitting(false); }
-  }, [selectedSlot, callType, topic, name, loadSlots, loadMine]);
+  }, [selectedSlot, callType, topic, topics, name, loadSlots, loadMine]);
 
   const cancel = useCallback(async (id: string) => {
     if (!confirm("Cancel this call?")) return;
@@ -176,7 +185,7 @@ export default function BookCallPage() {
         ) : (
           <p className="mt-3 text-sm text-slate-500">Your join link will be emailed to you shortly.</p>
         )}
-        <button type="button" onClick={() => { setConfirmed(null); setSelectedSlot(null); setSelectedDay(null); setTopic(""); setConsent(false); }} className="mt-5 rounded-lg bg-[#f97316] px-4 py-2 text-sm font-medium text-white hover:bg-[#ea580c]">Book another</button>
+        <button type="button" onClick={() => { setConfirmed(null); setSelectedSlot(null); setSelectedDay(null); setTopic(""); setTopics([]); setConsent(false); }} className="mt-5 rounded-lg bg-[#f97316] px-4 py-2 text-sm font-medium text-white hover:bg-[#ea580c]">Book another</button>
       </div>
     );
   }
@@ -257,8 +266,21 @@ export default function BookCallPage() {
             <span className="text-slate-500">Your name (optional)</span>
             <input value={name} onChange={(e) => setName(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm" />
           </label>
+          <div className="mt-3">
+            <TopicPicker value={topics} onChange={setTopics} legend="What is this call about?" hint="This helps us prepare the right person and materials." />
+            {topics.length === 0 && <p className="mt-1 text-xs text-slate-500">Pick at least one to continue.</p>}
+            {helpLinks.length > 0 && (
+              <p className="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                Want to try a guide first?{" "}
+                {helpLinks.map((h, i) => (
+                  <span key={h.slug}>{i > 0 ? ", " : ""}<a href={`/help/tutorials/${h.slug}`} target="_blank" rel="noreferrer" className="font-medium text-[#c2410c] underline">{h.label}</a></span>
+                ))}
+                . You can still book either way.
+              </p>
+            )}
+          </div>
           <label className="mt-3 block text-sm">
-            <span className="text-slate-500">What would you like to cover?</span>
+            <span className="text-slate-700">Anything else we should know? <span className="text-xs text-slate-500">(optional)</span></span>
             <textarea value={topic} onChange={(e) => setTopic(e.target.value)} rows={3} className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm" placeholder="A sentence or two so we can prepare." />
           </label>
           <label className="mt-3 flex items-start gap-2 text-xs text-slate-600">
@@ -266,7 +288,7 @@ export default function BookCallPage() {
             <span>This call is recorded, transcribed, and summarized by AI so we can prepare notes to review afterward. Any product issues or feature requests raised may be logged to our support queue so we can follow up. Check the box to confirm you understand.</span>
           </label>
           {msg && <div className="mt-2 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{msg}</div>}
-          <button type="button" disabled={submitting || !consent} onClick={book} className="mt-3 rounded-lg bg-[#f97316] px-4 py-2 text-sm font-medium text-white hover:bg-[#ea580c] disabled:opacity-50">
+          <button type="button" disabled={submitting || !consent || topics.length === 0} onClick={book} className="mt-3 rounded-lg bg-[#f97316] px-4 py-2 text-sm font-medium text-white hover:bg-[#ea580c] disabled:opacity-50">
             {submitting ? "Booking…" : "Confirm booking"}
           </button>
         </div>

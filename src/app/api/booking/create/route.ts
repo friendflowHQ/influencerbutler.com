@@ -1,6 +1,6 @@
 /**
  * POST /api/booking/create
- * Body: { type:'support'|'demo', startMs:number, timezone?:string, topic?:string, name?:string }
+ * Body: { type:'support'|'demo', startMs:number, timezone?:string, topic?:string, topics?:string[], name?:string }
  * Gates support to subscribers, re-validates the slot, creates a Google Meet
  * link (or falls back to the configured link), books atomically via the
  * book_call RPC, schedules a Recall.ai recording bot, and sends the
@@ -14,11 +14,12 @@ import { tierForSubscriptionStatus } from "@/lib/entitlements";
 import { createMeetEvent, isGoogleConfigured } from "@/lib/google-meet";
 import { scheduleBot, isRecallConfigured, shouldScheduleRecordingBot } from "@/lib/recall";
 import { sendBookingConfirmation, sendOwnerNotification, type BookingEmailData } from "@/lib/call-emails";
+import { sanitizeTopics, isMissingTopicsColumn } from "@/lib/call-topics";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type Body = { type?: string; startMs?: number; timezone?: string; topic?: string; name?: string };
+type Body = { type?: string; startMs?: number; timezone?: string; topic?: string; topics?: unknown; name?: string };
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
   if (!v.ok) return NextResponse.json({ error: v.reason }, { status: 409 });
 
   const topic = (body.topic || "").trim().slice(0, 2000);
+  const topics = sanitizeTopics(body.topics);
   const name = (body.name || "").trim().slice(0, 200) || null;
   const timezone = (body.timezone || "").trim().slice(0, 64) || null;
 
@@ -119,6 +121,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Could not book that time." }, { status: 500 });
   }
 
+  // Chips ride a follow-up update (not the book_call RPC) so booking keeps
+  // working before the topics migration is applied in prod.
+  if (topics.length > 0) {
+    const { error: topicsErr } = await admin.from("call_bookings").update({ topics }).eq("id", bookingId);
+    if (topicsErr && !isMissingTopicsColumn(topicsErr)) console.error("[booking/create] topics", topicsErr.message);
+  }
+
   // Schedule a Recall.ai bot to record + transcribe the call. Best-effort: a
   // failure here never fails a confirmed booking. Any joinable Google Meet room
   // records (an auto-created room, or a fallback meet.google.com link); a call
@@ -155,6 +164,7 @@ export async function POST(request: Request) {
     userEndMs: v.userEndMs,
     userTimezone: timezone,
     topic: topic || null,
+    topics,
     joinUrl,
     recorded: recordingStatus === "scheduled",
   };

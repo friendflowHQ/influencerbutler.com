@@ -170,6 +170,11 @@ function overlaps(aStart: number, aEnd: number, busy: BusyRange[]): boolean {
   return busy.some((b) => aStart < b.endMs && aEnd > b.startMs);
 }
 
+/** True when [startMs, endMs) overlaps any busy range (touching edges do not conflict). */
+export function hasConflict(startMs: number, endMs: number, busy: BusyRange[]): boolean {
+  return overlaps(startMs, endMs, busy);
+}
+
 /**
  * Bookable slots for a single day + call type. Grid-aligned starts whose full
  * BLOCK fits in the window, minus decoys, manual blocks, existing bookings,

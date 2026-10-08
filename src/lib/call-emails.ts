@@ -10,6 +10,7 @@ import { bodyToHtml } from "./newsletter";
 import { CALL_TYPES, type CallTypeKey } from "./scheduling";
 import { sendEmail } from "@/lib/email-send";
 import { transactionalFrom } from "@/lib/email-senders";
+import { topicLabelsText } from "@/lib/call-topics";
 
 const FROM = transactionalFrom();
 const ORGANIZER_EMAIL = "hello@influencerbutler.com";
@@ -48,6 +49,7 @@ export type BookingEmailData = {
   userEndMs: number;
   userTimezone?: string | null;
   topic?: string | null;
+  topics?: string[] | null; // chip keys picked at booking (see call-topics.ts)
   joinUrl?: string | null;
   recorded?: boolean; // true when a recording bot is scheduled for this call
 };
@@ -109,6 +111,7 @@ export async function sendBookingConfirmation(b: BookingEmailData): Promise<bool
     ``,
     whenLine(b.startMs, b.userEndMs, tz),
     b.joinUrl ? `Join link: ${b.joinUrl}` : `Your join link will be emailed to you shortly.`,
+    topicLabelsText(b.topics) ? `\nTopics: ${topicLabelsText(b.topics)}` : "",
     b.topic ? `\nWhat you asked about: ${b.topic}` : "",
     ``,
     `A calendar invite is attached, so it will drop straight onto your calendar.`,
@@ -146,7 +149,8 @@ export async function sendOwnerNotification(b: BookingEmailData, prepSummary: st
     ``,
     `Who: ${b.userName || ""} <${b.userEmail}>`,
     `When: ${whenLine(b.startMs, b.userEndMs, tz)} (their time)`,
-    b.topic ? `Topic: ${b.topic}` : "Topic: (none given)",
+    topicLabelsText(b.topics) ? `Topics: ${topicLabelsText(b.topics)}` : "Topics: (none picked)",
+    b.topic ? `Notes: ${b.topic}` : "Notes: (none given)",
     b.joinUrl ? `Join: ${b.joinUrl}` : "Join: (no link yet)",
     ``,
     prepSummary,
@@ -205,6 +209,53 @@ export async function sendLinkAttached(b: BookingEmailData): Promise<boolean> {
     { phrase: b.joinUrl, href: b.joinUrl },
   ]);
   return sendResend(b.userEmail, `Join link for your ${ct.label.toLowerCase()}`, body, "call_link_attached", [
+    { filename: "invite.ics", content: icsBase64(ics) },
+  ], html);
+}
+
+/**
+ * Tells the customer their call moved. The .ics reuses the booking's UID with a
+ * higher SEQUENCE (time-based so a second move still outranks the first), so
+ * calendar apps update the existing entry instead of adding a duplicate.
+ */
+export async function sendRescheduled(b: BookingEmailData, previousStartMs: number): Promise<boolean> {
+  const ct = CALL_TYPES[b.callType];
+  const tz = b.userTimezone || "UTC";
+  const oldStart = DateTime.fromMillis(previousStartMs, { zone: tz });
+  const body = [
+    `Hi ${firstName(b.userName, b.userEmail)},`,
+    ``,
+    `We had to move your ${ct.label.toLowerCase()}. It was ${oldStart.toFormat("cccc, LLLL d")} at ${oldStart.toFormat("h:mm a")}. Your new time is:`,
+    ``,
+    whenLine(b.startMs, b.userEndMs, tz),
+    b.joinUrl ? `Join link: ${b.joinUrl}` : `Your join link will be emailed to you shortly.`,
+    ``,
+    `An updated calendar invite is attached, so it will replace the old entry on your calendar.`,
+    `Does the new time not work? You can pick another from your dashboard under Book a Call.`,
+    `Having technical trouble joining? Email us at hello@influencerbutler.com and we will help.`,
+    ``,
+    `Warmly,`,
+    `Your Influencer Butler Team`,
+  ].filter((l) => l !== "").join("\n");
+  const ics = buildIcs({
+    uid: `call-${b.id}@influencerbutler.com`,
+    startMs: b.startMs,
+    endMs: b.userEndMs,
+    summary: `${ct.label} with Influencer Butler`,
+    description: [b.topic ? `Topic: ${b.topic}` : "", b.joinUrl ? `Join: ${b.joinUrl}` : ""].filter(Boolean).join("\n"),
+    location: b.joinUrl || undefined,
+    conferenceUrl: b.joinUrl || undefined,
+    organizerEmail: ORGANIZER_EMAIL,
+    attendeeEmail: b.userEmail,
+    attendeeName: b.userName || undefined,
+    method: "REQUEST",
+    sequence: Math.floor(Date.now() / 60_000),
+  });
+  const html = htmlFrom(body, [
+    { phrase: "Book a Call", href: BOOK_URL },
+    ...(b.joinUrl ? [{ phrase: b.joinUrl, href: b.joinUrl }] : []),
+  ]);
+  return sendResend(b.userEmail, `New time for your ${ct.label.toLowerCase()}`, body, "call_rescheduled", [
     { filename: "invite.ics", content: icsBase64(ics) },
   ], html);
 }
