@@ -14,6 +14,10 @@
         <span class="ver" id="ext-version"></span>
       </div>
       <div class="head-right">
+        <span class="zoom-ctl" role="group" aria-label="Zoom">
+          <button id="zoom-out" class="gear" type="button" aria-label="Zoom out" title="Zoom out (Ctrl -)">A-</button>
+          <button id="zoom-in" class="gear" type="button" aria-label="Zoom in" title="Zoom in (Ctrl +)">A+</button>
+        </span>
         <span class="tag" data-i18n="tagFree">Free</span>
         <button id="open-options" class="gear" type="button" aria-label="API integrations" title="API integrations">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -50,7 +54,6 @@
           </li>
           <li data-nav-for="watchlist-card"><a href="#watchlist-card" data-i18n="popupWatchlistHeading">Watchlist</a></li>
           <li data-nav-for="lists-card"><a href="#lists-card" data-i18n="popupListsHeading">My lists</a></li>
-          <li><a href="#feedback-card" data-i18n="feedbackHeading">Feedback</a></li>
         </ul>
       </nav>
       <div class="pane" id="popup-pane">
@@ -350,28 +353,6 @@
         <ul id="lists-list" class="watchlist"></ul>
       </section>
 
-      <section id="feedback-card" class="card">
-        <h2 data-i18n="feedbackHeading">Feedback Butler</h2>
-        <p class="muted small" data-i18n="feedbackBlurb">Found a bug or want a feature? Tell us. No account needed.</p>
-        <div class="grid">
-          <label class="wide"><span data-i18n="feedbackTypeLabel">Type</span>
-            <select id="fb-type">
-              <option value="bug" data-i18n="feedbackTypeBug">Bug report</option>
-              <option value="feature" data-i18n="feedbackTypeFeature">Feature request</option>
-              <option value="praise" data-i18n="feedbackTypePraise">Praise</option>
-              <option value="other" data-i18n="feedbackTypeOther">Something else</option>
-            </select>
-          </label>
-        </div>
-        <label class="fb-wide">
-          <textarea id="fb-message" rows="3" placeholder="What happened, or what would help?" data-i18n-ph="feedbackPlaceholder"></textarea>
-        </label>
-        <input id="fb-website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" class="fb-hp" />
-        <div class="row">
-          <button id="fb-send" class="primary" data-i18n="feedbackSend">Send feedback</button>
-          <span id="fb-status" class="muted small"></span>
-        </div>
-      </section>
       </div>
     </main>
 

@@ -2,8 +2,6 @@ import {
   sendToBackground,
   type AuthStatus,
   type CleanLinkResult,
-  type FeedbackInput,
-  type FeedbackResult,
   type GenerateLinkResult,
   type IntegrationsView,
   type PageStatus,
@@ -34,6 +32,7 @@ import { channelAllowed } from "../shared/creator-mode";
 import { isPairedLocal } from "../shared/bridge-token";
 import { isAndroid, isMobileUserAgent } from "../shared/platform";
 import { activePageTab } from "./active-tab";
+import { initChatBubble } from "../tools/chat-bubble/panel";
 import { autoFillFromDesktop, runSyncReconcile } from "../tools/settings-sync/ui";
 import { getLocale, resolveLocale, setLocale, t } from "../i18n";
 import { CHROME_REVIEW_URL, EXTENSION_FEEDBACK_URL, guideUrlFor } from "../shared/constants";
@@ -84,7 +83,10 @@ async function init(): Promise<void> {
     renderWatchlist(),
     renderProductLists(),
   ]);
-  wireFeedback();
+  wirePopupZoom();
+  // The Feedback Butler card was replaced by the same chat bubble the product pages
+  // show: bug report + screenshots (picker / paste) + reply email + diagnostics.
+  initChatBubble({ popup: true });
   wireOptions();
   // AI Assistant is a neutral help tool for every creator, so it is wired
   // unconditionally, like Link Butler below.
@@ -1030,43 +1032,59 @@ function applyStaticI18n(): void {
   }
 }
 
-function wireFeedback(): void {
-  const btn = byId<HTMLButtonElement>("fb-send");
-  const type = byId<HTMLSelectElement>("fb-type");
-  const message = byId<HTMLTextAreaElement>("fb-message");
-  const honeypot = byId<HTMLInputElement>("fb-website");
-  const status = byId("fb-status");
+// Zoom for the whole popup. Chrome caps a popup at 800x600 and has no zoom of its
+// own for it, so scale the document with CSS `zoom` and divide the body's size
+// caps by the same factor (popup.css reads --z) so the window never exceeds the
+// cap. Persisted in localStorage like the popup size; Ctrl +/-/0 also work.
+const ZOOM_KEY = "ib_popup_zoom";
+const ZOOM_MIN = 0.8;
+const ZOOM_MAX = 1.6;
 
-  btn.onclick = async () => {
-    if (honeypot.value) return; // bot
-    const text = message.value.trim();
-    if (text.length < 3) {
-      status.textContent = t().feedbackAddDetail;
-      return;
+function applyPopupZoom(z: number, reflow: boolean): void {
+  const zoom = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, Math.round(z * 10) / 10));
+  const root = document.documentElement;
+  root.style.setProperty("--z", String(zoom));
+  (root.style as CSSStyleDeclaration & { zoom: string }).zoom = String(zoom);
+  // A saved drag-size was measured at the old zoom; drop it so the default
+  // (which scales with --z) fits the new one.
+  if (reflow) {
+    document.body.style.width = "";
+    document.body.style.height = "";
+  }
+  try {
+    localStorage.setItem(ZOOM_KEY, String(zoom));
+  } catch {
+    // Best-effort; zoom just will not persist.
+  }
+}
+
+function currentPopupZoom(): number {
+  const z = Number(document.documentElement.style.getPropertyValue("--z"));
+  return Number.isFinite(z) && z > 0 ? z : 1;
+}
+
+function wirePopupZoom(): void {
+  try {
+    const saved = Number(localStorage.getItem(ZOOM_KEY));
+    if (Number.isFinite(saved) && saved > 0) applyPopupZoom(saved, false);
+  } catch {
+    // Storage unavailable: stay at 100%.
+  }
+  byId<HTMLButtonElement>("zoom-out").onclick = () => applyPopupZoom(currentPopupZoom() - 0.1, true);
+  byId<HTMLButtonElement>("zoom-in").onclick = () => applyPopupZoom(currentPopupZoom() + 0.1, true);
+  document.addEventListener("keydown", (e) => {
+    if (!(e.ctrlKey || e.metaKey)) return;
+    if (e.key === "=" || e.key === "+") {
+      e.preventDefault();
+      applyPopupZoom(currentPopupZoom() + 0.1, true);
+    } else if (e.key === "-") {
+      e.preventDefault();
+      applyPopupZoom(currentPopupZoom() - 0.1, true);
+    } else if (e.key === "0") {
+      e.preventDefault();
+      applyPopupZoom(1, true);
     }
-    btn.disabled = true;
-    status.textContent = t().feedbackSending;
-    let pageUrl: string | undefined;
-    try {
-      const tab = await activePageTab();
-      if (tab?.url?.includes("amazon.com")) pageUrl = tab.url.split("?")[0];
-    } catch {
-      // page url is best-effort context, not required
-    }
-    const feedback: FeedbackInput = {
-      feedbackType: type.value as FeedbackInput["feedbackType"],
-      message: text,
-      pageUrl,
-    };
-    const result = await sendToBackground<FeedbackResult>({ kind: "SEND_FEEDBACK", feedback });
-    btn.disabled = false;
-    if (result.ok) {
-      message.value = "";
-      status.textContent = t().feedbackThanks;
-    } else {
-      status.textContent = result.error ?? t().feedbackFailed;
-    }
-  };
+  });
 }
 
 async function renderPageStatus(): Promise<void> {

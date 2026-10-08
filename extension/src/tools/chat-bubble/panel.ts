@@ -304,6 +304,9 @@ const CSS = `
 }
 .transcript { flex: 1 1 auto; overflow-y: auto; padding: 14px; display: flex;
   flex-direction: column; gap: 10px; }
+.wrap.popup { right: 12px; left: auto; bottom: 46px; align-items: flex-end; }
+.wrap.popup .launcher { width: 44px; height: 44px; font-size: 20px; }
+.wrap.popup .panel { width: min(360px, calc(100vw - 24px)); height: min(540px, calc(100vh - 110px)); max-height: none; }
 .msg { max-width: 86%; padding: 9px 12px; border-radius: 14px; font-size: 13px;
   line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
 .msg.assistant { align-self: flex-start; background: #f4f5f7; border: 1px solid #eceef1;
@@ -423,7 +426,10 @@ const CSS = `
 
 let mounted = false;
 
-export function initChatBubble(): void {
+// `popup: true` mounts the bubble inside the toolbar popup (the Feedback Butler
+// card there was replaced by it): pinned above the footer, and the launcher opens
+// straight onto the Report form because the popup already has an AI Assistant card.
+export function initChatBubble(opts: { popup?: boolean } = {}): void {
   if (mounted) return;
   const existing = document.getElementById(HOST_ID);
   if (existing && existing.isConnected) {
@@ -431,7 +437,7 @@ export function initChatBubble(): void {
     return;
   }
   try {
-    new ChatBubble();
+    new ChatBubble(!!opts.popup);
     mounted = true;
   } catch {
     /* never let the bubble break the rest of the content script */
@@ -493,7 +499,7 @@ class ChatBubble {
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   private emailPrefillToken = 0;
 
-  constructor() {
+  constructor(private readonly inPopup = false) {
     this.s = STRINGS[getLocale()] || STRINGS.en;
     const host = document.createElement("div");
     host.id = HOST_ID;
@@ -516,7 +522,7 @@ class ChatBubble {
 
   private build(): void {
     const s = this.s;
-    const wrap = el("div", "wrap");
+    const wrap = el("div", this.inPopup ? "wrap popup" : "wrap");
 
     this.launcher = el("button", "launcher");
     this.launcher.type = "button";
@@ -722,7 +728,7 @@ class ChatBubble {
 
   // ---- open / close / view ----
   private toggle(): void {
-    this.open ? this.close() : this.show("chat");
+    this.open ? this.close() : this.show(this.inPopup ? "report" : "chat");
   }
 
   private show(view: View): void {
@@ -1005,7 +1011,7 @@ class ChatBubble {
           userEmail: this.emailInput.value.trim(),
           attachLogs: this.logsChk.checked,
           screenshots: this.shots.map((s) => ({ base64: s.base64, mime: s.mime, filename: s.filename })),
-          pageUrl: location.href,
+          pageUrl: /^https?:/.test(location.protocol) ? location.href : undefined,
         },
       });
       if (res && res.ok) {

@@ -11,7 +11,7 @@
 
 * { box-sizing: border-box; }
 
-html { height: 100%; }
+html { height: 100%; --z: 1; }
 
 body {
   /* User-resizable popup. Chrome sizes the popup window to the document, so an
@@ -23,11 +23,11 @@ body {
      opens big enough that content is not cramped out of the box; anyone who
      resizes gets their own size restored on top of this default. */
   width: 460px;
-  height: 590px;
+  height: calc(590px / var(--z));
   min-width: 300px;
   min-height: 360px;
-  max-width: 780px;
-  max-height: 590px;
+  max-width: calc(780px / var(--z));
+  max-height: calc(590px / var(--z));
   resize: both;
   /* overflow must not be `visible` for the resize grabber to appear; children
      scroll in their own panes, so hide the body's own overflow. */
@@ -102,6 +102,9 @@ body {
   color: var(--slate-600);
   cursor: pointer;
 }
+
+.zoom-ctl { display: inline-flex; gap: 4px; }
+.zoom-ctl .gear { width: 30px; font: 700 11px/1 system-ui, sans-serif; }
 
 .gear:hover {
   color: var(--orange);
