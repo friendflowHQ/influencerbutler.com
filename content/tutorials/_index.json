@@ -862,6 +862,14 @@
       "summary": "Type what you are shopping for and Shopping Butler searches Amazon and Walmart, then ranks the results by price, product quality, the commission you would earn, and how crowded each product already is with creator videos.",
       "order": 34,
       "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "ai-influencer-butler",
+      "title": "AI Influencer Butler: create branded outfit looks and milestone videos with an AI model",
+      "category": "Other",
+      "summary": "Turn a style into a ready-to-post outfit look with your AI model, real Amazon and Walmart products, and your branding. Run it on autopilot with a daily spend cap, and make a celebration video like \"1k Members\" from a photo of you.",
+      "order": 73,
+      "locales": ["en-US", "es-ES", "fr-FR"]
     }
   ]
 }
