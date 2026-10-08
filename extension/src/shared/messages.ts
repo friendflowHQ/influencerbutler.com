@@ -416,6 +416,12 @@ export type RuntimeMessage =
   // (advances the stored "last shown version" so both surfaces stop showing it).
   | { kind: "GET_WHATS_NEW" }
   | { kind: "DISMISS_WHATS_NEW" }
+  // "Is this saving you time?" review ask (background/review-ask.ts). The content
+  // script reports a retailer page load so distinct active days can be counted,
+  // the popup asks whether the card is due, and the user's answer is recorded.
+  | { kind: "NOTE_ACTIVE_DAY" }
+  | { kind: "GET_REVIEW_ASK_DUE" }
+  | { kind: "ANSWER_REVIEW_ASK"; answer: "yes" | "no" | "later" | "never" }
   // Cross-device relay (send commands to the desktop app on ANOTHER computer).
   // Claim a 6-digit link code shown by that app, list the linked desktops, send
   // one command to a linked desktop, and read/set the default remote target the

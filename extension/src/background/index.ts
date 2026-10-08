@@ -109,6 +109,7 @@ import {
   remindUpdateLater,
 } from "./update";
 import { getWhatsNewView, markWhatsNewSeen, noteInstall } from "./whats-new";
+import { answerReviewAsk, isReviewAskCardDue, noteActiveDay } from "./review-ask";
 import {
   acceptCampaignInTab,
   noteAccept,
@@ -869,6 +870,15 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "DISMISS_WHATS_NEW":
       void markWhatsNewSeen().then(() => sendResponse(undefined));
+      return true;
+    case "NOTE_ACTIVE_DAY":
+      void noteActiveDay().then(() => sendResponse(undefined));
+      return true;
+    case "GET_REVIEW_ASK_DUE":
+      void isReviewAskCardDue().then(sendResponse);
+      return true;
+    case "ANSWER_REVIEW_ASK":
+      void answerReviewAsk(message.answer).then(() => sendResponse(undefined));
       return true;
     // Standalone campaign accept (background/campaign-accept.ts).
     case "ACCEPT_CAMPAIGN_IN_TAB":

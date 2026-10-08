@@ -96,7 +96,7 @@ html, body {
 .row { display: flex; gap: 8px; align-items: center; }
 .field { display: block; margin: 4px 0 12px; }
 .field span { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
-input[type="text"], input[type="password"] {
+input[type="text"], input[type="password"], input[type="email"] {
   flex: 1 1 auto;
   width: 100%;
   padding: 9px 11px;
@@ -157,6 +157,9 @@ button, .primary, .secondary {
   padding: 9px 8px;
 }
 .done-links { margin-top: 16px; }
+.ob-email { margin: 16px 0 0; padding: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; }
+.ob-email label { display: block; font-weight: 600; margin-bottom: 4px; }
+.ob-email p { margin: 0 0 8px; }
 
 .ob-foot {
   position: sticky;

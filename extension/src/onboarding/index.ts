@@ -1,7 +1,7 @@
 import { getSettings, getState, patchSettings, patchState } from "../storage/store";
 import { getLocale, setLocale, t } from "../i18n";
 import { sendToBackground, type AuthStatus, type PairResult, type SignInResult } from "../shared/messages";
-import { API_BASE, guideUrlFor } from "../shared/constants";
+import { API_BASE, ENDPOINTS, guideUrlFor } from "../shared/constants";
 import type { Settings } from "../storage/schema";
 import { isPairedLocal } from "../shared/bridge-token";
 import { isAndroid } from "../shared/platform";
@@ -43,6 +43,7 @@ async function init(): Promise<void> {
 
   await Promise.all([wireAccount(), wireStorefront(), wireTools(), wireApp()]);
   wireDoneLinks();
+  wireEmailOptin();
   wireFooter();
   render();
 }
@@ -276,6 +277,46 @@ async function offerSyncAfterPair(): Promise<void> {
 }
 
 // --- Done step --------------------------------------------------------------
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Optional email opt-in on the done step. The extension is anonymous, so this is
+// the only place an installer can ask for the day 10/17/28 check-in sequence
+// (a feedback survey with a thank-you gift, plus a separate reward-free review
+// ask). Entirely optional: finishing without it is fine, and nothing is sent
+// unless the user submits the form.
+function wireEmailOptin(): void {
+  const form = document.getElementById("ob-email-form") as HTMLFormElement;
+  const input = document.getElementById("ob-email-input") as HTMLInputElement;
+  const submit = document.getElementById("ob-email-submit") as HTMLButtonElement;
+  const status = document.getElementById("ob-email-status") as HTMLElement;
+  const show = (text: string): void => {
+    status.textContent = text;
+    status.hidden = false;
+  };
+  form.onsubmit = async (event) => {
+    event.preventDefault();
+    const email = input.value.trim();
+    if (!EMAIL_RE.test(email)) {
+      show(t().obEmailInvalid);
+      return;
+    }
+    submit.disabled = true;
+    try {
+      const response = await fetch(ENDPOINTS.reviewOptin, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, installedAt: Date.now() }),
+      });
+      if (!response.ok) throw new Error(`optin ${response.status}`);
+      show(t().obEmailThanks);
+      input.disabled = true; // done: leave the button disabled so it cannot double-submit
+    } catch {
+      show(t().obEmailFailed);
+      submit.disabled = false;
+    }
+  };
+}
 
 function wireDoneLinks(): void {
   (document.getElementById("ob-done-help") as HTMLAnchorElement).href = `${API_BASE}/extension`;

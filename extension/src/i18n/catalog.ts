@@ -1090,6 +1090,12 @@ export interface Dict {
   whatsNewReportedHeading: string;
   whatsNewOtherHeading: string;
   whatsNewDismiss: string;
+  reviewAskTitle: string;
+  reviewAskBody: string;
+  reviewAskYes: string;
+  reviewAskNo: string;
+  reviewAskLater: string;
+  reviewAskNever: string;
 
   // ASIN watchlist (product-page button, search-tile star, popup list).
   watchlist: string;
@@ -1153,6 +1159,13 @@ export interface Dict {
   obDoneDashboard: string;
   obDoneGuide: string;
   obDoneClose: string;
+  obEmailLabel: string;
+  obEmailBody: string;
+  obEmailPlaceholder: string;
+  obEmailSubmit: string;
+  obEmailThanks: string;
+  obEmailInvalid: string;
+  obEmailFailed: string;
 
   // Settings sync with the paired desktop app (popup card + walkthrough +
   // "are you sure" reconcile confirm).
@@ -2268,6 +2281,13 @@ const en: Dict = {
   whatsNewReportedHeading: "Issues you reported that we fixed",
   whatsNewOtherHeading: "Other notable changes",
   whatsNewDismiss: "Got it",
+  reviewAskTitle: "Is Influencer Butler saving you time?",
+  reviewAskBody:
+    "You have been using it for a little while. If it is helping, an honest review on the Chrome Web Store helps other Amazon creators find it. If something is not working for you, tell us instead and we will fix it.",
+  reviewAskYes: "Yes, leave a review",
+  reviewAskNo: "Not really, send feedback",
+  reviewAskLater: "Not now",
+  reviewAskNever: "Do not ask again",
 
   watchlist: "Watchlist",
   watchlistIntro:
@@ -2338,6 +2358,14 @@ const en: Dict = {
   obDoneDashboard: "My dashboard",
   obDoneGuide: "Download the PDF guide",
   obDoneClose: "Done",
+  obEmailLabel: "Optional: a check-in from our team",
+  obEmailBody:
+    "Want a short check-in from us in a week or two, with a thank-you gift for your feedback? Unsubscribe in one click, any time.",
+  obEmailPlaceholder: "you@example.com",
+  obEmailSubmit: "Sign me up",
+  obEmailThanks: "You are on the list. Thank you!",
+  obEmailInvalid: "That email address does not look right.",
+  obEmailFailed: "Could not sign you up right now. You can skip this and try again later.",
 
   syncTitle: "Sync with desktop app",
   syncBlurb:
@@ -3460,6 +3488,13 @@ const es: Dict = {
   whatsNewReportedHeading: "Problemas que reportaste y ya corregimos",
   whatsNewOtherHeading: "Otros cambios destacados",
   whatsNewDismiss: "Entendido",
+  reviewAskTitle: "¿Influencer Butler te está ahorrando tiempo?",
+  reviewAskBody:
+    "Ya llevas un tiempo usándolo. Si te está ayudando, una reseña sincera en Chrome Web Store ayuda a otros creadores de Amazon a encontrarlo. Si algo no te funciona, cuéntanoslo y lo arreglaremos.",
+  reviewAskYes: "Sí, dejar una reseña",
+  reviewAskNo: "No mucho, enviar comentarios",
+  reviewAskLater: "Ahora no",
+  reviewAskNever: "No volver a preguntar",
 
   watchlist: "Lista de seguimiento",
   watchlistIntro:
@@ -3530,6 +3565,14 @@ const es: Dict = {
   obDoneDashboard: "Mi panel",
   obDoneGuide: "Descargar la guía en PDF",
   obDoneClose: "Listo",
+  obEmailLabel: "Opcional: un mensaje de seguimiento de nuestro equipo",
+  obEmailBody:
+    "¿Quieres un breve mensaje nuestro dentro de una o dos semanas, con un regalo de agradecimiento por tus comentarios? Cancela la suscripción con un clic, cuando quieras.",
+  obEmailPlaceholder: "tu@ejemplo.com",
+  obEmailSubmit: "Apúntame",
+  obEmailThanks: "Estás en la lista. ¡Gracias!",
+  obEmailInvalid: "Ese correo electrónico no parece válido.",
+  obEmailFailed: "No pudimos apuntarte ahora mismo. Puedes omitir esto e intentarlo más tarde.",
 
   syncTitle: "Sincronizar con la app de escritorio",
   syncBlurb:
@@ -4652,6 +4695,13 @@ const fr: Dict = {
   whatsNewReportedHeading: "Problèmes que vous avez signalés et corrigés",
   whatsNewOtherHeading: "Autres changements notables",
   whatsNewDismiss: "Compris",
+  reviewAskTitle: "Influencer Butler vous fait-il gagner du temps ?",
+  reviewAskBody:
+    "Vous l'utilisez depuis un petit moment. S'il vous aide, un avis honnête sur le Chrome Web Store aide d'autres créateurs Amazon à le trouver. Si quelque chose ne fonctionne pas, dites-le-nous et nous le corrigerons.",
+  reviewAskYes: "Oui, laisser un avis",
+  reviewAskNo: "Pas vraiment, envoyer un retour",
+  reviewAskLater: "Pas maintenant",
+  reviewAskNever: "Ne plus demander",
 
   watchlist: "Liste de suivi",
   watchlistIntro:
@@ -4722,6 +4772,14 @@ const fr: Dict = {
   obDoneDashboard: "Mon tableau de bord",
   obDoneGuide: "Télécharger le guide PDF",
   obDoneClose: "Terminé",
+  obEmailLabel: "Facultatif : un petit suivi de notre équipe",
+  obEmailBody:
+    "Souhaitez-vous un court message de notre part dans une ou deux semaines, avec un cadeau de remerciement pour vos retours ? Désabonnement en un clic, à tout moment.",
+  obEmailPlaceholder: "vous@exemple.com",
+  obEmailSubmit: "Je m'inscris",
+  obEmailThanks: "Vous êtes inscrit. Merci !",
+  obEmailInvalid: "Cette adresse e-mail ne semble pas valide.",
+  obEmailFailed: "Inscription impossible pour le moment. Vous pouvez passer cette étape et réessayer plus tard.",
 
   syncTitle: "Synchroniser avec l'app de bureau",
   syncBlurb:

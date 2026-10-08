@@ -7,6 +7,10 @@ export const ENDPOINTS = {
   storefrontIssues: `${API_BASE}/api/extension/storefront-issues`,
   orders: `${API_BASE}/api/extension/orders`,
   feedback: `${API_BASE}/api/extension/feedback`,
+  // Optional email opt-in from the first-run walkthrough: tags the address so the
+  // day 10/17/28 check-in sequence (feedback survey + a reward-free review ask)
+  // enrolls it. Anonymous POST, one-click unsubscribe in every email.
+  reviewOptin: `${API_BASE}/api/extension/review/optin`,
   // Read side of the Feedback Butler: the signed-in user's own bug reports that
   // have since been marked resolved, so the "What's New" notice can show
   // "issues you reported that we fixed". License Bearer required (anonymous
@@ -405,6 +409,24 @@ export const NUDGE_COMMUNITY_ALARM = "ib-nudge-community";
 export const NUDGE_FB_DELAY_MS = 24 * 60 * 60 * 1000; // 1 day after first use
 export const NUDGE_APP_DELAY_MS = 3 * 24 * 60 * 60 * 1000; // 3 days after first use
 export const NUDGE_COMMUNITY_DELAY_MS = 5 * 24 * 60 * 60 * 1000; // 5 days after first use
+
+// "Is this saving you time?" review ask. A passive popup card for engaged users:
+// a happy answer opens the Chrome Web Store reviews tab, an unhappy one opens
+// Feedback Butler instead, so unhappy users are routed to us rather than to the
+// store. It never offers or implies a reward (an incentivized review would
+// violate Chrome Web Store policy). Own storage key (no schema bump, like
+// UPDATE_STORAGE_KEY below). Keep the id in sync with CHROME_REVIEW_URL in the
+// web repo's src/lib/extension-review.ts.
+export const CHROME_REVIEW_URL =
+  "https://chromewebstore.google.com/detail/influencer-butler/cnkfballfjhdijogkjjhdfmnkijcjgbc/reviews";
+export const REVIEW_ASK_STORAGE_KEY = "ib-review-ask";
+// Eligibility: at least this long since first use AND this many distinct active
+// days, so the ask lands after the product has had time to prove itself.
+export const REVIEW_ASK_MIN_AGE_MS = 5 * 24 * 60 * 60 * 1000;
+export const REVIEW_ASK_MIN_ACTIVE_DAYS = 3;
+// "Not now" snoozes this long; after MAX asks the card never returns.
+export const REVIEW_ASK_SNOOZE_MS = 30 * 24 * 60 * 60 * 1000;
+export const REVIEW_ASK_MAX_ASKS = 2;
 
 // Extension self-update banner. Chrome stages extension updates itself (and in
 // MV3 applies them shortly after the worker idles); we just record what is

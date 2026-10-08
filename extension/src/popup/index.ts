@@ -36,7 +36,7 @@ import { isAndroid, isMobileUserAgent } from "../shared/platform";
 import { activePageTab } from "./active-tab";
 import { autoFillFromDesktop, runSyncReconcile } from "../tools/settings-sync/ui";
 import { getLocale, resolveLocale, setLocale, t } from "../i18n";
-import { guideUrlFor } from "../shared/constants";
+import { CHROME_REVIEW_URL, EXTENSION_FEEDBACK_URL, guideUrlFor } from "../shared/constants";
 
 // Popup: page status via the active tab's content script, account sign-in via
 // the background, settings straight to storage (content scripts pick changes
@@ -75,6 +75,7 @@ async function init(): Promise<void> {
   await Promise.all([
     renderUpdateCard(),
     renderWhatsNewCard(),
+    renderReviewAskCard(),
     renderPageStatus(),
     renderAccount(),
     renderAppBridge(),
@@ -274,6 +275,29 @@ async function renderWhatsNewCard(): Promise<void> {
     syncNavVisibility();
   };
   byId("whats-new-card").hidden = false;
+}
+
+// "Is this saving you time?" review ask: shown once an install is old and active
+// enough (decided in the background). A happy answer opens the Web Store reviews
+// tab, an unhappy one opens Feedback Butler, and either closes the card for good.
+// No reward is ever mentioned: an incentivized store review would violate Chrome
+// Web Store policy.
+async function renderReviewAskCard(): Promise<void> {
+  const due = await sendToBackground<boolean>({ kind: "GET_REVIEW_ASK_DUE" }).catch(() => false);
+  if (!due) return; // card stays hidden
+  const card = byId("review-ask-card");
+  const answer = (choice: "yes" | "no" | "later" | "never", url?: string): void => {
+    void sendToBackground<void>({ kind: "ANSWER_REVIEW_ASK", answer: choice }).catch(() => {});
+    if (url) void chrome.tabs.create({ url });
+    card.hidden = true;
+    syncNavVisibility();
+  };
+  byId<HTMLButtonElement>("review-ask-yes").onclick = () => answer("yes", CHROME_REVIEW_URL);
+  byId<HTMLButtonElement>("review-ask-no").onclick = () =>
+    answer("no", `${EXTENSION_FEEDBACK_URL}?src=review-ask`);
+  byId<HTMLButtonElement>("review-ask-later").onclick = () => answer("later");
+  byId<HTMLButtonElement>("review-ask-never").onclick = () => answer("never");
+  card.hidden = false;
 }
 
 // One labelled group of bullet points in the popup's What's New card.

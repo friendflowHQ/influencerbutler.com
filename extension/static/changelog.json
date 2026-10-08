@@ -1,6 +1,19 @@
 {
-  "lastUpdated": "2026-10-07",
+  "lastUpdated": "2026-10-08",
   "releases": [
+    {
+      "version": "0.1.31",
+      "date": "October 8, 2026",
+      "sections": [
+        {
+          "heading": "Other notable changes",
+          "items": [
+            "After you have used the extension for a few days, the popup may ask whether it is saving you time. Say yes to leave an honest review, say not really to send us feedback instead, or turn the question off for good",
+            "The first-run walkthrough now ends with an optional sign-up for a short check-in email from our team"
+          ]
+        }
+      ]
+    },
     {
       "version": "0.1.30",
       "date": "October 7, 2026",

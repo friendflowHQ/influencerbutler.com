@@ -94,6 +94,15 @@
       <section class="ob-step" data-step="done" hidden>
         <h1 data-i18n="obDoneTitle">You are all set</h1>
         <p data-i18n="obDoneBody"></p>
+        <form id="ob-email-form" class="ob-email">
+          <label for="ob-email-input" data-i18n="obEmailLabel">Optional: a check-in from our team</label>
+          <p class="muted small" data-i18n="obEmailBody"></p>
+          <div class="row">
+            <input id="ob-email-input" type="email" autocomplete="email" data-i18n-ph="obEmailPlaceholder" placeholder="you@example.com" />
+            <button id="ob-email-submit" type="submit" class="secondary" data-i18n="obEmailSubmit">Sign me up</button>
+          </div>
+          <p id="ob-email-status" class="muted small" role="status" hidden></p>
+        </form>
         <div class="row done-links">
           <a id="ob-done-help" class="primary" href="#" data-i18n="obDoneHelp">Open Help</a>
           <a id="ob-done-dashboard" class="secondary" href="#" data-i18n="obDoneDashboard">My dashboard</a>

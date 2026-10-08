@@ -32,6 +32,10 @@ export async function maybeShowNudge(): Promise<void> {
     return;
   }
 
+  // Count today as an active day for the popup's review ask. Fire and forget:
+  // the background writes at most once per local day.
+  void sendToBackground<void>({ kind: "NOTE_ACTIVE_DAY" }).catch(() => {});
+
   const elapsed = Date.now() - state.firstUseAt;
 
   if (dueForModal(state.nudges.fbGroup, elapsed, NUDGE_FB_DELAY_MS)) {
