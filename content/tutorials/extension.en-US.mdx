@@ -140,14 +140,37 @@ Auto mode is off until you turn it on. If Amazon shows a robot check, it pauses 
 
 ## Use the extension with the app on a different computer
 
-The pairing code links the extension to the app on the **same** computer. To run the extension on one computer and the desktop app on another, use the Remote devices feature instead. It needs a paid or trial plan, and you sign in with the same license on both computers.
+The 6-digit pairing code only links the extension to the app on the **same** computer. To run the extension on one computer and the desktop app on another, use **Send to another computer**. It needs a paid or trial plan, and it takes two things: the **same license key** on both computers, then a **link code**. Do them in this order.
 
-1. On the computer running the desktop app, open **Settings**, find **Remote devices (other computers)**, and click **Turn on receiving**
-1. Click **Link a device**; the app shows a link code that is good for 2 minutes
-1. On the other computer, click the extension icon in Chrome to open the **popup** (the small window, not the extension's options page), find the **Send to another computer** card, and enter that link code
-1. Once linked, the deals your extension finds are sent to the app on the other computer, where they queue to post
+**Part 1: sign the extension in with your license key (other computer)**
 
-This sends the deals your extension finds. Live actions like accepting a campaign still happen on the computer where the app runs.
+1. Click the Influencer Butler icon in Chrome's toolbar to open the **popup** (the small window, not the panel on Amazon pages and not the options page)
+1. If the badge at the top says **Free**, the extension is not signed in yet. Open **Account** in the popup and sign in with the same email and license key you use in the desktop app
+1. The badge changes and the **Send to another computer** card now shows a code box. If it still says "Not signed in here yet", the key did not save; sign in again
+
+**Part 2: get a link code (the computer running the desktop app)**
+
+1. Open the desktop app, go to **Settings**, then **Extension**
+1. Under **Remote devices (other computers)**, click **Connect another computer**; the app turns on receiving and shows a 6-digit code
+1. The code lasts 2 minutes. If it runs out, click the button again for a fresh one
+
+**Part 3: link them (other computer)**
+
+1. In the extension popup, find **Send to another computer**, type the code, and click **Link device**
+1. A message says the computer is linked and it appears under **Linked computers**. If you have more than one, click **Make default** on the one deals should go to
+
+Once linked, the deals your extension finds are sent to the app on the other computer, where they queue to post. Live actions like accepting a campaign still happen on the computer where the app runs.
+
+**If linking fails, the message tells you why**
+
+- **Cross-device sending needs a paid plan:** the account needs an active paid or trial plan
+- **That link code is wrong or has expired:** generate a new code in the app and enter it within 2 minutes. This also appears when the extension is signed in with a different license key than the app, so check Part 1
+- **Not signed in here yet:** finish Part 1 first
+- **Could not reach your other device:** check the computer's internet connection and try again
+
+## Contact support from the extension
+
+Click the small orange chat bubble at the bottom right of the popup to report a bug or ask for a feature. You can add screenshots (pick a file, paste with Ctrl+V, or capture the page), leave an email so we can reply, and keep **Attach diagnostic details** ticked so we can see what happened. Use the **A-** and **A+** buttons at the top of the popup to make everything bigger or smaller.
 
 ## See what your videos earn (Creator Hub)
 

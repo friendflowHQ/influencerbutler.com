@@ -140,14 +140,37 @@ Le mode automatique est désactivé tant que vous ne l'activez pas. Si Amazon af
 
 ## Utiliser l'extension avec l'application sur un autre ordinateur
 
-Le code d'association relie l'extension et l'application sur le **même** ordinateur. Pour utiliser l'extension sur un ordinateur et l'application de bureau sur un autre, utilisez plutôt la fonction Remote devices. Elle nécessite un forfait payant ou d'essai, et vous vous connectez avec la même licence sur les deux ordinateurs.
+Le code d'association à 6 chiffres relie seulement l'extension et l'application sur le **même** ordinateur. Pour utiliser l'extension sur un ordinateur et l'application de bureau sur un autre, utilisez **Send to another computer**. Il faut un forfait payant ou d'essai, et deux choses: la **même clé de licence** sur les deux ordinateurs, puis un **code de liaison**. Faites-les dans cet ordre.
 
-1. Sur l'ordinateur qui exécute l'application de bureau, ouvrez **Paramètres**, trouvez **Remote devices (other computers)**, puis cliquez sur **Turn on receiving**
-1. Cliquez sur **Link a device**; l'application affiche un code de liaison valable 2 minutes
-1. Sur l'autre ordinateur, cliquez sur l'icône de l'extension dans Chrome pour ouvrir la **fenêtre contextuelle** (la petite fenêtre, pas la page d'options de l'extension), trouvez la carte **Send to another computer** et saisissez ce code de liaison
-1. Une fois liées, les offres que votre extension trouve sont envoyées à l'application sur l'autre ordinateur, où elles sont mises en file pour publication
+**Partie 1: connectez l'extension avec votre clé de licence (autre ordinateur)**
 
-Cela envoie les offres que votre extension trouve. Les actions en direct, comme accepter une campagne, se font toujours sur l'ordinateur où l'application s'exécute.
+1. Cliquez sur l'icône Influencer Butler dans la barre d'outils de Chrome pour ouvrir la **fenêtre contextuelle** (la petite fenêtre, pas le panneau des pages Amazon ni la page d'options)
+1. Si le badge en haut indique **Free**, l'extension n'est pas encore connectée. Ouvrez **Account** dans la fenêtre et connectez-vous avec le même e-mail et la même clé de licence que dans l'application de bureau
+1. Le badge change et la carte **Send to another computer** affiche une zone de code. Si elle indique encore "Not signed in here yet", la clé n'a pas été enregistrée; reconnectez-vous
+
+**Partie 2: obtenez un code de liaison (l'ordinateur avec l'application de bureau)**
+
+1. Ouvrez l'application de bureau, allez dans **Paramètres**, puis **Extension**
+1. Sous **Remote devices (other computers)**, cliquez sur **Connecter un autre ordinateur**; l'application active la réception et affiche un code à 6 chiffres
+1. Le code est valable 2 minutes. S'il expire, cliquez de nouveau sur le bouton pour en obtenir un nouveau
+
+**Partie 3: liez-les (autre ordinateur)**
+
+1. Dans la fenêtre de l'extension, trouvez **Send to another computer**, saisissez le code et cliquez sur **Link device**
+1. Un message indique que l'ordinateur est lié et il apparaît sous **Linked computers**. Si vous en avez plusieurs, cliquez sur **Make default** sur celui qui doit recevoir les offres
+
+Une fois liées, les offres que votre extension trouve sont envoyées à l'application sur l'autre ordinateur, où elles sont mises en file pour publication. Les actions en direct, comme accepter une campagne, se font toujours sur l'ordinateur où l'application s'exécute.
+
+**Si la liaison échoue, le message vous dit pourquoi**
+
+- **Cross-device sending needs a paid plan:** le compte doit avoir un forfait payant ou d'essai actif
+- **That link code is wrong or has expired:** générez un nouveau code dans l'application et saisissez-le en 2 minutes. Ce message apparaît aussi quand l'extension utilise une autre clé de licence que l'application, vérifiez donc la Partie 1
+- **Not signed in here yet:** terminez d'abord la Partie 1
+- **Could not reach your other device:** vérifiez la connexion internet de l'ordinateur et réessayez
+
+## Contacter le support depuis l'extension
+
+Cliquez sur la petite bulle de chat orange en bas à droite de la fenêtre pour signaler un bogue ou demander une fonction. Vous pouvez ajouter des captures (choisir un fichier, coller avec Ctrl+V ou capturer la page), laisser un e-mail pour que nous puissions répondre, et garder **Attach diagnostic details** coché pour que nous voyions ce qui s'est passé. Utilisez les boutons **A-** et **A+** en haut pour tout agrandir ou réduire.
 
 ## Voir ce que rapportent vos vidéos (Creator Hub)
 

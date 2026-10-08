@@ -934,6 +934,9 @@ async function renderRemoteDevices(): Promise<void> {
 
   const state = await sendToBackground<RelayStateView>({ kind: "RELAY_GET_STATE" });
   card.hidden = false;
+  // Guided checklist: tick step 1 once signed in, step 3 once a computer is linked.
+  byId("relay-step-1").classList.toggle("done", state.signedIn);
+  byId("relay-step-3").classList.toggle("done", state.signedIn && state.targets.length > 0);
   if (!state.signedIn) {
     // Stay visible so a user who is not signed in sees WHY linking is unavailable
     // (it was hidden before, which read as "this feature does not exist").
@@ -959,6 +962,7 @@ async function renderRemoteDevices(): Promise<void> {
       status.textContent = `Linked ${r.receiverLabel || "your other computer"}.`;
       const next = await sendToBackground<RelayStateView>({ kind: "RELAY_GET_STATE" });
       renderRelayTargets(next, targetsWrap, targetsLabel, status);
+      byId("relay-step-3").classList.toggle("done", next.targets.length > 0);
     } else {
       status.textContent = r.error || "Could not link. Check the code and try again.";
     }

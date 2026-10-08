@@ -140,14 +140,37 @@ El modo automático está apagado hasta que lo actives. Si Amazon muestra una ve
 
 ## Usar la extensión con la app en otro ordenador
 
-El código de emparejamiento une la extensión y la app en el **mismo** ordenador. Para usar la extensión en un ordenador y la app de escritorio en otro, usa la función Remote devices. Necesita un plan de pago o de prueba, y debes iniciar sesión con la misma licencia en ambos ordenadores.
+El código de emparejamiento de 6 dígitos solo une la extensión y la app en el **mismo** ordenador. Para usar la extensión en un ordenador y la app de escritorio en otro, usa **Send to another computer**. Necesita un plan de pago o de prueba, y hacen falta dos cosas: la **misma clave de licencia** en ambos ordenadores y después un **código de enlace**. Hazlo en este orden.
 
-1. En el ordenador con la app de escritorio, abre **Ajustes**, busca **Remote devices (other computers)** y haz clic en **Turn on receiving**
-1. Haz clic en **Link a device**; la app muestra un código de enlace válido durante 2 minutos
-1. En el otro ordenador, haz clic en el icono de la extensión en Chrome para abrir la **ventana emergente** (la ventana pequeña, no la página de opciones de la extensión), busca la tarjeta **Send to another computer** e introduce ese código de enlace
-1. Una vez enlazados, las ofertas que encuentra tu extensión se envían a la app del otro ordenador, donde quedan en cola para publicarse
+**Parte 1: inicia sesión en la extensión con tu clave de licencia (otro ordenador)**
 
-Esto envía las ofertas que encuentra tu extensión. Las acciones en directo, como aceptar una campaña, siguen ocurriendo en el ordenador donde se ejecuta la app.
+1. Haz clic en el icono de Influencer Butler en la barra de herramientas de Chrome para abrir la **ventana emergente** (la ventana pequeña, no el panel de las páginas de Amazon ni la página de opciones)
+1. Si la insignia de arriba dice **Free**, la extensión aún no ha iniciado sesión. Abre **Account** en la ventana e inicia sesión con el mismo correo y la misma clave de licencia que usas en la app de escritorio
+1. La insignia cambia y la tarjeta **Send to another computer** muestra una casilla para el código. Si sigue diciendo "Not signed in here yet", la clave no se guardó; inicia sesión de nuevo
+
+**Parte 2: obtén un código de enlace (el ordenador con la app de escritorio)**
+
+1. Abre la app de escritorio, ve a **Ajustes** y luego a **Extensión**
+1. En **Remote devices (other computers)**, haz clic en **Conectar otro ordenador**; la app activa la recepción y muestra un código de 6 dígitos
+1. El código dura 2 minutos. Si caduca, haz clic de nuevo en el botón para obtener uno nuevo
+
+**Parte 3: enlázalos (otro ordenador)**
+
+1. En la ventana de la extensión, busca **Send to another computer**, escribe el código y haz clic en **Link device**
+1. Un mensaje indica que el ordenador está enlazado y aparece en **Linked computers**. Si tienes más de uno, haz clic en **Make default** en el que debe recibir las ofertas
+
+Una vez enlazados, las ofertas que encuentra tu extensión se envían a la app del otro ordenador, donde quedan en cola para publicarse. Las acciones en directo, como aceptar una campaña, siguen ocurriendo en el ordenador donde se ejecuta la app.
+
+**Si el enlace falla, el mensaje te dice por qué**
+
+- **Cross-device sending needs a paid plan:** la cuenta necesita un plan de pago o de prueba activo
+- **That link code is wrong or has expired:** genera un código nuevo en la app y escríbelo en 2 minutos. También aparece cuando la extensión tiene una clave de licencia distinta a la de la app, así que revisa la Parte 1
+- **Not signed in here yet:** termina primero la Parte 1
+- **Could not reach your other device:** revisa la conexión a internet del ordenador e inténtalo de nuevo
+
+## Contactar con soporte desde la extensión
+
+Haz clic en la pequeña burbuja naranja de chat, abajo a la derecha de la ventana, para informar de un error o pedir una función. Puedes añadir capturas (elige un archivo, pega con Ctrl+V o captura la página), dejar un correo para que podamos responder y mantener marcado **Attach diagnostic details** para que veamos qué ocurrió. Usa los botones **A-** y **A+** de la parte superior para ver todo más grande o más pequeño.
 
 ## Ver lo que ganan tus videos (Creator Hub)
 
