@@ -156,6 +156,17 @@ describe("/api/build-week/enter", () => {
     expect(tagMock).not.toHaveBeenCalled();
   });
 
+  it("notes the language the consent was shown in", async () => {
+    const db = fakeDb();
+    adminMock.mockReturnValue(db.client);
+    await POST(request(valid({ locale: "es-ES" })));
+    expect(db.insert.mock.calls[0][0].consent_text).toBe(
+      `${BUILD_WEEK_CONSENT_TEXT} [shown to the entrant in es-ES; the English Rules control]`,
+    );
+    await POST(request(valid({ locale: "xx-XX", email: "other@gmail.com" })));
+    expect(db.insert.mock.calls[1][0].consent_text).toBe(BUILD_WEEK_CONSENT_TEXT);
+  });
+
   it("keys the rate limits by IP and by email", async () => {
     adminMock.mockReturnValue(fakeDb().client);
     await POST(request(valid()));

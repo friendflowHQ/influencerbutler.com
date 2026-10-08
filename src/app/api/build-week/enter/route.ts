@@ -46,6 +46,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const LOCALES = ["en-US", "es-ES", "fr-FR"];
 const FACEBOOK_HOST_RE = /(^|\.)facebook\.com$|(^|\.)fb\.com$/i;
 
 type Body = {
@@ -60,6 +61,7 @@ type Body = {
   agree?: unknown;
   website?: unknown;
   turnstileToken?: unknown;
+  locale?: unknown;
 };
 
 function isMissingTable(error: unknown): boolean {
@@ -174,6 +176,13 @@ export async function POST(request: Request) {
   }
 
   const wantsUpdates = body.updates === true;
+  // The consent record is the wording the entrant saw; note when it was shown in
+  // another language (the English Rules are the binding text either way).
+  const locale = typeof body.locale === "string" && LOCALES.includes(body.locale) ? body.locale : "en-US";
+  const consentText =
+    locale === "en-US"
+      ? BUILD_WEEK_CONSENT_TEXT
+      : `${BUILD_WEEK_CONSENT_TEXT} [shown to the entrant in ${locale}; the English Rules control]`;
   const row: Record<string, unknown> = {
     event_slug: BUILD_WEEK_SLUG,
     name,
@@ -185,7 +194,7 @@ export async function POST(request: Request) {
     keep_private: body.keepPrivate === true,
     wants_updates: wantsUpdates,
     rules_version: BUILD_WEEK_RULES_VERSION,
-    consent_text: BUILD_WEEK_CONSENT_TEXT,
+    consent_text: consentText,
   };
 
   try {

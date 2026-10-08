@@ -24,6 +24,10 @@ const PAGES = [
   "/affiliates/apply",
   "/legal/accessibility",
   "/help/tutorials/extension",
+  // Build Week is dark (404) until launch, so only check it when the flag is on.
+  ...(process.env.NEXT_PUBLIC_BUILD_WEEK_ENABLED === "1"
+    ? ["/build-week", "/build-week?lang=es-ES", "/legal/build-week-rules"]
+    : []),
 ];
 
 // Impact levels that fail the check.
