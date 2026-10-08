@@ -9,6 +9,7 @@ import { describe, it, expect } from "vitest";
 import {
   buildCampaignEmail,
   campaignPlainText,
+  extractSrcTags,
   hasCampaignMarkup,
   renderCampaignHtml,
 } from "../campaign-email";
@@ -96,6 +97,23 @@ describe("renderCampaignHtml", () => {
   it("does not turn a non-http link into an anchor", () => {
     const html = renderCampaignHtml("**x** [bad](javascript:alert(1))");
     expect(html).not.toContain("<a href");
+  });
+});
+
+describe("extractSrcTags", () => {
+  it("finds unique src tags from bare and markdown links, in order", () => {
+    const body = [
+      "Try https://www.influencerbutler.com/go/download?src=group-mirror-a today.",
+      "[Button](https://www.influencerbutler.com/go/download?utm=x&src=group-mirror-b)",
+      "Again https://www.influencerbutler.com/go/download?src=group-mirror-a.",
+    ].join("\n\n");
+    expect(extractSrcTags(body)).toEqual(["group-mirror-a", "group-mirror-b"]);
+  });
+
+  it("returns nothing when there is no src parameter", () => {
+    expect(extractSrcTags("No links here")).toEqual([]);
+    expect(extractSrcTags("https://example.com/?source=foo")).toEqual([]);
+    expect(extractSrcTags("")).toEqual([]);
   });
 });
 

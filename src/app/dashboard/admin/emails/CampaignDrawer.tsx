@@ -8,13 +8,15 @@ import { useEffect, useState } from "react";
 
 import EmailTrends from "./EmailTrends";
 
-type Audience =
+type Audience = (
   | { kind: "all_contacts" }
   | { kind: "tag"; tag: string }
   | { kind: "segment"; segment: string }
-  | { kind: "opened_nonpaid"; minOpens?: number }
+  | { kind: "opened_nonpaid"; minOpens?: number; maxOpens?: number }
+  | { kind: "campaign_nonopeners"; campaignId: string }
   | { kind: "engaged" }
-  | { kind: "pasted"; emails: string[] };
+  | { kind: "pasted"; emails: string[] }
+) & { split?: { index: number; of: number } };
 
 type CampaignDetail = {
   id: string;
@@ -43,6 +45,8 @@ type RecipientRow = {
 
 type CampaignResponse = {
   campaign: CampaignDetail | null;
+  /** People who reached the download page from this campaign's ?src= links. */
+  downloadClicks?: { src: string; count: number }[];
   counts: { queued: number; sent: number; skipped: number; failed: number };
   recipients: RecipientRow[];
   total: number;
@@ -66,19 +70,27 @@ const SEGMENT_LABELS: Record<string, string> = {
   trial: "Trial users",
   pro: "Pro subscribers",
   churned: "Churned customers",
-  free: "Free users (never subscribed)",
   newsletter: "Newsletter subscribers",
 };
 
-function audienceLabel(a: Audience): string {
+function baseAudienceLabel(a: Audience): string {
   if (a.kind === "all_contacts") return "All contacts";
   if (a.kind === "tag") return `Tag: ${a.tag}`;
   if (a.kind === "segment") return `Segment: ${SEGMENT_LABELS[a.segment] ?? a.segment}`;
   if (a.kind === "opened_nonpaid") {
-    return `Opened ${a.minOpens ?? 1}+ emails, no active subscription or trial`;
+    const min = a.minOpens ?? 1;
+    const range = a.maxOpens !== undefined ? `${min}-${a.maxOpens}` : `${min}+`;
+    return `Opened ${range} emails, no active subscription or trial`;
   }
+  if (a.kind === "campaign_nonopeners") return "Did not open an earlier campaign";
   if (a.kind === "engaged") return "Engaged openers";
   return `Pasted list (${a.emails?.length ?? 0})`;
+}
+
+function audienceLabel(a: Audience): string {
+  const base = baseAudienceLabel(a);
+  if (!a.split) return base;
+  return `${base} (half ${String.fromCharCode(65 + a.split.index)} of ${a.split.of})`;
 }
 
 function fmt(iso: string | null): string {
@@ -213,6 +225,26 @@ export default function CampaignDrawer({
                 </div>
               ) : null}
             </dl>
+
+            {data.downloadClicks && data.downloadClicks.length > 0 ? (
+              <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+                <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Download clicks
+                </h3>
+                <ul className="mt-1 space-y-0.5">
+                  {data.downloadClicks.map((d) => (
+                    <li key={d.src} className="text-slate-800">
+                      <span className="font-semibold">{d.count.toLocaleString("en-US")}</span>{" "}
+                      <span className="font-mono text-xs text-slate-500">src={d.src}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-1 text-xs text-slate-500">
+                  People who reached the download page from the links in this email after it was
+                  sent (bots and link previews are filtered out).
+                </p>
+              </div>
+            ) : null}
 
             {/* This campaign's sends, opens, and clicks over time (category
                 campaign_<id8>). */}

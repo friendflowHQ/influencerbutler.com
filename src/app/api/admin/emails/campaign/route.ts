@@ -11,6 +11,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requirePermission } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { campaignCategory } from "@/lib/email-marketing";
+import { extractSrcTags } from "@/lib/campaign-email";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,7 +19,7 @@ export const dynamic = "force-dynamic";
 const PAGE_SIZE = 50;
 const COUNT_PAGE = 1000;
 const COUNT_CAP = 20000;
-const ENGAGEMENT_CAP = 5000;
+const ENGAGEMENT_CAP = 20000;
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -95,27 +96,59 @@ export async function GET(request: Request) {
   // by category. Empty until the Resend webhook populates events.
   const engagement = new Map<string, Engagement>();
   try {
-    const { data: sendRows } = await db
-      .from("email_sends")
-      .select("recipient, delivered_at, opened_at, clicked_at, bounced_at")
-      .eq("category", campaignCategory(id))
-      .limit(ENGAGEMENT_CAP);
-    for (const row of sendRows ?? []) {
-      if (typeof row.recipient === "string") {
-        engagement.set(row.recipient.toLowerCase(), {
-          delivered_at: (row.delivered_at as string | null) ?? null,
-          opened_at: (row.opened_at as string | null) ?? null,
-          clicked_at: (row.clicked_at as string | null) ?? null,
-          bounced_at: (row.bounced_at as string | null) ?? null,
-        });
+    // Page in 1000-row ranges with a stable order: a single .limit(5000) is
+    // silently capped at 1000 rows by PostgREST and returns an arbitrary subset,
+    // which made opens and clicks flicker between loads.
+    for (let offset = 0; offset < ENGAGEMENT_CAP; offset += COUNT_PAGE) {
+      const { data: sendRows, error: sendErr } = await db
+        .from("email_sends")
+        .select("recipient, delivered_at, opened_at, clicked_at, bounced_at")
+        .eq("category", campaignCategory(id))
+        .order("created_at", { ascending: true })
+        .order("id", { ascending: true })
+        .range(offset, offset + COUNT_PAGE - 1);
+      if (sendErr) break;
+      for (const row of sendRows ?? []) {
+        if (typeof row.recipient === "string") {
+          engagement.set(row.recipient.toLowerCase(), {
+            delivered_at: (row.delivered_at as string | null) ?? null,
+            opened_at: (row.opened_at as string | null) ?? null,
+            clicked_at: (row.clicked_at as string | null) ?? null,
+            bounced_at: (row.bounced_at as string | null) ?? null,
+          });
+        }
       }
+      if ((sendRows ?? []).length < COUNT_PAGE) break;
     }
   } catch {
     // no engagement available; degrade to status-only
   }
 
+  // Download clicks per src tag used in the body's links: people who reached
+  // /go/download from this campaign after the send (bots and prefetches are
+  // already filtered out). The email's own click total counts clicks on any
+  // link, so the two can differ. Best-effort; omitted on a query error.
+  const sinceIso =
+    (campaign.materialized_at as string | null) ?? (campaign.created_at as string | null);
+  const downloadClicks: { src: string; count: number }[] = [];
+  if (sinceIso) {
+    for (const src of extractSrcTags(String(campaign.body ?? ""))) {
+      const { count: clicks, error: clickErr } = await db
+        .from("activity_events")
+        .select("id", { count: "exact", head: true })
+        .eq("kind", "trial_click")
+        .eq("is_bot", false)
+        .eq("hidden", false)
+        .eq("source", src)
+        .gte("created_at", sinceIso);
+      if (clickErr) break;
+      downloadClicks.push({ src, count: clicks ?? 0 });
+    }
+  }
+
   return NextResponse.json({
     campaign: { ...campaign, category: campaignCategory(id) },
+    downloadClicks,
     counts,
     recipients: recipients.map((r) => ({
       email: r.email,

@@ -9,21 +9,33 @@
 // keeps per-campaign skip counts honest.
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { campaignCategory } from "@/lib/email-marketing";
 
-export type AudienceSegment = "trial" | "pro" | "churned" | "free" | "newsletter";
+export type AudienceSegment = "trial" | "pro" | "churned" | "newsletter";
 
-export type Audience =
+/**
+ * Optional A/B split applied to ANY audience: keep only the addresses whose
+ * stable hash bucket equals `index` out of `of` buckets. Two campaigns with the
+ * same audience and split indexes 0 and 1 (of 2) get disjoint halves.
+ */
+export type AudienceSplit = { index: number; of: number };
+
+export type Audience = (
   | { kind: "tag"; tag: string }
   | { kind: "all_contacts" }
   | { kind: "segment"; segment: AudienceSegment }
   | { kind: "engaged"; minOpens: number; withinDays?: number }
-  | { kind: "opened_nonpaid"; minOpens: number; withinDays?: number }
-  | { kind: "pasted"; emails: string[] };
+  | { kind: "opened_nonpaid"; minOpens: number; maxOpens?: number; withinDays?: number }
+  | { kind: "campaign_nonopeners"; campaignId: string }
+  | { kind: "pasted"; emails: string[] }
+) & { split?: AudienceSplit };
 
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const SEGMENTS = new Set<AudienceSegment>(["trial", "pro", "churned", "free", "newsletter"]);
+const SEGMENTS = new Set<AudienceSegment>(["trial", "pro", "churned", "newsletter"]);
 const TAG_RE = /^[a-z0-9][a-z0-9_-]{0,39}$/;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const MAX_SPLIT_OF = 4;
 
 const PAGE = 1000;
 const CHUNK = 200;
@@ -68,8 +80,41 @@ export function parseEmailList(
   return { emails: [...seen], invalid };
 }
 
+/**
+ * Stable bucket (0..of-1) for an address: FNV-1a 32-bit over the lowercased,
+ * trimmed email. Deterministic, so a preview, the cron's recipient list and a
+ * "duplicate as the other half" campaign always agree.
+ */
+export function splitBucket(email: string, of: number): number {
+  let hash = 0x811c9dc5;
+  for (const ch of email.trim().toLowerCase()) {
+    hash ^= ch.codePointAt(0) ?? 0;
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash % of;
+}
+
+/** Validates the optional split field. Undefined when absent, null when invalid. */
+function parseSplit(raw: unknown): AudienceSplit | undefined | null {
+  if (raw === undefined || raw === null) return undefined;
+  if (typeof raw !== "object") return null;
+  const { index, of } = raw as Record<string, unknown>;
+  if (typeof index !== "number" || typeof of !== "number") return null;
+  if (!Number.isInteger(index) || !Number.isInteger(of)) return null;
+  if (of < 2 || of > MAX_SPLIT_OF || index < 0 || index >= of) return null;
+  return { index, of };
+}
+
 /** Allow-list validation of an untrusted audience payload. Null on garbage. */
 export function parseAudience(input: unknown): Audience | null {
+  const base = parseAudienceBase(input);
+  if (!base) return null;
+  const split = parseSplit((input as Record<string, unknown>).split);
+  if (split === null) return null;
+  return split ? { ...base, split } : base;
+}
+
+function parseAudienceBase(input: unknown): Audience | null {
   if (!input || typeof input !== "object") return null;
   const raw = input as Record<string, unknown>;
   switch (raw.kind) {
@@ -112,9 +157,24 @@ export function parseAudience(input: unknown): Audience | null {
         typeof raw.withinDays === "number" && Number.isFinite(raw.withinDays)
           ? Math.max(1, Math.min(MAX_WITHIN_DAYS, Math.floor(raw.withinDays)))
           : undefined;
-      return withinDays
-        ? { kind: "opened_nonpaid", minOpens, withinDays }
-        : { kind: "opened_nonpaid", minOpens };
+      // Optional inclusive upper bound ("opened 1 to 2 emails"). A maximum below
+      // the minimum would match nobody, so it is dropped rather than honored.
+      const maxCandidate =
+        typeof raw.maxOpens === "number" && Number.isFinite(raw.maxOpens)
+          ? Math.min(MAX_MIN_OPENS, Math.floor(raw.maxOpens))
+          : undefined;
+      const maxOpens =
+        maxCandidate !== undefined && maxCandidate >= minOpens ? maxCandidate : undefined;
+      return {
+        kind: "opened_nonpaid",
+        minOpens,
+        ...(maxOpens !== undefined ? { maxOpens } : {}),
+        ...(withinDays ? { withinDays } : {}),
+      };
+    }
+    case "campaign_nonopeners": {
+      if (typeof raw.campaignId !== "string" || !UUID_RE.test(raw.campaignId)) return null;
+      return { kind: "campaign_nonopeners", campaignId: raw.campaignId.toLowerCase() };
     }
     case "pasted": {
       if (!Array.isArray(raw.emails)) return null;
@@ -184,70 +244,6 @@ async function collectUserIdsByStatus(
     if (rows.length < PAGE) return ids;
     offset += PAGE;
   }
-}
-
-/** Pages subscriptions in ANY status, returning every user id that ever had one. */
-async function collectEverSubscribedUserIds(db: SupabaseClient): Promise<Set<string> | null> {
-  const ids = new Set<string>();
-  let offset = 0;
-  for (;;) {
-    const { data, error } = await db
-      .from("subscriptions")
-      .select("user_id")
-      .range(offset, offset + PAGE - 1);
-    if (error) return null;
-    const rows = data ?? [];
-    for (const row of rows) {
-      if (typeof row.user_id === "string" && row.user_id) ids.add(row.user_id);
-    }
-    if (rows.length < PAGE) return ids;
-    offset += PAGE;
-  }
-}
-
-/**
- * Free users: app accounts with no subscription row in any status (never
- * trialed or paid) plus newsletter/extension-only contacts, minus anyone who
- * ever subscribed (matched by email) and anyone opted out. Returns false on a
- * query error so the caller can surface the migration/setup banner.
- */
-async function collectFreeUsers(db: SupabaseClient, into: Set<string>): Promise<boolean> {
-  const everIds = await collectEverSubscribedUserIds(db);
-  if (!everIds) return false;
-
-  const everEmails = new Set<string>();
-  if (everIds.size > 0) await emailsForUserIds(db, [...everIds], everEmails);
-
-  const candidates = new Set<string>();
-  let offset = 0;
-  for (;;) {
-    const { data, error } = await db
-      .from("profiles")
-      .select("id,email")
-      .order("created_at", { ascending: false })
-      .range(offset, offset + PAGE - 1);
-    if (error) return false;
-    const rows = data ?? [];
-    for (const row of rows) {
-      const id = typeof row.id === "string" ? row.id : "";
-      const email = typeof row.email === "string" ? row.email.trim().toLowerCase() : "";
-      if (id && email && !everIds.has(id)) candidates.add(email);
-    }
-    if (rows.length < PAGE) break;
-    offset += PAGE;
-  }
-
-  const contacts = new Set<string>();
-  if (!(await collectSubscribers(db, contacts, {}))) return false;
-  for (const email of contacts) candidates.add(email);
-
-  const remaining = [...candidates].filter((email) => !everEmails.has(email));
-  const optedOut = new Set<string>();
-  await collectOptedOut(db, remaining, optedOut);
-  for (const email of remaining) {
-    if (!optedOut.has(email) && into.size < MAX_AUDIENCE) into.add(email);
-  }
-  return true;
 }
 
 /**
@@ -383,7 +379,8 @@ async function collectEngagedOpeners(
 
 /**
  * Tallies opens per recipient and keeps anyone who opened at least minOpens
- * of our emails, drops opted-out addresses (same as "engaged"), then drops
+ * (and at most maxOpens, when given) of our emails, drops opted-out addresses
+ * (same as "engaged"), then drops
  * anyone with a live subscription (active, past_due, paused, or on a free
  * trial), since a "try Pro free" pitch is wrong for someone already on one. A
  * candidate with no matching profiles row (extension-only leads, cold-outreach
@@ -393,6 +390,7 @@ async function collectEngagedOpeners(
 async function collectOpenedNonPaid(
   db: SupabaseClient,
   minOpens: number,
+  maxOpens: number | undefined,
   withinDays: number | undefined,
   into: Set<string>,
 ): Promise<boolean> {
@@ -401,7 +399,7 @@ async function collectOpenedNonPaid(
 
   const candidates: string[] = [];
   for (const [email, n] of counts) {
-    if (n >= minOpens) candidates.push(email);
+    if (n >= minOpens && (maxOpens === undefined || n <= maxOpens)) candidates.push(email);
   }
 
   const optedOut = new Set<string>();
@@ -430,12 +428,97 @@ async function collectOpenedNonPaid(
   return true;
 }
 
+/** Addresses that were sent the campaign but never opened it (pure set logic). */
+export function nonOpeners(sent: Iterable<string>, openers: Set<string>): string[] {
+  const out: string[] = [];
+  for (const email of sent) {
+    if (!openers.has(email)) out.push(email);
+  }
+  return out;
+}
+
 /**
- * Resolves an audience to a concrete deduped list of lowercased addresses.
- * migrationPending is true when the contacts table (or its tags column) is
- * missing, so callers can surface the apply-the-migration banner.
+ * People who were sent an earlier campaign and never opened it: recipients with
+ * status 'sent' minus anyone with an opened email_sends row for that campaign's
+ * category, minus opted-out addresses, minus anyone who has since started a
+ * subscription or trial. Fails closed (returns false) if the live-subscriber
+ * lookup errors, so a resend can never reach a paying customer by accident.
+ * Note a "non-opener" may simply have blocked the tracking pixel.
+ */
+async function collectCampaignNonOpeners(
+  db: SupabaseClient,
+  campaignId: string,
+  into: Set<string>,
+): Promise<boolean> {
+  const sent = new Set<string>();
+  for (let offset = 0; ; offset += PAGE) {
+    const { data, error } = await db
+      .from("email_campaign_recipients")
+      .select("email")
+      .eq("campaign_id", campaignId)
+      .eq("status", "sent")
+      .order("id")
+      .range(offset, offset + PAGE - 1);
+    if (error) return false;
+    const rows = data ?? [];
+    for (const row of rows) {
+      const email = typeof row.email === "string" ? row.email.trim().toLowerCase() : "";
+      if (email) sent.add(email);
+    }
+    if (rows.length < PAGE) break;
+  }
+  if (sent.size === 0) return true;
+
+  const openers = new Set<string>();
+  for (let offset = 0; ; offset += PAGE) {
+    const { data, error } = await db
+      .from("email_sends")
+      .select("recipient")
+      .eq("category", campaignCategory(campaignId))
+      .not("opened_at", "is", null)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + PAGE - 1);
+    if (error) return false;
+    const rows = data ?? [];
+    for (const row of rows) {
+      const email = typeof row.recipient === "string" ? row.recipient.trim().toLowerCase() : "";
+      if (email) openers.add(email);
+    }
+    if (rows.length < PAGE) break;
+  }
+
+  const live = await liveSubscriberEmails(db);
+  if (!live) return false;
+
+  const candidates = nonOpeners(sent, openers).filter((email) => !live.has(email));
+  const optedOut = new Set<string>();
+  await collectOptedOut(db, candidates, optedOut);
+  for (const email of candidates) {
+    if (!optedOut.has(email) && into.size < MAX_AUDIENCE) into.add(email);
+  }
+  return true;
+}
+
+/**
+ * Resolves an audience to a concrete deduped list of lowercased addresses,
+ * then applies the optional A/B split. migrationPending is true when the
+ * contacts table (or its tags column) is missing, so callers can surface the
+ * apply-the-migration banner.
  */
 export async function resolveAudience(
+  db: SupabaseClient,
+  audience: Audience,
+): Promise<{ emails: string[]; migrationPending: boolean }> {
+  const resolved = await resolveAudienceBase(db, audience);
+  const { split } = audience;
+  if (!split) return resolved;
+  return {
+    ...resolved,
+    emails: resolved.emails.filter((email) => splitBucket(email, split.of) === split.index),
+  };
+}
+
+async function resolveAudienceBase(
   db: SupabaseClient,
   audience: Audience,
 ): Promise<{ emails: string[]; migrationPending: boolean }> {
@@ -461,7 +544,18 @@ export async function resolveAudience(
     }
 
     case "opened_nonpaid": {
-      const ok = await collectOpenedNonPaid(db, audience.minOpens, audience.withinDays, into);
+      const ok = await collectOpenedNonPaid(
+        db,
+        audience.minOpens,
+        audience.maxOpens,
+        audience.withinDays,
+        into,
+      );
+      return { emails: [...into], migrationPending: !ok };
+    }
+
+    case "campaign_nonopeners": {
+      const ok = await collectCampaignNonOpeners(db, audience.campaignId, into);
       return { emails: [...into], migrationPending: !ok };
     }
 
@@ -470,10 +564,6 @@ export async function resolveAudience(
         // v1: the newsletter list IS the contacts base (the Resend segment is
         // a best-effort mirror of it).
         const ok = await collectSubscribers(db, into, {});
-        return { emails: [...into], migrationPending: !ok };
-      }
-      if (audience.segment === "free") {
-        const ok = await collectFreeUsers(db, into);
         return { emails: [...into], migrationPending: !ok };
       }
       if (audience.segment === "trial" || audience.segment === "pro") {

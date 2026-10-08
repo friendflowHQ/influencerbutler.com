@@ -48,6 +48,7 @@ type CampaignRow = {
   sent_at: string | null;
   attachments?: NormalizedAttachment[] | null;
   inline_images?: NormalizedAttachment[] | null;
+  stream?: "lifecycle" | "cold" | null;
 };
 
 // A write that references the attachments/inline_images columns fails with one
@@ -379,11 +380,20 @@ export async function PATCH(request: Request) {
   }
 
   if (action === "duplicate") {
+    // A split-test campaign duplicates as the OTHER half (index flipped), so
+    // A and B never overlap; any other audience is copied as is.
+    const source = parseAudience(campaign.audience);
+    const otherHalf = source?.split
+      ? {
+          ...source,
+          split: { ...source.split, index: (source.split.index + 1) % source.split.of },
+        }
+      : null;
     const copy = {
-      name: `${campaign.name} copy`.slice(0, 200),
+      name: `${campaign.name} ${otherHalf ? "(other half)" : "copy"}`.slice(0, 200),
       subject: campaign.subject,
       body: campaign.body,
-      audience: campaign.audience,
+      audience: otherHalf ?? campaign.audience,
       status: "draft",
       created_by: actor.email,
     };
@@ -391,6 +401,7 @@ export async function PATCH(request: Request) {
       .from("email_campaigns")
       .insert({
         ...copy,
+        ...(campaign.stream ? { stream: campaign.stream } : {}),
         attachments: campaign.attachments ?? [],
         inline_images: campaign.inline_images ?? [],
       })

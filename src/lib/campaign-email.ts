@@ -34,6 +34,20 @@ function escapeHtml(s: string): string {
 }
 
 /**
+ * Unique `src` attribution tags used by the links in a campaign body, in order
+ * of appearance (e.g. "group-mirror-engaged" from /go/download?src=group-mirror-engaged).
+ * The admin drawer counts download clicks per tag. Use one tag per campaign or
+ * variant so counts never mix.
+ */
+export function extractSrcTags(body: string): string[] {
+  const tags: string[] = [];
+  for (const match of (body ?? "").matchAll(/[?&]src=([A-Za-z0-9_-]+)/g)) {
+    if (!tags.includes(match[1])) tags.push(match[1]);
+  }
+  return tags;
+}
+
+/**
  * True when the body opts in to formatted HTML: **bold**, a "# " heading line,
  * or two or more consecutive "- " bullet lines. Anything else stays a
  * plain-text campaign, so existing campaigns are unaffected. In particular a

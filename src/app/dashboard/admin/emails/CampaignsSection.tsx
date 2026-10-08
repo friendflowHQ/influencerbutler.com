@@ -60,13 +60,17 @@ function toMedia(stored: StoredMedia[] | undefined | null): CampaignMedia[] {
   }));
 }
 
-type Audience =
+type AudienceSplit = { index: number; of: number };
+
+type Audience = (
   | { kind: "all_contacts" }
   | { kind: "tag"; tag: string }
-  | { kind: "segment"; segment: "trial" | "pro" | "churned" | "free" | "newsletter" }
-  | { kind: "opened_nonpaid"; minOpens?: number }
+  | { kind: "segment"; segment: "trial" | "pro" | "churned" | "newsletter" }
+  | { kind: "opened_nonpaid"; minOpens?: number; maxOpens?: number }
+  | { kind: "campaign_nonopeners"; campaignId: string }
   | { kind: "engaged"; minOpens?: number; withinDays?: number }
-  | { kind: "pasted"; emails: string[] };
+  | { kind: "pasted"; emails: string[] }
+) & { split?: AudienceSplit };
 
 type CampaignCounts = { queued: number; sent: number; skipped: number; failed: number };
 
@@ -107,7 +111,6 @@ const SEGMENT_LABELS: Record<string, string> = {
   trial: "Trial users",
   pro: "Pro subscribers",
   churned: "Churned customers",
-  free: "Free users (never subscribed)",
   newsletter: "Newsletter subscribers",
 };
 
@@ -135,21 +138,70 @@ function pct(numerator: number, denominator: number): string {
   return `${Math.round((numerator / denominator) * 100)}%`;
 }
 
-function audienceLabel(a: Audience): string {
+function baseAudienceLabel(a: Audience, campaignNames?: Map<string, string>): string {
   if (a.kind === "all_contacts") return "All contacts";
   if (a.kind === "tag") return `Tag: ${a.tag}`;
   if (a.kind === "segment") return `Segment: ${SEGMENT_LABELS[a.segment] ?? a.segment}`;
   if (a.kind === "opened_nonpaid") {
-    return `Opened ${a.minOpens ?? 1}+ emails, no active subscription or trial`;
+    const min = a.minOpens ?? 1;
+    const range = a.maxOpens !== undefined ? `${min}-${a.maxOpens}` : `${min}+`;
+    return `Opened ${range} emails, no active subscription or trial`;
+  }
+  if (a.kind === "campaign_nonopeners") {
+    return `Did not open: ${campaignNames?.get(a.campaignId) ?? "an earlier campaign"}`;
   }
   if (a.kind === "engaged") return "Engaged openers";
   return `Pasted list (${a.emails?.length ?? 0})`;
 }
 
-/** Builds the opened_nonpaid audience from the composer's min-opens text box. */
-function openedAudience(raw: string): Audience {
+function audienceLabel(a: Audience, campaignNames?: Map<string, string>): string {
+  const base = baseAudienceLabel(a, campaignNames);
+  if (!a.split) return base;
+  return `${base} (half ${String.fromCharCode(65 + a.split.index)} of ${a.split.of})`;
+}
+
+/** Parses a composer number box: whole number in [1, 50], or undefined when blank/invalid. */
+function wholeOpens(raw: string): number | undefined {
+  if (raw.trim() === "") return undefined;
   const n = Math.floor(Number(raw));
-  return { kind: "opened_nonpaid", minOpens: Number.isFinite(n) && n >= 1 ? Math.min(n, 50) : 1 };
+  return Number.isFinite(n) && n >= 1 ? Math.min(n, 50) : undefined;
+}
+
+type ComposerAudienceInput = {
+  kind: Audience["kind"];
+  tag: string;
+  segment: "trial" | "pro" | "churned" | "newsletter";
+  pastedText: string;
+  openedMin: string;
+  openedMax: string;
+  nonopenerId: string;
+  /** "all", or the half index as text ("0" = A, "1" = B), always out of 2. */
+  splitChoice: string;
+  loadedEngaged: Audience | null;
+};
+
+/** The one place the composer's fields become an Audience (save and preview share it). */
+function composeAudience(s: ComposerAudienceInput): Audience {
+  let base: Audience;
+  if (s.kind === "tag") base = { kind: "tag", tag: s.tag.trim() };
+  else if (s.kind === "segment") base = { kind: "segment", segment: s.segment };
+  else if (s.kind === "opened_nonpaid") {
+    const minOpens = wholeOpens(s.openedMin) ?? 1;
+    const maxOpens = wholeOpens(s.openedMax);
+    base = {
+      kind: "opened_nonpaid",
+      minOpens,
+      ...(maxOpens !== undefined && maxOpens >= minOpens ? { maxOpens } : {}),
+    };
+  } else if (s.kind === "campaign_nonopeners") {
+    base = { kind: "campaign_nonopeners", campaignId: s.nonopenerId };
+  } else if (s.kind === "pasted") base = { kind: "pasted", emails: parseEmails(s.pastedText) };
+  else if (s.kind === "engaged" && s.loadedEngaged) base = s.loadedEngaged;
+  else base = { kind: "all_contacts" };
+  if (s.splitChoice === "0" || s.splitChoice === "1") {
+    return { ...base, split: { index: Number(s.splitChoice), of: 2 } };
+  }
+  return base;
 }
 
 function parseEmails(input: string): string[] {
@@ -186,10 +238,13 @@ export default function CampaignsSection({
   const [audienceKind, setAudienceKind] = useState<Audience["kind"]>("all_contacts");
   const [audienceTag, setAudienceTag] = useState("");
   const [audienceSegment, setAudienceSegment] = useState<
-    "trial" | "pro" | "churned" | "free" | "newsletter"
+    "trial" | "pro" | "churned" | "newsletter"
   >("trial");
   const [pastedText, setPastedText] = useState("");
   const [openedMin, setOpenedMin] = useState("3");
+  const [openedMax, setOpenedMax] = useState("");
+  const [nonopenerId, setNonopenerId] = useState("");
+  const [splitChoice, setSplitChoice] = useState("all");
   // The composer has no control for the API-only "engaged" audience, so keep the
   // loaded one verbatim: otherwise re-saving such a draft would silently turn it
   // into "all contacts".
@@ -228,13 +283,23 @@ export default function CampaignsSection({
   }, [refetch]);
 
   function buildAudience(): Audience {
-    if (audienceKind === "tag") return { kind: "tag", tag: audienceTag.trim() };
-    if (audienceKind === "segment") return { kind: "segment", segment: audienceSegment };
-    if (audienceKind === "opened_nonpaid") return openedAudience(openedMin);
-    if (audienceKind === "pasted") return { kind: "pasted", emails: parseEmails(pastedText) };
-    if (audienceKind === "engaged" && loadedEngaged.current) return loadedEngaged.current;
-    return { kind: "all_contacts" };
+    return composeAudience({
+      kind: audienceKind,
+      tag: audienceTag,
+      segment: audienceSegment,
+      pastedText,
+      openedMin,
+      openedMax,
+      nonopenerId,
+      splitChoice,
+      loadedEngaged: loadedEngaged.current,
+    });
   }
+
+  // Sent campaigns a "did not open" audience can point at, and a lookup so
+  // audience labels can show the campaign's name instead of an id.
+  const sentCampaigns = (data?.campaigns ?? []).filter((c) => c.status === "sent");
+  const campaignNames = new Map((data?.campaigns ?? []).map((c) => [c.id, c.name]));
 
   // Read dropped/picked/pasted files into base64 media, enforcing the same caps
   // the server re-checks. `attachment` files download; `inline` images embed in
@@ -322,18 +387,17 @@ export default function CampaignsSection({
   useEffect(() => {
     if (editing === null) return;
     if (previewTimer.current) clearTimeout(previewTimer.current);
-    const audience: Audience =
-      audienceKind === "tag"
-        ? { kind: "tag", tag: audienceTag.trim() }
-        : audienceKind === "segment"
-          ? { kind: "segment", segment: audienceSegment }
-          : audienceKind === "opened_nonpaid"
-            ? openedAudience(openedMin)
-            : audienceKind === "pasted"
-              ? { kind: "pasted", emails: parseEmails(pastedText) }
-              : audienceKind === "engaged" && loadedEngaged.current
-                ? loadedEngaged.current
-                : { kind: "all_contacts" };
+    const audience = composeAudience({
+      kind: audienceKind,
+      tag: audienceTag,
+      segment: audienceSegment,
+      pastedText,
+      openedMin,
+      openedMax,
+      nonopenerId,
+      splitChoice,
+      loadedEngaged: loadedEngaged.current,
+    });
     previewTimer.current = setTimeout(() => {
       void (async () => {
         try {
@@ -352,7 +416,17 @@ export default function CampaignsSection({
     return () => {
       if (previewTimer.current) clearTimeout(previewTimer.current);
     };
-  }, [editing, audienceKind, audienceTag, audienceSegment, pastedText, openedMin]);
+  }, [
+    editing,
+    audienceKind,
+    audienceTag,
+    audienceSegment,
+    pastedText,
+    openedMin,
+    openedMax,
+    nonopenerId,
+    splitChoice,
+  ]);
 
   function openComposer(campaign: "new" | Campaign) {
     setEditing(campaign);
@@ -371,6 +445,9 @@ export default function CampaignsSection({
       setAudienceSegment("trial");
       setPastedText("");
       setOpenedMin("3");
+      setOpenedMax("");
+      setNonopenerId("");
+      setSplitChoice("all");
       loadedEngaged.current = null;
       setStream("lifecycle");
       setAttachments([]);
@@ -385,6 +462,9 @@ export default function CampaignsSection({
       setAudienceSegment(a.kind === "segment" ? a.segment : "trial");
       setPastedText(a.kind === "pasted" ? a.emails.join("\n") : "");
       setOpenedMin(a.kind === "opened_nonpaid" && a.minOpens ? String(a.minOpens) : "3");
+      setOpenedMax(a.kind === "opened_nonpaid" && a.maxOpens ? String(a.maxOpens) : "");
+      setNonopenerId(a.kind === "campaign_nonopeners" ? a.campaignId : "");
+      setSplitChoice(a.split && a.split.of === 2 ? String(a.split.index) : "all");
       loadedEngaged.current = a.kind === "engaged" ? a : null;
       setStream(campaign.stream === "cold" ? "cold" : "lifecycle");
       setAttachments(toMedia(campaign.attachments));
@@ -672,27 +752,70 @@ export default function CampaignsSection({
                 <option value="tag">Tag</option>
                 <option value="segment">Customer segment</option>
                 <option value="opened_nonpaid">Opened emails, no subscription or trial</option>
+                <option value="campaign_nonopeners">Did not open an earlier campaign</option>
                 <option value="pasted">Pasted list</option>
               </select>
             </div>
             <div>
               {audienceKind === "opened_nonpaid" ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="campaign-min-opens" className="text-xs font-medium text-slate-500">
+                      Minimum emails opened
+                    </label>
+                    <input
+                      id="campaign-min-opens"
+                      type="number"
+                      min={1}
+                      max={50}
+                      value={openedMin}
+                      onChange={(e) => setOpenedMin(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 focus:border-indigo-300 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="campaign-max-opens" className="text-xs font-medium text-slate-500">
+                      Maximum (optional)
+                    </label>
+                    <input
+                      id="campaign-max-opens"
+                      type="number"
+                      min={1}
+                      max={50}
+                      value={openedMax}
+                      onChange={(e) => setOpenedMax(e.target.value)}
+                      placeholder="no limit"
+                      className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none"
+                    />
+                  </div>
+                  <p className="col-span-2 text-xs text-slate-500">
+                    Minimum 3 means opened three or more of our emails. Minimum 1 and maximum 2
+                    means opened one or two. Anyone with an active subscription or trial is left
+                    out.
+                  </p>
+                </div>
+              ) : null}
+              {audienceKind === "campaign_nonopeners" ? (
                 <>
-                  <label htmlFor="campaign-min-opens" className="text-xs font-medium text-slate-500">
-                    Minimum emails opened
+                  <label htmlFor="campaign-nonopeners" className="text-xs font-medium text-slate-500">
+                    Campaign they did not open
                   </label>
-                  <input
-                    id="campaign-min-opens"
-                    type="number"
-                    min={1}
-                    max={50}
-                    value={openedMin}
-                    onChange={(e) => setOpenedMin(e.target.value)}
+                  <select
+                    id="campaign-nonopeners"
+                    value={nonopenerId}
+                    onChange={(e) => setNonopenerId(e.target.value)}
                     className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 focus:border-indigo-300 focus:outline-none"
-                  />
+                  >
+                    <option value="">Choose a sent campaign...</option>
+                    {sentCampaigns.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
                   <p className="mt-1 text-xs text-slate-500">
-                    3 means opened three or more of our emails. Anyone with an active
-                    subscription or trial is left out.
+                    People who were sent it and never opened it. Some may have blocked tracking.
+                    Anyone who has since started a subscription or trial is left out.
                   </p>
                 </>
               ) : null}
@@ -715,7 +838,7 @@ export default function CampaignsSection({
                     value={audienceSegment}
                     onChange={(e) =>
                       setAudienceSegment(
-                        e.target.value as "trial" | "pro" | "churned" | "free" | "newsletter",
+                        e.target.value as "trial" | "pro" | "churned" | "newsletter",
                       )
                     }
                     className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 focus:border-indigo-300 focus:outline-none"
@@ -723,12 +846,31 @@ export default function CampaignsSection({
                     <option value="trial">Trial users</option>
                     <option value="pro">Pro subscribers</option>
                     <option value="churned">Churned customers</option>
-                    <option value="free">Free users (never subscribed)</option>
                     <option value="newsletter">Newsletter subscribers</option>
                   </select>
                 </>
               ) : null}
             </div>
+          </div>
+
+          <div className="mt-3">
+            <label htmlFor="campaign-split" className="text-xs font-medium text-slate-500">
+              Split test
+            </label>
+            <select
+              id="campaign-split"
+              value={splitChoice}
+              onChange={(e) => setSplitChoice(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 focus:border-indigo-300 focus:outline-none sm:max-w-xs"
+            >
+              <option value="all">Everyone (no split)</option>
+              <option value="0">Half A only</option>
+              <option value="1">Half B only</option>
+            </select>
+            <p className="mt-1 text-xs text-slate-500">
+              Halves never overlap. Save this as half A, then use Duplicate to get half B, change
+              the subject, and give each its own ?src= tag in the links so the clicks stay separate.
+            </p>
           </div>
 
           <div className="mt-3">
@@ -917,7 +1059,7 @@ export default function CampaignsSection({
                       {c.status}
                     </span>
                   </td>
-                  <td className="px-4 py-2 text-xs text-slate-500">{audienceLabel(c.audience)}</td>
+                  <td className="px-4 py-2 text-xs text-slate-500">{audienceLabel(c.audience, campaignNames)}</td>
                   <td className="px-4 py-2 text-right text-slate-600">
                     {totalQueued > 0
                       ? `${c.counts.sent.toLocaleString("en-US")}/${totalQueued.toLocaleString("en-US")}`
