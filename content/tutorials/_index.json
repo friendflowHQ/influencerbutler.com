@@ -584,6 +584,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "youtube-like-butler",
+      "title": "YouTube Like Butler: auto-like the recent videos of channels you choose",
+      "category": "Other",
+      "summary": "Add YouTube channels, set max likes and delay, and YouTube Like Butler likes each channel's recent videos on a schedule.",
+      "order": 246,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "api-integrations",
       "title": "API Integrations: store every API key Butler uses in one place",
       "category": "Other",

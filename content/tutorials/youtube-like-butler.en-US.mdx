@@ -1,0 +1,78 @@
+---
+title: YouTube Like Butler: auto-like the recent videos of channels you choose
+summary: Add YouTube channels, set max likes and delay, and YouTube Like Butler likes each channel's recent videos on a schedule.
+category: Other
+---
+
+> **Free forever.** YouTube Like Butler stays unlocked on every account - trial, paid, expired, or cancelled. No license check, no quota. It's our way of keeping you in the workflow.
+
+## What YouTube Like Butler does
+
+On YouTube, a steady like on another creator's video is one of the cheapest ways to stay on their radar without sending a message. YouTube Like Butler likes the recent videos of the channels you specify, on a cadence, with a delay between each like.
+
+The point isn't engagement gaming. It's reciprocity: if you support a creator's or brand's channel consistently, your name keeps showing up in their activity, and that familiarity pays off when you reach out later.
+
+## Before you start
+
+- **A signed-in YouTube session.** YouTube Like Butler uses the same browser profile as YouTube Butler, so if you've already signed in to Google there, you're set. Otherwise the butler opens a window and waits for you to sign in. Sign in to the Google account you want the likes to come from.
+- **1-10 YouTube channels** in your niche. Enter a handle like `@creator`, or paste a channel link like `youtube.com/@creator`. Channel ID links (`youtube.com/channel/UC...`) work too.
+
+## Running your first pass
+
+1. Open **YouTube Like Butler** in the sidebar, right under YouTube Butler.
+2. In **YouTube channels**, type your first channel. Click **Add another YouTube channel** for more. Each row also takes an optional **Max likes** cap for just that channel.
+3. In **Run settings**:
+   - **Max likes per run**: start at the default 10. This is the run-wide budget across all channels.
+   - **Delay between likes**: 8-12 seconds is safe. Anything faster than 5 seconds looks robotic.
+   - **Recent videos per channel**: how many of each channel's newest videos to check (default 30).
+4. Keep **Watch it run** turned on in the top right of the app for the first pass so you can see the browser and sign in if asked.
+5. Click **Start YouTube Like Butler**.
+
+A Chrome window opens on each channel's Videos tab, collects the most recent videos, opens each one, and taps like with your configured delay. Videos you've already liked are skipped. Progress shows in the KPI tiles (**Total likes given**, **Likes this run**).
+
+Only regular videos from the Videos tab are liked. Shorts and live streams are skipped.
+
+## Tuning over time
+
+- **Max likes per run**: 10 is conservative. With 5 channels that's still only 10 likes total per run; raise it gradually.
+- **Per-channel Max likes**: use the per-row cap to keep one prolific channel from eating the whole run budget.
+- **Delay**: keep at 8 seconds minimum.
+- **Like every recent video**: on, the butler ignores its own history and checks everything it finds; off (recommended), videos liked on a previous run are skipped so your activity looks natural.
+
+## Scheduling
+
+YouTube Like Butler has a built-in scheduler:
+
+1. Set a **start time** and a **repeat interval** (e.g. every 12 hours).
+2. To keep likes inside part of the day, turn on **Only like during set hours** and pick a **From** and **To** time.
+3. Click **Enable Schedule**.
+
+While the schedule is active, the channel list and run settings lock. Click **Stop Schedule** before editing them. Once a day or every 12 hours is plenty.
+
+With set hours on, a scheduled run that falls outside your window is held back until the window reopens, and a run still going when the window closes stops at the next channel. Starting the butler yourself is never held back. A window can run overnight (10 PM to 2 AM, say). Leaving From and To the same means any hour.
+
+## Support Circle
+
+If you're a Pro member, add your own YouTube channel in **Support Circle** and tick **YouTube Like**. Other members' YouTube Like Butlers then include your channel in their runs, and yours includes theirs. Your own channel list is never changed, the shared channels are only added at run time.
+
+## Where the data goes
+
+Every like is logged per channel. The **History** table shows liked videos per channel and recent liked videos, with search, time-range chips, CSV download, and per-channel clearing.
+
+## If YouTube asks for a check
+
+If YouTube shows an "unusual traffic" page, a consent screen, or asks you to confirm you're not a bot, the butler stops the run cleanly instead of pushing through. Open YouTube in the browser window, clear the check, raise your delay if you were running fast, and start again.
+
+## Common gotchas
+
+- **"YouTube sign-in is required" with Watch it run off**: the butler can't show a sign-in window in the background. Turn Watch it run on, start again, and sign in.
+- **YouTube Butler is busy**: YouTube Like Butler and YouTube Butler share one browser profile, so they can't run at the same moment. Start the like run after the upload finishes.
+- **Scheduler appears stuck**: the channel list is locked while a schedule is active. Click Stop Schedule, edit, restart.
+- **A channel shows 0 likes after a run**: every recent video was already liked (check the History table), the channel has likes turned off, or the run budget was spent on earlier channels.
+- **A channel is rejected**: enter just the handle (`@creator`) or a channel link. Video links, Shorts and playlists aren't channels.
+
+## Related
+
+- [YouTube Butler tutorial](/help/tutorials/youtube-butler) - the upload, scheduling and description side of YouTube.
+- [Instagram Like Butler tutorial](/help/tutorials/instagram-like-butler) - the same idea for Instagram.
+- [Like Butler tutorial](/help/tutorials/likebutler) - the same idea for Amazon Creator storefronts.
