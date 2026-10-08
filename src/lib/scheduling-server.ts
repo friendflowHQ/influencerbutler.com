@@ -121,7 +121,7 @@ export async function loadBusy(
   admin: Admin,
   fromMs: number,
   toMs: number,
-  opts?: { googleRefreshToken?: string | null; excludeBookingId?: string | null },
+  opts?: { googleRefreshToken?: string | null; excludeBookingId?: string | null; ownEvent?: { startMs: number; endMs: number } | null },
 ): Promise<BusyRange[]> {
   const fromIso = new Date(fromMs).toISOString();
   const toIso = new Date(toMs).toISOString();
@@ -150,7 +150,14 @@ export async function loadBusy(
   // Owner's Google Calendar busy (best-effort; empty on any failure).
   const token = opts?.googleRefreshToken;
   if (token && isGoogleConfigured()) {
-    try { busy.push(...(await googleBusyCached(token, fromMs, toMs))); }
+    try {
+      // A booking being moved has its own Google Calendar event, which free/busy
+      // reports as busy at the old time: drop it so a small shift is not blocked by itself.
+      const own = opts?.ownEvent;
+      const near = (a: number, b: number) => Math.abs(a - b) < 60_000;
+      const g = await googleBusyCached(token, fromMs, toMs);
+      busy.push(...g.filter((r) => !(own && near(r.startMs, own.startMs) && near(r.endMs, own.endMs))));
+    }
     catch (e) { console.error("[scheduling] google busy", e); }
   }
   return busy;
@@ -159,7 +166,9 @@ export async function loadBusy(
 export type DaySlots = { date: string; timezone: string; slots: Slot[] };
 
 /** Per-day available slots across the booking horizon for a call type. */
-export async function availabilityForType(admin: Admin, callType: CallTypeKey, nowMs: number): Promise<DaySlots[]> {
+export type MoveOpts = { excludeBookingId?: string | null; ownEvent?: { startMs: number; endMs: number } | null };
+
+export async function availabilityForType(admin: Admin, callType: CallTypeKey, nowMs: number, move?: MoveOpts): Promise<DaySlots[]> {
   const [rules, config] = await Promise.all([loadRules(admin), loadConfig(admin)]);
   if (rules.length === 0) return [];
   // Use the first rule's tz for the calendar-day walk (rules share the display tz per phase).
@@ -167,7 +176,7 @@ export async function availabilityForType(admin: Admin, callType: CallTypeKey, n
   const dates = horizonDates(nowMs, config.bookingHorizonDays, walkTz);
   const rangeStart = nowMs;
   const rangeEnd = nowMs + (config.bookingHorizonDays + 1) * 86_400_000;
-  const busy = await loadBusy(admin, rangeStart, rangeEnd, { googleRefreshToken: config.googleRefreshToken });
+  const busy = await loadBusy(admin, rangeStart, rangeEnd, { googleRefreshToken: config.googleRefreshToken, ...move });
   const decoyOpts = { minPerDay: config.decoyMin, maxPerDay: config.decoyMax };
 
   const out: DaySlots[] = [];
@@ -194,6 +203,7 @@ export async function validateSlot(
   callType: CallTypeKey,
   startMs: number,
   nowMs: number,
+  move?: MoveOpts,
 ): Promise<{ ok: true; endMs: number; userEndMs: number } | { ok: false; reason: string }> {
   const ct = CALL_TYPES[callType];
   const date = new Date(startMs);
@@ -204,7 +214,7 @@ export async function validateSlot(
   const walkTz = rules[0]?.timezone || "UTC";
   const isoDate = new Intl.DateTimeFormat("en-CA", { timeZone: walkTz, year: "numeric", month: "2-digit", day: "2-digit" })
     .format(date); // YYYY-MM-DD
-  const busy = await loadBusy(admin, startMs - 86_400_000, startMs + ct.blockMinutes * 60_000 + 86_400_000, { googleRefreshToken: config.googleRefreshToken });
+  const busy = await loadBusy(admin, startMs - 86_400_000, startMs + ct.blockMinutes * 60_000 + 86_400_000, { googleRefreshToken: config.googleRefreshToken, ...move });
   const slots = computeDaySlots({
     dateISO: isoDate,
     callType,

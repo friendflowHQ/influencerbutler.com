@@ -11,6 +11,7 @@ import { CALL_TYPES, type CallTypeKey } from "./scheduling";
 import { sendEmail } from "@/lib/email-send";
 import { transactionalFrom } from "@/lib/email-senders";
 import { topicLabelsText } from "@/lib/call-topics";
+import { manageUrl } from "@/lib/call-manage";
 
 const FROM = transactionalFrom();
 const ORGANIZER_EMAIL = "hello@influencerbutler.com";
@@ -83,6 +84,17 @@ function firstName(name?: string | null, email?: string): string {
   return local || "there";
 }
 
+/**
+ * The "change it" line for a booking email, plus the link to hyperlink. The
+ * signed link works without logging in; with no signing secret configured we
+ * fall back to the dashboard wording the emails used before.
+ */
+function manageLine(id: string, lead: string): { line: string; links: { phrase: string; href: string }[] } {
+  const url = manageUrl(id);
+  if (!url) return { line: `${lead} You can reschedule or cancel from your dashboard under Book a Call.`, links: [] };
+  return { line: `${lead} Reschedule or cancel in one click, no login needed: ${url}`, links: [{ phrase: url, href: url }] };
+}
+
 function icsAttachment(b: BookingEmailData): Attachment {
   const ct = CALL_TYPES[b.callType];
   const ics = buildIcs({
@@ -104,6 +116,7 @@ function icsAttachment(b: BookingEmailData): Attachment {
 export async function sendBookingConfirmation(b: BookingEmailData): Promise<boolean> {
   const ct = CALL_TYPES[b.callType];
   const tz = b.userTimezone || "UTC";
+  const manage = manageLine(b.id, "Need to change it?");
   const body = [
     `Hi ${firstName(b.userName, b.userEmail)},`,
     ``,
@@ -115,7 +128,7 @@ export async function sendBookingConfirmation(b: BookingEmailData): Promise<bool
     b.topic ? `\nWhat you asked about: ${b.topic}` : "",
     ``,
     `A calendar invite is attached, so it will drop straight onto your calendar.`,
-    `Need to change it? You can reschedule or cancel from your dashboard under Book a Call.`,
+    manage.line,
     `If we are not there within 10 minutes of the start time, go ahead and rebook a new time from your dashboard under Book a Call.`,
     `Having technical trouble joining? Email us at hello@influencerbutler.com and we will help.`,
     b.recorded ? `\nPlease note: this call is recorded, transcribed, and AI-summarized so we can prepare notes to review afterward, and any product issues or feature requests raised may be logged to our support queue so we can follow up.` : "",
@@ -125,6 +138,7 @@ export async function sendBookingConfirmation(b: BookingEmailData): Promise<bool
   ].filter((l) => l !== "").join("\n");
   const html = htmlFrom(body, [
     { phrase: "Book a Call", href: BOOK_URL },
+    ...manage.links,
     ...(b.joinUrl ? [{ phrase: b.joinUrl, href: b.joinUrl }] : []),
   ]);
   return sendResend(b.userEmail, `Confirmed: your ${ct.label.toLowerCase()}`, body, "booking_confirm", [icsAttachment(b)], html);
@@ -164,6 +178,29 @@ export async function sendOwnerNotification(b: BookingEmailData, prepSummary: st
 }
 
 /**
+ * Tells the owner a CUSTOMER cancelled or moved their own call (via the emailed
+ * link or the dashboard), so a freed or shifted slot never goes unnoticed.
+ */
+export async function sendOwnerChange(b: BookingEmailData, kind: "rescheduled" | "cancelled", detail: string): Promise<boolean> {
+  const to = ownerNotifyEmail();
+  if (!to) return false;
+  const ct = CALL_TYPES[b.callType];
+  const tz = b.userTimezone || "UTC";
+  const body = [
+    `A customer ${kind === "cancelled" ? "cancelled" : "rescheduled"} their ${ct.label.toLowerCase()}.`,
+    ``,
+    `Who: ${b.userName || ""} <${b.userEmail}>`,
+    kind === "cancelled" ? `Was: ${whenLine(b.startMs, b.userEndMs, tz)} (their time)` : `Now: ${whenLine(b.startMs, b.userEndMs, tz)} (their time)`,
+    topicLabelsText(b.topics) ? `Topics: ${topicLabelsText(b.topics)}` : "",
+    b.topic ? `Notes: ${b.topic}` : "",
+    detail,
+    ``,
+    `Full details: dashboard > Scheduling.`,
+  ].filter((l) => l !== "").join("\n");
+  return sendResend(to, `[Call ${kind} by customer] ${ct.label}: ${b.userEmail}`, body, "booking_owner_change");
+}
+
+/**
  * Emails the customer the join link after the owner attaches (or fixes) one
  * post-booking, with an updated .ics (SEQUENCE 1) so the link drops onto the
  * existing calendar entry. This keeps the confirmation email's "will be emailed
@@ -173,6 +210,7 @@ export async function sendLinkAttached(b: BookingEmailData): Promise<boolean> {
   if (!b.joinUrl) return false;
   const ct = CALL_TYPES[b.callType];
   const tz = b.userTimezone || "UTC";
+  const manage = manageLine(b.id, "Need to change the time?");
   const body = [
     `Hi ${firstName(b.userName, b.userEmail)},`,
     ``,
@@ -183,7 +221,7 @@ export async function sendLinkAttached(b: BookingEmailData): Promise<boolean> {
     b.topic ? `\nWhat you asked about: ${b.topic}` : "",
     ``,
     `An updated calendar invite is attached, so the link will drop onto your calendar entry.`,
-    `Need to change the time? You can reschedule or cancel from your dashboard under Book a Call.`,
+    manage.line,
     `If we are not there within 10 minutes of the start time, go ahead and rebook a new time from your dashboard under Book a Call.`,
     `Having technical trouble joining? Email us at hello@influencerbutler.com and we will help.`,
     ``,
@@ -206,6 +244,7 @@ export async function sendLinkAttached(b: BookingEmailData): Promise<boolean> {
   });
   const html = htmlFrom(body, [
     { phrase: "Book a Call", href: BOOK_URL },
+    ...manage.links,
     { phrase: b.joinUrl, href: b.joinUrl },
   ]);
   return sendResend(b.userEmail, `Join link for your ${ct.label.toLowerCase()}`, body, "call_link_attached", [
@@ -221,6 +260,7 @@ export async function sendLinkAttached(b: BookingEmailData): Promise<boolean> {
 export async function sendRescheduled(b: BookingEmailData, previousStartMs: number): Promise<boolean> {
   const ct = CALL_TYPES[b.callType];
   const tz = b.userTimezone || "UTC";
+  const manage = manageLine(b.id, "Does the new time not work?");
   const oldStart = DateTime.fromMillis(previousStartMs, { zone: tz });
   const body = [
     `Hi ${firstName(b.userName, b.userEmail)},`,
@@ -231,7 +271,7 @@ export async function sendRescheduled(b: BookingEmailData, previousStartMs: numb
     b.joinUrl ? `Join link: ${b.joinUrl}` : `Your join link will be emailed to you shortly.`,
     ``,
     `An updated calendar invite is attached, so it will replace the old entry on your calendar.`,
-    `Does the new time not work? You can pick another from your dashboard under Book a Call.`,
+    manage.line,
     `Having technical trouble joining? Email us at hello@influencerbutler.com and we will help.`,
     ``,
     `Warmly,`,
@@ -253,6 +293,7 @@ export async function sendRescheduled(b: BookingEmailData, previousStartMs: numb
   });
   const html = htmlFrom(body, [
     { phrase: "Book a Call", href: BOOK_URL },
+    ...manage.links,
     ...(b.joinUrl ? [{ phrase: b.joinUrl, href: b.joinUrl }] : []),
   ]);
   return sendResend(b.userEmail, `New time for your ${ct.label.toLowerCase()}`, body, "call_rescheduled", [
@@ -264,6 +305,7 @@ export async function sendReminder(b: BookingEmailData, which: "24h" | "1h"): Pr
   const ct = CALL_TYPES[b.callType];
   const tz = b.userTimezone || "UTC";
   const lead = which === "24h" ? "tomorrow" : "in about an hour";
+  const manage = manageLine(b.id, "Can't make it?");
   const body = [
     `Hi ${firstName(b.userName, b.userEmail)},`,
     ``,
@@ -271,6 +313,7 @@ export async function sendReminder(b: BookingEmailData, which: "24h" | "1h"): Pr
     ``,
     whenLine(b.startMs, b.userEndMs, tz),
     b.joinUrl ? `Join link: ${b.joinUrl}` : `Your join link will be emailed shortly.`,
+    manage.line,
     ...(which === "1h" ? [
       `If we are not there within 10 minutes of the start time, go ahead and rebook a new time from your dashboard under Book a Call.`,
       `Having technical trouble joining? Email us at hello@influencerbutler.com and we will help.`,
@@ -282,7 +325,8 @@ export async function sendReminder(b: BookingEmailData, which: "24h" | "1h"): Pr
     `Your Influencer Butler Team`,
   ].join("\n");
   const html = htmlFrom(body, [
-    ...(which === "1h" ? [{ phrase: "Book a Call", href: BOOK_URL }] : []),
+    ...(which === "1h" || manage.links.length === 0 ? [{ phrase: "Book a Call", href: BOOK_URL }] : []),
+    ...manage.links,
     ...(b.joinUrl ? [{ phrase: b.joinUrl, href: b.joinUrl }] : []),
   ]);
   return sendResend(b.userEmail, `Reminder: your ${ct.label.toLowerCase()} is ${lead}`, body, "call_reminder", undefined, html);

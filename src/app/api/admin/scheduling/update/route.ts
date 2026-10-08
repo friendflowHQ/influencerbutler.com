@@ -12,10 +12,11 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { logAdminAction } from "@/lib/admin-audit";
 import { getAdmin, loadConfig, checkMove } from "@/lib/scheduling-server";
-import { CALL_TYPES, type CallTypeKey } from "@/lib/scheduling";
-import { sendCancellation, sendMissedYou, sendLinkAttached, sendRescheduled, type BookingEmailData } from "@/lib/call-emails";
-import { createMeetEvent, deleteMeetEvent, isGoogleConfigured } from "@/lib/google-meet";
-import { stopBot, scheduleBot, isRecallConfigured, shouldScheduleRecordingBot } from "@/lib/recall";
+import { type CallTypeKey } from "@/lib/scheduling";
+import { sendCancellation, sendMissedYou, sendLinkAttached, type BookingEmailData } from "@/lib/call-emails";
+import { deleteMeetEvent } from "@/lib/google-meet";
+import { stopBot } from "@/lib/recall";
+import { moveBooking, type BookingRow } from "@/lib/call-actions";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -115,17 +116,10 @@ export async function POST(request: Request) {
 }
 
 type Admin = NonNullable<ReturnType<typeof getAdmin>>;
-type BookingRow = {
-  id: string; user_email: string; user_name: string | null; call_type: CallTypeKey;
-  starts_at: string; user_ends_at: string; user_timezone: string | null; topic: string | null; status: string;
-  join_url: string | null; meeting_provider: string | null; meeting_id: string | null;
-  recall_bot_id: string | null; recording_status: string | null;
-};
 
 /**
- * Moves a booking to a new start time and carries everything tied to the old
- * time with it: the Google Meet event, the recording bot, the 24h/1h reminder
- * stamps and the customer's calendar invite.
+ * Owner-side move: refuses a past time and (unless force) a conflict, then hands
+ * the actual move (Meet event, recording bot, reminders, email) to moveBooking.
  */
 async function reschedule(admin: Admin, actor: Parameters<typeof logAdminAction>[0]["actor"], booking: BookingRow, body: Body) {
   const startMs = Number(body.newStartMs);
@@ -137,80 +131,15 @@ async function reschedule(admin: Admin, actor: Parameters<typeof logAdminAction>
   if (startMs === oldStartMs) return NextResponse.json({ error: "Pick a different time than the current one." }, { status: 400 });
   if (startMs < Date.now()) return NextResponse.json({ error: "That time is in the past." }, { status: 400 });
 
-  const ct = CALL_TYPES[booking.call_type];
-  const endMs = startMs + ct.blockMinutes * 60_000;
-  const userEndMs = startMs + ct.userMinutes * 60_000;
-
   if (body.force !== true) {
     const own = booking.meeting_provider === "google_meet" ? { startMs: oldStartMs, endMs: Date.parse(booking.user_ends_at) } : null;
     const chk = await checkMove(admin, booking.call_type, booking.id, startMs, Date.now(), own);
     if (!chk.ok) return NextResponse.json({ error: chk.reason }, { status: 409 });
   }
 
-  const warnings: string[] = [];
-  const cfg = await loadConfig(admin);
-  let joinUrl = booking.join_url;
-  let meetingId = booking.meeting_id;
+  const res = await moveBooking(admin, booking, startMs, { sendEmail: body.sendEmail !== false });
+  if (!res.ok) return NextResponse.json({ error: res.error }, { status: res.status });
 
-  // A Meet event we created is tied to the old time: make a new one at the new
-  // time, then drop the old. If creating fails we keep the old room (its link
-  // still works) and say so, rather than leave the booking with no link.
-  if (booking.meeting_provider === "google_meet" && meetingId && cfg.googleRefreshToken && isGoogleConfigured()) {
-    const m = await createMeetEvent({
-      refreshToken: cfg.googleRefreshToken,
-      summary: `${ct.label} with Influencer Butler`,
-      description: booking.topic || undefined,
-      startMs,
-      endMs: userEndMs,
-      attendeeEmail: booking.user_email,
-    });
-    if (m) {
-      try { await deleteMeetEvent(cfg.googleRefreshToken, meetingId); } catch (e) { console.error("[scheduling/update] old meet delete", e); }
-      joinUrl = m.joinUrl; meetingId = m.meetingId;
-    } else warnings.push("Could not move the Google Calendar event, so the original Meet link was kept. Check your calendar.");
-  }
-
-  // The bot was scheduled for the old time/room: stop it and send a new one.
-  let recallBotId = booking.recall_bot_id;
-  let recordingStatus = booking.recording_status;
-  if (booking.recall_bot_id || booking.recording_status === "scheduled") {
-    if (booking.recall_bot_id) { try { await stopBot(booking.recall_bot_id); } catch (e) { console.error("[scheduling/update] stop bot", e); } }
-    recallBotId = null;
-    if (!shouldScheduleRecordingBot(booking.meeting_provider, joinUrl)) recordingStatus = "skipped_no_meet";
-    else if (isRecallConfigured()) {
-      try {
-        const bot = await scheduleBot({ meetingUrl: joinUrl as string, joinAtISO: new Date(startMs).toISOString(), botName: "Influencer Butler Notetaker", metadata: { bookingId: booking.id } });
-        if (bot) { recallBotId = bot.id; recordingStatus = "scheduled"; } else { recordingStatus = "failed"; warnings.push("The recording bot could not be re-scheduled. Use Send recorder now before the call."); }
-      } catch (e) { console.error("[scheduling/update] schedule bot", e); recordingStatus = "failed"; }
-    }
-  }
-
-  const patch = {
-    starts_at: new Date(startMs).toISOString(),
-    ends_at: new Date(endMs).toISOString(),
-    user_ends_at: new Date(userEndMs).toISOString(),
-    status: "confirmed",
-    join_url: joinUrl,
-    meeting_id: meetingId,
-    recall_bot_id: recallBotId,
-    recording_status: recordingStatus,
-    // The reminders were stamped for the old time; clear them so they fire for the new one.
-    reminded_24h_at: null,
-    reminded_1h_at: null,
-  };
-  const { error: updErr } = await admin.from("call_bookings").update(patch).eq("id", booking.id);
-  if (updErr) { console.error("[scheduling/update] reschedule", updErr.message); return NextResponse.json({ error: "Update failed" }, { status: 500 }); }
-
-  let emailSent = false;
-  if (body.sendEmail !== false) {
-    try {
-      emailSent = await sendRescheduled({
-        id: booking.id, callType: booking.call_type, userEmail: booking.user_email, userName: booking.user_name,
-        startMs, userEndMs, userTimezone: booking.user_timezone, topic: booking.topic, joinUrl,
-      }, oldStartMs);
-    } catch (e) { console.error("[scheduling/update] reschedule email", e); }
-  }
-
-  await logAdminAction({ actor, action: "scheduling.reschedule", targetType: "call_booking", targetId: booking.id, details: { from: booking.starts_at, to: patch.starts_at, force: body.force === true, emailed: emailSent } });
-  return NextResponse.json({ ok: true, emailSent, joinUrl, warnings });
+  await logAdminAction({ actor, action: "scheduling.reschedule", targetType: "call_booking", targetId: booking.id, details: { from: booking.starts_at, to: new Date(startMs).toISOString(), force: body.force === true, emailed: res.emailSent } });
+  return NextResponse.json({ ok: true, emailSent: res.emailSent, joinUrl: res.joinUrl, warnings: res.warnings });
 }

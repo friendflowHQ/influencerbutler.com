@@ -1,9 +1,11 @@
 /**
  * GET /api/booking/mine — the signed-in customer's own bookings (upcoming first).
+ * Each row carries a signed manage_url (reschedule or cancel without a second login).
  */
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getAdmin } from "@/lib/scheduling-server";
+import { manageUrl } from "@/lib/call-manage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,5 +25,6 @@ export async function GET() {
     .order("starts_at", { ascending: false })
     .limit(50);
   if (error) return NextResponse.json({ error: "Query failed" }, { status: 500 });
-  return NextResponse.json({ bookings: data ?? [] });
+  const bookings = (data ?? []).map((b) => ({ ...b, manage_url: b.status === "confirmed" ? manageUrl(b.id as string) : null }));
+  return NextResponse.json({ bookings });
 }

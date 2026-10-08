@@ -17,6 +17,7 @@ type DaySlots = { date: string; timezone: string; slots: Slot[] };
 type MyBooking = {
   id: string; call_type: "support" | "demo"; starts_at: string; user_ends_at: string;
   user_timezone: string | null; status: string; topic: string | null; join_url: string | null;
+  manage_url?: string | null;
 };
 
 const USER_TZ = typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : "UTC";
@@ -309,6 +310,7 @@ export default function BookCallPage() {
                 {b.status === "confirmed" && Date.parse(b.starts_at) > Date.now() && (
                   <div className="flex gap-2">
                     {b.join_url && <a href={b.join_url} target="_blank" rel="noreferrer" className="text-[#f97316] hover:underline">Join</a>}
+                    {b.manage_url && <a href={b.manage_url} className="text-slate-700 underline hover:text-slate-900">Reschedule</a>}
                     <button type="button" onClick={() => cancel(b.id)} className="text-slate-400 hover:text-rose-600">Cancel</button>
                   </div>
                 )}
