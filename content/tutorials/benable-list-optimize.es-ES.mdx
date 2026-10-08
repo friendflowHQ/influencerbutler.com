@@ -30,10 +30,18 @@ El único paso que gasta créditos de OpenAI es el botón **Generar mejoras con 
 - **La URL de una lista de Benable** de tu propiedad, como `https://benable.com/<tu-nombre>/<tu-lista>`.
 - **Una clave de OpenAI en Claves de IA y Datos** ([cómo conseguirla](/help/tutorials/openai-api-setup)) solo si quieres el texto de "Generar mejoras con IA". El análisis y las puntuaciones funcionan sin ella.
 
-## Analizar una lista
+## Optimiza todo tu perfil con un clic
+
+El panel empieza con una sola tarjeta: pega la URL de tu perfil de Benable (como `https://benable.com/<tunombre>`) y haz clic en **Optimizar todo mi perfil**. Tras una única confirmación, el butler analiza cada lista de tu perfil, lee la insignia de cada lista desde tu perfil en una sola visita y luego trabaja con las listas que aún no están optimizadas: reescribe títulos y descripciones flojos, añade productos a las listas escasas y añade recomendaciones que no son productos. Las listas ya optimizadas se dejan como están.
+
+Mientras se ejecuta ves el progreso en vivo ("Analizando la lista 12 de 99...", luego "Optimizando la lista 3 de 63...") y un botón **Detener** junto a los botones de ejecución. Detener termina el elemento en curso y luego cierra la ejecución limpiamente. Al final obtienes un resumen con **resultados por lista**, para ver exactamente qué pasó con cada una: optimizada, ya optimizada, sin cambios seguros o necesita atención, con los productos añadidos en cada caso.
+
+¿Prefieres mirar antes de que algo cambie? **Solo analizar (sin cambios)** analiza cada lista localmente sin coste de OpenAI y las ordena para que las menos optimizadas aparezcan primero.
+
+## Analizar una sola lista
 
 1. Abre **Optimizar Lista de Benable** dentro de Benable Butler (anidado bajo el interruptor de Benable Butler).
-2. Pega la URL de tu lista en **Analizar una lista** y haz clic en **Analizar lista**.
+2. Abre la sección **Optimizar solo una lista**, pega la URL de tu lista y haz clic en **Analizar lista**.
 3. Se abre una ventana de Chrome, la herramienta lee la lista y aparece el análisis.
 
 Obtienes una **puntuación de optimización sobre 100**, el **estado de la insignia Optimizada**, un conjunto de **puntuaciones por categoría** que puedes expandir para ver exactamente por qué se asignó cada número, y una lista **Corrige esto primero** con los cambios de mayor impacto.
@@ -60,7 +68,7 @@ Todo lo demás (secciones, eliminaciones de productos, portada) es solo de copia
 
 ## Analizar todas mis listas
 
-Abre **O analizar todas mis listas**, pega la URL de tu perfil de Benable y haz clic en **Analizar todas**. La herramienta analiza cada lista de tu perfil localmente (sin coste de OpenAI) y las ordena para que las menos optimizadas aparezcan primero. Haz clic en cualquier fila para abrir su análisis completo.
+Pega la URL de tu perfil de Benable en la tarjeta superior y haz clic en **Solo analizar (sin cambios)**. La herramienta analiza cada lista de tu perfil localmente (sin coste de OpenAI) y las ordena para que las menos optimizadas aparezcan primero. Haz clic en cualquier fila para abrir su análisis completo. El panel **Análisis recientes** de abajo guarda los últimos análisis del perfil en el que trabajas, mostrando 12 cada vez con un botón para ver más.
 
 ### Optimizar desde la vista de triaje
 
@@ -80,6 +88,8 @@ Después de **Analizar todas**, una línea te dice si tu perfil se apoya demasia
 - **Añadir recomendaciones que no son productos** es el interruptor principal.
 - **Añadir algunas recomendaciones no comerciales a las listas solo de productos** cuela un par de lugares, vídeos o recursos relevantes en las listas de productos que todavía no tienen ninguno.
 - **Crear listas nuevas sin productos** permite que el butler escriba listas nuevas que no son de productos (como "San Diego Cooking Classes" o "Fridge Organization Tips") cuando tu perfil tiene demasiados productos. Fija cuántas puede crear por ejecución y una zona de residencia que pueda usar para recomendaciones locales.
+
+El butler recuerda qué listas ya equilibró y cuáles creó, así que una lista que ya recibió sus recomendaciones sin productos no se vuelve a completar en el siguiente barrido, y la creación de listas se detiene sola cuando tu perfil alcanza una mezcla sana (con un tope máximo de 10 listas creadas automáticamente en total, para que nunca se descontrole).
 
 De dónde vienen las recomendaciones: con tu clave de **OpenAI** conectada, los lugares locales, los tutoriales, los artículos web y las apps funcionan desde el primer momento, y cada sugerencia se verifica antes de aparecer en tu lista (los vídeos con YouTube, los lugares con OpenStreetMap, los artículos abriendo el enlace). Añadir una clave de **Google Places** (para lugares locales) o de **YouTube** (para vídeos) en IA y claves de datos da resultados más frescos y de mayor calidad, pero es opcional. Una lista puramente sin productos nunca se marca como anuncio, porque no hay nada de afiliación que declarar.
 
@@ -104,7 +114,7 @@ Los productos de Amazon, las recomendaciones que no son productos y los producto
 - **"Conecta OpenAI para generar mejoras con IA"**: el análisis funcionó, pero el texto de IA necesita tu clave de OpenAI en Claves de IA y Datos. Añádela y vuelve a hacer clic en Generar mejoras con IA.
 - **"Conecta tu API de Amazon Creators para añadir productos"**: añadir productos busca en Amazon selecciones sobre el tema, así que necesita tu API de Amazon Creators conectada en Claves de IA y Datos. Las notas de los nuevos productos también usan tu clave de OpenAI, pero los productos se añaden igualmente sin ella.
 - **La puntuación parece alta pero la lista no está optimizada**: en tus propias listas no podemos ver las notas, así que la puntuación refleja solo la estructura. Lee la nota de "notas no determinadas" y refuerza las notas de tus productos.
-- **Un análisis volvió con poco contenido**: la lista puede ser privada, estar vacía o seguir cargando. Inténtalo de nuevo y asegúrate de tener la sesión iniciada.
+- **Un análisis volvió con poco contenido**: la lista puede ser privada, estar vacía o seguir cargando. La herramienta ahora espera a que aparezca el contador de artículos de la lista (y recarga una vez si no aparece), y cuando aun así no puede leer una lista, informa "no se pudo leer esta lista" y la deja como está en lugar de puntuarla como vacía. Inténtalo de nuevo y asegúrate de tener la sesión iniciada.
 
 ## Relacionado
 

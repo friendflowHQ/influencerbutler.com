@@ -30,10 +30,18 @@ La seule étape qui consomme des crédits OpenAI est le bouton **Générer des a
 - **L'URL d'une liste Benable** que vous possédez, comme `https://benable.com/<votre-nom>/<votre-liste>`.
 - **Une clé OpenAI dans Clés IA et Données** ([comment l'obtenir](/help/tutorials/openai-api-setup)) uniquement si vous voulez le texte de "Générer des améliorations IA". L'analyse et les scores fonctionnent sans elle.
 
-## Analyser une liste
+## Optimisez tout votre profil en un clic
+
+Le panneau commence par une seule carte : collez l'URL de votre profil Benable (comme `https://benable.com/<votrenom>`) et cliquez sur **Optimiser tout mon profil**. Après une seule confirmation, le butler analyse chaque liste de votre profil, lit le badge de chaque liste depuis votre profil en une seule visite, puis traite les listes qui ne sont pas encore optimisées : il réécrit les titres et descriptions faibles, ajoute des produits aux listes trop courtes et ajoute des recommandations hors produits. Les listes déjà optimisées ne sont pas touchées.
+
+Pendant l'exécution, vous voyez la progression en direct (« Analyse de la liste 12 sur 99... », puis « Optimisation de la liste 3 sur 63... ») et un bouton **Arrêter** à côté des boutons de lancement. Arrêter termine l'élément en cours puis clôt l'exécution proprement. À la fin, vous obtenez un résumé avec des **résultats par liste**, pour voir exactement ce qui est arrivé à chacune : optimisée, déjà optimisée, aucun changement sûr ou à vérifier, avec les produits ajoutés pour chaque liste.
+
+Vous préférez regarder avant que quoi que ce soit change ? **Analyser seulement (sans changements)** analyse chaque liste localement sans coût OpenAI et les trie pour afficher d'abord les moins optimisées.
+
+## Analyser une seule liste
 
 1. Ouvrez **Optimiser une Liste Benable** sous Benable Butler (imbriqué sous l'interrupteur Benable Butler).
-2. Collez l'URL de votre liste dans **Analyser une liste** et cliquez sur **Analyser la liste**.
+2. Ouvrez la section **Optimiser une seule liste**, collez l'URL de votre liste et cliquez sur **Analyser la liste**.
 3. Une fenêtre Chrome s'ouvre, l'outil lit la liste et l'analyse apparaît.
 
 Vous obtenez un **score d'optimisation sur 100**, le **statut du badge Optimisée**, un ensemble de **scores par catégorie** que vous pouvez déplier pour voir exactement pourquoi chaque chiffre a été attribué, et une liste **Corrigez ceci en premier** avec les modifications les plus impactantes.
@@ -60,7 +68,7 @@ Tout le reste (sections, suppressions de produits, couverture) est en copie seul
 
 ## Analyser toutes mes listes
 
-Ouvrez **Ou analyser toutes mes listes**, collez l'URL de votre profil Benable et cliquez sur **Tout analyser**. L'outil analyse chaque liste de votre profil localement (sans coût OpenAI) et les trie pour que les moins optimisées apparaissent en premier. Cliquez sur une ligne pour ouvrir son analyse complète.
+Collez l'URL de votre profil Benable dans la carte du haut et cliquez sur **Analyser seulement (sans changements)**. L'outil analyse chaque liste de votre profil localement (sans coût OpenAI) et les trie pour que les moins optimisées apparaissent en premier. Cliquez sur une ligne pour ouvrir son analyse complète. Le panneau **Analyses récentes** en bas conserve les dernières analyses du profil sur lequel vous travaillez, en affichant 12 lignes à la fois avec un bouton pour en voir plus.
 
 ### Optimiser depuis la vue de tri
 
@@ -80,6 +88,8 @@ Après **Analyser toutes**, une ligne vous indique si votre profil s'appuie trop
 - **Ajouter des recommandations hors produits** est l'interrupteur principal.
 - **Ajouter quelques recommandations hors produits aux listes uniquement de produits** glisse quelques lieux, vidéos ou ressources pertinents dans les listes de produits qui n'en ont pas encore.
 - **Créer de nouvelles listes hors produits** permet au butler d'écrire des listes entièrement nouvelles qui ne portent pas sur des produits (comme « San Diego Cooking Classes » ou « Fridge Organization Tips ») quand votre profil contient trop de produits. Réglez combien il peut en créer par exécution, et une zone de résidence qu'il peut utiliser pour les recommandations locales.
+
+Le butler se souvient des listes qu'il a déjà équilibrées et de celles qu'il a créées : une liste qui a reçu ses recommandations hors produits n'est pas complétée à nouveau au balayage suivant, et la création de listes s'arrête d'elle-même quand votre profil atteint un bon équilibre (avec un plafond ferme de 10 listes créées automatiquement au total, pour qu'elle ne s'emballe jamais).
 
 D'où viennent les recommandations : avec votre clé **OpenAI** connectée, les lieux locaux, les tutoriels, les articles web et les applis fonctionnent d'emblée, et chaque suggestion est vérifiée avant d'apparaître sur votre liste (les vidéos via YouTube, les lieux via OpenStreetMap, les articles en ouvrant le lien). Ajouter une clé **Google Places** (pour les lieux) ou **YouTube** (pour les vidéos) dans IA et clés de données donne des résultats plus récents et de meilleure qualité, mais reste facultatif. Une liste entièrement hors produits n'est jamais signalée comme une publicité, car il n'y a aucune affiliation à divulguer.
 
@@ -104,7 +114,7 @@ Les produits Amazon, les recommandations qui ne sont pas des produits et les pro
 - **"Connectez OpenAI pour générer des améliorations IA"** : l'analyse a fonctionné, mais le texte IA nécessite votre clé OpenAI dans Clés IA et Données. Ajoutez-la et cliquez à nouveau sur Générer des améliorations IA.
 - **"Connectez votre API Amazon Creators pour ajouter des produits"** : ajouter des produits recherche sur Amazon des choix sur le thème, il faut donc que votre API Amazon Creators soit connectée dans Clés IA et Données. Les notes des nouveaux produits utilisent aussi votre clé OpenAI, mais les produits s'ajoutent quand même sans elle.
 - **Le score semble élevé mais la liste n'est pas optimisée** : sur vos propres listes, nous ne pouvons pas voir les notes, donc le score ne reflète que la structure. Lisez la note "notes indéterminées" et renforcez les notes de vos produits.
-- **Une analyse est revenue pauvre** : la liste est peut-être privée, vide ou encore en chargement. Réessayez et assurez-vous d'être connecté.
+- **Une analyse est revenue pauvre** : la liste est peut-être privée, vide ou encore en chargement. L'outil attend désormais que le compteur d'articles de la liste s'affiche (et recharge une fois s'il n'apparaît pas), et quand il ne peut toujours pas lire une liste, il signale « impossible de lire cette liste » et la laisse telle quelle au lieu de la noter comme vide. Réessayez et assurez-vous d'être connecté.
 
 ## Associé
 

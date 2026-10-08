@@ -30,10 +30,18 @@ The only step that spends OpenAI credits is the **Generate AI fixes** button, wh
 - **A Benable list URL** that you own, like `https://benable.com/<your-name>/<your-list>`.
 - **An OpenAI key in AI & Data Keys** ([how to get one](/help/tutorials/openai-api-setup)) only if you want the "Generate AI fixes" copy. The audit and scores work without it.
 
-## Auditing a list
+## Optimize your whole profile in one click
+
+The panel leads with one card: paste your Benable profile URL (like `https://benable.com/<your-name>`) and click **Optimize my whole profile**. After one confirmation, the butler scans every list on your profile, reads each list's badge from your profile in a single visit, and then works through the lists that are not optimized yet: it rewrites weak titles and descriptions, adds products to thin lists, and adds non-product recommendations. Already-optimized lists are left alone.
+
+While it runs you see live progress ("Scanning list 12 of 99...", then "Optimizing list 3 of 63..."), and a **Stop** button sits next to the run buttons. Stop finishes the item it is on and then ends the run cleanly. When the run ends you get a summary plus **per-list results**, so you can see exactly what happened to every list: optimized, already optimized, no safe changes, or needs attention, with the products added for each.
+
+Prefer to look before anything changes? **Just scan (no changes)** audits every list locally with no OpenAI cost and sorts them so the least optimized show first.
+
+## Auditing a single list
 
 1. Open **Benable List Optimize** under Benable Butler (nested under the Benable Butler toggle).
-2. Paste your list URL into **Audit a list** and click **Audit list**.
+2. Open the **Optimize just one list** section, paste your list URL, and click **Audit list**.
 3. A Chrome window opens, the tool reads the list, and the audit appears.
 
 You get an **optimization score out of 100**, the **Optimized badge status**, a set of **category scores** you can expand to see exactly why each number was assigned, and a **Fix these first** list of the highest-impact changes.
@@ -60,7 +68,7 @@ Everything else (sections, product removals, cover) is copy-only for now. You pa
 
 ## Scan all my lists
 
-Open **Or scan all my lists**, paste your Benable profile URL, and click **Scan all**. The tool audits every list on your profile locally (no OpenAI cost) and sorts them so the least optimized show first. Click any row to open its full audit.
+Paste your Benable profile URL into the top card and click **Just scan (no changes)**. The tool audits every list on your profile locally (no OpenAI cost) and sorts them so the least optimized show first. Click any row to open its full audit. The **Recent audits** panel at the bottom keeps the last audits for the profile you are working on, showing 12 at a time with a Show more button.
 
 ### Optimize from the triage view
 
@@ -80,6 +88,8 @@ After **Scan all**, a one-line read tells you whether your profile leans too hea
 - **Add non-product recommendations** is the master switch.
 - **Add a few non-product picks to product-only lists** slips a couple of relevant places, videos, or resources into product lists that do not have any yet.
 - **Create new non-product lists** lets the butler write brand-new lists that are not about products (like "San Diego Cooking Classes" or "Fridge Organization Tips") when your profile is product-heavy. Set how many it may create per run, and a home area it can use for local picks.
+
+The butler remembers which lists it has already balanced and which lists it created, so a list that got its non-product picks is not topped up again on the next sweep, and list creation stops on its own once your profile has a healthy mix (with a hard ceiling of 10 auto-created lists in total, so it can never run away).
 
 Where the recommendations come from: with your **OpenAI key** connected, local places, tutorials, web articles, and apps all work out of the box, and every suggestion is verified before it lands on your list (videos against YouTube, places against OpenStreetMap, articles by opening the link). Adding a **Google Places** key (for local) or a **YouTube** key (for videos) in AI & Data Keys gives fresher, higher-quality results, but is optional. A purely non-product list is never labeled as an ad, because there is nothing affiliate to disclose.
 
@@ -104,7 +114,7 @@ Amazon items, non-product recommendations, and items whose retailer cannot be re
 - **"Connect OpenAI to generate AI fixes"**: the audit worked, but the AI copy needs your OpenAI key in AI & Data Keys. Add it and click Generate AI fixes again.
 - **"Connect your Amazon Creators API to add products"**: adding products searches Amazon for on-topic picks, so it needs your Amazon Creators API connected in AI & Data Keys. Notes for the new products also use your OpenAI key, but products still add without it.
 - **The score looks high but the list is not optimized**: on your own lists we cannot see the notes, so the score reflects structure only. Read the "notes undetermined" note and strengthen your product notes.
-- **A scan came back thin**: the list may be private, empty, or still loading. Try again, and make sure you are signed in.
+- **A scan came back thin**: the list may be private, empty, or still loading. The tool now waits for the list's item count to render (and reloads once if it does not), and when it still cannot read a list it reports "could not read this list" and leaves it alone instead of scoring it as empty. Try again, and make sure you are signed in.
 
 ## Related
 
