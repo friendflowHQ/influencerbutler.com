@@ -7,7 +7,7 @@
 // KEEP CURRENT: update the table/copy when we ship new butlers, and refresh
 // competitor rows weekly. See the app repo's "Keep the affiliate
 // competitor-analysis materials current" note and the weekly scheduled task.
-// Last reviewed: 2026-09-04
+// Last reviewed: 2026-09-04 (Cha-Ching entry refreshed 2026-10-07 for 3.5 to 3.6)
 
 import Image from "next/image";
 import { useState } from "react";
@@ -15,6 +15,9 @@ import { useState } from "react";
 // Every competitor claim in this file is "as of" this date. Update it every
 // time the rows/copy are re-verified against the competitors' live sites.
 const LAST_REVIEWED = "September 4, 2026";
+// The Cha-Ching entry was refreshed separately (3.5 to 3.6 release posts) and
+// says "as of October 7, 2026" in its own copy. Bump LAST_REVIEWED only after
+// the other competitors are re-checked too.
 
 type Verdict = "yes" | "ltd" | "no" | "text";
 
@@ -82,7 +85,7 @@ const ROWS: Row[] = [
     ib: { v: "yes", t: "CC + SPCC" },
     oink: { v: "yes", t: "CC (Pro)" },
     vue: { v: "yes", t: "CC (Pro)" },
-    cha: { v: "no" },
+    cha: { v: "ltd", t: "uploaded ASINs + Sponsored Links" },
     logie: { v: "ltd", t: "CC visibility + reminders" },
     joy: { v: "ltd", t: "auto-apply (add-on)" },
     many: { v: "no" },
@@ -159,7 +162,7 @@ const ROWS: Row[] = [
     ib: { v: "yes", t: "CA/UK/AU/SG" },
     oink: { v: "ltd", t: "CA/UK" },
     vue: { v: "no" },
-    cha: { v: "no", t: "video only" },
+    cha: { v: "ltd", t: "not mentioned in 3.5 to 3.6 posts" },
     logie: { v: "ltd", t: "Amazon CA/UK publish" },
     joy: { v: "no" },
     many: { v: "no" },
@@ -170,7 +173,7 @@ const ROWS: Row[] = [
     ib: { v: "yes" },
     oink: { v: "ltd" },
     vue: { v: "no" },
-    cha: { v: "no" },
+    cha: { v: "ltd", t: "video posts + drafts, not deals" },
     logie: { v: "ltd", t: "YouTube/Pinterest" },
     joy: { v: "ltd", t: "Telegram + IG" },
     many: { v: "ltd", t: "IG/FB/WhatsApp DMs" },
@@ -225,7 +228,7 @@ const ROWS: Row[] = [
     ib: { v: "yes", t: "Amazon + Walmart" },
     oink: { v: "no" },
     vue: { v: "ltd", t: "TikTok (beta)" },
-    cha: { v: "no" },
+    cha: { v: "ltd", t: "Walmart upload (3.6)" },
     logie: { v: "no" },
     joy: { v: "no" },
     many: { v: "no" },
@@ -236,7 +239,7 @@ const ROWS: Row[] = [
     ib: { v: "yes", t: "branded + dashboard" },
     oink: { v: "ltd" },
     vue: { v: "yes", t: "URL Vue" },
-    cha: { v: "ltd", t: "in descriptions" },
+    cha: { v: "ltd", t: "link type per destination" },
     logie: { v: "yes", t: "smart deep links" },
     joy: { v: "yes", t: "core feature" },
     many: { v: "no" },
@@ -322,7 +325,7 @@ const MASCOTS: { emoji: string; name: string; body: string; butler?: boolean }[]
   {
     emoji: "\u{1F3B0}",
     name: "Cha-Ching Automate",
-    body: "The one-trick specialist. Does one job (cross-posting your videos to YouTube and 13+ international Amazon marketplaces) and nothing else.",
+    body: "The video-first specialist. Cross-posts your videos to YouTube and 13+ international Amazon marketplaces, and keeps adding posting controls, but stays focused on video.",
   },
   {
     emoji: "\u{1F3A8}",
@@ -393,15 +396,18 @@ const COMPETITORS: Competitor[] = [
     name: "Cha-Ching Automate",
     tag: "Desktop app · $20/mo",
     pitch:
-      "One job, done well: syncs your Amazon Influencer videos to YouTube and cross-posts them to 13+ international Amazon storefronts, auto-transcribing, translating, and captioning per country. Optional AI voiceover dubbing, auto affiliate links, thumbnail sync, playlists, scheduling.",
+      "Video-first: syncs your Amazon Influencer videos to YouTube and cross-posts them to 13+ international Amazon storefronts, auto-transcribing, translating, and captioning per country. Per their admin's posts in their public Facebook group (v3.5 Sep 29, v3.5.1 about Oct 5, v3.6 Oct 6, 2026), it now also auto-accepts Creator Connections for the ASINs of videos being uploaded and submits links, accepts Sponsored Links campaigns, uploads to Walmart, and adds draft settings for Pinterest, Facebook, TikTok, and Threads, a link type per destination, 'Schedule for later', a cover-image option, one-word-at-a-time captions, and a 'Stay awake' setting. Optional AI voiceover dubbing, auto affiliate links, thumbnail sync, playlists, scheduling.",
     credit:
-      "For video specifically, Cha-Ching reaches more countries (13+), auto-translates and captions in the local language, and now offers optional AI voiceover dubbing, which Butler's Video Reload does not do today. If a creator's only goal is multilingual video-to-YouTube at scale, Cha-Ching is strong at that one thing.",
+      "Cha-Ching ships fast (three releases between Sep 29 and Oct 6) and is ahead of Butler today on drafts for Facebook, Pinterest, and Threads, a link type per destination, 'Schedule for later' on selected uploads, cover-image and black-first-frame handling, one-word-at-a-time captions, a step-by-step 'Next step' mode, and 'Hide US Creator Hub' for VAs. It also reaches more countries (13+) and offers optional AI voiceover dubbing. Say so up front: it keeps you credible.",
     win:
-      "As of our last check, Cha-Ching focuses on video only: no photo reload, brand outreach, CC/SPCC auto-accept, collab tracking, deal posting, or inbox. Influencer Butler is a full suite: Video Reload AND Photo Reload butlers, plus 50+ other connected tools. You would need Cha-Ching plus five other tools to match one Butler.",
+      "As of October 7, 2026, Cha-Ching's Walmart upload matches by product picture and otherwise takes the first search result, and their admin tells users to verify the tags and retag or delete wrong ones. Butler's Walmart repost (video and photo) matches on exact UPC/GTIN only, with no first-result fallback, and review-before-posting is the default. Cha-Ching is still video-first: its release posts do not mention photo reload, brand outreach, collab tracking, or a unified inbox, while Butler is a full suite of 50+ connected tools. Coming in the next release: a keep-awake toggle, a per-run estimated OpenAI spend in the Run summary, known-flagged-word removal before posting, and markers on the marketplaces Amazon is reported to cross-post to automatically.",
     points: [
-      "Cha-Ching does one thing. Butler does that plus your photos, your brand deals, your posting, and your earnings tracking.",
-      "It reloads videos but not photos. Butler reloads both, and revives your dead product links on top.",
-      "Why rent a one-trick tool when the butler already includes it?",
+      "Walmart accuracy: Butler matches on the exact UPC/GTIN only. Cha-Ching matches by picture and falls back to the first search result, and its own admin tells users to check the tags afterward.",
+      "Butler reviews before it posts to Walmart by default, and conforms videos to 9:16, trims them to 60 seconds, and stays under a 150MB cap.",
+      "Cha-Ching is video-first. Butler does that plus your photos, CC and SPCC accept on uploads and social posts, your brand deals, and your earnings tracking.",
+      "Be fair on posting controls: Cha-Ching is ahead on drafts for Facebook, Pinterest, and Threads and on a link type per destination. Butler has TikTok drafts and Amazon 'Save as draft' plus the full suite around them.",
+      "Amazon is reported (by Cha-Ching's own admin, unconfirmed) to be auto cross-posting videos to ten marketplaces. If that holds, Butler's Video and Photo Reload still cover the rest.",
+      "Why rent a video-first tool when the butler already includes the core of it?",
     ],
     oneliner: "\u{1F3B0} Cha-Ching is one specialist. \u{1F933} Butler is the whole household staff.",
   },
