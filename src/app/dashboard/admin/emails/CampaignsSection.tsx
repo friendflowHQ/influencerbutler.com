@@ -63,8 +63,9 @@ function toMedia(stored: StoredMedia[] | undefined | null): CampaignMedia[] {
 type Audience =
   | { kind: "all_contacts" }
   | { kind: "tag"; tag: string }
-  | { kind: "segment"; segment: "trial" | "pro" | "churned" | "newsletter" }
-  | { kind: "opened_nonpaid" }
+  | { kind: "segment"; segment: "trial" | "pro" | "churned" | "free" | "newsletter" }
+  | { kind: "opened_nonpaid"; minOpens?: number }
+  | { kind: "engaged"; minOpens?: number; withinDays?: number }
   | { kind: "pasted"; emails: string[] };
 
 type CampaignCounts = { queued: number; sent: number; skipped: number; failed: number };
@@ -106,6 +107,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   trial: "Trial users",
   pro: "Pro subscribers",
   churned: "Churned customers",
+  free: "Free users (never subscribed)",
   newsletter: "Newsletter subscribers",
 };
 
@@ -137,8 +139,17 @@ function audienceLabel(a: Audience): string {
   if (a.kind === "all_contacts") return "All contacts";
   if (a.kind === "tag") return `Tag: ${a.tag}`;
   if (a.kind === "segment") return `Segment: ${SEGMENT_LABELS[a.segment] ?? a.segment}`;
-  if (a.kind === "opened_nonpaid") return "Opened an email, not a paying customer";
-  return `Pasted list (${a.emails.length})`;
+  if (a.kind === "opened_nonpaid") {
+    return `Opened ${a.minOpens ?? 1}+ emails, no active subscription or trial`;
+  }
+  if (a.kind === "engaged") return "Engaged openers";
+  return `Pasted list (${a.emails?.length ?? 0})`;
+}
+
+/** Builds the opened_nonpaid audience from the composer's min-opens text box. */
+function openedAudience(raw: string): Audience {
+  const n = Math.floor(Number(raw));
+  return { kind: "opened_nonpaid", minOpens: Number.isFinite(n) && n >= 1 ? Math.min(n, 50) : 1 };
 }
 
 function parseEmails(input: string): string[] {
@@ -175,9 +186,14 @@ export default function CampaignsSection({
   const [audienceKind, setAudienceKind] = useState<Audience["kind"]>("all_contacts");
   const [audienceTag, setAudienceTag] = useState("");
   const [audienceSegment, setAudienceSegment] = useState<
-    "trial" | "pro" | "churned" | "newsletter"
+    "trial" | "pro" | "churned" | "free" | "newsletter"
   >("trial");
   const [pastedText, setPastedText] = useState("");
+  const [openedMin, setOpenedMin] = useState("3");
+  // The composer has no control for the API-only "engaged" audience, so keep the
+  // loaded one verbatim: otherwise re-saving such a draft would silently turn it
+  // into "all contacts".
+  const loadedEngaged = useRef<Audience | null>(null);
   const [stream, setStream] = useState<"lifecycle" | "cold">("lifecycle");
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [composerBusy, setComposerBusy] = useState(false);
@@ -214,8 +230,9 @@ export default function CampaignsSection({
   function buildAudience(): Audience {
     if (audienceKind === "tag") return { kind: "tag", tag: audienceTag.trim() };
     if (audienceKind === "segment") return { kind: "segment", segment: audienceSegment };
-    if (audienceKind === "opened_nonpaid") return { kind: "opened_nonpaid" };
+    if (audienceKind === "opened_nonpaid") return openedAudience(openedMin);
     if (audienceKind === "pasted") return { kind: "pasted", emails: parseEmails(pastedText) };
+    if (audienceKind === "engaged" && loadedEngaged.current) return loadedEngaged.current;
     return { kind: "all_contacts" };
   }
 
@@ -311,10 +328,12 @@ export default function CampaignsSection({
         : audienceKind === "segment"
           ? { kind: "segment", segment: audienceSegment }
           : audienceKind === "opened_nonpaid"
-            ? { kind: "opened_nonpaid" }
+            ? openedAudience(openedMin)
             : audienceKind === "pasted"
               ? { kind: "pasted", emails: parseEmails(pastedText) }
-              : { kind: "all_contacts" };
+              : audienceKind === "engaged" && loadedEngaged.current
+                ? loadedEngaged.current
+                : { kind: "all_contacts" };
     previewTimer.current = setTimeout(() => {
       void (async () => {
         try {
@@ -333,7 +352,7 @@ export default function CampaignsSection({
     return () => {
       if (previewTimer.current) clearTimeout(previewTimer.current);
     };
-  }, [editing, audienceKind, audienceTag, audienceSegment, pastedText]);
+  }, [editing, audienceKind, audienceTag, audienceSegment, pastedText, openedMin]);
 
   function openComposer(campaign: "new" | Campaign) {
     setEditing(campaign);
@@ -351,6 +370,8 @@ export default function CampaignsSection({
       setAudienceTag("");
       setAudienceSegment("trial");
       setPastedText("");
+      setOpenedMin("3");
+      loadedEngaged.current = null;
       setStream("lifecycle");
       setAttachments([]);
       setInlineImages([]);
@@ -363,6 +384,8 @@ export default function CampaignsSection({
       setAudienceTag(a.kind === "tag" ? a.tag : "");
       setAudienceSegment(a.kind === "segment" ? a.segment : "trial");
       setPastedText(a.kind === "pasted" ? a.emails.join("\n") : "");
+      setOpenedMin(a.kind === "opened_nonpaid" && a.minOpens ? String(a.minOpens) : "3");
+      loadedEngaged.current = a.kind === "engaged" ? a : null;
       setStream(campaign.stream === "cold" ? "cold" : "lifecycle");
       setAttachments(toMedia(campaign.attachments));
       setInlineImages(toMedia(campaign.inline_images));
@@ -648,11 +671,31 @@ export default function CampaignsSection({
                 <option value="all_contacts">All contacts</option>
                 <option value="tag">Tag</option>
                 <option value="segment">Customer segment</option>
-                <option value="opened_nonpaid">Opened an email, not paying</option>
+                <option value="opened_nonpaid">Opened emails, no subscription or trial</option>
                 <option value="pasted">Pasted list</option>
               </select>
             </div>
             <div>
+              {audienceKind === "opened_nonpaid" ? (
+                <>
+                  <label htmlFor="campaign-min-opens" className="text-xs font-medium text-slate-500">
+                    Minimum emails opened
+                  </label>
+                  <input
+                    id="campaign-min-opens"
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={openedMin}
+                    onChange={(e) => setOpenedMin(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 focus:border-indigo-300 focus:outline-none"
+                  />
+                  <p className="mt-1 text-xs text-slate-500">
+                    3 means opened three or more of our emails. Anyone with an active
+                    subscription or trial is left out.
+                  </p>
+                </>
+              ) : null}
               {audienceKind === "tag" ? (
                 <>
                   <label className="text-xs font-medium text-slate-500">Tag</label>
@@ -672,7 +715,7 @@ export default function CampaignsSection({
                     value={audienceSegment}
                     onChange={(e) =>
                       setAudienceSegment(
-                        e.target.value as "trial" | "pro" | "churned" | "newsletter",
+                        e.target.value as "trial" | "pro" | "churned" | "free" | "newsletter",
                       )
                     }
                     className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-800 focus:border-indigo-300 focus:outline-none"
@@ -680,6 +723,7 @@ export default function CampaignsSection({
                     <option value="trial">Trial users</option>
                     <option value="pro">Pro subscribers</option>
                     <option value="churned">Churned customers</option>
+                    <option value="free">Free users (never subscribed)</option>
                     <option value="newsletter">Newsletter subscribers</option>
                   </select>
                 </>

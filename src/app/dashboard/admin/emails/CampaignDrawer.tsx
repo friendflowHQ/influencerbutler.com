@@ -12,6 +12,8 @@ type Audience =
   | { kind: "all_contacts" }
   | { kind: "tag"; tag: string }
   | { kind: "segment"; segment: string }
+  | { kind: "opened_nonpaid"; minOpens?: number }
+  | { kind: "engaged" }
   | { kind: "pasted"; emails: string[] };
 
 type CampaignDetail = {
@@ -64,6 +66,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   trial: "Trial users",
   pro: "Pro subscribers",
   churned: "Churned customers",
+  free: "Free users (never subscribed)",
   newsletter: "Newsletter subscribers",
 };
 
@@ -71,7 +74,11 @@ function audienceLabel(a: Audience): string {
   if (a.kind === "all_contacts") return "All contacts";
   if (a.kind === "tag") return `Tag: ${a.tag}`;
   if (a.kind === "segment") return `Segment: ${SEGMENT_LABELS[a.segment] ?? a.segment}`;
-  return `Pasted list (${a.emails.length})`;
+  if (a.kind === "opened_nonpaid") {
+    return `Opened ${a.minOpens ?? 1}+ emails, no active subscription or trial`;
+  }
+  if (a.kind === "engaged") return "Engaged openers";
+  return `Pasted list (${a.emails?.length ?? 0})`;
 }
 
 function fmt(iso: string | null): string {

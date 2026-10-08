@@ -10,7 +10,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type AudienceSegment = "trial" | "pro" | "churned" | "newsletter";
+export type AudienceSegment = "trial" | "pro" | "churned" | "free" | "newsletter";
 
 export type Audience =
   | { kind: "tag"; tag: string }
@@ -22,7 +22,7 @@ export type Audience =
 
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const SEGMENTS = new Set<AudienceSegment>(["trial", "pro", "churned", "newsletter"]);
+const SEGMENTS = new Set<AudienceSegment>(["trial", "pro", "churned", "free", "newsletter"]);
 const TAG_RE = /^[a-z0-9][a-z0-9_-]{0,39}$/;
 
 const PAGE = 1000;
@@ -38,9 +38,6 @@ const MAX_WITHIN_DAYS = 3650;
 
 /** Statuses that mean a user currently has live access. Mirrors winback. */
 const LIVE_STATUSES = ["active", "on_trial", "past_due", "paused"];
-
-/** Statuses that count as a paid subscription. Mirrors tierForSubscriptionStatus's "pro" case. */
-const PAID_STATUSES = ["active", "past_due", "paused"];
 
 /** Lowercase/trim a raw tag and clamp to the allowed shape. Null if unusable. */
 export function normalizeTag(raw: string): string | null {
@@ -189,6 +186,70 @@ async function collectUserIdsByStatus(
   }
 }
 
+/** Pages subscriptions in ANY status, returning every user id that ever had one. */
+async function collectEverSubscribedUserIds(db: SupabaseClient): Promise<Set<string> | null> {
+  const ids = new Set<string>();
+  let offset = 0;
+  for (;;) {
+    const { data, error } = await db
+      .from("subscriptions")
+      .select("user_id")
+      .range(offset, offset + PAGE - 1);
+    if (error) return null;
+    const rows = data ?? [];
+    for (const row of rows) {
+      if (typeof row.user_id === "string" && row.user_id) ids.add(row.user_id);
+    }
+    if (rows.length < PAGE) return ids;
+    offset += PAGE;
+  }
+}
+
+/**
+ * Free users: app accounts with no subscription row in any status (never
+ * trialed or paid) plus newsletter/extension-only contacts, minus anyone who
+ * ever subscribed (matched by email) and anyone opted out. Returns false on a
+ * query error so the caller can surface the migration/setup banner.
+ */
+async function collectFreeUsers(db: SupabaseClient, into: Set<string>): Promise<boolean> {
+  const everIds = await collectEverSubscribedUserIds(db);
+  if (!everIds) return false;
+
+  const everEmails = new Set<string>();
+  if (everIds.size > 0) await emailsForUserIds(db, [...everIds], everEmails);
+
+  const candidates = new Set<string>();
+  let offset = 0;
+  for (;;) {
+    const { data, error } = await db
+      .from("profiles")
+      .select("id,email")
+      .order("created_at", { ascending: false })
+      .range(offset, offset + PAGE - 1);
+    if (error) return false;
+    const rows = data ?? [];
+    for (const row of rows) {
+      const id = typeof row.id === "string" ? row.id : "";
+      const email = typeof row.email === "string" ? row.email.trim().toLowerCase() : "";
+      if (id && email && !everIds.has(id)) candidates.add(email);
+    }
+    if (rows.length < PAGE) break;
+    offset += PAGE;
+  }
+
+  const contacts = new Set<string>();
+  if (!(await collectSubscribers(db, contacts, {}))) return false;
+  for (const email of contacts) candidates.add(email);
+
+  const remaining = [...candidates].filter((email) => !everEmails.has(email));
+  const optedOut = new Set<string>();
+  await collectOptedOut(db, remaining, optedOut);
+  for (const email of remaining) {
+    if (!optedOut.has(email) && into.size < MAX_AUDIENCE) into.add(email);
+  }
+  return true;
+}
+
 /**
  * Returns the set of lowercased emails belonging to users who currently have a
  * live subscription (active / on_trial / past_due / paused). Used by the
@@ -323,9 +384,10 @@ async function collectEngagedOpeners(
 /**
  * Tallies opens per recipient and keeps anyone who opened at least minOpens
  * of our emails, drops opted-out addresses (same as "engaged"), then drops
- * anyone with a currently-paid subscription. A candidate with no matching
- * profiles row (extension-only leads, cold-outreach contacts) has no app
- * account and so trivially counts as "not paying". Returns false on a query
+ * anyone with a live subscription (active, past_due, paused, or on a free
+ * trial), since a "try Pro free" pitch is wrong for someone already on one. A
+ * candidate with no matching profiles row (extension-only leads, cold-outreach
+ * contacts) has no app account and so counts as unsubscribed. Returns false on a query
  * error so the caller can surface the migration/setup banner.
  */
 async function collectOpenedNonPaid(
@@ -358,12 +420,12 @@ async function collectOpenedNonPaid(
     }
   }
 
-  const paidIds = await collectUserIdsByStatus(db, PAID_STATUSES);
+  const liveIds = await collectUserIdsByStatus(db, LIVE_STATUSES);
 
   for (const email of remaining) {
     const userId = emailToUserId.get(email);
-    const isPaid = userId !== undefined && paidIds !== null && paidIds.has(userId);
-    if (!isPaid && into.size < MAX_AUDIENCE) into.add(email);
+    const isLive = userId !== undefined && liveIds !== null && liveIds.has(userId);
+    if (!isLive && into.size < MAX_AUDIENCE) into.add(email);
   }
   return true;
 }
@@ -408,6 +470,10 @@ export async function resolveAudience(
         // v1: the newsletter list IS the contacts base (the Resend segment is
         // a best-effort mirror of it).
         const ok = await collectSubscribers(db, into, {});
+        return { emails: [...into], migrationPending: !ok };
+      }
+      if (audience.segment === "free") {
+        const ok = await collectFreeUsers(db, into);
         return { emails: [...into], migrationPending: !ok };
       }
       if (audience.segment === "trial" || audience.segment === "pro") {

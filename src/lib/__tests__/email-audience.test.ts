@@ -82,7 +82,7 @@ describe("parseAudience", () => {
   });
 
   it("allow-lists segments", () => {
-    for (const segment of ["trial", "pro", "churned", "newsletter"] as const) {
+    for (const segment of ["trial", "pro", "churned", "free", "newsletter"] as const) {
       expect(parseAudience({ kind: "segment", segment })).toEqual({ kind: "segment", segment });
     }
     expect(parseAudience({ kind: "segment", segment: "admins" })).toBeNull();
