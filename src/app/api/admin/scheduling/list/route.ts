@@ -12,6 +12,7 @@ import { requirePermission } from "@/lib/admin";
 import { getAdmin } from "@/lib/scheduling-server";
 import { isMissingTopicsColumn } from "@/lib/call-topics";
 import { tierForSubscriptionStatus } from "@/lib/entitlements";
+import { registrationCounts } from "@/lib/events";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -68,7 +69,25 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Query failed", detail: error.message, code: error.code }, { status: 500 });
   }
   const rows = (data ?? []) as unknown as Row[];
-  if (!enrich || rows.length === 0) return NextResponse.json({ bookings: rows });
+
+  // Group events (the Events system) share this calendar, read-only. Same window
+  // as the calls above. Best-effort: a failure here never hides the calls.
+  let events: Record<string, unknown>[] = [];
+  try {
+    let eq = admin.from("events").select("id,title,starts_at,ends_at,status,join_url").in("status", ["scheduled", "completed"]);
+    if (from && to) eq = eq.gte("starts_at", from).lt("starts_at", to);
+    else if (scope === "upcoming") eq = eq.gte("ends_at", nowIso);
+    else if (scope === "past") eq = eq.lt("ends_at", nowIso);
+    const er = await eq.order("starts_at", { ascending: scope === "upcoming" || !!(from && to) }).limit(200);
+    if (er.error) console.error("scheduling/list events", er.error.message);
+    else {
+      events = (er.data ?? []) as Record<string, unknown>[];
+      const counts = await registrationCounts(admin, events.map((e) => String(e.id)));
+      events = events.map((e) => ({ ...e, registrations: counts[String(e.id)] ?? 0 }));
+    }
+  } catch (e) { console.error("scheduling/list events", e); }
+
+  if (!enrich || rows.length === 0) return NextResponse.json({ bookings: rows, events });
 
   // Cards view context: the customer's plan and how many calls they have had
   // before this one. Best-effort, so a failure here never hides the calls.
@@ -93,5 +112,5 @@ export async function GET(request: Request) {
       r.ctx = { priorCalls, plan };
     }
   } catch (e) { console.error("scheduling/list enrich", e); }
-  return NextResponse.json({ bookings: rows });
+  return NextResponse.json({ bookings: rows, events });
 }

@@ -23,6 +23,18 @@ export type Booking = {
   ctx?: BookingCtx;
 };
 
+/** A group event (webinar-style call) from the Events system, shown read-only on the calendar. */
+export type CalEvent = {
+  id: string; title: string; starts_at: string; ends_at: string; status: string;
+  join_url: string | null; registrations?: number;
+};
+
+/** Events are managed on their own page; calendar entries link there. */
+export const EVENTS_HREF = "/dashboard/admin/events";
+export const EVENT_PILL_CLASS = "bg-indigo-50 text-indigo-800";
+
+export function eventDayKey(e: CalEvent): string { return DateTime.fromISO(e.starts_at).toLocal().toFormat("yyyy-MM-dd"); }
+
 export const WD = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function hhmm(min: number): string { const h = Math.floor(min / 60), m = min % 60; return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`; }

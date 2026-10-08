@@ -12,7 +12,7 @@ import { DateTime } from "luxon";
 import { CALL_TYPES } from "@/lib/scheduling";
 import { topicsForBooking } from "@/lib/call-topics";
 import { TopicChips, TopicPicker } from "@/components/scheduling/TopicChips";
-import { WD, hhmm, fmtWhen, fmtTime, startOfWeekSun, callPillClass, toLocalInput, type Booking } from "./shared";
+import { WD, hhmm, fmtWhen, fmtTime, startOfWeekSun, callPillClass, toLocalInput, eventDayKey, EVENTS_HREF, EVENT_PILL_CLASS, type Booking, type CalEvent } from "./shared";
 import { CalendarDayView, CallCards, TopicFilterBar } from "./views";
 
 type View = "list" | "day" | "week" | "month";
@@ -83,6 +83,7 @@ export default function SchedulingAdminPage() {
   const [showExpired, setShowExpired] = useState(false);
   const [calendarAnchor, setCalendarAnchor] = useState<DateTime>(() => DateTime.local());
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [events, setEvents] = useState<CalEvent[]>([]);
   const [listError, setListError] = useState<string | null>(null);
   const [prep, setPrep] = useState<Prep | null>(null);
   const [busy, setBusy] = useState(false);
@@ -113,8 +114,8 @@ export default function SchedulingAdminPage() {
       : (() => { const { from, to } = visibleRange(view, calendarAnchor); return `from=${from.toUTC().toJSDate().toISOString()}&to=${to.toUTC().toJSDate().toISOString()}`; })();
     const res = await fetch(`/api/admin/scheduling/list?${qs}`, { cache: "no-store" });
     if (res.status === 403) { setForbidden(true); return; }
-    if (res.ok) { setBookings((await res.json()).bookings ?? []); setListError(null); }
-    else { setBookings([]); setListError(`Couldn't load calls (server error ${res.status}). This is a load failure, not an empty schedule. Check the /api/admin/scheduling/list response.`); }
+    if (res.ok) { const j = await res.json(); setBookings(j.bookings ?? []); setEvents(j.events ?? []); setListError(null); }
+    else { setBookings([]); setEvents([]); setListError(`Couldn't load calls (server error ${res.status}). This is a load failure, not an empty schedule. Check the /api/admin/scheduling/list response.`); }
   }, [scope, view, layout, calendarAnchor]);
 
   const loadSettings = useCallback(async () => {
@@ -142,6 +143,23 @@ export default function SchedulingAdminPage() {
     () => (topicFilter ? bookings.filter((b) => topicsForBooking(b).some((t) => t.key === topicFilter)) : bookings),
     [bookings, topicFilter],
   );
+
+  // Group events have no topic chips, so a topic filter hides them.
+  const shownEvents = useMemo(() => (topicFilter ? [] : events), [events, topicFilter]);
+  const eventsByDay = useMemo(() => {
+    const m = new Map<string, CalEvent[]>();
+    for (const e of shownEvents) { const k = eventDayKey(e); (m.get(k) ?? m.set(k, []).get(k)!).push(e); }
+    return m;
+  }, [shownEvents]);
+
+  // Table rows: calls and events merged in the same order as the list (soonest first for upcoming).
+  const tableRows = useMemo(() => {
+    const rows = [
+      ...shown.map((b) => ({ at: b.starts_at, b, e: null as CalEvent | null })),
+      ...shownEvents.map((e) => ({ at: e.starts_at, b: null as Booking | null, e })),
+    ];
+    return rows.sort((x, y) => (scope === "upcoming" ? x.at.localeCompare(y.at) : y.at.localeCompare(x.at)));
+  }, [shown, shownEvents, scope]);
 
   // Buckets the shown bookings by local calendar day for the day/week/month views.
   const byDay = useMemo(() => {
@@ -293,6 +311,8 @@ export default function SchedulingAdminPage() {
           ) : view === "list" && layout === "cards" ? (
             <CallCards
               bookings={shown}
+              events={shownEvents}
+              descending={scope !== "upcoming"}
               emptyText={topicFilter ? "No calls with that topic." : "No calls."}
               a={{ onOpen: (id) => openPrep(id), onReschedule: (id) => openPrep(id, { reschedule: true }), onAct: (id, body) => act(id, body), busy }}
             />
@@ -303,10 +323,18 @@ export default function SchedulingAdminPage() {
                   <tr><th className="px-3 py-2">When</th><th className="px-3 py-2">Type</th><th className="px-3 py-2">Customer</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Topic</th></tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {shown.length === 0 ? <tr><td colSpan={5} className="px-3 py-8 text-center text-slate-500">{topicFilter ? "No calls with that topic." : "No calls."}</td></tr> :
-                    shown.map((b) => (
+                  {tableRows.length === 0 ? <tr><td colSpan={5} className="px-3 py-8 text-center text-slate-500">{topicFilter ? "No calls with that topic." : "No calls."}</td></tr> :
+                    tableRows.map(({ b, e }) => e ? (
+                      <tr key={`e-${e.id}`} className="bg-indigo-50/40">
+                        <td className="px-3 py-2 text-slate-700"><a href={EVENTS_HREF} className="hover:underline">{fmtWhen(e.starts_at)}</a></td>
+                        <td className="px-3 py-2"><span className={`rounded px-1.5 py-0.5 text-xs ${EVENT_PILL_CLASS}`}>event</span></td>
+                        <td className="px-3 py-2 text-slate-600">{typeof e.registrations === "number" ? `${e.registrations} registered` : "Group event"}</td>
+                        <td className="px-3 py-2"><span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{e.status}</span></td>
+                        <td className="max-w-sm px-3 py-2 text-slate-700"><div className="truncate">{e.title}</div></td>
+                      </tr>
+                    ) : b ? (
                       <tr key={b.id} onClick={() => openPrep(b.id)} className="cursor-pointer hover:bg-slate-50">
-                        <td className="px-3 py-2 text-slate-700"><button type="button" onClick={(e) => { e.stopPropagation(); openPrep(b.id); }} className="text-left hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-700">{fmtWhen(b.starts_at)}</button></td>
+                        <td className="px-3 py-2 text-slate-700"><button type="button" onClick={(ev) => { ev.stopPropagation(); openPrep(b.id); }} className="text-left hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-700">{fmtWhen(b.starts_at)}</button></td>
                         <td className="px-3 py-2">{b.call_type}</td>
                         <td className="px-3 py-2 text-slate-600">{b.user_email}</td>
                         <td className="px-3 py-2"><span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{b.status}</span>{b.recording_status === "ready" ? <span className="ml-1 text-xs" title="Recorded, transcript + notes ready">🎙</span> : null}</td>
@@ -315,7 +343,7 @@ export default function SchedulingAdminPage() {
                           {b.topic ? <div className="mt-0.5 truncate">{b.topic}</div> : (topicsForBooking(b).length === 0 ? "-" : null)}
                         </td>
                       </tr>
-                    ))}
+                    ) : null)}
                 </tbody>
               </table>
             </div>
@@ -323,13 +351,14 @@ export default function SchedulingAdminPage() {
             <CalendarDayView
               anchor={calendarAnchor}
               items={byDay.get(calendarAnchor.toFormat("yyyy-MM-dd")) ?? []}
+              events={eventsByDay.get(calendarAnchor.toFormat("yyyy-MM-dd")) ?? []}
               onOpen={openPrep}
               onSlot={(d) => { setAddPrefill({ start: toLocalInput(d.toMillis()), n: Date.now() }); setAddMsg(null); setShowAdd(true); }}
             />
           ) : view === "week" ? (
-            <CalendarWeekView anchor={calendarAnchor} byDay={byDay} onOpen={openPrep} onAddDay={(d) => { setAddPrefill({ start: toLocalInput(d.set({ hour: 10, minute: 0 }).toMillis()), n: Date.now() }); setAddMsg(null); setShowAdd(true); }} />
+            <CalendarWeekView anchor={calendarAnchor} byDay={byDay} eventsByDay={eventsByDay} onOpen={openPrep} onAddDay={(d) => { setAddPrefill({ start: toLocalInput(d.set({ hour: 10, minute: 0 }).toMillis()), n: Date.now() }); setAddMsg(null); setShowAdd(true); }} />
           ) : (
-            <CalendarMonthView anchor={calendarAnchor} byDay={byDay} onOpen={openPrep} onMore={(d) => { setCalendarAnchor(d); chooseView("week"); }} />
+            <CalendarMonthView anchor={calendarAnchor} byDay={byDay} eventsByDay={eventsByDay} onOpen={openPrep} onMore={(d) => { setCalendarAnchor(d); chooseView("week"); }} />
           )}
         </>
       )}
@@ -560,7 +589,7 @@ export default function SchedulingAdminPage() {
 }
 
 // Cancelled calls never reach the grids (byDay drops them before grouping).
-function CalendarWeekView({ anchor, byDay, onOpen, onAddDay }: { anchor: DateTime; byDay: Map<string, Booking[]>; onOpen: (id: string) => void; onAddDay: (day: DateTime) => void }) {
+function CalendarWeekView({ anchor, byDay, eventsByDay, onOpen, onAddDay }: { anchor: DateTime; byDay: Map<string, Booking[]>; eventsByDay: Map<string, CalEvent[]>; onOpen: (id: string) => void; onAddDay: (day: DateTime) => void }) {
   const start = startOfWeekSun(anchor);
   const days = Array.from({ length: 7 }, (_, i) => start.plus({ days: i }));
   const today = DateTime.local().toFormat("yyyy-MM-dd");
@@ -570,6 +599,7 @@ function CalendarWeekView({ anchor, byDay, onOpen, onAddDay }: { anchor: DateTim
         {days.map((d) => {
           const key = d.toFormat("yyyy-MM-dd");
           const items = byDay.get(key) ?? [];
+          const evs = eventsByDay.get(key) ?? [];
           const isToday = key === today;
           return (
             <div key={key} className={`min-h-[150px] rounded-lg border p-2 ${isToday ? "border-[#f97316] bg-orange-50/40" : "border-slate-200"}`}>
@@ -581,7 +611,13 @@ function CalendarWeekView({ anchor, byDay, onOpen, onAddDay }: { anchor: DateTim
                 <button type="button" onClick={() => onAddDay(d)} aria-label={`Add a call on ${d.toFormat("cccc LLLL d")}`} className="rounded px-1.5 text-sm text-slate-500 hover:bg-slate-100 hover:text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-700">+</button>
               </div>
               <div className="mt-1.5 space-y-1">
-                {items.length === 0 && <div className="text-xs text-slate-300">No calls.</div>}
+                {items.length === 0 && evs.length === 0 && <div className="text-xs text-slate-500">No calls.</div>}
+                {evs.map((e) => (
+                  <a key={e.id} href={EVENTS_HREF} title={`${e.title}${typeof e.registrations === "number" ? ` (${e.registrations} registered)` : ""}`} className={`block w-full rounded-lg px-1.5 py-1 text-left text-xs hover:opacity-80 ${EVENT_PILL_CLASS}`}>
+                    <span className="block truncate">{fmtTime(e.starts_at)} · Event</span>
+                    <span className="block truncate font-medium">{e.title}</span>
+                  </a>
+                ))}
                 {items.map((b) => (
                   <button key={b.id} type="button" onClick={() => onOpen(b.id)} className={`block w-full rounded-lg px-1.5 py-1 text-left text-xs hover:opacity-80 ${callPillClass(b)}`}>
                     <span className="block truncate">{fmtTime(b.starts_at)} · {b.user_email}</span>
@@ -597,7 +633,7 @@ function CalendarWeekView({ anchor, byDay, onOpen, onAddDay }: { anchor: DateTim
   );
 }
 
-function CalendarMonthView({ anchor, byDay, onOpen, onMore }: { anchor: DateTime; byDay: Map<string, Booking[]>; onOpen: (id: string) => void; onMore: (day: DateTime) => void }) {
+function CalendarMonthView({ anchor, byDay, eventsByDay, onOpen, onMore }: { anchor: DateTime; byDay: Map<string, Booking[]>; eventsByDay: Map<string, CalEvent[]>; onOpen: (id: string) => void; onMore: (day: DateTime) => void }) {
   const gridStart = startOfWeekSun(anchor.startOf("month"));
   const days = Array.from({ length: 42 }, (_, i) => gridStart.plus({ days: i }));
   const today = DateTime.local().toFormat("yyyy-MM-dd");
@@ -612,19 +648,27 @@ function CalendarMonthView({ anchor, byDay, onOpen, onMore }: { anchor: DateTime
           {days.map((d) => {
             const key = d.toFormat("yyyy-MM-dd");
             const items = byDay.get(key) ?? [];
+            const evs = eventsByDay.get(key) ?? [];
+            const evShown = evs.slice(0, MAX_PER_CELL);
+            const callBudget = MAX_PER_CELL - evShown.length;
             const inMonth = d.month === anchor.month;
             const isToday = key === today;
             return (
               <div key={key} className={`min-h-[96px] rounded-lg border p-1.5 ${isToday ? "border-[#f97316]" : "border-slate-200"} ${inMonth ? "bg-white" : "bg-slate-50"}`}>
                 <div className={`text-xs ${!inMonth ? "text-slate-300" : isToday ? "font-semibold text-[#c2410c]" : "text-slate-600"}`}>{d.toFormat("d")}</div>
                 <div className="mt-1 space-y-0.5">
-                  {items.slice(0, MAX_PER_CELL).map((b) => (
+                  {evShown.map((e) => (
+                    <a key={e.id} href={EVENTS_HREF} title={`Event: ${e.title}`} className={`block w-full truncate rounded px-1 py-0.5 text-left text-[11px] hover:opacity-80 ${EVENT_PILL_CLASS}`}>
+                      {fmtTime(e.starts_at)} Event: {e.title}
+                    </a>
+                  ))}
+                  {items.slice(0, callBudget).map((b) => (
                     <button key={b.id} type="button" onClick={() => onOpen(b.id)} title={topicsForBooking(b).map((t) => t.label).join(", ") || undefined} className={`block w-full truncate rounded px-1 py-0.5 text-left text-[11px] hover:opacity-80 ${callPillClass(b)}`}>
                       {fmtTime(b.starts_at)} {b.user_email}
                     </button>
                   ))}
-                  {items.length > MAX_PER_CELL && (
-                    <button type="button" onClick={() => onMore(d)} className="block w-full truncate rounded px-1 py-0.5 text-left text-[11px] text-slate-500 hover:underline">+{items.length - MAX_PER_CELL} more</button>
+                  {items.length + evs.length > MAX_PER_CELL && (
+                    <button type="button" onClick={() => onMore(d)} className="block w-full truncate rounded px-1 py-0.5 text-left text-[11px] text-slate-600 hover:underline">+{items.length + evs.length - MAX_PER_CELL} more</button>
                   )}
                 </div>
               </div>
