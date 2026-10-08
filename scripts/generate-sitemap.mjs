@@ -52,7 +52,7 @@ function mapToCanonical(relPath) {
   const posix = relPath.split(path.sep).join("/");
   if (posix in ROOT_PAGES) return ROOT_PAGES[posix];
 
-  const legal = posix.match(/^legal\/(privacy|terms|eula|accessibility|build-week-rules)\.html$/);
+  const legal = posix.match(/^legal\/(privacy|terms|eula|accessibility)\.html$/);
   if (legal) return { url: `/legal/${legal[1]}`, ...LEGAL_DEFAULTS };
 
   const feature = posix.match(/^features\/([^/]+)\.html$/);
