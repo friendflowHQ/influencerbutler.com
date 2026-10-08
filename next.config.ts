@@ -140,6 +140,7 @@ const nextConfig: NextConfig = {
       { source: "/legal/refund", destination: "/legal/refund.html" },
       { source: "/legal/cookies", destination: "/legal/cookies.html" },
       { source: "/legal/affiliate-terms", destination: "/legal/affiliate-terms.html" },
+      { source: "/legal/build-week-rules", destination: "/legal/build-week-rules.html" },
       { source: "/legal/accessibility", destination: "/legal/accessibility.html" },
       { source: "/security", destination: "/security.html" },
       { source: "/es/security", destination: "/security-es.html" },

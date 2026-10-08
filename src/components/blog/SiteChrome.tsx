@@ -223,6 +223,9 @@ export function SiteFooter() {
               <a href="/legal/refund.html" className="block text-slate-500 hover:text-orange-700">
                 Refund Policy
               </a>
+              <a href="/legal/build-week-rules" className="block text-slate-500 hover:text-orange-700">
+                Build Week Rules
+              </a>
               <a href="/legal/accessibility" className="block text-slate-500 hover:text-orange-700">
                 Accessibility
               </a>
