@@ -221,6 +221,67 @@ type Fill = {
     }
   };
 
+  // Session facts the Messages inbox harvest needs (tools/cc-messages/inbox-api):
+  // Amazon's /connect/api/chat/* calls 401 without the storefront-scoped `storeid`
+  // request header its own app sends, and the thread endpoint wants the creator's
+  // `actorId`. Both ride on the page's own requests, so lift them as they go by:
+  // `storeid` from any /connect/api/* request, `actorId` from a chat/messages/list
+  // URL. Published only when a value is new. Read-only; nothing is sent anywhere.
+  const API_RE = /\/connect\/api\//i;
+  const THREAD_RE = /\/connect\/api\/chat\/messages\/list/i;
+  let seenStoreId = "";
+  let seenActorId = "";
+  const publishSession = () => {
+    try {
+      document.dispatchEvent(
+        new CustomEvent("ib-ext-cc-session", { detail: { storeId: seenStoreId, actorId: seenActorId } }),
+      );
+    } catch {
+      // never let the shim surface an error on the page
+    }
+  };
+  const noteSession = (url: string, storeId: string | null) => {
+    let changed = false;
+    if (storeId && storeId !== seenStoreId) {
+      seenStoreId = storeId;
+      changed = true;
+    }
+    if (THREAD_RE.test(url)) {
+      const m = /[?&]actorId=([^&]+)/.exec(url);
+      let actor = "";
+      try {
+        actor = m ? decodeURIComponent(m[1] ?? "") : "";
+      } catch {
+        actor = "";
+      }
+      if (actor && actor !== seenActorId) {
+        seenActorId = actor;
+        changed = true;
+      }
+    }
+    if (changed) publishSession();
+  };
+  const headerFrom = (headers: unknown, name: string): string | null => {
+    try {
+      if (!headers) return null;
+      if (typeof Headers !== "undefined" && headers instanceof Headers) return headers.get(name);
+      if (Array.isArray(headers)) {
+        for (const pair of headers as unknown[]) {
+          if (Array.isArray(pair) && String(pair[0]).toLowerCase() === name) return String(pair[1] ?? "");
+        }
+        return null;
+      }
+      if (typeof headers === "object") {
+        for (const key of Object.keys(headers as Record<string, unknown>)) {
+          if (key.toLowerCase() === name) return String((headers as Record<string, unknown>)[key] ?? "");
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return null;
+  };
+
   const originalFetch = window.fetch;
   window.fetch = function (this: unknown, ...args: Parameters<typeof fetch>) {
     const result = originalFetch.apply(this as typeof globalThis, args);
@@ -228,6 +289,11 @@ type Fill = {
       const input = args[0];
       const url =
         typeof input === "string" ? input : input instanceof Request ? input.url : String(input);
+      if (API_RE.test(url)) {
+        const fromInit = headerFrom(args[1]?.headers, "storeid");
+        const fromRequest = input instanceof Request ? input.headers.get("storeid") : null;
+        noteSession(url, (fromInit || fromRequest || "").trim() || null);
+      }
       if (URL_RE.test(url)) {
         result
           .then((response) => response.clone().text())
@@ -242,13 +308,33 @@ type Fill = {
 
   const openOriginal = XMLHttpRequest.prototype.open;
   const sendOriginal = XMLHttpRequest.prototype.send;
+  const setHeaderOriginal = XMLHttpRequest.prototype.setRequestHeader;
   XMLHttpRequest.prototype.open = function (
     this: XMLHttpRequest & { __ibUrl?: string },
     ...args: Parameters<XMLHttpRequest["open"]>
   ) {
     this.__ibUrl = String(args[1] ?? "");
+    try {
+      if (API_RE.test(this.__ibUrl)) noteSession(this.__ibUrl, null);
+    } catch {
+      // passthrough regardless
+    }
     return openOriginal.apply(this, args as unknown as Parameters<XMLHttpRequest["open"]>);
   } as typeof XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.setRequestHeader = function (
+    this: XMLHttpRequest & { __ibUrl?: string },
+    name: string,
+    value: string,
+  ) {
+    try {
+      if (String(name).toLowerCase() === "storeid" && API_RE.test(this.__ibUrl ?? "")) {
+        noteSession(this.__ibUrl ?? "", String(value).trim() || null);
+      }
+    } catch {
+      // passthrough regardless
+    }
+    return setHeaderOriginal.call(this, name, value);
+  };
   XMLHttpRequest.prototype.send = function (
     this: XMLHttpRequest & { __ibUrl?: string },
     ...args: Parameters<XMLHttpRequest["send"]>

@@ -1255,6 +1255,7 @@ async function renderSettings(): Promise<void> {
     "earningsOverlay",
     "watchlist",
     "messageCards",
+    "brandConversations",
     "brandKeywords",
     "messageTemplates",
     "benableBadge",

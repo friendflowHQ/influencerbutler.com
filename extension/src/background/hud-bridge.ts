@@ -18,6 +18,7 @@ import type {
   HudCommandResult,
   HudStatus,
   NotifyPollResult,
+  MessengerLookupResult,
   OutreachKeywordsResult,
   OwnershipLookupResult,
   PairResult,
@@ -802,6 +803,81 @@ function fetchOutreachKeywordsOnPort(
           return;
         }
         if (frame.type === "outreach.result") {
+          done({
+            ok: frame.ok === true,
+            records: Array.isArray(frame.records) ? frame.records : [],
+          });
+          return;
+        }
+      } catch {
+        // fall through
+      }
+      done(null);
+    };
+    socket.onerror = () => done(null);
+    socket.onclose = () => done(null);
+  });
+}
+
+// ── Messenger status (desktop Messenger Butler -> product conversation chips) ─
+// Ask the running app for every brand conversation in Messenger Butler's saved
+// snapshot (who wrote last, did the brand ever reply), so a product's brand chip
+// still works when the Creator Connections inbox cache is stale or was never
+// built. Read-only; authed because it exposes the creator's private
+// conversations. Returns paired:false when never connected.
+
+export async function fetchMessengerStatus(): Promise<MessengerLookupResult> {
+  const token = await getToken();
+  if (!token) return { ok: false, paired: false, records: [] };
+  for (const port of BRIDGE_PORTS) {
+    const result = await fetchMessengerStatusOnPort(port, token);
+    if (result) return result;
+  }
+  return { ok: false, records: [] };
+}
+
+function fetchMessengerStatusOnPort(port: number, token: string): Promise<MessengerLookupResult | null> {
+  return new Promise((resolve) => {
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(`ws://127.0.0.1:${port}/butler`);
+    } catch {
+      resolve(null);
+      return;
+    }
+    const done = (value: MessengerLookupResult | null) => {
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // ignore
+      }
+      resolve(value);
+    };
+    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 3);
+    socket.onopen = () => {
+      try {
+        socket.send(JSON.stringify({ type: "auth", token }));
+      } catch {
+        done(null);
+      }
+    };
+    socket.onmessage = (event) => {
+      try {
+        const frame = JSON.parse(String(event.data)) as {
+          type?: string;
+          ok?: boolean;
+          records?: MessengerLookupResult["records"];
+        };
+        if (frame.type === "authed") {
+          socket.send(JSON.stringify({ type: "messenger.lookup", payload: {} }));
+          return;
+        }
+        if (frame.type === "auth.error") {
+          done({ ok: false, paired: false, records: [] });
+          return;
+        }
+        if (frame.type === "messenger.result") {
           done({
             ok: frame.ok === true,
             records: Array.isArray(frame.records) ? frame.records : [],

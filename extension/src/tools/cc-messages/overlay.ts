@@ -45,7 +45,10 @@ import {
 } from "./dom";
 import { findDuplicateIndexes, normalizeMessageText } from "./dupes";
 import { buildFilterBar, filterBarSignature, type BuiltFilterBar, type FilterBarModel } from "./filterbar";
+import { getInbox, subscribeInbox } from "./inbox-store";
+import { buildInboxView, visibleExtras, type DomFact, type MoreItem } from "./inbox-view";
 import { extractMessageLinks } from "./links";
+import { openBrandConversation } from "./open-conversation";
 import { getBrandNote, setBrandNote } from "./notes";
 import { buildStrip, stripSignature, type StripModel } from "./strip";
 import { buildCard, cardSignature, type CardModel } from "./thread-card";
@@ -73,6 +76,7 @@ const RESWEEP_DEBOUNCE_MS = 200;
 
 let unsubscribe: (() => void) | null = null;
 let unsubscribeSignals: (() => void) | null = null;
+let unsubscribeInbox: (() => void) | null = null;
 let epoch = 0;
 let settingsRef: Settings | null = null;
 let resweepTimer: number | null = null;
@@ -102,6 +106,8 @@ export function initMessageCards(settings: Settings): void {
   startFeeds(() => requestSweep(myEpoch));
   // Repaint when the desktop app's keyword / enrichment answers land.
   unsubscribeSignals = onBrandSignalsChanged(() => requestSweep(myEpoch));
+  // Repaint when the full-inbox read (or a batch of thread reads) lands.
+  unsubscribeInbox = subscribeInbox(() => requestSweep(myEpoch));
   unsubscribe = subscribeMessagesWidget(() => runSweep(myEpoch));
 }
 
@@ -110,6 +116,8 @@ export function teardownMessageCards(): void {
   unsubscribe = null;
   unsubscribeSignals?.();
   unsubscribeSignals = null;
+  unsubscribeInbox?.();
+  unsubscribeInbox = null;
   epoch += 1;
   if (resweepTimer !== null) {
     window.clearTimeout(resweepTimer);
@@ -247,11 +255,13 @@ function sweepList(widget: HTMLElement, myEpoch: number): void {
 
   const facts = new Map<HTMLElement, RowFacts>();
   const brandEls = new Map<HTMLElement, HTMLElement>();
+  const brandKeys = new Map<HTMLElement, string>();
   for (const row of rows) {
     const brandEl = findListRowBrandEl(row);
     const brand = brandEl ? (brandEl.textContent ?? "").trim() : "";
     if (!brandEl || !brand) continue;
     brandEls.set(row, brandEl);
+    brandKeys.set(row, normalizeBrand(brand));
     const { strip, facts: rowFacts } = rowModel(brand);
     rowFacts.unread = readRowUnread(row);
     facts.set(row, rowFacts);
@@ -276,7 +286,7 @@ function sweepList(widget: HTMLElement, myEpoch: number): void {
   }
 
   applyFilter(facts);
-  mountFilterBar(firstRow, facts, brandEls, myEpoch);
+  mountFilterBar(firstRow, facts, brandEls, brandKeys, myEpoch);
 }
 
 function applyFilter(facts: Map<HTMLElement, RowFacts>): void {
@@ -297,18 +307,57 @@ function applyFilter(facts: Map<HTMLElement, RowFacts>): void {
   }
 }
 
+// "3 days ago" style label for an off-drawer conversation's last message.
+function relativeWhen(ms: number): string {
+  if (!Number.isFinite(ms) || ms <= 0) return "";
+  const days = Math.floor((Date.now() - ms) / (24 * 60 * 60 * 1000));
+  if (days < 1) return "Today";
+  if (days === 1) return "Yesterday";
+  if (days < 45) return `${days} days ago`;
+  return formatDate(ms) ?? "";
+}
+
+// Conversations the full-inbox read knows about and the drawer does not render
+// (it stops at 100 rows).
+function inboxViewFor(facts: Map<HTMLElement, RowFacts>, brandKeys: Map<HTMLElement, string>) {
+  const dom: DomFact[] = [];
+  for (const [row, rowFacts] of facts) {
+    const brandKey = brandKeys.get(row);
+    if (brandKey) dom.push({ brandKey, facts: rowFacts });
+  }
+  return buildInboxView(dom, getInbox(), (brand, unread) => {
+    const made = rowModel(brand).facts;
+    return { ...made, unread };
+  });
+}
+
 function mountFilterBar(
   firstRow: HTMLElement,
   facts: Map<HTMLElement, RowFacts>,
   brandEls: Map<HTMLElement, HTMLElement>,
+  brandKeys: Map<HTMLElement, string>,
   myEpoch: number,
 ): void {
-  const all = Array.from(facts.values());
-  const counts = Object.fromEntries(TRIAGE_FILTERS.map((f) => [f, countMatches(f, all)])) as Record<
+  const view = inboxViewFor(facts, brandKeys);
+  const counts = Object.fromEntries(TRIAGE_FILTERS.map((f) => [f, countMatches(f, view.all)])) as Record<
     TriageFilter,
     number
   >;
-  const model: FilterBarModel = { active: activeFilter, counts, total: all.length };
+  const shownMore = visibleExtras(view.extras, (rowFacts) => matchesFilter(activeFilter, rowFacts));
+  const model: FilterBarModel = {
+    active: activeFilter,
+    counts,
+    total: view.all.length,
+    more: {
+      items: shownMore.items.map((item) => ({
+        brandKey: item.brandKey,
+        brand: item.brand,
+        when: relativeWhen(item.lastMsgAt),
+        unread: item.unread,
+      })),
+      hidden: shownMore.hidden,
+    },
+  };
   const sig = filterBarSignature(model);
   if (filterBar && filterBar.sig === sig && filterBar.built.host.isConnected) return;
 
@@ -328,6 +377,13 @@ function mountFilterBar(
         (brandEls.get(row) ?? row).click();
         return;
       }
+      // Nothing unread in the drawer's rows: the next one may be an older
+      // conversation the drawer does not list.
+      const next: MoreItem | undefined = view.extras.find((item) => item.unread);
+      if (next) void openBrandConversation(next.brand);
+    },
+    onOpenMore: (brand) => {
+      void openBrandConversation(brand);
     },
   });
   if (!insertOnOwnLine(firstRow, firstRow, built.host, "before")) return;

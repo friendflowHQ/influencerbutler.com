@@ -48,6 +48,8 @@ const HOST_CLASS = "bkw-chip-host";
 // Do not refetch the ledger (or retry a failed enrichment fetch) more often than
 // this when the panel is reopened.
 const REFETCH_THROTTLE_MS = 60_000;
+// The desktop's brand.enrichment frame dedupes and caps a request at this many.
+const ENRICH_BATCH = 100;
 
 // Unsubscribes from the shared widget observer; null when not initialised.
 let unsubscribe: (() => void) | null = null;
@@ -226,29 +228,35 @@ async function sweep(myEpoch: number): Promise<void> {
   if (toFetch.length === 0) return;
   if (Date.now() < enrichBackoffUntil) return;
 
-  const res = await sendToBackground<BrandEnrichmentResult>({
-    kind: "FETCH_BRAND_ENRICHMENT",
-    brands: toFetch,
-  });
-  if (myEpoch !== epoch) return;
-  log("brand-keywords", "enrichment fetch", {
-    ok: res?.ok === true,
-    paired: res?.paired !== false,
-    requested: toFetch.length,
-    records: res?.records?.length ?? 0,
-  });
-  if (!res?.ok) {
-    // App not answering: retry after the throttle window, do not remember misses.
-    enrichBackoffUntil = Date.now() + REFETCH_THROTTLE_MS;
-    return;
+  // The app answers at most ENRICH_BATCH brands per request (it dedupes and caps
+  // the batch), so send long lists in slices: a brand past the cap would otherwise
+  // be remembered as looked up without ever having been asked about.
+  for (let from = 0; from < toFetch.length; from += ENRICH_BATCH) {
+    const batch = toFetch.slice(from, from + ENRICH_BATCH);
+    const res = await sendToBackground<BrandEnrichmentResult>({
+      kind: "FETCH_BRAND_ENRICHMENT",
+      brands: batch,
+    });
+    if (myEpoch !== epoch) return;
+    log("brand-keywords", "enrichment fetch", {
+      ok: res?.ok === true,
+      paired: res?.paired !== false,
+      requested: batch.length,
+      records: res?.records?.length ?? 0,
+    });
+    if (!res?.ok) {
+      // App not answering: retry after the throttle window, do not remember misses.
+      enrichBackoffUntil = Date.now() + REFETCH_THROTTLE_MS;
+      return;
+    }
+    // Remember every requested brand (hit or miss) so we never ask twice.
+    for (const brand of batch) enrichedBrands.add(normalizeBrand(brand));
+    enrichmentRecords.push(...res.records.filter((r) => r && hasEnrichmentSignal(r)));
+    enrichmentMap = buildEnrichmentMap(enrichmentRecords);
+    // Re-run to paint the brands the fetch just resolved.
+    decorate(widget, outreachMap, enrichmentMap);
+    notifySignals();
   }
-  // Remember every requested brand (hit or miss) so we never ask twice.
-  for (const brand of toFetch) enrichedBrands.add(normalizeBrand(brand));
-  enrichmentRecords.push(...res.records.filter((r) => r && hasEnrichmentSignal(r)));
-  enrichmentMap = buildEnrichmentMap(enrichmentRecords);
-  // Re-run to paint the brands the fetch just resolved.
-  decorate(widget, outreachMap, enrichmentMap);
-  notifySignals();
 }
 
 // Decorate every conversation row and the open thread header. A row resolves to

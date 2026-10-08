@@ -36,6 +36,9 @@ import { enrichSearchTiles } from "./enrich";
 import { renderToolbar, type FilterState, type SearchToolbar, type SortKey } from "./toolbar";
 import { describeAcceptResult, requestAccept } from "../campaigns/accept";
 import { mountTileMenuButton, type HudRef } from "./tile-menu";
+import { buildConversationChip } from "../brand-conversation/chip";
+import { loadConversationLookup } from "../brand-conversation/data";
+import type { ConversationChip, ConversationLookup } from "../brand-conversation/status";
 import type { AuthStatus } from "../../shared/messages";
 import type { HudStatus } from "../../transport/hud-commands";
 import type { CachedScan, Settings, StorageShape } from "../../storage/schema";
@@ -47,6 +50,9 @@ const DONE_ATTR = "data-ib-search";
 const SCAN_CAP = 20;
 
 type Row = {
+  // Where the creator stands with this product's brand ("Messaged", "Brand
+  // responded", ...), from the cached Creator Connections inbox and the app.
+  convo: ConversationChip | null;
   tile: SearchTile;
   order: number;
   marketplace: string;
@@ -211,6 +217,7 @@ export async function initSearchOverlay(
     const flags = loaded ? membership(loaded, tile.asin) : { cc: false, spcc: false, deals: false };
     const badgeBody = el("div", "tile-badge-body");
     const row: Row = {
+      convo: null,
       tile,
       order: i,
       marketplace,
@@ -326,6 +333,23 @@ export async function initSearchOverlay(
     });
   }
 
+  // Brand conversation chips ("Messaged" / "Brand responded"): the cached
+  // Creator Connections inbox plus the app's Messenger Butler threads, matched to
+  // each tile by its brand (a CC rate names it) or by the title's leading brand.
+  // Amazon only: Creator Connections conversations are with Amazon brands.
+  convoLookup = null;
+  if (settings.tools.brandConversations && module.retailer === "amazon") {
+    void loadConversationLookup().then((lookup) => {
+      if (epoch !== initEpoch || !lookup) return;
+      convoLookup = lookup;
+      for (const row of rows) {
+        const before = row.convo;
+        resolveConvo(row);
+        if (row.convo !== before) renderBadge(row, settings);
+      }
+    });
+  }
+
   // Desktop-app connection + sign-in state, once for the whole page, so the
   // per-tile action menu can offer the app actions (or the upsell) without a
   // lookup per open. Updates the shared `hud` object in place; menus read it
@@ -401,6 +425,7 @@ export async function initSearchOverlay(
             row.ccRate = rate;
             if (ccFromRates) row.flags.cc = true;
             recompute(row, settings);
+            resolveConvo(row);
             renderBadge(row, settings);
           } else if (tableServing && row.flags.cc && campaignAsins.includes(row.tile.asin)) {
             row.flags.cc = false;
@@ -958,6 +983,27 @@ function acceptChip(row: Row, settings: Settings): HTMLElement | null {
   return btn;
 }
 
+// The matcher for this page's brand conversation chips, set once the cached
+// inbox has loaded (null until then, and when the creator has no conversations).
+let convoLookup: ConversationLookup | null = null;
+
+function resolveConvo(row: Row): void {
+  if (!convoLookup) return;
+  const chip = convoLookup.resolve({ brand: row.ccRate?.brand ?? null, title: row.tile.title });
+  // Keep the same object while nothing changed so the caller can compare identity.
+  if (
+    row.convo &&
+    chip &&
+    row.convo.state === chip.state &&
+    row.convo.brand === chip.brand &&
+    row.convo.inApp === chip.inApp &&
+    row.convo.lastAt === chip.lastAt
+  ) {
+    return;
+  }
+  row.convo = chip;
+}
+
 function renderBadge(row: Row, settings: Settings): void {
   const body = row.badgeBody;
   body.replaceChildren();
@@ -979,6 +1025,8 @@ function renderBadge(row: Row, settings: Settings): void {
   // promotion right from the grid.
   if (row.owned) body.append(el("span", "tile-chip good", t().ownedGridOwned));
   if (row.posted) body.append(el("span", "tile-chip warn", t().ownedGridPosted));
+  // You already talked to this product's brand: one click opens the conversation.
+  if (row.convo) body.append(buildConversationChip(row.convo));
   if (row.commissionCents !== null) {
     body.append(
       el("span", "tile-chip", t().tileCommission(formatCents(row.commissionCents, row.tile.currency))),

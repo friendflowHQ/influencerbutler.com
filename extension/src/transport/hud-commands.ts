@@ -421,6 +421,31 @@ export type OutreachKeywordsResult = {
   records: OutreachRecord[];
 };
 
+// One brand conversation held in the desktop app's Messenger Butler, from its
+// saved snapshot. `lastSender` is who wrote the newest message; `brandReplied` /
+// `iMessaged` are sticky history over the whole thread. `threadId` is the app's own
+// card id. Used to chip products with "Messaged" / "Brand responded" when the
+// Creator Connections inbox has not been read recently.
+export type MessengerRecord = {
+  brand: string;
+  brandKey: string;
+  threadId: string;
+  status: string;
+  lastSender: "me" | "brand" | null;
+  lastAt: number;
+  brandReplied: boolean;
+  iMessaged: boolean;
+  unread: boolean;
+};
+
+// Result of a messenger.lookup request. `paired` is false when the extension has
+// never connected the app, so the caller stays silent rather than erroring.
+export type MessengerLookupResult = {
+  ok: boolean;
+  paired?: boolean;
+  records: MessengerRecord[];
+};
+
 // One posted/promoted content item for a product, as recorded by the desktop
 // app (a Storefront video/photo/idea-list, a Deals post, or a YouTube
 // upload). Unioned across every channel so the extension can say "you already

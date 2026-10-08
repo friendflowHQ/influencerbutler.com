@@ -27,6 +27,9 @@ import { enrichStoreTiles } from "../store-overlay/enrich";
 import { renderIdeaListToolbar, type IdeaListToolbar } from "./toolbar";
 import { budgetLevel, campaignEnd, formatEndDay, perSaleCents } from "./campaign-detail";
 import type { Settings } from "../../storage/schema";
+import { buildConversationChip } from "../brand-conversation/chip";
+import { loadConversationLookup } from "../brand-conversation/data";
+import type { ConversationChip, ConversationLookup } from "../brand-conversation/status";
 
 // Idea List money signals: badges every product on an Idea List detail page
 // (/shop/<handle>/list/<LISTID>) with the Butler Score, estimated commission,
@@ -47,6 +50,9 @@ const GRID_WAIT_MS = 500;
 const GRID_WAIT_TRIES = 30;
 
 type Row = {
+  // Where the creator stands with this product's brand ("Messaged", "Brand
+  // responded", ...), from the cached Creator Connections inbox and the app.
+  convo: ConversationChip | null;
   tile: IdeaListTile;
   marketplace: string;
   ratePct: number;
@@ -70,6 +76,13 @@ type Row = {
 let controller: AbortController | null = null;
 let gridObserver: MutationObserver | null = null;
 let stopRequested = false;
+// Matcher for the brand conversation chips, set once the cached inbox has loaded.
+let convoLookup: ConversationLookup | null = null;
+
+function resolveConvo(row: Row): void {
+  if (!convoLookup) return;
+  row.convo = convoLookup.resolve({ brand: row.tile.brand ?? row.ccRate?.brand ?? null, title: row.tile.title });
+}
 
 export async function initIdeaListOverlay(settings: Settings): Promise<void> {
   controller?.abort();
@@ -110,6 +123,7 @@ export async function initIdeaListOverlay(settings: Settings): Promise<void> {
     tile.el.setAttribute(DONE_ATTR, "1");
     const flags = membership(loaded, tile.asin);
     const row: Row = {
+      convo: null,
       tile,
       marketplace,
       ratePct: defaultRate,
@@ -127,6 +141,7 @@ export async function initIdeaListOverlay(settings: Settings): Promise<void> {
       provenEarner: false,
     };
     row.score = scoreFor(row, settings);
+    resolveConvo(row);
     mountBadge(tile, row.badgeBody);
     renderBadge(row);
     return row;
@@ -145,6 +160,22 @@ export async function initIdeaListOverlay(settings: Settings): Promise<void> {
   });
   mountToolbar(toolbar.host);
   toolbar.setRunning(true);
+
+  // Brand conversation chips ("Messaged" / "Brand responded"): the cached
+  // Creator Connections inbox plus the app's Messenger Butler threads, matched to
+  // each tile by its brand line.
+  convoLookup = null;
+  if (settings.tools.brandConversations) {
+    void loadConversationLookup().then((lookup) => {
+      if (run.signal.aborted || !lookup) return;
+      convoLookup = lookup;
+      for (const row of rows) {
+        const before = row.convo?.label ?? null;
+        resolveConvo(row);
+        if ((row.convo?.label ?? null) !== before) renderBadge(row);
+      }
+    });
+  }
 
   // Watchlist membership + proven-earner tint, one round trip each. Both
   // no-op instantly for users without the feature or the paired app.
@@ -200,6 +231,7 @@ export async function initIdeaListOverlay(settings: Settings): Promise<void> {
             if (ccFromRates) row.flags.cc = true;
             row.ratePct = rate.ratePct;
             row.commissionCents = perSaleCents(row.tile.priceCents, rate.ratePct);
+            resolveConvo(row);
           } else if (tableServing && row.flags.cc && campaignAsins.includes(row.tile.asin)) {
             row.flags.cc = false;
           } else {
@@ -347,6 +379,7 @@ function renderBadge(row: Row): void {
   if (row.provenEarner) {
     body.append(el("span", "tile-chip good", t().tileProvenEarner));
   }
+  if (row.convo) body.append(buildConversationChip(row.convo));
   if (row.commissionCents !== null) {
     body.append(
       el(

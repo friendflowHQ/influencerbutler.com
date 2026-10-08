@@ -133,6 +133,7 @@ export type RuntimeMessage =
   // Connections Messages widget can badge each conversation with its keyword.
   // Routed over the local bridge; returns paired:false when never connected.
   | { kind: "FETCH_OUTREACH_KEYWORDS" }
+  | { kind: "FETCH_MESSENGER_STATUS" }
   // Ask the running desktop app for the creator's own message templates (and the
   // resolved placeholder values from that workspace), so the Message Templates
   // picker on the Creator Connections composer can offer them next to the local

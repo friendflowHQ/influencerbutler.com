@@ -531,6 +531,8 @@ export interface Dict {
   groupCcMessages: string;
   toolMessageCards: string;
   toolMessageCardsHint: string;
+  toolBrandConversations: string;
+  toolBrandConversationsHint: string;
   toolBrandKeywords: string;
   toolMessageTemplates: string;
   sumBenableBadge: string;
@@ -1696,6 +1698,8 @@ const en: Dict = {
   groupCcMessages: "Amazon: Creator Connections messages",
   toolMessageCards: "Message cards (brand summary, links, filters)",
   toolMessageCardsHint: "In the Creator Connections Messages drawer, shows each brand's rate, days left and open slots, pulls the sample-form and content links out of their message, folds repeated messages, and adds filters. Works without the desktop app.",
+  toolBrandConversations: "Brand conversation chips on products",
+  toolBrandConversationsHint: "Shows \"Messaged\", \"Brand responded\" or \"Brand messaged you\" on a product when you have a conversation with its brand in Creator Connections, and opens that conversation when clicked. Works without the desktop app.",
   toolBrandKeywords: "Keyword you pitched each brand under",
   toolMessageTemplates: "Message templates (save and load)",
   sumBenableBadge: "Benable money signals",
@@ -2900,6 +2904,8 @@ const es: Dict = {
   groupCcMessages: "Amazon: mensajes de Creator Connections",
   toolMessageCards: "Tarjetas de mensajes (resumen de la marca, enlaces, filtros)",
   toolMessageCardsHint: "En el panel de Mensajes de Creator Connections, muestra la tasa, los días restantes y los cupos de cada marca, saca los enlaces del formulario de muestra y del contenido, pliega los mensajes repetidos y añade filtros. Funciona sin la app de escritorio.",
+  toolBrandConversations: "Etiquetas de conversación con la marca en los productos",
+  toolBrandConversationsHint: "Muestra \"Mensaje enviado\", \"La marca respondió\" o \"La marca te escribió\" en un producto cuando tienes una conversación con su marca en Creator Connections, y abre esa conversación al hacer clic. Funciona sin la app de escritorio.",
   toolBrandKeywords: "Palabra clave con la que contactaste a cada marca",
   toolMessageTemplates: "Plantillas de mensajes (guardar y cargar)",
   sumBenableBadge: "Señales de dinero en Benable",
@@ -4107,6 +4113,8 @@ const fr: Dict = {
   groupCcMessages: "Amazon : messages Creator Connections",
   toolMessageCards: "Cartes de messages (résumé de la marque, liens, filtres)",
   toolMessageCardsHint: "Dans le panneau Messages de Creator Connections, affiche le taux, les jours restants et les places de chaque marque, extrait les liens du formulaire d'échantillon et du contenu, replie les messages répétés et ajoute des filtres. Fonctionne sans l'application de bureau.",
+  toolBrandConversations: "Pastilles de conversation avec la marque sur les produits",
+  toolBrandConversationsHint: "Affiche \"Message envoyé\", \"La marque a répondu\" ou \"La marque vous a écrit\" sur un produit lorsque vous avez une conversation avec sa marque dans Creator Connections, et ouvre cette conversation au clic. Fonctionne sans l'application de bureau.",
   toolBrandKeywords: "Mot-clé sous lequel vous avez contacté chaque marque",
   toolMessageTemplates: "Modèles de messages (enregistrer et charger)",
   sumBenableBadge: "Signaux d'argent Benable",

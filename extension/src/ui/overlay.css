@@ -785,6 +785,20 @@ a.tile-chip:hover { filter: brightness(0.97); }
 .tile-chip.yt-upload-btn:hover { filter: brightness(0.97); }
 .tile-chip.yt-upload-btn:disabled { opacity: 0.6; cursor: default; }
 
+/* Brand conversation chip ("Messaged" / "Brand responded" ...): a button that
+   opens the conversation, plus a small "App" button when the desktop app holds
+   the thread too. */
+.tile-convo { display: inline-flex; align-items: center; gap: 4px; }
+.tile-chip.convo-chip, .tile-chip.convo-app {
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tile-chip.convo-chip:hover, .tile-chip.convo-app:hover { filter: brightness(0.97); }
+.tile-chip.convo-chip:focus-visible, .tile-chip.convo-app:focus-visible { outline: 2px solid #c2410c; outline-offset: 1px; }
+.tile-chip.convo-app { background: #eef2ff; border-color: #c7d2fe; color: #4338ca; }
+
 /* Idea List campaign chips (Creator Connections rate + end date, SPCC $/click)
    and their hover card. The chips are buttons so keyboard users can open the
    card; the card is an overlay under the chip row (never in the flow), so the
@@ -1220,6 +1234,36 @@ a.tile-chip:hover { filter: brightness(0.97); }
 .ccm-filter.on { background: #c2410c; border-color: #c2410c; color: #ffffff; }
 .ccm-filter-count { font-variant-numeric: tabular-nums; opacity: 0.85; }
 .ccm-filter.ccm-next { margin-left: auto; border-color: #c2410c; color: #9a3412; }
+.ccm-more {
+  padding: 6px 10px;
+  border-bottom: 1px solid #e2e8f0;
+  font: 600 12px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #475569;
+}
+.ccm-more-summary { cursor: pointer; }
+.ccm-more-summary:focus-visible, .ccm-more-open:focus-visible { outline: 2px solid #c2410c; outline-offset: 1px; }
+.ccm-more-list { list-style: none; margin: 6px 0 0; padding: 0; max-height: 220px; overflow-y: auto; }
+.ccm-more-item { margin: 0; }
+.ccm-more-open {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 5px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #0f172a;
+  font: 600 12.5px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+.ccm-more-open:hover { background: #f1f5f9; }
+.ccm-more-dot { width: 8px; height: 8px; border-radius: 50%; background: #dc2626; flex: 0 0 auto; }
+.ccm-more-brand { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ccm-more-when { flex: 0 0 auto; color: #475569; font-weight: 500; }
+.ccm-more-cut { margin: 6px 0 0; font-weight: 500; }
 .ccm-dupe {
   display: block;
   width: 100%;

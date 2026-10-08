@@ -442,6 +442,67 @@ Contract notes:
   rejected token yields `{ "type": "auth.error" }` and the extension stays
   silent (no chips shown).
 
+## Messenger status (app to extension, read-only)
+
+Where the creator stands with each brand they have a conversation with, read
+from Messenger Butler's saved snapshot (`messengerThreads.json`). The extension
+uses it to chip product cards (search, deals, Idea Lists, Campaign Radar, product
+pages) with "Messaged" / "Brand responded" / "You replied" / "Brand messaged you"
+when the Creator Connections inbox cache (`ib-cc-inbox`, built from Amazon's own
+chat API) has not been read recently, and to offer an "Open in desktop app"
+action on the chip. Authed with the pairing token and read-only. Extension side:
+`fetchMessengerStatus` in `extension/src/background/hud-bridge.ts`; app side:
+`createMessengerHandler` in `app/extension-bridge/command-handlers.js`.
+
+```json
+{ "type": "messenger.lookup", "payload": {} }
+```
+
+`payload.brands` (optional array of display names) narrows the answer; omitted,
+the app returns every conversation (capped at 5000). It replies:
+
+```json
+{
+  "type": "messenger.result",
+  "ok": true,
+  "records": [
+    {
+      "brand": "Litter-Robot",
+      "brandKey": "litter-robot",
+      "threadId": "messengerbutler-litterrobot",
+      "status": "",
+      "lastSender": "brand",
+      "lastAt": 1791244800000,
+      "brandReplied": true,
+      "iMessaged": true,
+      "unread": false
+    }
+  ]
+}
+```
+
+Contract notes:
+
+- `lastSender` is `"me"`, `"brand"` or `null` (direction unknown). It is read off
+  the thread's messages by direction (`INBOUND` = brand, `OUTBOUND` = creator),
+  falling back to the timeline.
+- `brandReplied` and `iMessaged` are sticky history across the whole thread.
+- `lastAt` is epoch milliseconds; `status` is the card's own status
+  (`sent`, `follow-up`, `responded`, or empty).
+- The extension re-normalizes `brand` itself, so exact casing parity is not
+  required.
+- Unauthed sockets get `{ "type": "messenger.result", "ok": false, "needsPairing": true, "records": [] }`.
+
+### Opening a conversation in the app
+
+The chip's "App" action opens `https://www.influencerbutler.com/app/open?to=` plus
+the URL-encoded deep link `influencerbutler://messenger?brand=<brand>`. The app's
+protocol handler (`app/protocolHandler.js`) parses the brand (control characters
+stripped, capped at 200 characters), forwards it to the renderer, and Messenger
+Butler focuses that brand's thread (`__messengerBridge.focusThread`). On a cold
+launch the renderer claims the brand through `messenger:consume-pending-brand`
+(honoured for 60 seconds).
+
 ## Brand enrichment (app to extension, read-only)
 
 The inbound counterpart to the outreach lookup. Outreach keywords only cover

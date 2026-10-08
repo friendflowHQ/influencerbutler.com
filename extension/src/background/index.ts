@@ -15,7 +15,7 @@ import { enqueue, flush, queueDepth } from "../transport/router";
 import { detectRetailerForUrl, isBenableListUrl } from "../content/page-type";
 import { authSnapshot, signIn, signOut } from "./auth";
 import { captureAffiliateReferral } from "./affiliate";
-import { getHudStatus, lookupEarnings, fetchDesktopHistory, fetchOutreachKeywords, fetchMessageTemplates, fetchBrandEnrichment, fetchOwnership, fetchCampaignStatus, fetchYouTubeStatus, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
+import { getHudStatus, lookupEarnings, fetchDesktopHistory, fetchOutreachKeywords, fetchMessengerStatus, fetchMessageTemplates, fetchBrandEnrichment, fetchOwnership, fetchCampaignStatus, fetchYouTubeStatus, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
 import { relayClaimLink, relayListTargets, relaySend, sendCommandPreferLocal } from "./relay";
 import { clearActivity, getActivity, recordActivity } from "./desktop-activity";
 import type { RelayClaimResult } from "./relay";
@@ -495,6 +495,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "FETCH_OUTREACH_KEYWORDS":
       void fetchOutreachKeywords().then(sendResponse);
+      return true;
+    case "FETCH_MESSENGER_STATUS":
+      void fetchMessengerStatus().then(sendResponse);
       return true;
     case "FETCH_MESSAGE_TEMPLATES":
       void fetchMessageTemplates().then(sendResponse);
@@ -989,6 +992,23 @@ async function openDealsPage(query?: string): Promise<void> {
 
 function isCrossRetailerUrl(url: URL): boolean {
   if (url.protocol !== "https:") return false;
+// The Creator Connections pages the brand-conversation chip opens (the campaigns
+// list or one campaign, carrying `#ib-open-thread=<brand>`): the creator's own
+// Amazon Associates host and its /p/connect/ section, nothing else.
+const CREATOR_CONNECTIONS_HOSTS = new Set([
+  "affiliate-program.amazon.com",
+  "affiliate-program.amazon.ca",
+  "affiliate-program.amazon.co.uk",
+]);
+
+function isCreatorConnectionsUrl(url: URL): boolean {
+  return (
+    url.protocol === "https:" &&
+    CREATOR_CONNECTIONS_HOSTS.has(url.hostname) &&
+    url.pathname.startsWith("/p/connect/")
+  );
+}
+
   if (url.hostname === "www.walmart.com") {
     return /^\/ip\/(?:[^/]+\/)?\d{3,15}\/?$/.test(url.pathname) || url.pathname === "/search";
   }
@@ -1008,7 +1028,7 @@ async function openAllowedUrl(url: string): Promise<void> {
     const isFacebookGroup = target.href === FACEBOOK_GROUP_URL;
     // The cross-retailer card links to the same product on the other store:
     // exactly a Walmart /ip/ page or search, or a Target /p/ page or search.
-    if (!sameOrigin && !isFacebookGroup && !isCrossRetailerUrl(target)) return;
+    if (!sameOrigin && !isFacebookGroup && !isCrossRetailerUrl(target) && !isCreatorConnectionsUrl(target)) return;
     await chrome.tabs.create({ url: target.toString() });
   } catch {
     // malformed url: ignore rather than open anything

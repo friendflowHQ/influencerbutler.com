@@ -39,6 +39,9 @@ import { runAcceptOnPage } from "./accept-runner";
 import { describeAcceptResult } from "../campaigns/accept";
 import type { AcceptOutcome } from "../../shared/messages";
 import type { Settings } from "../../storage/schema";
+import { buildConversationChip } from "../brand-conversation/chip";
+import { loadConversationLookup } from "../brand-conversation/data";
+import type { ConversationChip } from "../brand-conversation/status";
 
 // Campaign Radar overlay: score and highlight the campaigns on the Creator
 // Connections grid, with the user's own thresholds live in a toolbar. This is our
@@ -66,6 +69,9 @@ function formatEpc(cents: number): string {
 }
 
 type Row = {
+  // Where the creator stands with this campaign's brand ("Messaged", "Brand
+  // responded", ...), from the cached Creator Connections inbox and the app.
+  convo: ConversationChip | null;
   campaign: Campaign;
   daysRemaining: number | null;
   // null = unknown (order history not synced / app not paired); true/false once a
@@ -208,6 +214,7 @@ export async function initCampaignRadar(
     const spcc = campaign.asins.some((a) => membership(loaded, a).spcc);
     const badgeBody = el("div", "tile-badge-body");
     const row: Row = {
+      convo: null,
       campaign,
       daysRemaining,
       owned: null,
@@ -234,6 +241,23 @@ export async function initCampaignRadar(
     if (lastCallEnabled && campaign.fullyClaimed === true) setDimmed(campaign.el, true);
     return row;
   });
+
+  // Brand conversation chips: a campaign whose brand you already talked to reads
+  // "Messaged" / "Brand responded" and opens that conversation. From the cached
+  // inbox, so it needs no desktop app.
+  if (settings.tools.brandConversations) {
+    void loadConversationLookup()
+      .then((lookup) => {
+        if (epoch !== initEpoch || !lookup) return;
+        for (const row of rows) {
+          const chip = lookup.resolve({ brand: row.campaign.brand });
+          if (!chip) continue;
+          row.convo = chip;
+          renderBadge(row);
+        }
+      })
+      .catch((error) => log("campaign-radar", "conversation lookup failed", error));
+  }
 
   // Enrichment 1: products the creator already owns (from synced order history).
   // A no-op (ok:false) when they never signed in, so owned stays unknown.
@@ -460,6 +484,7 @@ function renderBadge(row: Row): void {
   // reason to take a campaign.
   if (row.owned) body.append(el("span", "tile-chip good", t().radarChipOwned));
   if (row.provenEarner) body.append(el("span", "tile-chip good", t().radarChipEarner));
+  if (row.convo) body.append(buildConversationChip(row.convo));
 
   // Rate, days-left, and budget are NOT repeated as chips: the native card
   // already prints them right above the badge (they still feed the score).

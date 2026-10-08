@@ -6,6 +6,9 @@ import { HIGH_RATE_PCT, TRIAGE_FILTERS, type TriageFilter } from "./triage";
 // The inbox filter bar above the conversation list: All / Unread / Live
 // campaign / Pitched by me / 10%+ rate (each with a live count) and a Next unread
 // jump. Real buttons with aria-pressed so it is keyboard and screen-reader usable.
+// The counts cover the whole inbox (read from the chat API), while Amazon's drawer
+// renders at most 100 rows; the conversations it leaves out are listed in a
+// disclosure under the pills.
 
 const LABELS: Record<TriageFilter, string> = {
   all: "All",
@@ -15,15 +18,22 @@ const LABELS: Record<TriageFilter, string> = {
   highrate: `${HIGH_RATE_PCT}%+ rate`,
 };
 
+export type MoreRow = { brandKey: string; brand: string; when: string; unread: boolean };
+
 export type FilterBarModel = {
   active: TriageFilter;
   counts: Record<TriageFilter, number>;
   total: number;
+  // Matching conversations the drawer does not render (capped), and how many
+  // more matched beyond the cap.
+  more: { items: MoreRow[]; hidden: number };
 };
 
 export type FilterBarHandlers = {
   onSelect: (filter: TriageFilter) => void;
   onNextUnread: () => void;
+  // Open the conversation with this brand (the drawer has no row for it).
+  onOpenMore: (brand: string) => void;
 };
 
 export type BuiltFilterBar = {
@@ -69,11 +79,46 @@ export function buildFilterBar(model: FilterBarModel, handlers: FilterBarHandler
 
   root.addEventListener("click", (event) => event.stopPropagation());
   root.append(bar);
+  if (model.more.items.length > 0) root.append(buildMore(model.more, handlers));
   return { host, focusFilter: (filter) => buttons.get(filter)?.focus() };
+}
+
+function buildMore(more: FilterBarModel["more"], handlers: FilterBarHandlers): HTMLElement {
+  const details = el("details", "ccm-more");
+  const shown = more.items.length + more.hidden;
+  const summary = el(
+    "summary",
+    "ccm-more-summary",
+    `${shown} more ${shown === 1 ? "conversation" : "conversations"} Amazon's drawer does not list`,
+  );
+  details.append(summary);
+  const list = el("ul", "ccm-more-list");
+  for (const item of more.items) {
+    const li = el("li", "ccm-more-item");
+    const btn = el("button", "ccm-more-open");
+    btn.type = "button";
+    btn.setAttribute("aria-label", `Open the conversation with ${item.brand}`);
+    if (item.unread) btn.append(el("span", "ccm-more-dot"));
+    btn.append(el("span", "ccm-more-brand", item.brand));
+    if (item.when) btn.append(el("span", "ccm-more-when", item.when));
+    btn.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      handlers.onOpenMore(item.brand);
+    });
+    li.append(btn);
+    list.append(li);
+  }
+  details.append(list);
+  if (more.hidden > 0) {
+    details.append(el("p", "ccm-more-cut", `${more.hidden} more not shown. Narrow the filter to see them.`));
+  }
+  return details;
 }
 
 // A signature of the model, so the sweep only rebuilds the bar when something
 // the creator can see has changed.
 export function filterBarSignature(model: FilterBarModel): string {
-  return `${model.active}|${model.total}|${TRIAGE_FILTERS.map((f) => model.counts[f]).join(",")}`;
+  const more = model.more.items.map((m) => `${m.brandKey}${m.unread ? "!" : ""}`).join(",");
+  return `${model.active}|${model.total}|${TRIAGE_FILTERS.map((f) => model.counts[f]).join(",")}|${model.more.hidden}|${more}`;
 }

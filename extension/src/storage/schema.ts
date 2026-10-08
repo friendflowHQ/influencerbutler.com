@@ -227,6 +227,16 @@ export type Settings = {
     // kill-flag key is "messageCards" in disabledTools. Backfilled to true by the
     // tools shallow-merge in migrate().
     messageCards: boolean;
+    // Brand Conversations: a chip on product cards (search, deals, Idea Lists,
+    // Campaign Radar) and product pages showing where the creator stands with that
+    // product's brand: "Messaged", "Brand responded", "You replied", or "Brand
+    // messaged you". Reads the full Creator Connections inbox (cached by the Messages
+    // tools whenever a Creator Connections page is open) and, when paired, the
+    // desktop app's Messenger Butler. A click opens the conversation in Creator
+    // Connections, with an "Open in desktop app" alternative. Works without the
+    // desktop app. On by default; the kill-flag key is "brandConversations" in
+    // disabledTools. Backfilled to true by the tools shallow-merge in migrate().
+    brandConversations: boolean;
     // Ownership: a live "you already own this / you already posted this" badge on
     // product pages and search/deals tiles, read from the desktop Orders Butler
     // (order history) + content-coverage (Storefront / Deals / YouTube) over
@@ -932,6 +942,7 @@ export const DEFAULTS: StorageShape = {
       brandKeywords: true,
       messageTemplates: true,
       messageCards: true,
+      brandConversations: true,
       ownership: true,
       enrolledBadge: true,
       walmart: true,

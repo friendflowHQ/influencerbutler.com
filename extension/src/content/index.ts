@@ -34,6 +34,9 @@ import { renderCalculator } from "../tools/calculator/panel";
 import { renderProductSnapshot } from "../tools/product-snapshot/panel";
 import { renderProductEarnings } from "../tools/earnings/panel";
 import { renderOwnership } from "../tools/ownership/panel";
+import { renderBrandConversation } from "../tools/brand-conversation/panel";
+import { startInboxSync, stopInboxSync } from "../tools/cc-messages/inbox-store";
+import { handleOpenHash } from "../tools/cc-messages/open-conversation";
 import { renderPriceHistory } from "../tools/price-history/panel";
 import { renderDealSignals } from "../tools/deal-signals/panel";
 import { renderInlineCard } from "../tools/inline-card/panel";
@@ -577,6 +580,7 @@ async function runForPage(): Promise<void> {
   teardownBrandKeywords();
   teardownMessageTemplates();
   teardownMessageCards();
+  stopInboxSync();
 
   // Remote operational flags win over the user's own settings: they are the
   // site's kill switch for when a tool misbehaves in the wild. Apply selector
@@ -657,6 +661,13 @@ async function runForPage(): Promise<void> {
       // Reserves a slot; reveals only when the creator owns or already posted it.
       if (settings.tools.ownership) {
         guard("owned", () => renderOwnership(signals));
+      }
+
+      // "Messaged / Brand responded" for this product's brand, from the cached
+      // Creator Connections inbox (and the app's Messenger Butler when paired).
+      // Reserves a slot; reveals only when you have a conversation with the brand.
+      if (settings.tools.brandConversations) {
+        guard("brand-conversation", () => renderBrandConversation(signals));
       }
 
       // Price history sparkline, built locally from prices seen while browsing.
@@ -1051,6 +1062,14 @@ async function runForPage(): Promise<void> {
     guard("message-cards", () => {
       if (settings.tools.messageCards) initMessageCards(settings);
     });
+    // Read the whole Messages inbox from Amazon's chat API (the drawer itself stops
+    // at 100 rows) into the cache the Message Cards counts and the product-card
+    // conversation chips read, and finish a "#ib-open-thread=<brand>" link from a
+    // product chip. Both need only a Creator Connections page, not the app.
+    guard("inbox-sync", () => {
+      if (settings.tools.messageCards || settings.tools.brandConversations) startInboxSync();
+      if (settings.tools.brandConversations || settings.tools.messageCards) void handleOpenHash();
+    });
   } else if (pageType === "campaign-detail") {
     if (settings.tools.standaloneAccept || settings.tools.contentLinkSubmit) {
       void sendToBackground({ kind: "ACCEPT_TAB_READY", pageType: "campaign-detail" }).catch(
@@ -1076,6 +1095,10 @@ async function runForPage(): Promise<void> {
     });
     guard("message-cards", () => {
       if (settings.tools.messageCards) initMessageCards(settings);
+    });
+    guard("inbox-sync", () => {
+      if (settings.tools.messageCards || settings.tools.brandConversations) startInboxSync();
+      if (settings.tools.brandConversations || settings.tools.messageCards) void handleOpenHash();
     });
   }
 }
