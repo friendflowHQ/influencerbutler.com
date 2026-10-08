@@ -52,6 +52,7 @@
               <li><a href="#grp-benable" data-i18n="navGrpBenable">Benable</a></li>
             </ul>
           </li>
+          <li data-nav-for="relay-card"><a href="#relay-card" data-i18n="relayHeading">Send to another computer</a></li>
           <li data-nav-for="watchlist-card"><a href="#watchlist-card" data-i18n="popupWatchlistHeading">Watchlist</a></li>
           <li data-nav-for="lists-card"><a href="#lists-card" data-i18n="popupListsHeading">My lists</a></li>
         </ul>
@@ -173,13 +174,13 @@
       <section id="relay-card" class="card" hidden>
         <h2 data-i18n="relayHeading">Send to another computer</h2>
         <p class="muted small" data-i18n="relayBlurb">
-          Run the desktop app on a different computer? Link it here to send deals
-          and actions to it from this browser. In the app on that computer, open
-          Settings, Chrome extension, Remote devices, turn on receiving, and click
-          Link a device to get a code.
+          Use the desktop app on a different computer? On that computer open
+          Settings, Extension, and click Connect another computer to get a code,
+          then type it below. This browser must be signed in with the same license
+          key as that app.
         </p>
         <div id="relay-signed-out" hidden>
-          <p class="muted small" data-i18n="relaySignedOut">Sign in with your license key above to use this.</p>
+          <p class="muted small" data-i18n="relaySignedOut">Not signed in here yet. Open Account in this popup and enter the same license key the desktop app uses, then come back to link it.</p>
         </div>
         <div id="relay-body" hidden>
           <div class="row">

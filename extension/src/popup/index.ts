@@ -933,11 +933,14 @@ async function renderRemoteDevices(): Promise<void> {
   const targetsWrap = byId("relay-targets");
 
   const state = await sendToBackground<RelayStateView>({ kind: "RELAY_GET_STATE" });
+  card.hidden = false;
   if (!state.signedIn) {
-    card.hidden = true; // surfaced only after a license key is connected
+    // Stay visible so a user who is not signed in sees WHY linking is unavailable
+    // (it was hidden before, which read as "this feature does not exist").
+    signedOut.hidden = false;
+    body.hidden = true;
     return;
   }
-  card.hidden = false;
   signedOut.hidden = true;
   body.hidden = false;
   renderRelayTargets(state, targetsWrap, targetsLabel, status);
