@@ -15,7 +15,7 @@ The point isn't engagement gaming. It's reciprocity: if you're trying to grow in
 ## Before you start
 
 - **A signed-in Benable session** in Chrome - Benable Like Butler uses your existing session.
-- **1-10 Benable profile URLs** of creators in your niche. URLs look like `https://benable.com/<profile-name>`.
+- **1-10 Benable profile URLs** of creators in your niche. URLs look like `https://benable.com/<profile-name>`. Optional if you turn on Discover (below).
 
 ## Running your first pass
 
@@ -34,6 +34,16 @@ A Chrome window opens. Benable Like Butler walks each profile, finds collections
 - **Delay**: keep at 8 seconds minimum. Faster than 5 seconds and Benable starts to throttle.
 - **Cooldown days** (in settings) - defaults to 7. Benable Like Butler won't re-like the same content within this window, keeping your activity signal genuine rather than spammy.
 - **What to like**: toggle between liking only the top-level collections vs. drilling into items inside each collection. Item-level liking is deeper engagement but uses more of your daily quota.
+
+## Liking what's trending (Discover)
+
+You don't need a list of profiles to use Benable Like Butler. Turn on **Include Discover** and it also opens Benable's Discover page and likes the collections shown there, plus the items inside them, the same way it does for a profile.
+
+1. In the **Discover** card, switch on **Include Discover**.
+2. Tick the **Categories** you want: Trending, Fashion, Beauty, Food, Travel & Local, Home, Books, Health, Pets, Active Life, Wedding, Baby & Kids, Hobbies or Tech. Only ticked categories are visited. Leave all of them unticked to use the main Discover feed.
+3. Click **Start Benable Like Butler**, or let the schedule run it.
+
+Your profile links (if any) are liked first, then Discover. **Max likes per run** and **Delay between likes** apply to the whole run, and **What to like** works the same way. Each category adds a limited number of collections per run, and a collection that shows up under two categories is only visited once. Discover likes appear in History under the creator who owns each collection.
 
 ## Scheduling
 
@@ -62,7 +72,7 @@ The three together build a presence on Benable without you having to spend hours
 
 - **"Benable login required"**: your session expired. Sign in via the Chrome window Benable Like Butler spawned, click Resume.
 - **Scheduler appears stuck**: the profile-list panel is locked while a schedule is active. Click Stop Schedule, edit, restart.
-- **A run finishes instantly and nothing shows in History**: no profile links are saved yet, so there is nothing to visit. Benable Like Butler likes other creators' profiles, not your own lists. Click Stop Schedule, paste creator profile URLs (`https://benable.com/<profile-name>`) under Benable Profile URLs, then Enable Schedule again or click Start Benable Like Butler.
+- **A run finishes instantly and nothing shows in History**: no profile links are saved yet and Discover is off, so there is nothing to visit. Benable Like Butler likes other creators' profiles, not your own lists. Click Stop Schedule, paste creator profile URLs (`https://benable.com/<profile-name>`) under Benable Profile URLs, then Enable Schedule again or click Start Benable Like Butler.
 - **A profile shows 0 likes after a run**: usually means cooldownDays still excludes everything on that profile. Wait for the cooldown to lapse or lower it.
 - **Likes don't register**: the profile URL is wrong (404) or your session got logged out. Re-open the URL in Chrome manually to verify.
 
