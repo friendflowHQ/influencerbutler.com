@@ -1093,6 +1093,17 @@ export interface Dict {
   updatePopupHeading: string;
   updatePopupBody: (current: string, available: string) => string;
 
+  // Manual "Check for updates" button in the popup.
+  updateCheckHeading: string;
+  updateCheckBtn: string;
+  updateCheckCurrent: (version: string) => string;
+  updateCheckRunning: string;
+  updateCheckFound: (version: string) => string;
+  updateCheckUpToDate: (version: string) => string;
+  updateCheckThrottled: (version: string) => string;
+  updateCheckUnsupported: string;
+  updateCheckError: string;
+
   // Post-update "What's New" notice (on-page corner card + popup card).
   whatsNewTitle: string;
   whatsNewFeaturesHeading: string;
@@ -2294,6 +2305,17 @@ const en: Dict = {
   updatePopupHeading: "Update available",
   updatePopupBody: (current, available) =>
     `Version ${available} is ready to install (you have ${current}). The extension restarts in a moment; your settings are kept.`,
+
+  updateCheckHeading: "Extension updates",
+  updateCheckBtn: "Check for updates",
+  updateCheckCurrent: (version) => `You have version ${version}.`,
+  updateCheckRunning: "Checking for updates...",
+  updateCheckFound: (version) => `Version ${version} is available. Use "Update now" above to install it.`,
+  updateCheckUpToDate: (version) => `You're up to date (version ${version}).`,
+  updateCheckThrottled: (version) =>
+    `Your browser only allows an update check every few minutes. You have version ${version}; try again shortly.`,
+  updateCheckUnsupported: "This build was installed manually, so it can't check for updates by itself.",
+  updateCheckError: "Couldn't check for updates right now. Please try again in a minute.",
 
   whatsNewTitle: "What's new",
   whatsNewFeaturesHeading: "New features",
@@ -3512,6 +3534,17 @@ const es: Dict = {
   updatePopupBody: (current, available) =>
     `La versión ${available} está lista para instalarse (tienes la ${current}). La extensión se reinicia en un momento; tus ajustes se conservan.`,
 
+  updateCheckHeading: "Actualizaciones de la extensión",
+  updateCheckBtn: "Buscar actualizaciones",
+  updateCheckCurrent: (version) => `Tienes la versión ${version}.`,
+  updateCheckRunning: "Buscando actualizaciones...",
+  updateCheckFound: (version) => `La versión ${version} está disponible. Usa "Actualizar ahora" arriba para instalarla.`,
+  updateCheckUpToDate: (version) => `Estás al día (versión ${version}).`,
+  updateCheckThrottled: (version) =>
+    `Tu navegador solo permite buscar actualizaciones cada pocos minutos. Tienes la versión ${version}; vuelve a intentarlo en un momento.`,
+  updateCheckUnsupported: "Esta versión se instaló manualmente, así que no puede buscar actualizaciones por sí sola.",
+  updateCheckError: "No se pudo buscar actualizaciones ahora. Inténtalo de nuevo en un minuto.",
+
   whatsNewTitle: "Novedades",
   whatsNewFeaturesHeading: "Nuevas funciones",
   whatsNewFixesHeading: "Correcciones",
@@ -4728,6 +4761,17 @@ const fr: Dict = {
   updatePopupHeading: "Mise à jour disponible",
   updatePopupBody: (current, available) =>
     `La version ${available} est prête à être installée (vous avez la ${current}). L'extension redémarre dans un instant; vos réglages sont conservés.`,
+
+  updateCheckHeading: "Mises à jour de l'extension",
+  updateCheckBtn: "Rechercher des mises à jour",
+  updateCheckCurrent: (version) => `Vous avez la version ${version}.`,
+  updateCheckRunning: "Recherche de mises à jour...",
+  updateCheckFound: (version) => `La version ${version} est disponible. Utilisez « Mettre à jour » ci-dessus pour l'installer.`,
+  updateCheckUpToDate: (version) => `Vous êtes à jour (version ${version}).`,
+  updateCheckThrottled: (version) =>
+    `Votre navigateur n'autorise une recherche de mise à jour que toutes les quelques minutes. Vous avez la version ${version} ; réessayez dans un instant.`,
+  updateCheckUnsupported: "Cette version a été installée manuellement et ne peut pas rechercher de mises à jour seule.",
+  updateCheckError: "Impossible de rechercher des mises à jour pour l'instant. Réessayez dans une minute.",
 
   whatsNewTitle: "Nouveautés",
   whatsNewFeaturesHeading: "Nouvelles fonctionnalités",

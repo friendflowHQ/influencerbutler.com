@@ -13,6 +13,7 @@ import {
   type RowBadgesResult,
   type RowEnrichRef,
   type SignInResult,
+  type UpdateCheckResult,
   type UpdateStateView,
   type WatchlistResult,
   type WhatsNewView,
@@ -73,6 +74,7 @@ async function init(): Promise<void> {
   showVersion();
   await Promise.all([
     renderUpdateCard(),
+    wireUpdateCheck(),
     renderWhatsNewCard(),
     renderReviewAskCard(),
     renderPageStatus(),
@@ -243,6 +245,42 @@ async function renderUpdateCard(): Promise<void> {
     void sendToBackground<void>({ kind: "APPLY_UPDATE" }).catch(() => {});
   };
   byId("update-card").hidden = false;
+}
+
+// "Check for updates" button: asks the browser to look for a newer version now
+// instead of waiting for its own schedule. A found update surfaces the regular
+// "Update now" card above; every other outcome is explained in plain words.
+async function wireUpdateCheck(): Promise<void> {
+  const btn = byId<HTMLButtonElement>("update-check-btn");
+  const status = byId("update-check-status");
+  status.textContent = t().updateCheckCurrent(chrome.runtime.getManifest().version);
+  btn.onclick = async () => {
+    btn.disabled = true;
+    status.textContent = t().updateCheckRunning;
+    const result = await sendToBackground<UpdateCheckResult>({ kind: "CHECK_FOR_UPDATE" }).catch(
+      () => null,
+    );
+    btn.disabled = false;
+    if (!result || result.status === "error") {
+      status.textContent = t().updateCheckError;
+      return;
+    }
+    if (result.status === "unsupported") {
+      status.textContent = t().updateCheckUnsupported;
+      return;
+    }
+    if (result.status === "update_available" && result.availableVersion) {
+      status.textContent = t().updateCheckFound(result.availableVersion);
+      await renderUpdateCard();
+      syncNavVisibility();
+      byId("update-card").scrollIntoView({ block: "nearest" });
+      return;
+    }
+    status.textContent =
+      result.status === "throttled"
+        ? t().updateCheckThrottled(result.currentVersion)
+        : t().updateCheckUpToDate(result.currentVersion);
+  };
 }
 
 // Post-update "What's New" card: shown only when the extension has updated and

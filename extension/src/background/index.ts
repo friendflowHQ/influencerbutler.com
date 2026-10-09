@@ -104,6 +104,7 @@ import {
 import {
   applyUpdate,
   checkForUpdate,
+  checkForUpdateNow,
   getUpdateStateView,
   noteUpdateAvailable,
   remindUpdateLater,
@@ -858,6 +859,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "GET_UPDATE_STATE":
       void getUpdateStateView().then(sendResponse);
+      return true;
+    case "CHECK_FOR_UPDATE":
+      void checkForUpdateNow().then(sendResponse);
       return true;
     case "UPDATE_REMIND_LATER":
       void remindUpdateLater().then(() => sendResponse(undefined));

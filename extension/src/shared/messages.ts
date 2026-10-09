@@ -414,6 +414,7 @@ export type RuntimeMessage =
   // banner, or apply the pending update now (restarts the extension, so the
   // caller fires and forgets).
   | { kind: "GET_UPDATE_STATE" }
+  | { kind: "CHECK_FOR_UPDATE" }
   | { kind: "UPDATE_REMIND_LATER" }
   | { kind: "APPLY_UPDATE" }
   // Post-update "What's New" notice: read what changed in the running version
@@ -1294,7 +1295,7 @@ export type {
 } from "../integrations/ib-links-client";
 export type { BrandedMintInput, BulkMintResult } from "../background/links";
 export type { RelayClaimResult, RelaySendResult, RelayTarget, RelayTargetsResult } from "../background/relay";
-export type { UpdateStateView } from "../background/update";
+export type { UpdateCheckResult, UpdateStateView } from "../background/update";
 export type { WhatsNewView, ResolvedBug } from "../background/whats-new";
 
 export function sendToBackground<T>(message: RuntimeMessage): Promise<T> {

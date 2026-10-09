@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   checkForUpdate,
+  checkForUpdateNow,
   compareVersions,
   getUpdateStateView,
   noteUpdateAvailable,
@@ -198,5 +199,60 @@ describe("checkForUpdate", () => {
       await checkForUpdate();
       expect(stored[UPDATE_STORAGE_KEY]).toBeUndefined();
     }
+  });
+});
+
+describe("checkForUpdateNow", () => {
+  const storeManifest = { version: "0.1.30", update_url: "https://clients2.google.com/service/update2/crx" };
+
+  it("reports an available update and clears any snooze", async () => {
+    const { stored } = stubChrome({
+      manifest: storeManifest,
+      requestUpdateCheck: vi.fn(async () => ({ status: "update_available", version: "0.1.32" })),
+      stored: {
+        [UPDATE_STORAGE_KEY]: { availableVersion: "0.1.32", detectedAt: 1, remindAfter: Date.now() + 1e9 },
+      },
+    });
+    const result = await checkForUpdateNow();
+    expect(result).toEqual({ status: "update_available", availableVersion: "0.1.32", currentVersion: "0.1.30" });
+    expect((stored[UPDATE_STORAGE_KEY] as UpdateState).remindAfter).toBeNull();
+  });
+
+  it("says up to date on no_update", async () => {
+    stubChrome({ manifest: storeManifest, requestUpdateCheck: vi.fn(async () => ({ status: "no_update" })) });
+    expect((await checkForUpdateNow()).status).toBe("up_to_date");
+  });
+
+  it("falls back to an already-staged update when throttled", async () => {
+    stubChrome({
+      manifest: storeManifest,
+      requestUpdateCheck: vi.fn(async () => ({ status: "throttled" })),
+      stored: { [UPDATE_STORAGE_KEY]: { availableVersion: "0.1.31", detectedAt: 1, remindAfter: null } },
+    });
+    const result = await checkForUpdateNow();
+    expect(result.status).toBe("update_available");
+    expect(result.availableVersion).toBe("0.1.31");
+  });
+
+  it("reports throttled when nothing is staged", async () => {
+    stubChrome({ manifest: storeManifest, requestUpdateCheck: vi.fn(async () => ({ status: "throttled" })) });
+    expect((await checkForUpdateNow()).status).toBe("throttled");
+  });
+
+  it("is unsupported on unpacked installs and never asks the browser", async () => {
+    const requestUpdateCheck = vi.fn();
+    stubChrome({ manifest: { version: "0.1.30" }, requestUpdateCheck });
+    expect((await checkForUpdateNow()).status).toBe("unsupported");
+    expect(requestUpdateCheck).not.toHaveBeenCalled();
+  });
+
+  it("reports an error when the browser check throws", async () => {
+    stubChrome({
+      manifest: storeManifest,
+      requestUpdateCheck: vi.fn(async () => {
+        throw new Error("boom");
+      }),
+    });
+    expect((await checkForUpdateNow()).status).toBe("error");
   });
 });

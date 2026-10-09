@@ -99,6 +99,51 @@ export async function checkForUpdate(): Promise<void> {
   }
 }
 
+// What a manual "Check for updates" click reports back to the popup.
+export type UpdateCheckResult = {
+  status: "update_available" | "up_to_date" | "throttled" | "unsupported" | "error";
+  availableVersion: string | null;
+  currentVersion: string;
+};
+
+// User-initiated check. Unlike the periodic one it clears any "Remind me later"
+// snooze so a newly found update is shown right away, and it distinguishes the
+// outcomes the popup needs to word differently: Chrome rate-limits
+// requestUpdateCheck ("throttled"), in which case an already-staged update still
+// counts as available; unpacked/dev installs have no update_url and cannot check.
+export async function checkForUpdateNow(): Promise<UpdateCheckResult> {
+  const currentVersion = chrome.runtime.getManifest().version;
+  const staged = async (): Promise<string | null> => {
+    const state = await readState();
+    return state && compareVersions(state.availableVersion, currentVersion) > 0
+      ? state.availableVersion
+      : null;
+  };
+  if (!chrome.runtime.getManifest().update_url) {
+    return { status: "unsupported", availableVersion: await staged(), currentVersion };
+  }
+  let version: string | null = null;
+  let status: UpdateCheckResult["status"];
+  try {
+    const result = await chrome.runtime.requestUpdateCheck();
+    if (result.status === "update_available" && result.version) {
+      version = result.version;
+      status = "update_available";
+    } else {
+      status = result.status === "throttled" ? "throttled" : "up_to_date";
+    }
+  } catch (error) {
+    log("update", "manual requestUpdateCheck failed", error);
+    status = "error";
+  }
+  version = version ?? (await staged());
+  if (version) {
+    await writeState({ availableVersion: version, detectedAt: Date.now(), remindAfter: null });
+    return { status: "update_available", availableVersion: version, currentVersion };
+  }
+  return { status, availableVersion: null, currentVersion };
+}
+
 export async function getUpdateStateView(): Promise<UpdateStateView> {
   const currentVersion = chrome.runtime.getManifest().version;
   const state = await readState();
