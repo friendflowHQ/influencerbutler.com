@@ -28,6 +28,15 @@ The runner opens a Chrome window, logs in (if needed), and walks the orders page
 
 After the first catch-up, leave the scope on **Only new since last run** (the default). Orders Butler walks newest-first and stops as soon as it reaches orders you already have, so a routine sync finishes in seconds instead of re-walking your whole history. Set it to **run daily** in the Schedule card and it adds new orders incrementally. Reach for **All years (full catch-up)** only when you want a full reconciliation.
 
+## Harvest a different Amazon site (Canada, UK, and more)
+
+By default Orders Butler reads your orders from the Amazon site that matches your Creators API region, or amazon.com if none is connected. If you shop on another Amazon site, pick it in **Run settings > Amazon site**: United States, Canada, United Kingdom, Australia, Germany, France, Italy, Spain, and more.
+
+- **One site per run.** Switch the **Amazon site** and run again to pull a second site. Your choice is remembered.
+- **Sign in once per site.** Amazon keeps a separate login for each site, so the first run on a new site opens that site's own sign-in window. Sign in there and the run carries on.
+- **Prices and links follow the site.** Orders from amazon.co.uk show pound prices and link to amazon.co.uk products, and the same goes for each other site.
+- **Currency note.** Your earnings totals are not converted between currencies, so the break-even check is most reliable when your orders and your earnings are in the same currency.
+
 ## Use a different Amazon account for purchases
 
 If you buy the products you review on a different Amazon account than your storefront account, you can keep the two separate. Orders Butler then signs into your buying account in its own browser window, so your storefront login and your purchase login never overwrite each other.
