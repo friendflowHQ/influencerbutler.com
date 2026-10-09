@@ -29,6 +29,7 @@ export interface DealsDict {
   cardSending: string;
   cardSent: string;
   cardFailed: string;
+  cardFailedDetail: string;
   cardAppNotRunning: string;
   cardNeedsPairing: string;
   // Extra chip on event days that sends the same deal to the Prime Day workspace.
@@ -99,6 +100,7 @@ const en: DealsDict = {
   cardSending: "Sending",
   cardSent: "Sent",
   cardFailed: "Could not send",
+  cardFailedDetail: "The deal could not be sent. Make sure the Influencer Butler app is open and connected, then try again.",
   cardAppNotRunning: "The Influencer Butler app is not running. Open it, then click again.",
   cardNeedsPairing: "Connect the app to the extension, then click again.",
   cardAlsoPrimeDay: "+ Prime Day Deals",
@@ -169,6 +171,7 @@ const es: DealsDict = {
   cardSending: "Enviando",
   cardSent: "Enviado",
   cardFailed: "No se pudo enviar",
+  cardFailedDetail: "No se pudo enviar la oferta. Asegurate de que la app Influencer Butler este abierta y conectada, y vuelve a intentarlo.",
   cardAppNotRunning: "La app Influencer Butler no esta abierta. Abrela y vuelve a hacer clic.",
   cardNeedsPairing: "Conecta la app con la extension y vuelve a hacer clic.",
   cardAlsoPrimeDay: "+ Ofertas Prime Day",
@@ -239,6 +242,7 @@ const fr: DealsDict = {
   cardSending: "Envoi",
   cardSent: "Envoye",
   cardFailed: "Envoi impossible",
+  cardFailedDetail: "L'offre n'a pas pu etre envoyee. Verifiez que l'application Influencer Butler est ouverte et connectee, puis reessayez.",
   cardAppNotRunning: "L'application Influencer Butler n'est pas ouverte. Ouvrez-la puis recliquez.",
   cardNeedsPairing: "Connectez l'application a l'extension puis recliquez.",
   cardAlsoPrimeDay: "+ Offres Prime Day",

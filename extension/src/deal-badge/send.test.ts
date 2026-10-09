@@ -170,6 +170,17 @@ describe("chipStateFor", () => {
     });
   });
 
+  it("falls back to a plain-English reason when a refusal carries no message", () => {
+    expect(chipStateFor({ ok: false }, D)).toEqual({
+      state: "error",
+      detail: D.cardFailedDetail,
+    });
+    expect(chipStateFor({ ok: false, message: "" }, D)).toEqual({
+      state: "error",
+      detail: D.cardFailedDetail,
+    });
+  });
+
   it("reports a send", () => {
     expect(chipStateFor({ ok: true }, D)).toEqual({ state: "sent" });
   });
