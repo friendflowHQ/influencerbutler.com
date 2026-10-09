@@ -73,6 +73,9 @@ export const ENDPOINTS = {
   // Free ("Influencer Butler AI") caption engine for the compose box. The
   // creator can instead use their own connected OpenAI key (OPENAI_COMPLETE).
   socialCaption: `${API_BASE}/api/extension/social-caption`,
+  // "Your AI Post is ready": the creator's formula filled with the product's facts
+  // and rewritten by the free Influencer Butler AI. Bearer license.
+  aiPost: `${API_BASE}/api/extension/ai-post`,
 } as const;
 
 // Influencer Butler branded short-link service (links.influencerbutler.com),

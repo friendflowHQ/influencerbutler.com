@@ -299,6 +299,12 @@ export type Settings = {
     // The kill-flag key is "dealSignals" in disabledTools. On by default;
     // backfilled to true by the tools shallow-merge in migrate().
     dealSignals: boolean;
+    // AI Post: the "Your AI Post is ready!" popup on a product page, which writes a
+    // ready-to-post caption from the creator's own formulas and the listing's
+    // facts via the free Influencer Butler AI. The kill-flag key is "aiPost" in
+    // disabledTools. On by default; backfilled to true by the tools shallow-merge
+    // in migrate().
+    aiPost: boolean;
     // Target support: the product-page panel on target.com (price / rating chips
     // plus the cross-retailer card). Product pages only. The kill-flag key is
     // "target" in disabledTools. On by default; backfilled to true by the tools
@@ -956,6 +962,7 @@ export const DEFAULTS: StorageShape = {
       socialSchedule: true,
       benableBadge: true,
       dealSignals: true,
+      aiPost: true,
       target: true,
       crossRetailer: true,
       youtubeStatus: true,

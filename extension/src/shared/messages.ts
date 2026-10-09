@@ -296,6 +296,8 @@ export type RuntimeMessage =
   // Draft a caption with the chosen engine (free first-party AI or the creator's
   // own connected OpenAI key).
   | { kind: "GEN_SOCIAL_CAPTION"; input: SocialCaptionInput }
+  // "Your AI Post is ready": write a post from the creator's formula + product facts.
+  | { kind: "GEN_AI_POST"; input: AiPostRequest }
   // Upload image bytes (data URL) as the fallback when the source cannot be
   // downloaded server-side. Returns a public URL + storage path.
   | { kind: "UPLOAD_SOCIAL_IMAGE"; dataUrl: string }
@@ -1246,6 +1248,21 @@ export type AiChatResult = { ok: boolean; reply?: string; images?: AiChatImage[]
 export type ScheduleSocialPostResult = { ok: boolean; id?: string; error?: string; migrationPending?: boolean };
 export type ListSocialPostsResult = { ok: boolean; posts: SocialPostRecord[]; error?: string; migrationPending?: boolean };
 export type CancelSocialPostResult = { ok: boolean; error?: string };
+export type AiPostRequest = {
+  facts: Record<string, string | number | null>;
+  formula: { id: string; name: string; post: string; comment?: string };
+  variant: number;
+  previous: string[];
+  locale: string | null;
+};
+export type GenAiPostResult = {
+  ok: boolean;
+  post?: string;
+  comment?: string | null;
+  // "ai" = rewritten by the model; "formula" = the plain filled-in formula.
+  source?: "ai" | "formula";
+  error?: string;
+};
 export type GenSocialCaptionResult = { ok: boolean; caption?: string; alts?: string[]; error?: string };
 export type UploadSocialImageResult = { ok: boolean; url?: string; path?: string; error?: string };
 export type VoiceSessionResult = {

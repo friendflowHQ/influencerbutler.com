@@ -50,6 +50,7 @@ import {
   scheduleSocialPost,
   uploadSocialImage,
 } from "./social-schedule";
+import { generateAiPost } from "./ai-post";
 import { initSocialContextMenu, openComposeWindow } from "./social-compose-window";
 import {
   assistantChat,
@@ -475,6 +476,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "GEN_SOCIAL_CAPTION":
       void generateSocialCaption(message.input).then(sendResponse);
+      return true;
+    case "GEN_AI_POST":
+      void generateAiPost(message.input).then(sendResponse);
       return true;
     case "UPLOAD_SOCIAL_IMAGE":
       void uploadSocialImage(message.dataUrl).then(sendResponse);

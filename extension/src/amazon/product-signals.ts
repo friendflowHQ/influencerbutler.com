@@ -1,6 +1,7 @@
 import { query, queryMatchingText } from "./selectors";
 import { parseBoughtCount, parseBoughtFromBody } from "./bought-badge";
 import { parseDealBadgeText, type DealKind } from "./deal-kind";
+import { extractPromo, type ProductPromo } from "./promo";
 
 // Reads the non-video signals off a product page: identity, price,
 // availability, social proof. Accepts any Document so fetched pages from the
@@ -45,6 +46,9 @@ export type ProductSignals = {
   // when no count is exposed.
   sellerCount: number | null;
   imageUrl: string | null;
+  // The coupon / promo code the buybox offers, or null when none. Optional so a
+  // builder that has no page to read (fetched pages, other retailers) can omit it.
+  promo?: ProductPromo | null;
 };
 
 // A product ASIN out of a /dp/, /gp/product/, or mobile-web /gp/aw/d/ url.
@@ -74,6 +78,7 @@ export function extractSignals(doc: Document, url: string): ProductSignals {
     listedAt: extractListedAt(doc),
     sellerCount: extractSellerCount(doc),
     imageUrl: extractImage(doc),
+    promo: extractPromo(doc),
   };
 }
 

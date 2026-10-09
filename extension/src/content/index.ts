@@ -39,6 +39,7 @@ import { startInboxSync, stopInboxSync } from "../tools/cc-messages/inbox-store"
 import { handleOpenHash } from "../tools/cc-messages/open-conversation";
 import { renderPriceHistory } from "../tools/price-history/panel";
 import { renderDealSignals } from "../tools/deal-signals/panel";
+import { renderAiPost } from "../tools/ai-post/panel";
 import { renderInlineCard } from "../tools/inline-card/panel";
 import { renderGlobalMaximizer } from "../tools/global-maximizer/panel";
 import { renderCampaigns } from "../tools/campaigns/panel";
@@ -682,6 +683,15 @@ async function runForPage(): Promise<void> {
       if (settings.tools.dealSignals) {
         guard("deal-signals", () => {
           renderDealSignals(signals);
+        });
+      }
+
+      // AI Post: a button that opens the "Your AI Post is ready!" popup, a caption
+      // written from the creator's formulas and this listing's facts. Own tool flag
+      // so the remote kill switch can disable it.
+      if (settings.tools.aiPost) {
+        guard("ai-post", () => {
+          renderAiPost(signals);
         });
       }
 

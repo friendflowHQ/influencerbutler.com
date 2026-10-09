@@ -2072,3 +2072,66 @@ a.tile-chip:hover { filter: brightness(0.97); }
   cursor: default;
   opacity: 0.6;
 }
+
+/* ---- AI Post popup ("Your AI Post is ready!") ----------------------------- */
+.aip { display: flex; flex-direction: column; gap: 10px; }
+.aip-tabs { display: flex; gap: 4px; border-bottom: 1px solid #e2e8f0; }
+.aip-tab {
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 8px 12px;
+  margin-bottom: -1px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+}
+.aip-tab.active { color: #c2410c; border-bottom-color: #c2410c; }
+.aip-tab:focus-visible, .aip-link:focus-visible { outline: 2px solid #c2410c; outline-offset: 2px; }
+.aip-panel[hidden] { display: none; }
+.aip-grid { display: flex; gap: 14px; align-items: flex-start; }
+.aip-image {
+  flex: 0 0 120px;
+  width: 120px;
+  min-height: 120px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.aip-image img { max-width: 100%; max-height: 160px; object-fit: contain; display: block; }
+.aip-col { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.aip-product-title { margin: 0; font-size: 13.5px; font-weight: 600; color: #0f172a; line-height: 1.4; }
+.aip-field { display: flex; flex-direction: column; gap: 4px; }
+.aip-field label { font-size: 12px; font-weight: 600; color: #334155; }
+.aip-field textarea, .aip-field input, .aip-field select { width: 100%; box-sizing: border-box; font: inherit; font-size: 13px; }
+.aip-formula-row { display: flex; gap: 10px; align-items: flex-end; }
+.aip-formula-row .aip-field { flex: 1 1 auto; }
+.aip-link {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 6px 2px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #c2410c;
+  text-decoration: underline;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.aip-editor { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 10px; background: #f8fafc; }
+.aip-editor[hidden], .aip-comment[hidden] { display: none; }
+.aip-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.aip-actions .btn { flex: 1 1 auto; text-align: center; }
+.aip-status { min-height: 1.2em; }
+@media (max-width: 480px) {
+  .aip-grid { flex-direction: column; }
+  .aip-image { flex-basis: auto; width: 100%; min-height: 0; }
+}

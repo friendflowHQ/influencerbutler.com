@@ -15,6 +15,7 @@ export type SelectorId =
   | "price"
   | "productListPrice"
   | "productDealBadge"
+  | "productPromo"
   | "availability"
   | "addToCart"
   | "boughtPastMonth"
@@ -183,6 +184,18 @@ const REGISTRY: Record<SelectorId, string[]> = {
     "#apex_desktop .a-badge-text",
     "#corePriceDisplay_mobile_feature_div .savingsPercentage",
     "#corePriceDisplay_mobile_feature_div .a-badge-text",
+  ],
+  // Buybox promo messages: a clippable coupon ("Save 15%", "Apply $2 coupon") or a
+  // promo-code line ("Extra 10% off with code SAVE10"). Read as text only, then
+  // classified by amazon/promo.ts, so a stray match is harmless.
+  productPromo: [
+    "#couponBadgeRegularVpc",
+    "#vpcButton .couponLabelText",
+    "[id^='couponText']",
+    "#promoPriceBlockMessage_feature_div",
+    ".promoPriceBlockMessage",
+    "#applicable_promotion_list_sec",
+    "#couponFeatureRegular",
   ],
   availability: ["#availability", "#availabilityInsideBuyBox_feature_div"],
   addToCart: ["#add-to-cart-button"],
@@ -479,6 +492,24 @@ export function query<T extends Element = HTMLElement>(
   }
   recordMiss(id);
   return null;
+}
+
+// Every non-empty text (whitespace-collapsed) across ALL selectors for `id`,
+// without recording a miss: for optional page features such as a coupon, whose
+// absence is the common case and not selector breakage.
+export function queryAllTextsQuiet(doc: ParentNode, id: SelectorId): string[] {
+  const out: string[] = [];
+  for (const sel of selectorsFor(id)) {
+    try {
+      for (const el of Array.from(doc.querySelectorAll(sel))) {
+        const text = (el.textContent ?? "").replace(/\s+/g, " ").trim();
+        if (text && !out.includes(text)) out.push(text);
+      }
+    } catch {
+      // skip an invalid selector strategy
+    }
+  }
+  return out;
 }
 
 // Returns the trimmed text of the first element (across ALL selectors and all
