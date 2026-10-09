@@ -3,7 +3,7 @@
 // Live subscriber counts per plan (tier + monthly/yearly), shown under the
 // "right now" strip. A point-in-time view, so it ignores the month picker.
 
-import type { PlanBreakdownRow } from "./format";
+import { formatUsdFromCents, type PlanBreakdownRow } from "./format";
 
 const fmt = (n: number) => n.toLocaleString("en-US");
 
@@ -21,6 +21,7 @@ export default function PlanBreakdown({
 
   const totalActive = rows.reduce((sum, r) => sum + r.active, 0);
   const totalTrial = rows.reduce((sum, r) => sum + r.onTrial, 0);
+  const totalMrr = rows.reduce((sum, r) => sum + (r.mrrCents ?? 0), 0);
 
   return (
     <section className="mt-3 rounded-xl border border-slate-200 bg-white p-4">
@@ -28,7 +29,7 @@ export default function PlanBreakdown({
         Subscribers by plan
       </h2>
       <p className="mt-1 text-xs text-slate-600">
-        Live right now, whatever month is selected. Add-on subscriptions are not counted.
+        Live right now, whatever month is selected. Add-on subscriptions are not counted. MRR is active subscribers only, at list price (yearly plans divided by 12), so discounts and comps are not reflected.
       </p>
       <div className="mt-3 overflow-x-auto">
         <table className="w-full text-sm">
@@ -37,7 +38,8 @@ export default function PlanBreakdown({
               <th scope="col" className="py-1.5 pr-3">Plan</th>
               <th scope="col" className="px-3 py-1.5 text-right">Active</th>
               <th scope="col" className="px-3 py-1.5 text-right">On trial</th>
-              <th scope="col" className="py-1.5 pl-3 text-right">Total</th>
+              <th scope="col" className="px-3 py-1.5 text-right">Total</th>
+              <th scope="col" className="py-1.5 pl-3 text-right">MRR</th>
             </tr>
           </thead>
           <tbody>
@@ -51,7 +53,10 @@ export default function PlanBreakdown({
                   <th scope="row" className="py-1.5 pr-3 text-left font-medium">{r.label}</th>
                   <td className="px-3 py-1.5 text-right tabular-nums">{fmt(r.active)}</td>
                   <td className="px-3 py-1.5 text-right tabular-nums">{fmt(r.onTrial)}</td>
-                  <td className="py-1.5 pl-3 text-right font-semibold tabular-nums">{fmt(total)}</td>
+                  <td className="px-3 py-1.5 text-right font-semibold tabular-nums">{fmt(total)}</td>
+                  <td className="py-1.5 pl-3 text-right tabular-nums">
+                    {r.mrrCents === null ? "n/a" : formatUsdFromCents(r.mrrCents)}
+                  </td>
                 </tr>
               );
             })}
@@ -61,7 +66,8 @@ export default function PlanBreakdown({
               <th scope="row" className="py-2 pr-3 text-left">All plans</th>
               <td className="px-3 py-2 text-right tabular-nums">{fmt(totalActive)}</td>
               <td className="px-3 py-2 text-right tabular-nums">{fmt(totalTrial)}</td>
-              <td className="py-2 pl-3 text-right tabular-nums">{fmt(totalActive + totalTrial)}</td>
+              <td className="px-3 py-2 text-right tabular-nums">{fmt(totalActive + totalTrial)}</td>
+              <td className="py-2 pl-3 text-right tabular-nums">{formatUsdFromCents(totalMrr)}</td>
             </tr>
           </tfoot>
         </table>

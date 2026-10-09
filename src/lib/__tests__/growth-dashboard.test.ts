@@ -202,7 +202,12 @@ describe("projectedTrialConversionCents", () => {
 
     const withOther = planBreakdownFor([sub("nope"), sub(null)], []);
     expect(withOther).toHaveLength(9);
-    expect(withOther[8]).toMatchObject({ plan: "other", active: 2 });
+    expect(withOther[8]).toMatchObject({ plan: "other", active: 2, mrrCents: null });
+
+    // MRR: active only, annual plans at price / 12; trials excluded.
+    expect(rows[0].mrrCents).toBe(PRICE_CENTS.solo.monthly * 2);
+    expect(rows[1].mrrCents).toBe(PRICE_CENTS.solo.annual / 12);
+    expect(rows[2].mrrCents).toBe(0);
   });
 });
 

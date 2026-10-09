@@ -122,6 +122,12 @@ export type PlanBreakdownRow = {
   label: string;
   active: number;
   onTrial: number;
+  /**
+   * Monthly recurring revenue from ACTIVE subscribers at list price (annual
+   * plans count price / 12), in cents. Trials are excluded. Null for the
+   * "other" row, whose price is unknown.
+   */
+  mrrCents: number | null;
 };
 
 export type GrowthSnapshot = {
@@ -245,12 +251,13 @@ export function planBreakdownFor(
         label: `${TIER_NAME[tier]} ${interval === "monthly" ? "monthly" : "yearly"}`,
         active: 0,
         onTrial: 0,
+        mrrCents: 0,
       };
       rows.push(row);
       byPlan.set(plan, row);
     }
   }
-  const other: PlanBreakdownRow = { plan: "other", label: "Other / unmapped plan", active: 0, onTrial: 0 };
+  const other: PlanBreakdownRow = { plan: "other", label: "Other / unmapped plan", active: 0, onTrial: 0, mrrCents: null };
 
   const tally = (list: Record<string, unknown>[], field: "active" | "onTrial") => {
     for (const r of list) {
@@ -261,6 +268,15 @@ export function planBreakdownFor(
   };
   tally(activeRows, "active");
   tally(onTrialRows, "onTrial");
+
+  for (const tier of BREAKDOWN_TIERS) {
+    for (const interval of BREAKDOWN_INTERVALS) {
+      const row = byPlan.get(`${tier}-${interval}`)!;
+      const monthlyCents =
+        interval === "monthly" ? PRICE_CENTS[tier].monthly : PRICE_CENTS[tier].annual / 12;
+      row.mrrCents = Math.round(row.active * monthlyCents);
+    }
+  }
 
   return other.active + other.onTrial > 0 ? [...rows, other] : rows;
 }

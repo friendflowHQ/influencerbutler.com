@@ -45,6 +45,7 @@ export type PlanBreakdownRow = {
   label: string;
   active: number;
   onTrial: number;
+  mrrCents: number | null;
 };
 
 export function formatUsdFromCents(cents: number): string {
