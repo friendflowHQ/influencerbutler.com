@@ -14,7 +14,7 @@
 import { computeMonthlyEarnings } from "@/lib/affiliate-commissions-data";
 import { SEED_SOURCE } from "@/lib/recent-activity";
 import { planForVariantId } from "@/lib/lemonsqueezy";
-import { planMetaFor, PRICE_CENTS } from "@/lib/pricing-constants";
+import { planMetaFor, PRICE_CENTS, TIER_NAME } from "@/lib/pricing-constants";
 import { DEFAULT_TIMEZONE, localDateStr, zonedTimeToUtc, currentMonthKey } from "@/lib/timezone";
 import { upcomingPayoutDatesMs } from "@/lib/finance-ls-payouts";
 
@@ -115,6 +115,15 @@ export type PayoutSettings = {
   netDelayDays: number;
 };
 
+/** Live subscriber counts for one plan (tier + billing interval). */
+export type PlanBreakdownRow = {
+  /** Canonical plan string ("solo-monthly", ...) or "other" for unmapped variants. */
+  plan: string;
+  label: string;
+  active: number;
+  onTrial: number;
+};
+
 export type GrowthSnapshot = {
   month: string;
   prevMonth: string;
@@ -122,6 +131,8 @@ export type GrowthSnapshot = {
   metrics: Record<string, MetricSnapshot>;
   /** Only present for the current month; null for historical snapshots. */
   projection: EarningsProjection | null;
+  /** Point-in-time active/on-trial subscribers per plan; null when subs are unreadable. */
+  planBreakdown: PlanBreakdownRow[] | null;
 };
 
 // ---------------------------------------------------------------------------
@@ -210,6 +221,49 @@ export function billsWithinWindow(
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+const BREAKDOWN_TIERS = ["solo", "duo", "team", "agency"] as const;
+const BREAKDOWN_INTERVALS = ["monthly", "annual"] as const;
+
+/**
+ * Splits live subscriptions by plan (tier + billing interval), counting active
+ * and on-trial separately. Every known plan gets a row (zeros included) so the
+ * dashboard layout is stable; a variant we cannot map lands in a trailing
+ * "other" row, which is only emitted when non-empty.
+ */
+export function planBreakdownFor(
+  activeRows: Record<string, unknown>[],
+  onTrialRows: Record<string, unknown>[],
+): PlanBreakdownRow[] {
+  const rows: PlanBreakdownRow[] = [];
+  const byPlan = new Map<string, PlanBreakdownRow>();
+  for (const tier of BREAKDOWN_TIERS) {
+    for (const interval of BREAKDOWN_INTERVALS) {
+      const plan = `${tier}-${interval}`;
+      const row: PlanBreakdownRow = {
+        plan,
+        label: `${TIER_NAME[tier]} ${interval === "monthly" ? "monthly" : "yearly"}`,
+        active: 0,
+        onTrial: 0,
+      };
+      rows.push(row);
+      byPlan.set(plan, row);
+    }
+  }
+  const other: PlanBreakdownRow = { plan: "other", label: "Other / unmapped plan", active: 0, onTrial: 0 };
+
+  const tally = (list: Record<string, unknown>[], field: "active" | "onTrial") => {
+    for (const r of list) {
+      const plan = planForVariantId(r.ls_variant_id == null ? null : String(r.ls_variant_id));
+      const target = (plan ? byPlan.get(plan) : undefined) ?? other;
+      target[field] += 1;
+    }
+  };
+  tally(activeRows, "active");
+  tally(onTrialRows, "onTrial");
+
+  return other.active + other.onTrial > 0 ? [...rows, other] : rows;
+}
 
 /**
  * Splits "projected cash this month" across the next few upcoming Lemon
@@ -420,6 +474,7 @@ export async function computeGrowthSnapshot(
   for (const def of GROWTH_METRICS) metrics[def.key] = emptySnapshotMetric();
   let migrationPending = false;
   let projection: EarningsProjection | null = null;
+  let planBreakdown: PlanBreakdownRow[] | null = null;
   // The projection blends this month's secured revenue with the trials open
   // right now, so it only makes sense for the current month. "Current" means
   // the business's local calendar month (DEFAULT_TIMEZONE), not UTC's.
@@ -604,6 +659,7 @@ export async function computeGrowthSnapshot(
       previous: null,
       series: null,
     };
+    planBreakdown = planBreakdownFor(activeLive, onTrialLive);
   }
   metrics.revenue_cents = bucket(orderRows, "created_at", (row) =>
     typeof row.total === "number" && Number.isFinite(row.total) ? row.total : 0,
@@ -734,5 +790,5 @@ export async function computeGrowthSnapshot(
     };
   }
 
-  return { month, prevMonth, migrationPending, metrics, projection };
+  return { month, prevMonth, migrationPending, metrics, projection, planBreakdown };
 }

@@ -54,5 +54,6 @@ export async function GET(request: Request) {
     catalog: GROWTH_METRICS,
     metrics: snapshot.metrics,
     projection: snapshot.projection,
+    planBreakdown: snapshot.planBreakdown,
   });
 }

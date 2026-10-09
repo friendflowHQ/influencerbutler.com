@@ -13,6 +13,7 @@ import GoalsSection from "./GoalsSection";
 import ChecklistSection from "./ChecklistSection";
 import MetricTile from "./MetricTile";
 import ProjectedEarnings from "./ProjectedEarnings";
+import PlanBreakdown from "./PlanBreakdown";
 import GrowthForecast from "./GrowthForecast";
 import {
   catalogEntry,
@@ -25,6 +26,7 @@ import {
   type CatalogEntry,
   type EarningsProjection,
   type MetricSnapshot,
+  type PlanBreakdownRow,
 } from "./format";
 import {
   MAX_MONTHS_AHEAD,
@@ -39,6 +41,7 @@ type MetricsResponse = {
   catalog?: CatalogEntry[];
   metrics?: Record<string, MetricSnapshot>;
   projection?: EarningsProjection | null;
+  planBreakdown?: PlanBreakdownRow[] | null;
   error?: string;
 };
 
@@ -317,6 +320,7 @@ export default function AdminGrowthPage() {
             </div>
           ))}
         </div>
+        <PlanBreakdown rows={metrics?.planBreakdown ?? null} loading={metricsLoading && !metrics} />
       </section>
 
       {/* Projected month total: secured revenue + trials that could still

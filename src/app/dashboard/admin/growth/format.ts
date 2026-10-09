@@ -40,6 +40,13 @@ export type EarningsProjection = {
   payoutSplit: PayoutBucket[] | null;
 };
 
+export type PlanBreakdownRow = {
+  plan: string;
+  label: string;
+  active: number;
+  onTrial: number;
+};
+
 export function formatUsdFromCents(cents: number): string {
   return (cents / 100).toLocaleString("en-US", {
     style: "currency",

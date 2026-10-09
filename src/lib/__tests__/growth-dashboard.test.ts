@@ -22,6 +22,7 @@ import {
   bucketLevelRows,
   projectedTrialConversionCents,
   billsWithinWindow,
+  planBreakdownFor,
 } from "../growth-metrics";
 import { PRICE_CENTS } from "../pricing-constants";
 import { buildJwtParts } from "../ga4";
@@ -186,6 +187,22 @@ describe("projectedTrialConversionCents", () => {
     expect(
       projectedTrialConversionCents(["v-duo-monthly", "nope"], PRICE_CENTS.solo.monthly),
     ).toBe(PRICE_CENTS.duo.monthly + PRICE_CENTS.solo.monthly);
+  });
+
+  it("planBreakdownFor splits active and trial subs per plan, with an other row only when needed", () => {
+    const sub = (v: string | null) => ({ ls_variant_id: v });
+    const rows = planBreakdownFor(
+      [sub("v-solo-monthly"), sub("v-solo-monthly"), sub("v-solo-annual")],
+      [sub("v-duo-monthly")],
+    );
+    expect(rows).toHaveLength(8);
+    expect(rows[0]).toMatchObject({ plan: "solo-monthly", label: "Pro Solo monthly", active: 2, onTrial: 0 });
+    expect(rows[1]).toMatchObject({ plan: "solo-annual", label: "Pro Solo yearly", active: 1 });
+    expect(rows[2]).toMatchObject({ plan: "duo-monthly", label: "Pro Trio monthly", active: 0, onTrial: 1 });
+
+    const withOther = planBreakdownFor([sub("nope"), sub(null)], []);
+    expect(withOther).toHaveLength(9);
+    expect(withOther[8]).toMatchObject({ plan: "other", active: 2 });
   });
 });
 
