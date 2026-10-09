@@ -1,0 +1,89 @@
+---
+title: Connectez votre propre domaine à votre page Foyer et à vos Butler Links
+summary: Mettez votre propre adresse web sur votre page Foyer et vos Butler Links, avec une aide DNS pas à pas pour GoDaddy, Namecheap, Cloudflare et Squarespace, et des solutions aux problèmes les plus courants.
+category: Amazon
+---
+
+## Ce que vous obtenez
+
+Avec une offre payante, vous pouvez utiliser votre propre adresse web, comme `go.votremarque.com`, pour votre page [Foyer Butler](/help/tutorials/foyer-butler) et vos [Butler Links](/help/tutorials/link-butler). Vos visiteurs voient votre marque au lieu de `influencerbutler.com`. Comptez environ cinq minutes, plus le temps dont votre fournisseur de domaine a besoin pour enregistrer le changement (en général quelques minutes).
+
+## Où le trouver
+
+Vous pouvez connecter un domaine depuis l'un ou l'autre de ces endroits, ils affichent la même chose :
+
+- **Foyer Butler > Settings** > **Votre propre domaine**
+- **Link Butler > Influencer Deeplink Butler > Settings** > **Votre propre domaine**
+
+Les domaines appartiennent à tout votre compte Influencer Butler. Chaque domaine actif affiche votre page Foyer, et l'un d'eux est celui que les nouveaux Butler Links utilisent (vous le choisissez avec **Utiliser pour les nouveaux liens**). Vous pouvez en connecter jusqu'à cinq.
+
+## Étape 1 : choisissez votre adresse
+
+Saisissez un sous-domaine d'un domaine qui vous appartient, comme `go.votremarque.com`, puis cliquez sur **Connecter**. Un sous-domaine est simplement un mot placé devant votre domaine.
+
+- **Pourquoi pas seulement `votremarque.com` ?** Les fournisseurs DNS n'autorisent pas le type d'enregistrement dont nous avons besoin sur un domaine nu. Si vous le saisissez, l'application l'explique et propose des choix en un clic : `go.`, `link.`, `shop.` ou `www.` devant votre domaine.
+- **Vous utilisez `www.` ?** Si votre site web habituel se trouve à cette adresse aujourd'hui, la connecter ici remplace ce site par votre page Foyer pour tous les visiteurs. Votre ancien site continue de fonctionner là où il est hébergé, mais les gens ne le trouveront plus à cette adresse. Si vous voulez garder votre site web, choisissez un autre mot comme `go` ou `shop`.
+
+## Étape 2 : ajoutez deux enregistrements DNS
+
+Après la connexion, l'application affiche deux enregistrements : un **CNAME** (il fait pointer votre adresse vers notre service de liens) et un **TXT** (il prouve que le domaine est à vous pour que nous puissions émettre son certificat de sécurité). Vous les ajoutez là où le DNS de votre domaine est géré, c'est-à-dire presque toujours l'entreprise où vous avez acheté le domaine. Cherchez le reçu dans vos e-mails si vous n'êtes pas sûr. Si vous avez déplacé votre DNS vers un autre service comme Cloudflare, utilisez celui-là.
+
+Dans l'application, choisissez votre fournisseur pour voir les clics exacts, et utilisez les boutons **Copier** de chaque Nom et Valeur pour éviter toute faute de frappe. L'application affiche le Nom court (comme `go`) parce que la plupart des fournisseurs ajoutent votre domaine à la fin pour vous. Si le vôtre le refuse, cliquez sur **Afficher les noms complets**.
+
+**GoDaddy**
+
+1. Connectez-vous et ouvrez votre liste de domaines (Mes produits, puis Domaines).
+2. Cliquez sur votre domaine, puis ouvrez ses paramètres DNS.
+3. Cliquez sur **Ajouter un nouvel enregistrement**, choisissez **CNAME**, collez le Nom et la Valeur, puis enregistrez.
+4. Ajoutez un deuxième enregistrement, **TXT**, avec son Nom et sa Valeur, puis enregistrez.
+
+**Namecheap**
+
+1. Connectez-vous, ouvrez **Domain List** et cliquez sur **Manage** à côté de votre domaine.
+2. Ouvrez **Advanced DNS** et cliquez sur **Add New Record**.
+3. Choisissez **CNAME Record** : le Nom va dans **Host**, la Valeur dans **Target**. Enregistrez.
+4. Ajoutez un **TXT Record** : le Nom dans **Host**, la Valeur dans **Value**. Enregistrez.
+
+**Cloudflare**
+
+1. Ouvrez votre domaine, puis **DNS**, puis **Records**.
+2. Cliquez sur **Add record**, choisissez **CNAME** et collez le Nom et le Target. Désactivez le nuage orange pour qu'il indique **DNS only**. Enregistrez.
+3. Ajoutez un enregistrement **TXT** avec le Nom et le Content. Enregistrez.
+
+**Squarespace ou Google Domains**
+
+1. Ouvrez **Domains** et cliquez sur votre domaine.
+2. Ouvrez **DNS**, puis **DNS Settings**, et cliquez sur **Add Record**.
+3. Choisissez **CNAME** (Nom dans **Host**, Valeur dans **Data**) et enregistrez. Ajoutez ensuite le **TXT** de la même façon.
+
+**Autre fournisseur :** cherchez la page DNS (elle peut s'appeler Enregistrements DNS ou DNS avancé) et ajoutez les deux enregistrements de la même façon.
+
+## Étape 3 : attendez le statut Actif
+
+L'application continue de vérifier pour vous. Le statut passe de **En attente du DNS** à **Vérification** puis à **Actif**. La plupart des changements apparaissent en quelques minutes. Certains fournisseurs mettent quelques heures et, rarement, jusqu'à une journée. Après environ dix minutes, l'application arrête de vérifier toute seule et vous le dit. Cliquez sur **Vérifier maintenant** une fois que votre fournisseur confirme l'enregistrement du changement.
+
+Quand c'est **Actif**, ouvrez votre adresse dans une fenêtre privée pour voir exactement ce que voient vos visiteurs. Vous pouvez maintenant supprimer l'enregistrement TXT chez votre fournisseur DNS. Gardez le CNAME.
+
+## Si c'est bloqué
+
+L'application vous dit ce qu'elle voit à votre adresse. Voici les causes habituelles :
+
+- **L'enregistrement est verrouillé (GoDaddy affiche une icône rouge).** GoDaddy a un site web ou une redirection configuré sur ce nom et ne vous laisse pas le modifier. Déconnectez d'abord ce site web ou cette redirection dans GoDaddy (ouvrez le produit qui gère le domaine, comme votre site web GoDaddy, et retirez-en le domaine, ou supprimez la redirection dans les paramètres de votre domaine). Ou choisissez une autre adresse ici, comme `go.votremarque.com`, qui n'a rien dessus.
+- **Un autre enregistrement existe déjà à ce nom.** Un CNAME ne peut pas partager son nom avec un autre enregistrement, comme un enregistrement A ou un site web. Modifiez ou supprimez l'ancien, puis ajoutez le nôtre. L'application indique « pointe déjà vers un site web » ou « pointe actuellement vers ... » quand elle voit cela.
+- **Cloudflare place l'enregistrement derrière son proxy.** Mettez le CNAME en **DNS only** (nuage gris).
+- **La valeur du TXT est incorrecte ou absente.** Copiez de nouveau la valeur depuis l'application et remplacez celle de votre fournisseur, au lieu d'en ajouter une seconde.
+- **Le Nom a été saisi autrement.** Collez exactement ce que l'application affiche. Si votre fournisseur ajoute votre domaine pour vous, utilisez le nom court.
+- **Une erreur de certificat.** L'application affiche la raison quand elle en a une, par exemple un enregistrement CAA qui n'autorise pas les certificats. Retirez ou mettez à jour l'enregistrement CAA, puis cliquez sur **Vérifier maintenant**.
+
+## Vous voulez que les personnes qui saisissent seulement votremarque.com arrivent sur votre page ?
+
+Un domaine nu ne peut pas pointer directement vers nous, mais votre fournisseur de domaine peut le rediriger. Dans les paramètres de domaine de votre fournisseur, configurez une **redirection** de `votremarque.com` vers votre adresse connectée, par exemple `https://go.votremarque.com`. Les deux adresses mènent alors à votre page Foyer.
+
+## Et les clones de Deals Butler ?
+
+Les domaines et votre page Foyer appartiennent à votre compte Influencer Butler, donc les clones publient sur la même page et utilisent la même liste de domaines. Les clones n'ont pas encore leur propre domaine ni leur propre page Foyer.
+
+## Voir aussi
+
+- [Tutoriel Foyer Butler](/help/tutorials/foyer-butler) - créez votre page de lien en bio.
+- [Tutoriel Link Butler](/help/tutorials/link-butler) - des Butler Links à votre marque, avec suivi.

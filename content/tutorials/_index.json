@@ -870,6 +870,14 @@
       "summary": "Turn a style into a ready-to-post outfit look with your AI model, real Amazon and Walmart products, and your branding. Run it on autopilot with a daily spend cap, and make a celebration video like \"1k Members\" from a photo of you.",
       "order": 73,
       "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "connect-your-domain",
+      "title": "Connect your own domain to your Foyer page and Butler Links",
+      "category": "Amazon",
+      "summary": "Put your own web address on your Foyer page and your Butler Links, with step-by-step DNS help for GoDaddy, Namecheap, Cloudflare and Squarespace, and fixes for the most common problems.",
+      "order": 125.5,
+      "locales": ["en-US", "es-ES", "fr-FR"]
     }
   ]
 }

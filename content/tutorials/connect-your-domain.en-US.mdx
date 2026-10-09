@@ -1,0 +1,89 @@
+---
+title: Connect your own domain to your Foyer page and Butler Links
+summary: Put your own web address on your Foyer page and your Butler Links, with step-by-step DNS help for GoDaddy, Namecheap, Cloudflare and Squarespace, and fixes for the most common problems.
+category: Amazon
+---
+
+## What you get
+
+On a paid plan you can use your own web address, like `go.yourbrand.com`, for your [Foyer Butler](/help/tutorials/foyer-butler) page and your [Butler Links](/help/tutorials/link-butler). Visitors see your brand instead of `influencerbutler.com`. It takes about five minutes, plus however long your domain provider needs to save the change (usually a few minutes).
+
+## Where to find it
+
+You can connect a domain from either place, and they show the same thing:
+
+- **Foyer Butler > Settings** > **Your own domain**
+- **Link Butler > Influencer Deeplink Butler > Settings** > **Your own domain**
+
+Domains belong to your whole Influencer Butler account. Every domain that is Live shows your Foyer page, and one domain is the one new Butler Links use (you choose it with **Use for new links**). You can connect up to five.
+
+## Step 1: choose your address
+
+Type a subdomain of a domain you own, like `go.yourbrand.com`, and click **Connect**. A subdomain is just a word in front of your domain.
+
+- **Why not just `yourbrand.com`?** DNS providers do not allow the kind of record we need on a bare domain. If you type it, the app explains this and offers one-click choices: `go.`, `link.`, `shop.` or `www.` in front of your domain.
+- **Using `www.`?** If your regular website is at that address today, connecting it here replaces that site with your Foyer page for anyone who visits. Your old site keeps running where it is hosted, but people will no longer reach it at that address. If you want to keep your website, pick a different word like `go` or `shop`.
+
+## Step 2: add two DNS records
+
+After you connect, the app shows two records: a **CNAME** (points your address at our link service) and a **TXT** (proves you own the domain so we can issue its security certificate). You add them where your domain's DNS is managed, which is almost always the company you bought the domain from. Search your email for the receipt if you are not sure. If you moved your DNS to another service like Cloudflare, use that one.
+
+In the app, pick your provider to see the exact clicks, and use the **Copy** buttons for each Name and Value so nothing gets mistyped. The app shows the short Name (like `go`) because most providers add your domain to the end for you. If yours rejects it, click **Show full names**.
+
+**GoDaddy**
+
+1. Sign in and open your domain list (My Products, then Domains).
+2. Click your domain, then open its DNS settings.
+3. Click **Add New Record**, choose **CNAME**, paste the Name and Value, and save.
+4. Add a second record, **TXT**, with its Name and Value, and save.
+
+**Namecheap**
+
+1. Sign in, open **Domain List**, and click **Manage** next to your domain.
+2. Open **Advanced DNS** and click **Add New Record**.
+3. Choose **CNAME Record**: Name goes in **Host**, Value goes in **Target**. Save.
+4. Add a **TXT Record**: Name in **Host**, Value in **Value**. Save.
+
+**Cloudflare**
+
+1. Open your domain, then **DNS**, then **Records**.
+2. Click **Add record**, choose **CNAME**, and paste the Name and the Target. Turn the orange cloud **off** so it says **DNS only**. Save.
+3. Add a **TXT** record with the Name and Content. Save.
+
+**Squarespace or Google Domains**
+
+1. Open **Domains** and click your domain.
+2. Open **DNS**, then **DNS Settings**, and click **Add Record**.
+3. Choose **CNAME** (Name in **Host**, Value in **Data**) and save. Then add the **TXT** the same way.
+
+**Somewhere else:** find the DNS page (it may be called DNS Records or Advanced DNS) and add the two records the same way.
+
+## Step 3: wait for Live
+
+The app keeps checking for you. The status moves from **Waiting for DNS** to **Verifying** to **Live**. Most changes show up within minutes. Some providers take a few hours, and rarely up to a day. After about ten minutes the app stops checking on its own and tells you so. Press **Recheck now** once your provider says the change is saved.
+
+When it says **Live**, open your address in a private window to see exactly what your visitors see. You can delete the TXT record at your DNS provider now. Keep the CNAME.
+
+## If it is stuck
+
+The app tells you what it can see at your address. These are the usual causes:
+
+- **The record is locked (GoDaddy shows a red icon).** GoDaddy has a website or forwarding set up on that name and will not let you edit it. Disconnect that website or forwarding in GoDaddy first (open the product that manages the domain, such as your GoDaddy website, and remove the domain from it, or delete the forwarding under your domain settings). Or choose a different address here, like `go.yourbrand.com`, which has nothing on it.
+- **Another record is already at that name.** A CNAME cannot share a name with another record, like an A record or a website. Edit or delete the old record, then add ours. The app says "already points to a website" or "points to ... right now" when it sees this.
+- **Cloudflare is proxying the record.** Set the CNAME to **DNS only** (grey cloud).
+- **The TXT value is wrong or missing.** Copy the value again from the app and replace the one at your provider, rather than adding a second.
+- **The Name was typed differently.** Paste exactly what the app shows. If your provider adds your domain for you, use the short name.
+- **A certificate error.** The app shows the reason when it has one, for example a CAA record that does not allow certificates. Remove or update the CAA record, then press **Recheck now**.
+
+## Want people who type just yourbrand.com to land on your page?
+
+A bare domain cannot point at us directly, but your domain provider can forward it. In your provider's domain settings, set up **forwarding** from `yourbrand.com` to your connected address, for example `https://go.yourbrand.com`. Then both addresses end up on your Foyer page.
+
+## What about Deals Butler clones?
+
+Domains and your Foyer page belong to your Influencer Butler account, so clones post to the same page and use the same domain list. Clones do not have their own domain or their own Foyer page yet.
+
+## Related
+
+- [Foyer Butler tutorial](/help/tutorials/foyer-butler) - build your link-in-bio page.
+- [Link Butler tutorial](/help/tutorials/link-butler) - branded, tracked Butler Links.

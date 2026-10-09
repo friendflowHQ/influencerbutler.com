@@ -1,0 +1,89 @@
+---
+title: Conecta tu propio dominio a tu página Foyer y a tus Butler Links
+summary: Pon tu propia dirección web en tu página Foyer y en tus Butler Links, con ayuda paso a paso del DNS para GoDaddy, Namecheap, Cloudflare y Squarespace, y soluciones a los problemas más comunes.
+category: Amazon
+---
+
+## Qué obtienes
+
+Con un plan de pago puedes usar tu propia dirección web, como `go.tumarca.com`, para tu página de [Foyer Butler](/help/tutorials/foyer-butler) y tus [Butler Links](/help/tutorials/link-butler). Tus visitantes ven tu marca en lugar de `influencerbutler.com`. Lleva unos cinco minutos, más el tiempo que tu proveedor de dominio tarde en guardar el cambio (normalmente unos minutos).
+
+## Dónde encontrarlo
+
+Puedes conectar un dominio desde cualquiera de los dos sitios, y muestran lo mismo:
+
+- **Foyer Butler > Settings** > **Tu propio dominio**
+- **Link Butler > Influencer Deeplink Butler > Settings** > **Tu propio dominio**
+
+Los dominios pertenecen a toda tu cuenta de Influencer Butler. Todos los dominios activos muestran tu página Foyer, y uno es el que usan los Butler Links nuevos (lo eliges con **Usar para enlaces nuevos**). Puedes conectar hasta cinco.
+
+## Paso 1: elige tu dirección
+
+Escribe un subdominio de un dominio que te pertenezca, como `go.tumarca.com`, y haz clic en **Conectar**. Un subdominio es simplemente una palabra delante de tu dominio.
+
+- **¿Por qué no solo `tumarca.com`?** Los proveedores de DNS no permiten el tipo de registro que necesitamos en un dominio sin nada delante. Si lo escribes, la app te lo explica y te ofrece opciones con un clic: `go.`, `link.`, `shop.` o `www.` delante de tu dominio.
+- **¿Usas `www.`?** Si tu sitio web habitual está en esa dirección hoy, conectarla aquí reemplaza ese sitio por tu página Foyer para cualquiera que lo visite. Tu sitio antiguo sigue funcionando donde está alojado, pero la gente ya no llegará a él en esa dirección. Si quieres conservar tu sitio web, elige otra palabra como `go` o `shop`.
+
+## Paso 2: añade dos registros DNS
+
+Después de conectar, la app muestra dos registros: un **CNAME** (apunta tu dirección a nuestro servicio de enlaces) y un **TXT** (demuestra que el dominio es tuyo para que podamos emitir su certificado de seguridad). Los añades donde se gestiona el DNS de tu dominio, que casi siempre es la empresa donde compraste el dominio. Busca el recibo en tu correo si no estás seguro. Si trasladaste tu DNS a otro servicio como Cloudflare, usa ese.
+
+En la app, elige tu proveedor para ver los clics exactos, y usa los botones **Copiar** de cada Nombre y Valor para no equivocarte al escribirlos. La app muestra el Nombre corto (como `go`) porque la mayoría de los proveedores añaden tu dominio al final por ti. Si el tuyo lo rechaza, haz clic en **Mostrar nombres completos**.
+
+**GoDaddy**
+
+1. Inicia sesión y abre tu lista de dominios (Mis productos, luego Dominios).
+2. Haz clic en tu dominio y abre su configuración de DNS.
+3. Haz clic en **Agregar nuevo registro**, elige **CNAME**, pega el Nombre y el Valor, y guarda.
+4. Añade un segundo registro, **TXT**, con su Nombre y Valor, y guarda.
+
+**Namecheap**
+
+1. Inicia sesión, abre **Domain List** y haz clic en **Manage** junto a tu dominio.
+2. Abre **Advanced DNS** y haz clic en **Add New Record**.
+3. Elige **CNAME Record**: el Nombre va en **Host** y el Valor en **Target**. Guarda.
+4. Añade un **TXT Record**: el Nombre en **Host** y el Valor en **Value**. Guarda.
+
+**Cloudflare**
+
+1. Abre tu dominio, luego **DNS**, luego **Records**.
+2. Haz clic en **Add record**, elige **CNAME** y pega el Nombre y el Target. Apaga la nube naranja para que diga **DNS only**. Guarda.
+3. Añade un registro **TXT** con el Nombre y el Content. Guarda.
+
+**Squarespace o Google Domains**
+
+1. Abre **Domains** y haz clic en tu dominio.
+2. Abre **DNS**, luego **DNS Settings**, y haz clic en **Add Record**.
+3. Elige **CNAME** (Nombre en **Host**, Valor en **Data**) y guarda. Luego añade el **TXT** de la misma forma.
+
+**Otro proveedor:** busca la página de DNS (puede llamarse Registros DNS o DNS avanzado) y añade los dos registros de la misma forma.
+
+## Paso 3: espera a que esté Activo
+
+La app sigue comprobando por ti. El estado pasa de **Esperando DNS** a **Verificando** y a **Activo**. La mayoría de los cambios aparecen en minutos. Algunos proveedores tardan unas horas y, rara vez, hasta un día. Tras unos diez minutos la app deja de comprobar sola y te lo dice. Pulsa **Comprobar ahora** cuando tu proveedor diga que el cambio está guardado.
+
+Cuando diga **Activo**, abre tu dirección en una ventana privada para ver exactamente lo que ven tus visitantes. Ya puedes borrar el registro TXT en tu proveedor de DNS. Conserva el CNAME.
+
+## Si se queda atascado
+
+La app te dice lo que ve en tu dirección. Estas son las causas habituales:
+
+- **El registro está bloqueado (GoDaddy muestra un icono rojo).** GoDaddy tiene un sitio web o un reenvío configurado en ese nombre y no te deja editarlo. Desconecta primero ese sitio web o reenvío en GoDaddy (abre el producto que gestiona el dominio, como tu sitio web de GoDaddy, y quita el dominio, o borra el reenvío en la configuración de tu dominio). O elige otra dirección aquí, como `go.tumarca.com`, que no tiene nada.
+- **Ya hay otro registro con ese nombre.** Un CNAME no puede compartir nombre con otro registro, como un registro A o un sitio web. Edita o borra el registro antiguo y luego añade el nuestro. La app dice "ya apunta a un sitio web" o "apunta ahora a ..." cuando ve esto.
+- **Cloudflare está usando proxy en el registro.** Pon el CNAME en **DNS only** (nube gris).
+- **El valor del TXT es incorrecto o falta.** Copia de nuevo el valor desde la app y reemplaza el que tienes en tu proveedor, en lugar de añadir un segundo.
+- **El Nombre se escribió distinto.** Pega exactamente lo que muestra la app. Si tu proveedor añade tu dominio por ti, usa el nombre corto.
+- **Un error de certificado.** La app muestra el motivo cuando lo tiene, por ejemplo un registro CAA que no permite certificados. Quita o actualiza el registro CAA y pulsa **Comprobar ahora**.
+
+## ¿Quieres que quien escriba solo tumarca.com llegue a tu página?
+
+Un dominio sin nada delante no puede apuntar directamente a nosotros, pero tu proveedor de dominio puede reenviarlo. En la configuración de dominio de tu proveedor, configura un **reenvío** de `tumarca.com` a tu dirección conectada, por ejemplo `https://go.tumarca.com`. Así ambas direcciones acaban en tu página Foyer.
+
+## ¿Y los clones de Deals Butler?
+
+Los dominios y tu página Foyer pertenecen a tu cuenta de Influencer Butler, así que los clones publican en la misma página y usan la misma lista de dominios. Los clones todavía no tienen su propio dominio ni su propia página Foyer.
+
+## Relacionado
+
+- [Tutorial de Foyer Butler](/help/tutorials/foyer-butler) - crea tu página de enlace en biografía.
+- [Tutorial de Link Butler](/help/tutorials/link-butler) - Butler Links con tu marca y seguimiento.
