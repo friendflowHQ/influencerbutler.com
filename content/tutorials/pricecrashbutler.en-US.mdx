@@ -63,6 +63,18 @@ Pricecrash Butler has its own **Build Your Post** composer, right in the panel, 
 - **Copy from another workspace.** Use **Copy caption & comment from** at the top to pull the caption, first comment, and their variants from your base Deals Butler or any deals workspace clone, then tweak from there.
 - **Live preview.** The preview at the bottom shows a sample catch rendered with your current caption and comment. When you add variants, use the arrows on the preview to step through each caption and comment version and see exactly how each one reads.
 
+## Posting limits and best first
+
+A big scan can find dozens of deals at once. The **Posting limits and best first** card keeps that under control:
+
+- **Posts per scan, per hour and per day.** Set any of the three, or leave them blank for no limit. The per-hour and per-day numbers look back over the last 60 minutes and the last 24 hours across all your scans, so a scan that runs every few hours will not go past them. A deal sent to several deals workspaces counts as one post.
+- **Pick the best by.** When a limit leaves room for only some of the catches, this decides which go first: **Best deal** (weighs the percent off and the dollars saved together, so a big saving on a real product beats a 99% cut on a 50 cent item), **Cheapest price**, **Biggest % off**, or **First found** (hand them off in the order the scan found them, which is how Pricecrash worked before).
+- **What happens to the rest.** Deals that miss the cut stay in the results table with a **Held by limit** pill, and the **Send to schedule** button stays on the row so you can push any of them yourself. They are not marked as posted, so the next scan ranks them again against new finds.
+
+With a ranking selected (the default is **Best deal**) or any limit set, Pricecrash waits until the scan finishes before handing deals off, so it can pick the best ones from the whole pool. With **First found** and no limits, deals are handed off one by one as they are found.
+
+The line under the limits shows the most extra posts a day your settings can add. Only **Auto-schedule** with **Post right away** posts outside your Deals Butler schedule, so that is the only combination that adds to it. Deals Butler counts it too: in the Scheduler tab, the posts-per-day tally lists Pricecrash Butler (as "up to" the number your limits allow) and counts it toward the Facebook posting warning, and the **How often** card shows the same extra.
+
 ## Hand-off to Deals Butler
 
 Each found deal is written into Deals Butler' `posts.json` with `source: "pricecrashbutler"` and a `dealRef` containing the ASIN, list price, sale price, and percent-off. The post copy is built from your Pricecrash Butler **Build Your Post** composer (above), so the pills you set there drive exactly what Pricecrash posts say. From there:
