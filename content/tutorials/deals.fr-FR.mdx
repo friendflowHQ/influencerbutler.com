@@ -258,6 +258,21 @@ Chaque espace de deals par boutique garde sa propre recette de filtres et ses mo
 
 Vous réglez Offres Amazon et Offres Walmart dans leurs propres espaces, mais vous décidez où et quand publier à un seul endroit : le hub **Deals Butler**. Son onglet **Destinations sociales** contient vos groupes, pages, canaux et connexions Facebook, et son onglet **Scheduler** contient l'unique planning de publication. Aucun de ces deux onglets n'existe dans Offres Amazon ni Offres Walmart. Le hub publie depuis les deux boutiques ensemble, une offre par créneau, en alternant entre elles, donc une cadence unique fixe tout votre rythme de publication et chaque offre part vers les mêmes destinations. L'estimation "combien de temps pour tout publier" dans le Scheduler du hub additionne les plafonds **Max deals harvested** des deux boutiques, elle reflète donc l'ensemble du pool qui s'écoule sur ce seul planning. Chaque boutique garde ses propres légendes, donc une offre Amazon part avec votre post Amazon et une offre Walmart avec votre post Walmart.
 
+## Suivre une recherche et choisir de bonnes heures de départ
+
+Pendant qu'une recherche s'exécute, une barre de progression sous les boutons **Search Deals** montre où elle en est (par exemple, recherche 5 sur 80) et ce qu'elle consulte en ce moment. Quand la recherche se termine, le même endroit affiche quand elle a été lancée pour la dernière fois, combien de temps elle a pris et combien d'offres elle a trouvées.
+
+Cliquez sur **Voir le calcul** pour voir comment le temps s'additionne : combien de recherches l'exécution effectue (par exemple, 2 marchés x 40 mots-clés = 80 recherches), combien de temps prend chaque recherche d'après vos exécutions récentes, et ce que cela donne au total. Tant que vous n'avez pas quelques exécutions enregistrées, Butler utilise une estimation par défaut et le précise.
+
+Pricecrash Butler, Prime Day Butler et Black Friday affichent la même barre de progression et la même ligne de dernière recherche. Black Friday ne peut pas connaître la taille d'une vitrine avant de commencer, donc sa barre indique combien de liens et de produits il a trouvés jusqu'ici plutôt qu'un pourcentage.
+
+**Heures de départ recommandées.** Si une boutique effectue une recherche par jour, Butler peut suggérer quand lancer chaque partie de la journée pour que les recherches ne se chevauchent pas et que la publication attende les offres fraîches :
+
+- Dans l'onglet **Scheduler** du hub, sous **Start at**, **Début de publication recommandé** affiche une heure après la fin habituelle de votre dernière recherche, plus une petite marge. Si votre **Start at** actuel est antérieur à la fin de vos recherches, il vous prévient. Cliquez sur **Utiliser cette heure** pour remplir **Start at**.
+- Dans la carte **Find new deals automatically** d'une boutique, une fois que vous choisissez **Custom** et une heure de la journée, **Heure de recherche recommandée** place cette boutique après les recherches de vos autres boutiques. Cliquez sur **Utiliser cette heure** pour l'appliquer (la recherche automatique doit être activée).
+
+Les deux ne sont que des suggestions, et rien ne change tant que vous ne cliquez pas. Elles se basent sur l'heure à laquelle vos recherches récentes se sont réellement terminées, donc elles s'améliorent à mesure que votre historique grandit. Les recherches qui s'exécutent toutes les quelques heures ne les influencent pas. Un Pricecrash Butler activé compte aussi comme une recherche, car ce qu'il trouve va dans la même file de publication.
+
 ## Publier une offre différente à chaque endroit
 
 Par défaut, chaque cycle publie une seule offre à tous les endroits que vous avez listés, donc le même produit part partout en même temps. Si vous préférez que chaque groupe, page et canal reçoive son propre produit, ouvrez l'onglet **Settings** du Scheduler de Deals Butler et activez **Publier une offre différente à chaque endroit**. Désormais, chaque cycle attribue une offre différente à chaque destination au lieu d'en répéter une seule. Gardez votre file d'offres bien remplie pour qu'il y en ait assez pour tout le monde ; s'il y a plus d'endroits que d'offres en file, les endroits en trop attendent simplement le cycle suivant.
