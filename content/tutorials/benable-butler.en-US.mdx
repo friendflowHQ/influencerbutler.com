@@ -55,6 +55,18 @@ A brand run changes three things:
 
 A brand with few campaign products can come back short while **Only publish products with a campaign** is on; turn that gate off for the run if the brand's catalog is mostly regular products.
 
+## Also create the list on Amazon, and download it as a CSV
+
+The List Ideas queue can publish each list to Amazon as an Amazon Idea List, right after it goes live on Benable. Pick an option under **Also create on Amazon** in the queue toolbar:
+
+- **Off**: Benable only, exactly as before. This is the default.
+- **Manual review**: each Amazon list waits in an **Amazon lists awaiting your review** tray under the queue. Remove any product you do not want, then click **Approve and create on Amazon**. Nothing is created on Amazon until you approve.
+- **Automatic**: once the batch finishes publishing on Benable, the Amazon lists are created for you in one go.
+
+Only products that come from Amazon go on the Amazon list, and an Amazon Idea List needs at least 2 of them. A list that is mostly Walmart or other stores is marked **Skipped** instead. You need to be signed in to Amazon in the browser window that opens; if you are not, the row shows what to do and you can approve it again after signing in.
+
+To keep a record, click **Download CSV** in the queue toolbar for every finished list, or **CSV** on a single row. The file has one row per product with the date and time it was published, the list name, the retailer (Amazon, Walmart and so on), the ASIN, product title, link, price, and the Benable and Amazon list links. Lists published before this feature existed have nothing to export; new ones are included.
+
 ## Tuning over time
 
 - **Niche keyword**: the single biggest knob. "Kitchen gadgets" is too broad → Butler returns 50 random products. "Compact kitchen tools for studio apartments" is right-sized → Butler returns a coherent collection.
