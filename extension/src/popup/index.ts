@@ -1237,6 +1237,10 @@ async function renderAccount(): Promise<void> {
         : status.lastSyncAt
           ? t().lastSynced(new Date(status.lastSyncAt).toLocaleTimeString())
           : t().nothingToSync;
+    // Name the endpoint holding the queue (only while something is waiting).
+    if (status.queueDepth > 0 && status.lastSyncError) {
+      byId("sync-status").textContent += `. ${t().syncProblem(status.lastSyncError)}`;
+    }
     byId("disconnect-btn").onclick = async () => {
       keyConnectedNotice = null;
       await sendToBackground({ kind: "SIGN_OUT" });

@@ -1050,5 +1050,6 @@ async function buildAuthStatus(): Promise<AuthStatus> {
     keyTail: key ? key.slice(-4) : null,
     queueDepth: depth,
     lastSyncAt: state.lastSyncAt,
+    lastSyncError: state.lastSyncError?.message ?? null,
   };
 }

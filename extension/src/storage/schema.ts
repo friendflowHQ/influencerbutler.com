@@ -645,6 +645,9 @@ export type StorageShape = {
   integrations: IntegrationsState;
   queue: Finding[];
   lastSyncAt: number | null;
+  // Why the most recent dashboard sync failed (null/absent once a flush succeeds).
+  // Diagnostic only; shown under the "findings waiting to sync" line in the popup.
+  lastSyncError?: { at: number; message: string } | null;
   cache: Record<string, CachedScan>;
   // Maps a child variant to its listing's parent ASIN, keyed `marketplace:asin`,
   // value the bare parent ASIN. Written whenever a product page is scanned (for

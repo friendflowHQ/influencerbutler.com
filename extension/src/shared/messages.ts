@@ -70,6 +70,8 @@ export type AuthStatus = {
   keyTail: string | null;
   queueDepth: number;
   lastSyncAt: number | null;
+  /** Why the latest dashboard sync failed, or null when it is healthy. */
+  lastSyncError: string | null;
 };
 
 export type PageStatus = {

@@ -26,7 +26,7 @@ export async function GET(request: Request) {
 
   const admin = createAdminClient();
 
-  const [scanCount, approvedCount, recentScans, gaps, issues] = await Promise.all([
+  const [scanCount, approvedCount, recentScans, gaps, issues, gapCount, issueCount] = await Promise.all([
     admin
       .from("extension_product_scans")
       .select("id", { count: "exact", head: true })
@@ -57,10 +57,27 @@ export async function GET(request: Request) {
       .eq("user_id", userId)
       .order("detected_at", { ascending: false })
       .limit(50),
+    // The tiles must show true totals: the lists above are capped (10 / 50), so
+    // counting their length made the tiles top out at those caps.
+    admin
+      .from("extension_content_gaps")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .is("resolved_at", null),
+    admin
+      .from("extension_storefront_issues")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId),
   ]);
 
   const firstError =
-    scanCount.error ?? approvedCount.error ?? recentScans.error ?? gaps.error ?? issues.error;
+    scanCount.error ??
+    approvedCount.error ??
+    recentScans.error ??
+    gaps.error ??
+    issues.error ??
+    gapCount.error ??
+    issueCount.error;
   if (firstError) {
     if (isMissingTableError(firstError)) return migrationPendingResponse();
     console.error("extension/summary: query failed", firstError);
@@ -79,8 +96,8 @@ export async function GET(request: Request) {
       total: scanCount.count ?? 0,
       approved: approvedCount.count ?? 0,
     },
-    openGapCount: gaps.data?.length ?? 0,
-    issueCount: issues.data?.length ?? 0,
+    openGapCount: gapCount.count ?? gaps.data?.length ?? 0,
+    issueCount: issueCount.count ?? issues.data?.length ?? 0,
     recentScans: recentScans.data ?? [],
     topGaps: gaps.data ?? [],
     storefrontIssues: issues.data ?? [],

@@ -47,32 +47,32 @@ const res = (status: number): Response => ({ ok: status >= 200 && status < 300, 
 describe("apiTransport.send retry classification", () => {
   it("succeeds when every group is accepted", async () => {
     fetchMock.mockResolvedValue(res(200));
-    expect(await apiTransport.send([scan("B000000001")])).toEqual({ ok: true, retry: false });
+    expect(await apiTransport.send([scan("B000000001")])).toMatchObject({ ok: true, retry: false });
   });
 
   it("does NOT retry a permanent 400 (would wedge the queue forever)", async () => {
     fetchMock.mockResolvedValue(res(400));
-    expect(await apiTransport.send([scan("B000000001")])).toEqual({ ok: false, retry: false });
+    expect(await apiTransport.send([scan("B000000001")])).toMatchObject({ ok: false, retry: false });
   });
 
   it("does NOT retry a revoked key (401)", async () => {
     fetchMock.mockResolvedValue(res(401));
-    expect(await apiTransport.send([scan("B000000001")])).toEqual({ ok: false, retry: false });
+    expect(await apiTransport.send([scan("B000000001")])).toMatchObject({ ok: false, retry: false });
   });
 
   it("retries a transient 5xx", async () => {
     fetchMock.mockResolvedValue(res(503));
-    expect(await apiTransport.send([scan("B000000001")])).toEqual({ ok: false, retry: true });
+    expect(await apiTransport.send([scan("B000000001")])).toMatchObject({ ok: false, retry: true });
   });
 
   it("retries a 429 rate limit", async () => {
     fetchMock.mockResolvedValue(res(429));
-    expect(await apiTransport.send([scan("B000000001")])).toEqual({ ok: false, retry: true });
+    expect(await apiTransport.send([scan("B000000001")])).toMatchObject({ ok: false, retry: true });
   });
 
   it("retries a network error", async () => {
     fetchMock.mockRejectedValue(new Error("network down"));
-    expect(await apiTransport.send([scan("B000000001")])).toEqual({ ok: false, retry: true });
+    expect(await apiTransport.send([scan("B000000001")])).toMatchObject({ ok: false, retry: true });
   });
 
   it("reports success when a good group succeeds and a bad group permanently fails, so the batch can drop", async () => {
@@ -81,6 +81,20 @@ describe("apiTransport.send retry classification", () => {
     // the healthy data is not re-sent forever.
     fetchMock.mockResolvedValueOnce(res(200)).mockResolvedValueOnce(res(400));
     const gap = { type: "content_gap", asin: "B000000002", marketplace: "amazon.com", gapType: "no_influencer", influencerVideoCount: 0, detectedAt: "2026-09-29T00:00:00.000Z" } as unknown as Finding;
-    expect(await apiTransport.send([scan("B000000001"), gap])).toEqual({ ok: true, retry: false });
+    expect(await apiTransport.send([scan("B000000001"), gap])).toMatchObject({ ok: true, retry: false });
+  });
+});
+
+describe("apiTransport failure detail", () => {
+  it("names the failing endpoint and status so the popup can show why the queue is held", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      url: "https://www.influencerbutler.com/api/extension/scans",
+      clone: () => ({ json: async () => ({ error: "Could not save scans" }) }),
+    });
+    const result = await apiTransport.send([scan("B000000001")]);
+    expect(result).toMatchObject({ ok: false, retry: true });
+    expect(result.error).toBe("scans HTTP 500: Could not save scans");
   });
 });

@@ -1,6 +1,6 @@
 import { ENDPOINTS } from "../shared/constants";
 import { getState } from "../storage/store";
-import type { Finding, FindingTransport } from "./types";
+import type { Finding, FindingTransport, SendResult } from "./types";
 
 // Website API transport. Groups a mixed batch by finding type and posts each
 // group to its /api/extension/* endpoint with the license key as a Bearer
@@ -14,7 +14,7 @@ export const apiTransport: FindingTransport = {
     return Boolean(state.auth.licenseKey && state.settings.syncEnabled);
   },
 
-  async send(batch: Finding[]): Promise<{ ok: boolean; retry: boolean }> {
+  async send(batch: Finding[]): Promise<SendResult> {
     const state = await getState();
     const key = state.auth.licenseKey;
     if (!key) return { ok: false, retry: false };
@@ -198,6 +198,7 @@ export const apiTransport: FindingTransport = {
     try {
       const responses = await Promise.all(posts);
       if (responses.every((r) => r.ok)) return { ok: true, retry: false };
+      const error = await describeFailures(responses);
       // Only a TRANSIENT failure holds the batch for another try. A 4xx is the
       // server permanently rejecting these exact bytes (a revoked key = 401, an
       // oversized/empty/all-invalid group = 400): retrying the identical payload
@@ -208,12 +209,38 @@ export const apiTransport: FindingTransport = {
       // 5xx or 429 (or the network error caught below) is worth re-sending.
       const anyTransient = responses.some((r) => r.status >= 500 || r.status === 429);
       const anySucceeded = responses.some((r) => r.ok);
-      return { ok: anySucceeded, retry: anyTransient };
-    } catch {
-      return { ok: false, retry: true }; // network trouble, keep the batch
+      return { ok: anySucceeded, retry: anyTransient, error };
+    } catch (err) {
+      // network trouble, keep the batch
+      const reason = err instanceof Error ? err.message : "request failed";
+      return { ok: false, retry: true, error: `network error (${reason})` };
     }
   },
 };
+
+// "scans HTTP 500: Could not save scans" for each failing endpoint, so the popup
+// can name the exact endpoint that is holding the queue.
+async function describeFailures(responses: Response[]): Promise<string> {
+  const parts: string[] = [];
+  for (const r of responses) {
+    if (r.ok) continue;
+    let path = "request";
+    try {
+      path = new URL(r.url).pathname.replace(/^\/api\/extension\//, "");
+    } catch {
+      // keep the generic label
+    }
+    let detail = "";
+    try {
+      const body = (await r.clone().json()) as { error?: unknown };
+      if (typeof body.error === "string") detail = `: ${body.error.slice(0, 80)}`;
+    } catch {
+      // non-JSON error body: the status alone is enough
+    }
+    parts.push(`${path} HTTP ${r.status}${detail}`);
+  }
+  return parts.join("; ").slice(0, 300);
+}
 
 function post(url: string, licenseKey: string, body: unknown): Promise<Response> {
   return fetch(url, {

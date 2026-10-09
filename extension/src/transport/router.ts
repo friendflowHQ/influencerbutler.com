@@ -51,10 +51,12 @@ export async function flush(): Promise<void> {
   let anyBestEffortAvailable = false;
   let bestEffortDelivered = false;
   let deliveredSomewhere = false;
+  let durableError: string | null = null;
   for (const transport of TRANSPORTS) {
     if (!(await transport.isAvailable())) continue;
     const result = await transport.send(batch);
     if (result.ok) deliveredSomewhere = true;
+    if (!transport.bestEffort && result.error) durableError = `${transport.id}: ${result.error}`;
     if (transport.bestEffort) {
       anyBestEffortAvailable = true;
       if (result.ok) bestEffortDelivered = true;
@@ -66,6 +68,8 @@ export async function flush(): Promise<void> {
     // the server permanently rejects) is unrecoverable; it does not hold the
     // batch either.
   }
+
+  await recordSyncError(durableError);
 
   if (anyDurableAvailable) {
     // The website dashboard / a linked device is the system of record: keep the
@@ -85,6 +89,17 @@ export async function flush(): Promise<void> {
     const done = new Set(batch.map(findingKey));
     s.queue = s.queue.filter((f) => !done.has(findingKey(f)));
     if (deliveredSomewhere) s.lastSyncAt = Date.now();
+  });
+}
+
+// Remember why the last durable send failed (cleared on success) so the popup can
+// say which endpoint is holding the queue. Writes only on a change, so a steady
+// failure does not rewrite storage every 2 minutes.
+async function recordSyncError(message: string | null): Promise<void> {
+  const current = (await getState()).lastSyncError ?? null;
+  if ((current?.message ?? null) === message) return;
+  await patchState((s) => {
+    s.lastSyncError = message ? { at: Date.now(), message } : null;
   });
 }
 

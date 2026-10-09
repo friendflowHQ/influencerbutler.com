@@ -156,10 +156,18 @@ export type Finding =
   | InstagramCreatorFinding
   | CampaignAcceptFinding;
 
+export type SendResult = {
+  ok: boolean;
+  retry: boolean;
+  // Short, human-readable reason for a failed send (endpoint + status), surfaced
+  // in the popup so a stalled queue can be diagnosed without devtools.
+  error?: string;
+};
+
 export interface FindingTransport {
   id: "api" | "local" | "relay";
   isAvailable(): Promise<boolean>;
-  send(batch: Finding[]): Promise<{ ok: boolean; retry: boolean }>;
+  send(batch: Finding[]): Promise<SendResult>;
   // A best-effort sink is a live convenience mirror (the local HUD bridge): its
   // delivery is nice-to-have and must NEVER hold the shared finding queue. The
   // durable sinks (the website dashboard, a linked device) decide when a batch

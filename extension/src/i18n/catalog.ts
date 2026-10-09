@@ -189,6 +189,7 @@ export interface Dict {
   findingsWaiting: (n: number) => string;
   lastSynced: (time: string) => string;
   nothingToSync: string;
+  syncProblem: (detail: string) => string;
   licenseDidNotVerify: string;
   accountKeyTail: (key: string) => string;
   changeKeyHeading: string;
@@ -1375,6 +1376,7 @@ const en: Dict = {
   findingsWaiting: (n) => `${n} findings waiting to sync`,
   lastSynced: (time) => `Last synced ${time}`,
   nothingToSync: "Nothing to sync yet",
+  syncProblem: (detail) => `Last sync problem: ${detail}`,
   licenseDidNotVerify: "That license key did not verify. Check it and try again.",
   accountKeyTail: (key) => `License key ending ${key}`,
   changeKeyHeading: "Change license key",
@@ -2587,6 +2589,7 @@ const es: Dict = {
   findingsWaiting: (n) => `${n} hallazgos esperando sincronizar`,
   lastSynced: (time) => `Última sincronización ${time}`,
   nothingToSync: "Nada que sincronizar todavía",
+  syncProblem: (detail) => `Último problema de sincronización: ${detail}`,
   licenseDidNotVerify: "Esa clave de licencia no se verificó. Revísala e inténtalo de nuevo.",
   accountKeyTail: (key) => `Clave de licencia terminada en ${key}`,
   changeKeyHeading: "Cambiar clave de licencia",
@@ -3803,6 +3806,7 @@ const fr: Dict = {
   findingsWaiting: (n) => `${n} découvertes en attente de synchronisation`,
   lastSynced: (time) => `Dernière synchro ${time}`,
   nothingToSync: "Rien à synchroniser pour l'instant",
+  syncProblem: (detail) => `Dernier problème de synchro : ${detail}`,
   licenseDidNotVerify: "Cette clé de licence n'a pas été vérifiée. Vérifiez-la et réessayez.",
   accountKeyTail: (key) => `Clé de licence se terminant par ${key}`,
   changeKeyHeading: "Changer la clé de licence",
