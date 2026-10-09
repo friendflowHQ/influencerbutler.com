@@ -199,6 +199,11 @@ export default function AdminGrowthPage() {
 
   useEffect(() => {
     void loadGa();
+    // Keep the live-visitor numbers fresh while the tab is in view.
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") void loadGa();
+    }, 60_000);
+    return () => clearInterval(timer);
   }, [loadGa]);
 
   useEffect(() => {

@@ -259,3 +259,58 @@ export async function fetchGaRealtime(): Promise<number | null> {
   if (rows.length === 0) return 0;
   return rows.reduce((sum, row) => sum + metricNum(row, 0), 0);
 }
+
+export type GaRealtimeSlice = { label: string; users: number };
+
+export type GaRealtimeBreakdown = {
+  /** Active users by page title (what they are looking at). */
+  pages: GaRealtimeSlice[];
+  /** Active users by first-visit source / medium (where they came from). */
+  sources: GaRealtimeSlice[];
+  countries: GaRealtimeSlice[];
+  devices: GaRealtimeSlice[];
+  /** Active users per minute for the last 30 minutes, oldest first (index 0 = 29 min ago). */
+  perMinute: number[];
+};
+
+async function realtimeSlices(dimension: string, limit = 8): Promise<GaRealtimeSlice[]> {
+  const json = await gaPost(":runRealtimeReport", {
+    dimensions: [{ name: dimension }],
+    metrics: [{ name: "activeUsers" }],
+    orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
+    limit,
+  });
+  const rows = (json?.rows as GaRow[] | undefined) ?? [];
+  return rows.map((row) => ({
+    label: dim(row, 0) || "(not set)",
+    users: metricNum(row, 0),
+  }));
+}
+
+/**
+ * Who is on the site right now and why: five small realtime reports in
+ * parallel (the Realtime API has no batch endpoint). Each degrades to an
+ * empty list on its own, so one unsupported dimension never blanks the card.
+ */
+export async function fetchGaRealtimeBreakdown(): Promise<GaRealtimeBreakdown> {
+  const [pages, sources, countries, devices, minuteJson] = await Promise.all([
+    realtimeSlices("unifiedScreenName"),
+    realtimeSlices("firstUserSourceMedium"),
+    realtimeSlices("country"),
+    realtimeSlices("deviceCategory", 4),
+    gaPost(":runRealtimeReport", {
+      dimensions: [{ name: "minutesAgo" }],
+      metrics: [{ name: "activeUsers" }],
+      limit: 30,
+    }),
+  ]);
+
+  // minutesAgo is "00".."29"; fill gaps with 0 so the sparkline is continuous.
+  const perMinute = new Array<number>(30).fill(0);
+  for (const row of (minuteJson?.rows as GaRow[] | undefined) ?? []) {
+    const ago = Number(dim(row, 0));
+    if (Number.isInteger(ago) && ago >= 0 && ago < 30) perMinute[29 - ago] = metricNum(row, 0);
+  }
+
+  return { pages, sources, countries, devices, perMinute };
+}

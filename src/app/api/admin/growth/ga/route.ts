@@ -12,7 +12,13 @@
  */
 import { NextResponse } from "next/server";
 import { requirePermission, createAdminClient } from "@/lib/admin";
-import { isGaConfigured, fetchGaSummary, fetchGaRealtime, type GaSummary } from "@/lib/ga4";
+import {
+  isGaConfigured,
+  fetchGaSummary,
+  fetchGaRealtime,
+  fetchGaRealtimeBreakdown,
+  type GaSummary,
+} from "@/lib/ga4";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -106,7 +112,10 @@ export async function GET(request: Request) {
     }
   }
 
-  const realtimeActiveUsers = await fetchGaRealtime();
+  const [realtimeActiveUsers, realtime] = await Promise.all([
+    fetchGaRealtime(),
+    fetchGaRealtimeBreakdown(),
+  ]);
 
   return NextResponse.json({
     admin: { email: actor.email },
@@ -114,6 +123,7 @@ export async function GET(request: Request) {
     error: gaError,
     cachedAt,
     realtimeActiveUsers,
+    realtime,
     trend: summary?.trend ?? null,
     channels: summary?.channels ?? null,
     topPages: summary?.topPages ?? null,
