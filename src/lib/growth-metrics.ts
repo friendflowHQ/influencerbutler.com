@@ -348,7 +348,9 @@ export function splitProjectionByPayout(
 // Snapshot computation
 // ---------------------------------------------------------------------------
 
-const ROW_LIMIT = 10000;
+const ROW_LIMIT = 30000;
+// Stay at or under Supabase's default max-rows (1000) so every page is complete.
+const PAGE_SIZE = 1000;
 
 type QueryResult = {
   data: Record<string, unknown>[] | null;
@@ -361,6 +363,8 @@ type Chain = PromiseLike<QueryResult> & {
   gte: (col: string, value: string) => Chain;
   lt: (col: string, value: string) => Chain;
   limit: (n: number) => Chain;
+  order: (col: string) => Chain;
+  range: (from: number, to: number) => Chain;
 };
 
 export type SnapshotClient = {
@@ -522,12 +526,24 @@ export async function computeGrowthSnapshot(
         .gte(tsCol, prevBounds!.startIso)
         .lt(tsCol, bounds!.nextIso);
       if (extra) chain = extra(chain);
-      const res = await chain.limit(ROW_LIMIT);
-      if (res.error) {
-        console.error(`growth snapshot: ${table} query failed`, res.error);
-        return null;
+      // Supabase silently caps one response at its "max rows" setting (1000 by
+      // default), ignoring a larger .limit(). An unordered capped read returns an
+      // arbitrary 1000 rows, so a busy two-month window (email_subscribers,
+      // activity_events) lost most of the current month and the tiles read 0.
+      // Page through the window in a stable order instead.
+      const rows: Record<string, unknown>[] = [];
+      chain = chain.order(tsCol);
+      for (let from = 0; from < ROW_LIMIT; from += PAGE_SIZE) {
+        const res = await chain.range(from, from + PAGE_SIZE - 1);
+        if (res.error) {
+          console.error(`growth snapshot: ${table} query failed`, res.error);
+          return null;
+        }
+        const page = res.data ?? [];
+        rows.push(...page);
+        if (page.length < PAGE_SIZE) break;
       }
-      return res.data ?? [];
+      return rows;
     } catch (err) {
       console.error(`growth snapshot: ${table} query threw`, err);
       return null;
