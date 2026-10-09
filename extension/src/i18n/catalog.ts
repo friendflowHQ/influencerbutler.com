@@ -190,6 +190,13 @@ export interface Dict {
   lastSynced: (time: string) => string;
   nothingToSync: string;
   licenseDidNotVerify: string;
+  accountKeyTail: (key: string) => string;
+  changeKeyHeading: string;
+  changeKeyHint: string;
+  changeKeyBtn: string;
+  keyConnectedTitle: string;
+  keyConnectedBody: (email: string, key: string) => string;
+  keyBannerDismiss: string;
   feedbackAddDetail: string;
   feedbackSending: string;
   feedbackThanks: string;
@@ -1369,6 +1376,13 @@ const en: Dict = {
   lastSynced: (time) => `Last synced ${time}`,
   nothingToSync: "Nothing to sync yet",
   licenseDidNotVerify: "That license key did not verify. Check it and try again.",
+  accountKeyTail: (key) => `License key ending ${key}`,
+  changeKeyHeading: "Change license key",
+  changeKeyHint: "Paste a different license key to switch this browser to it. Your current key stays connected until the new one verifies.",
+  changeKeyBtn: "Switch key",
+  keyConnectedTitle: "License key connected",
+  keyConnectedBody: (email, key) => `Connected as ${email} · key ending ${key}`,
+  keyBannerDismiss: "Dismiss",
   feedbackAddDetail: "Add a little more detail.",
   feedbackSending: "Sending...",
   feedbackThanks: "Thanks! Sent.",
@@ -2574,6 +2588,13 @@ const es: Dict = {
   lastSynced: (time) => `Última sincronización ${time}`,
   nothingToSync: "Nada que sincronizar todavía",
   licenseDidNotVerify: "Esa clave de licencia no se verificó. Revísala e inténtalo de nuevo.",
+  accountKeyTail: (key) => `Clave de licencia terminada en ${key}`,
+  changeKeyHeading: "Cambiar clave de licencia",
+  changeKeyHint: "Pega otra clave de licencia para cambiar este navegador a ella. Tu clave actual sigue conectada hasta que la nueva se verifique.",
+  changeKeyBtn: "Cambiar clave",
+  keyConnectedTitle: "Clave de licencia conectada",
+  keyConnectedBody: (email, key) => `Conectado como ${email} · clave terminada en ${key}`,
+  keyBannerDismiss: "Cerrar",
   feedbackAddDetail: "Añade un poco más de detalle.",
   feedbackSending: "Enviando...",
   feedbackThanks: "¡Gracias! Enviado.",
@@ -3783,6 +3804,13 @@ const fr: Dict = {
   lastSynced: (time) => `Dernière synchro ${time}`,
   nothingToSync: "Rien à synchroniser pour l'instant",
   licenseDidNotVerify: "Cette clé de licence n'a pas été vérifiée. Vérifiez-la et réessayez.",
+  accountKeyTail: (key) => `Clé de licence se terminant par ${key}`,
+  changeKeyHeading: "Changer la clé de licence",
+  changeKeyHint: "Collez une autre clé de licence pour y basculer ce navigateur. Votre clé actuelle reste connectée tant que la nouvelle n'est pas vérifiée.",
+  changeKeyBtn: "Changer de clé",
+  keyConnectedTitle: "Clé de licence connectée",
+  keyConnectedBody: (email, key) => `Connecté en tant que ${email} · clé se terminant par ${key}`,
+  keyBannerDismiss: "Fermer",
   feedbackAddDetail: "Ajoutez un peu plus de détail.",
   feedbackSending: "Envoi...",
   feedbackThanks: "Merci! Envoyé.",

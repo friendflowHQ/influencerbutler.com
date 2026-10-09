@@ -117,7 +117,16 @@
           </p>
         </div>
         <div id="signed-in" hidden>
+          <div id="key-connected-banner" class="key-banner" role="status" hidden>
+            <span class="key-banner-icon" aria-hidden="true">&#10003;</span>
+            <div class="key-banner-text">
+              <div id="key-banner-title" class="key-banner-title"></div>
+              <div id="key-banner-body" class="key-banner-body"></div>
+            </div>
+            <button id="key-banner-dismiss" class="ghost key-banner-x" type="button">&times;</button>
+          </div>
           <p><span data-i18n="connectedAs">Connected as</span> <strong id="account-email"></strong></p>
+          <p id="account-key-tail" class="muted small"></p>
           <label class="row toggle">
             <input id="sync-toggle" type="checkbox" />
             <span data-i18n="syncToggleLabel">Sync findings to my dashboard</span>
@@ -130,6 +139,15 @@
             <span data-i18n="contributeToggleLabel">Contribute to the shared product catalogue</span>
           </label>
           <p id="contribute-blurb" class="muted small" data-i18n="contributeBlurb"></p>
+          <div class="change-key">
+            <h3 id="change-key-heading" class="change-key-heading"></h3>
+            <p id="change-key-hint" class="muted small"></p>
+            <div class="row">
+              <input id="license-change-input" type="password" placeholder="License key" data-i18n-ph="licensePlaceholder" autocomplete="off" />
+              <button id="license-change-btn" class="primary" type="button"></button>
+            </div>
+            <p id="license-change-error" class="error" hidden></p>
+          </div>
           <button id="disconnect-btn" class="ghost" data-i18n="disconnect">Disconnect</button>
         </div>
       </section>
@@ -180,7 +198,7 @@
           key as that app.
         </p>
         <ol id="relay-steps" class="relay-steps">
-          <li id="relay-step-1"><strong>Sign in here.</strong> Open Account in this popup and enter the same license key the desktop app uses. The badge at the top changes from Free.</li>
+          <li id="relay-step-1"><strong>Sign in here.</strong> Open Account in this popup and enter the same license key the desktop app uses. The Account section then shows Connected as your email.</li>
           <li id="relay-step-2"><strong>Get a code on the other computer.</strong> In the desktop app go to Settings, Extension, and click Connect another computer. The code lasts 2 minutes.</li>
           <li id="relay-step-3"><strong>Type the code below</strong> and click Link device. Your computer then shows under Linked computers.</li>
         </ol>

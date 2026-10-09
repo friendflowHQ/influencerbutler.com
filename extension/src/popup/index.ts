@@ -1162,6 +1162,10 @@ async function renderPageStatus(): Promise<void> {
   }
 }
 
+// Set after a successful key connect/switch and shown as a banner (until
+// dismissed) so the user can see which account and key are now live.
+let keyConnectedNotice: { email: string | null; keyTail: string | null } | null = null;
+
 async function renderAccount(): Promise<void> {
   const signedOut = byId("signed-out");
   const signedIn = byId("signed-in");
@@ -1175,6 +1179,50 @@ async function renderAccount(): Promise<void> {
 
   if (status.signedIn) {
     byId("account-email").textContent = status.email ?? t().connectedFallback;
+    byId("account-key-tail").textContent = status.keyTail ? t().accountKeyTail(status.keyTail) : "";
+
+    const banner = byId("key-connected-banner");
+    banner.hidden = !keyConnectedNotice;
+    if (keyConnectedNotice) {
+      byId("key-banner-title").textContent = t().keyConnectedTitle;
+      byId("key-banner-body").textContent = t().keyConnectedBody(
+        keyConnectedNotice.email ?? t().connectedFallback,
+        keyConnectedNotice.keyTail ?? "",
+      );
+      const dismiss = byId<HTMLButtonElement>("key-banner-dismiss");
+      dismiss.setAttribute("aria-label", t().keyBannerDismiss);
+      dismiss.title = t().keyBannerDismiss;
+      dismiss.onclick = () => {
+        keyConnectedNotice = null;
+        banner.hidden = true;
+      };
+    }
+
+    byId("change-key-heading").textContent = t().changeKeyHeading;
+    byId("change-key-hint").textContent = t().changeKeyHint;
+    const changeBtn = byId<HTMLButtonElement>("license-change-btn");
+    changeBtn.textContent = t().changeKeyBtn;
+    const changeInput = byId<HTMLInputElement>("license-change-input");
+    const changeError = byId("license-change-error");
+    // signIn() only overwrites the stored key once the new one verifies, so a
+    // typo here leaves the current connection untouched.
+    changeBtn.onclick = async () => {
+      const licenseKey = changeInput.value.trim();
+      if (!licenseKey) return;
+      changeBtn.disabled = true;
+      changeError.hidden = true;
+      const result = await sendToBackground<SignInResult>({ kind: "SIGN_IN", licenseKey });
+      changeBtn.disabled = false;
+      if (result.ok) {
+        changeInput.value = "";
+        keyConnectedNotice = { email: result.email ?? null, keyTail: licenseKey.slice(-4) };
+        await renderAccount();
+        byId("key-connected-banner").scrollIntoView({ block: "nearest" });
+      } else {
+        changeError.hidden = false;
+        changeError.textContent = result.error ?? t().licenseDidNotVerify;
+      }
+    };
     const toggle = byId<HTMLInputElement>("sync-toggle");
     toggle.checked = settings.syncEnabled;
     toggle.onchange = () => void patchSettings({ syncEnabled: toggle.checked });
@@ -1190,6 +1238,7 @@ async function renderAccount(): Promise<void> {
           ? t().lastSynced(new Date(status.lastSyncAt).toLocaleTimeString())
           : t().nothingToSync;
     byId("disconnect-btn").onclick = async () => {
+      keyConnectedNotice = null;
       await sendToBackground({ kind: "SIGN_OUT" });
       await renderAccount();
     };
@@ -1207,6 +1256,7 @@ async function renderAccount(): Promise<void> {
     connect.disabled = false;
     if (result.ok) {
       input.value = "";
+      keyConnectedNotice = { email: result.email ?? null, keyTail: licenseKey.slice(-4) };
       await renderAccount();
     } else {
       errorEl.hidden = false;

@@ -66,6 +66,8 @@ type IntegrationsGlobal = IntegrationsState["global"];
 export type AuthStatus = {
   signedIn: boolean;
   email: string | null;
+  /** Last 4 characters of the connected license key, so the user can confirm which key is live. */
+  keyTail: string | null;
   queueDepth: number;
   lastSyncAt: number | null;
 };

@@ -1043,5 +1043,12 @@ async function buildAuthStatus(): Promise<AuthStatus> {
     queueDepth(),
     getState(),
   ]);
-  return { signedIn, email, queueDepth: depth, lastSyncAt: state.lastSyncAt };
+  const key = state.auth.licenseKey;
+  return {
+    signedIn,
+    email,
+    keyTail: key ? key.slice(-4) : null,
+    queueDepth: depth,
+    lastSyncAt: state.lastSyncAt,
+  };
 }
