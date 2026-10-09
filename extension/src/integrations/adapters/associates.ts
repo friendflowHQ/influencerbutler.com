@@ -6,7 +6,9 @@ import type { IntegrationAdapter, TestResult } from "../types";
 // themselves live in integrations.global.perCountryTags (they are not secret),
 // which the background passes in as the creds map for this adapter.
 
-const TAG_RE = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?-\d{2,4}$/i;
+// Real tags can carry periods and underscores (e.g. josephm.lee-20), so those
+// are allowed inside the name; the "-NN" marketplace suffix is what matters.
+const TAG_RE = /^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?-\d{2,4}$/i;
 
 export function validateTags(tags: Record<string, string>): TestResult {
   const entries = Object.entries(tags).filter(([, v]) => (v ?? "").trim());

@@ -335,4 +335,9 @@ describe("validateTags", () => {
     expect(validateTags({}).ok).toBe(false);
     expect(validateTags({ US: "notatag" }).ok).toBe(false);
   });
+
+  it("accepts tags that contain a period", () => {
+    expect(validateTags({ US: "josephm.lee-20", CA: "heidihirtle-20" }).ok).toBe(true);
+    expect(validateTags({ US: ".lee-20" }).ok).toBe(false);
+  });
 });
