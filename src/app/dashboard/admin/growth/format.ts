@@ -44,6 +44,7 @@ export type PlanBreakdownRow = {
   plan: string;
   label: string;
   active: number;
+  comped: number;
   onTrial: number;
   mrrCents: number | null;
 };

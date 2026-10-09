@@ -204,6 +204,19 @@ describe("projectedTrialConversionCents", () => {
     expect(withOther).toHaveLength(9);
     expect(withOther[8]).toMatchObject({ plan: "other", active: 2, mrrCents: null });
 
+    // Comps: marked by ls_subscription_id, counted in active but not in MRR.
+    const withComps = planBreakdownFor(
+      [
+        { ls_variant_id: "v-solo-annual", ls_subscription_id: "s1" },
+        { ls_variant_id: "v-solo-annual", ls_subscription_id: "comp:abc" },
+        { ls_variant_id: "v-solo-annual", ls_subscription_id: "comp:def" },
+      ],
+      [],
+      new Set(["comp:abc", "comp:def"]),
+    );
+    expect(withComps[1]).toMatchObject({ active: 3, comped: 2 });
+    expect(withComps[1].mrrCents).toBe(Math.round(PRICE_CENTS.solo.annual / 12));
+
     // MRR: active only, annual plans at price / 12; trials excluded.
     expect(rows[0].mrrCents).toBe(PRICE_CENTS.solo.monthly * 2);
     expect(rows[1].mrrCents).toBe(PRICE_CENTS.solo.annual / 12);

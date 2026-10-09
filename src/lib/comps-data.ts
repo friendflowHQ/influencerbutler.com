@@ -125,7 +125,10 @@ type LicenseInfo = {
   seats: number | null;
 };
 
-export async function loadComps(now: number = Date.now()): Promise<CompsResult | null> {
+export async function loadComps(
+  now: number = Date.now(),
+  opts: { includeTestEmails?: boolean } = {},
+): Promise<CompsResult | null> {
   const svc = createAdminClient() as unknown as CompsClient | null;
   if (!svc) return null;
 
@@ -289,7 +292,7 @@ export async function loadComps(now: number = Date.now()): Promise<CompsResult |
   // Drop comps for internal test addresses (COMP_TEST_EMAILS): test-phase grants
   // must never be tracked, warned about, or auto-cancelled. Filtering here keeps
   // the admin page, the expiry cron, and its digest in agreement.
-  const testEmails = testCompEmails();
+  const testEmails = opts.includeTestEmails ? new Set<string>() : testCompEmails();
   const visible =
     testEmails.size === 0
       ? rows

@@ -42,6 +42,7 @@ type MetricsResponse = {
   metrics?: Record<string, MetricSnapshot>;
   projection?: EarningsProjection | null;
   planBreakdown?: PlanBreakdownRow[] | null;
+  compsKnown?: boolean;
   error?: string;
 };
 
@@ -320,7 +321,11 @@ export default function AdminGrowthPage() {
             </div>
           ))}
         </div>
-        <PlanBreakdown rows={metrics?.planBreakdown ?? null} loading={metricsLoading && !metrics} />
+        <PlanBreakdown
+          rows={metrics?.planBreakdown ?? null}
+          compsKnown={metrics?.compsKnown ?? true}
+          loading={metricsLoading && !metrics}
+        />
       </section>
 
       {/* Projected month total: secured revenue + trials that could still

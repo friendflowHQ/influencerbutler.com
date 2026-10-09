@@ -120,12 +120,15 @@ export type PlanBreakdownRow = {
   /** Canonical plan string ("solo-monthly", ...) or "other" for unmapped variants. */
   plan: string;
   label: string;
+  /** All active subscribers, comped ones included (matches the Active subscribers tile). */
   active: number;
+  /** The subset of `active` that are comps (free grants, never charged). */
+  comped: number;
   onTrial: number;
   /**
-   * Monthly recurring revenue from ACTIVE subscribers at list price (annual
-   * plans count price / 12), in cents. Trials are excluded. Null for the
-   * "other" row, whose price is unknown.
+   * Monthly recurring revenue from PAID active subscribers (active minus
+   * comps) at list price (annual plans count price / 12), in cents. Trials and
+   * comps are excluded. Null for the "other" row, whose price is unknown.
    */
   mrrCents: number | null;
 };
@@ -139,6 +142,8 @@ export type GrowthSnapshot = {
   projection: EarningsProjection | null;
   /** Point-in-time active/on-trial subscribers per plan; null when subs are unreadable. */
   planBreakdown: PlanBreakdownRow[] | null;
+  /** False when the comp list could not be read, so `comped` is 0 by default, not by fact. */
+  compsKnown: boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -240,6 +245,7 @@ const BREAKDOWN_INTERVALS = ["monthly", "annual"] as const;
 export function planBreakdownFor(
   activeRows: Record<string, unknown>[],
   onTrialRows: Record<string, unknown>[],
+  compSubscriptionIds: ReadonlySet<string> = new Set(),
 ): PlanBreakdownRow[] {
   const rows: PlanBreakdownRow[] = [];
   const byPlan = new Map<string, PlanBreakdownRow>();
@@ -250,6 +256,7 @@ export function planBreakdownFor(
         plan,
         label: `${TIER_NAME[tier]} ${interval === "monthly" ? "monthly" : "yearly"}`,
         active: 0,
+        comped: 0,
         onTrial: 0,
         mrrCents: 0,
       };
@@ -257,13 +264,16 @@ export function planBreakdownFor(
       byPlan.set(plan, row);
     }
   }
-  const other: PlanBreakdownRow = { plan: "other", label: "Other / unmapped plan", active: 0, onTrial: 0, mrrCents: null };
+  const other: PlanBreakdownRow = { plan: "other", label: "Other / unmapped plan", active: 0, comped: 0, onTrial: 0, mrrCents: null };
 
   const tally = (list: Record<string, unknown>[], field: "active" | "onTrial") => {
     for (const r of list) {
       const plan = planForVariantId(r.ls_variant_id == null ? null : String(r.ls_variant_id));
       const target = (plan ? byPlan.get(plan) : undefined) ?? other;
       target[field] += 1;
+      if (field === "active" && compSubscriptionIds.has(String(r.ls_subscription_id ?? ""))) {
+        target.comped += 1;
+      }
     }
   };
   tally(activeRows, "active");
@@ -274,7 +284,7 @@ export function planBreakdownFor(
       const row = byPlan.get(`${tier}-${interval}`)!;
       const monthlyCents =
         interval === "monthly" ? PRICE_CENTS[tier].monthly : PRICE_CENTS[tier].annual / 12;
-      row.mrrCents = Math.round(row.active * monthlyCents);
+      row.mrrCents = Math.round((row.active - row.comped) * monthlyCents);
     }
   }
 
@@ -479,6 +489,8 @@ export async function computeGrowthSnapshot(
   supabase: SnapshotClient,
   month: string,
   payoutSettings?: PayoutSettings,
+  /** Live comp subscription ids (see loadComps); null/omitted = unknown, shown as no comps. */
+  compSubscriptionIds?: ReadonlySet<string> | null,
 ): Promise<GrowthSnapshot | null> {
   const bounds = monthBounds(month);
   if (!bounds) return null;
@@ -560,7 +572,7 @@ export async function computeGrowthSnapshot(
       try {
         const res = await supabase
           .from("subscriptions")
-          .select("status,ls_variant_id,renews_at")
+          .select("status,ls_variant_id,renews_at,ls_subscription_id")
           .not("status", "in", '("cancelled","expired")')
           .limit(ROW_LIMIT);
         if (res.error) {
@@ -675,7 +687,7 @@ export async function computeGrowthSnapshot(
       previous: null,
       series: null,
     };
-    planBreakdown = planBreakdownFor(activeLive, onTrialLive);
+    planBreakdown = planBreakdownFor(activeLive, onTrialLive, compSubscriptionIds ?? undefined);
   }
   metrics.revenue_cents = bucket(orderRows, "created_at", (row) =>
     typeof row.total === "number" && Number.isFinite(row.total) ? row.total : 0,
@@ -806,5 +818,13 @@ export async function computeGrowthSnapshot(
     };
   }
 
-  return { month, prevMonth, migrationPending, metrics, projection, planBreakdown };
+  return {
+    month,
+    prevMonth,
+    migrationPending,
+    metrics,
+    projection,
+    planBreakdown,
+    compsKnown: compSubscriptionIds != null,
+  };
 }
