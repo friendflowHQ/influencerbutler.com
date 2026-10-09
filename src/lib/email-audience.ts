@@ -28,7 +28,14 @@ export type Audience = (
   | { kind: "opened_nonpaid"; minOpens: number; maxOpens?: number; withinDays?: number }
   | { kind: "campaign_nonopeners"; campaignId: string }
   | { kind: "pasted"; emails: string[] }
-) & { split?: AudienceSplit };
+) & {
+  split?: AudienceSplit;
+  /**
+   * Drop anyone who is already a recipient (any status) of these campaigns, so a
+   * recurring send only reaches people who have not been sent the series yet.
+   */
+  excludeCampaignIds?: string[];
+};
 
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -36,6 +43,7 @@ const SEGMENTS = new Set<AudienceSegment>(["trial", "pro", "churned", "newslette
 const TAG_RE = /^[a-z0-9][a-z0-9_-]{0,39}$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_SPLIT_OF = 4;
+const MAX_EXCLUDE_CAMPAIGNS = 100;
 
 const PAGE = 1000;
 const CHUNK = 200;
@@ -105,13 +113,32 @@ function parseSplit(raw: unknown): AudienceSplit | undefined | null {
   return { index, of };
 }
 
+/** Validates the optional excludeCampaignIds field. Undefined when absent, null when invalid. */
+function parseExcludeCampaignIds(raw: unknown): string[] | undefined | null {
+  if (raw === undefined || raw === null) return undefined;
+  if (!Array.isArray(raw) || raw.length > MAX_EXCLUDE_CAMPAIGNS) return null;
+  const ids = new Set<string>();
+  for (const id of raw) {
+    if (typeof id !== "string" || !UUID_RE.test(id)) return null;
+    ids.add(id.toLowerCase());
+  }
+  return ids.size > 0 ? [...ids] : undefined;
+}
+
 /** Allow-list validation of an untrusted audience payload. Null on garbage. */
 export function parseAudience(input: unknown): Audience | null {
   const base = parseAudienceBase(input);
   if (!base) return null;
-  const split = parseSplit((input as Record<string, unknown>).split);
+  const rawInput = input as Record<string, unknown>;
+  const split = parseSplit(rawInput.split);
   if (split === null) return null;
-  return split ? { ...base, split } : base;
+  const exclude = parseExcludeCampaignIds(rawInput.excludeCampaignIds);
+  if (exclude === null) return null;
+  return {
+    ...base,
+    ...(split ? { split } : {}),
+    ...(exclude ? { excludeCampaignIds: exclude } : {}),
+  };
 }
 
 function parseAudienceBase(input: unknown): Audience | null {
@@ -510,12 +537,44 @@ export async function resolveAudience(
   audience: Audience,
 ): Promise<{ emails: string[]; migrationPending: boolean }> {
   const resolved = await resolveAudienceBase(db, audience);
+  let emails = resolved.emails;
+
+  if (audience.excludeCampaignIds?.length) {
+    const already = await collectCampaignRecipients(db, audience.excludeCampaignIds);
+    // Fail closed: if we cannot tell who was already emailed, reach nobody.
+    if (!already) return { emails: [], migrationPending: true };
+    emails = emails.filter((email) => !already.has(email));
+  }
+
   const { split } = audience;
-  if (!split) return resolved;
-  return {
-    ...resolved,
-    emails: resolved.emails.filter((email) => splitBucket(email, split.of) === split.index),
-  };
+  if (split) emails = emails.filter((email) => splitBucket(email, split.of) === split.index);
+  return { ...resolved, emails };
+}
+
+/** Every address that is a recipient (any status) of the given campaigns, or null on error. */
+async function collectCampaignRecipients(
+  db: SupabaseClient,
+  campaignIds: string[],
+): Promise<Set<string> | null> {
+  const out = new Set<string>();
+  for (const campaignId of campaignIds) {
+    for (let offset = 0; ; offset += PAGE) {
+      const { data, error } = await db
+        .from("email_campaign_recipients")
+        .select("email")
+        .eq("campaign_id", campaignId)
+        .order("id")
+        .range(offset, offset + PAGE - 1);
+      if (error) return null;
+      const rows = data ?? [];
+      for (const row of rows) {
+        const email = typeof row.email === "string" ? row.email.trim().toLowerCase() : "";
+        if (email) out.add(email);
+      }
+      if (rows.length < PAGE) break;
+    }
+  }
+  return out;
 }
 
 async function resolveAudienceBase(

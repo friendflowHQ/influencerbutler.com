@@ -467,7 +467,9 @@ export type RuntimeMessage =
   | { kind: "ACCEPT_RESULT"; campaignId: string; outcome: AcceptOutcome }
   // Content -> background: an accept that happened in-page (the grid's Accept
   // pill / Brief modal) so the daily accept ledger stays complete.
-  | { kind: "RECORD_ACCEPT"; campaignId: string; source: AcceptSource }
+  // `asins` are the campaign's products (when the card listed them), so the
+  // accept can also be mirrored into the desktop app's ledger.
+  | { kind: "RECORD_ACCEPT"; campaignId: string; source: AcceptSource; asins?: string[] }
   // Rule-based accept (tools/campaign-radar/auto-accept.ts, background/last-call.ts).
   // Background -> the Last Call poll tab it opened (chrome.tabs.sendMessage):
   // run the creator's accept rules over the grid now. The tab answers with

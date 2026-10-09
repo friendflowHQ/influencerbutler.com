@@ -46,6 +46,7 @@ import { coldFrom, coldStreamEnabled } from "@/lib/email-senders";
 import { isEmailSuppressed } from "@/lib/email-unsubscribe";
 import { isMissingTable } from "@/lib/growth-goals";
 import { buildCampaignEmail } from "@/lib/campaign-email";
+import { runRecurringIfDue } from "@/lib/recurring-campaign";
 import type { NormalizedAttachment } from "@/lib/email-attachments";
 import { verifyBearer } from "@/lib/auth-secret";
 
@@ -872,6 +873,14 @@ export async function GET(request: Request) {
   };
 
   // Each step is isolated so one blow-up never blocks the others.
+  // The recurring Group Mirror series (paused unless switched on in the admin
+  // Campaigns tab) creates its campaign here, so the materialize step below
+  // picks it up in the same run.
+  try {
+    await runRecurringIfDue(db);
+  } catch (err) {
+    console.error("cron email-marketing: recurring campaign step threw", err);
+  }
   try {
     await materializeCampaigns(db, summary);
   } catch (err) {

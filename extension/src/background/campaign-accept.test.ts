@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  acceptAsins,
+  buildAcceptFinding,
   cooldownActive,
   dayKey,
   emptyLedger,
@@ -20,6 +22,44 @@ const ID_B = "amzn1.campaign.BBBBBBBBBBBBB";
 // regardless of the machine's timezone.
 const DAY1 = new Date(2026, 8, 8, 12, 0, 0).getTime();
 const DAY2 = new Date(2026, 8, 9, 12, 0, 0).getTime();
+
+describe("acceptAsins", () => {
+  it("keeps valid ASINs, upper-cased and de-duplicated", () => {
+    expect(acceptAsins(ID_A, ["b0abcdefgh", "B0ABCDEFGH", "B0ZZZZZZZZ", "bad"])).toEqual([
+      "B0ABCDEFGH",
+      "B0ZZZZZZZZ",
+    ]);
+  });
+
+  it("accepts a single ASIN string", () => {
+    expect(acceptAsins(ID_A, "B0ABCDEFGH")).toEqual(["B0ABCDEFGH"]);
+  });
+
+  it("returns nothing for a CC campaign with no ASINs", () => {
+    expect(acceptAsins(ID_A)).toEqual([]);
+    expect(acceptAsins(ID_A, null)).toEqual([]);
+  });
+
+  it("recovers the ASIN from an SPCC key", () => {
+    expect(acceptAsins("spcc:B0ABCDEFGH")).toEqual(["B0ABCDEFGH"]);
+  });
+});
+
+describe("buildAcceptFinding", () => {
+  it("carries the ASINs for the desktop mirror when known", () => {
+    expect(buildAcceptFinding(ID_A, "manual", ["B0ABCDEFGH"], DAY1)).toEqual({
+      type: "campaign_accept",
+      campaignId: ID_A,
+      source: "manual",
+      detectedAt: new Date(DAY1).toISOString(),
+      asins: ["B0ABCDEFGH"],
+    });
+  });
+
+  it("omits asins entirely when none are known", () => {
+    expect(buildAcceptFinding(ID_A, "auto", [], DAY1)).not.toHaveProperty("asins");
+  });
+});
 
 describe("dayKey", () => {
   it("formats the local calendar day as YYYY-MM-DD", () => {

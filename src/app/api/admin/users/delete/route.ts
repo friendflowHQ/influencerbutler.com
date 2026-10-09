@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { adminService } from "@/lib/admin-service";
 import { logAdminAction } from "@/lib/admin-audit";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { executeDeletion } from "@/lib/account-deletion";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -50,10 +52,18 @@ export async function POST(request: Request) {
     );
   }
 
-  const { error } = await svc.auth.admin.deleteUser(userId);
-  if (error) {
-    console.error("users/delete failed", error);
-    return NextResponse.json({ error: "Could not delete user." }, { status: 500 });
+  // Same eraser the self-serve flow uses, so every table is cleaned (not just
+  // the FK cascades) and affiliates with payout/tax records are retired rather
+  // than hard-deleted. `force` skips the subscription guard: an admin may remove
+  // an account that still has a live subscription (cancel it in Lemon Squeezy).
+  const result = await executeDeletion(createAdminClient(), userId, { force: true });
+  if (result.outcome === "failed" || result.outcome === "blocked") {
+    const errors = result.outcome === "failed" ? result.errors : [result.blocker];
+    console.error("users/delete failed", errors);
+    return NextResponse.json({ error: "Could not fully delete user.", details: errors }, { status: 500 });
+  }
+  if (result.outcome === "not_found") {
+    return NextResponse.json({ error: "User not found." }, { status: 404 });
   }
 
   await logAdminAction({
@@ -61,8 +71,8 @@ export async function POST(request: Request) {
     action: "users.delete",
     targetType: "user",
     targetId: userId,
-    details: { email: actualEmail },
+    details: { email: actualEmail, outcome: result.outcome },
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, outcome: result.outcome });
 }

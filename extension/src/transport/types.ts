@@ -134,11 +134,17 @@ export type InstagramCreatorFinding = {
 // "proof of numbers" counter. Carries no campaign detail beyond the id (used
 // only for same-day dedupe) and whether it was an auto or manual accept; the
 // server records an aggregate count, never per-campaign rows.
+//
+// `asins` (when the accept knew them) is for the desktop app only: the local
+// bridge and relay deliver the whole finding, and the desktop stamps those ASINs
+// accepted in its CC Check ledger so both apps agree. The website transport
+// never sends it.
 export type CampaignAcceptFinding = {
   type: "campaign_accept";
   campaignId: string;
   source: "auto" | "manual";
   detectedAt: string;
+  asins?: string[];
 };
 
 export type Finding =

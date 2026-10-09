@@ -12,6 +12,7 @@ import { getFlags } from "../flags/cache";
 import { getState } from "../storage/store";
 import { log } from "../shared/log";
 import { enqueue } from "../transport/router";
+import type { CampaignAcceptFinding } from "../transport/types";
 import type { AcceptLedgerView, AcceptOutcome, AcceptSource } from "../shared/messages";
 
 // Standalone campaign accept: the background half.
@@ -179,35 +180,72 @@ export async function loadAcceptLedger(now = Date.now()): Promise<AcceptLedger> 
   return readAcceptLedger(raw[ACCEPT_LEDGER_KEY], now);
 }
 
-// Report an accept to the website's public "proof of numbers" counter. Rides
-// the same finding queue as every other sync (batched, deduped by campaign+day,
-// retried, and gated on the license key + syncEnabled setting), so a user with
-// sync off never sends it. Best-effort: a queue failure must never break the
-// accept itself.
-async function reportAccept(campaignId: string, source: AcceptSource): Promise<void> {
+// Pure: the valid, de-duplicated ASINs in `raw` (one ASIN or a list). An SPCC
+// accept travels as `spcc:<ASIN>`, so its ASIN is recovered from the key when
+// the caller gave none.
+export function acceptAsins(
+  campaignId: string,
+  raw?: string | readonly string[] | null,
+): string[] {
+  const list = typeof raw === "string" ? [raw] : Array.isArray(raw) ? raw : [];
+  const out: string[] = [];
+  for (const candidate of list) {
+    const { asin } = cleanAsin(candidate);
+    if (asin && !out.includes(asin)) out.push(asin);
+  }
+  if (out.length === 0 && SPCC_KEY_RE.test(campaignId)) out.push(campaignId.slice("spcc:".length));
+  return out;
+}
+
+// Pure: the finding an accept becomes. `asins` is only set when known, so the
+// desktop can stamp its CC Check ledger; the website transport ignores it.
+export function buildAcceptFinding(
+  campaignId: string,
+  source: AcceptSource,
+  asins: string[],
+  now: number,
+): CampaignAcceptFinding {
+  return {
+    type: "campaign_accept",
+    campaignId,
+    source,
+    detectedAt: new Date(now).toISOString(),
+    ...(asins.length > 0 ? { asins } : {}),
+  };
+}
+
+// Report an accept to the website's public "proof of numbers" counter and, over
+// the local bridge or relay, to the desktop app's accepted ledger. Rides the same
+// finding queue as every other sync (batched, deduped by campaign+day, retried,
+// and gated on the license key + syncEnabled setting), so a user with sync off
+// never sends it. Best-effort: a queue failure must never break the accept
+// itself.
+async function reportAccept(
+  campaignId: string,
+  source: AcceptSource,
+  asins: string[],
+): Promise<void> {
   try {
-    await enqueue({
-      type: "campaign_accept",
-      campaignId,
-      source,
-      detectedAt: new Date().toISOString(),
-    });
+    await enqueue(buildAcceptFinding(campaignId, source, asins, Date.now()));
   } catch {
     /* counting is best-effort; the local ledger is the source of truth */
   }
 }
 
 // Record an accept (from our own tab, or an in-page click reported by the grid
-// overlay) into today's ledger.
+// overlay) into today's ledger. `asin` is one product or every product the
+// campaign lists: the ledger keeps the first (the content-link pass keys on it),
+// the desktop mirror gets them all.
 export async function noteAccept(
   campaignId: string,
   source: AcceptSource,
-  asin?: string | null,
+  asin?: string | readonly string[] | null,
 ): Promise<AcceptLedger> {
   const now = Date.now();
-  const next = recordAccept(await loadAcceptLedger(now), campaignId, source, now, asin);
+  const asins = acceptAsins(campaignId, asin);
+  const next = recordAccept(await loadAcceptLedger(now), campaignId, source, now, asins[0] ?? null);
   await chrome.storage.local.set({ [ACCEPT_LEDGER_KEY]: next });
-  await reportAccept(campaignId, source);
+  await reportAccept(campaignId, source, asins);
   return next;
 }
 
@@ -221,7 +259,9 @@ export async function noteAccepts(
   let ledger = await loadAcceptLedger(now);
   for (const item of items) ledger = recordAccept(ledger, item.campaignId, source, now, item.asin);
   if (items.length) await chrome.storage.local.set({ [ACCEPT_LEDGER_KEY]: ledger });
-  for (const item of items) await reportAccept(item.campaignId, source);
+  for (const item of items) {
+    await reportAccept(item.campaignId, source, acceptAsins(item.campaignId, item.asin));
+  }
   return ledger;
 }
 

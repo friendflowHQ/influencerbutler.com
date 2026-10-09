@@ -90,6 +90,8 @@ You could hire a developer for thousands of dollars and wait weeks. Or you can b
 - The Influencer Butler team
 
 P.S. **Pro pricing goes up at the end of November**, so now is a great time to grab today's price.
+
+P.P.S. Come hang out with us in the Influencer Butler Facebook group: [Join the group](https://www.facebook.com/groups/influencerbutler)
 ```
 
 How to read it: compare opens and the "Download clicks" number for `group-mirror-light-a` vs `group-mirror-light-b`. The halves are the same size, so the bigger number wins. Expect lower numbers than the 3+ group (these people are less engaged); only compare A to B.
@@ -118,6 +120,8 @@ In case my last email got buried, here's the short version.
 - The Influencer Butler team
 
 P.S. **Pro pricing goes up at the end of November**, so now is a great time to grab today's price.
+
+P.P.S. Come hang out with us in the Influencer Butler Facebook group: [Join the group](https://www.facebook.com/groups/influencerbutler)
 ```
 
 Some "non-openers" simply blocked the tracking pixel, so a few will have read the first email already.

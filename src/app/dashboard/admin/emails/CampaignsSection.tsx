@@ -13,6 +13,7 @@ import {
   type DragEvent as ReactDragEvent,
 } from "react";
 import CampaignDrawer from "./CampaignDrawer";
+import RecurringCard from "./RecurringCard";
 
 // Attachments / inline images the operator adds to a campaign. They travel as
 // base64 in the save request and are stored on the campaign row. Caps mirror
@@ -1018,6 +1019,8 @@ export default function CampaignsSection({
           New campaign
         </button>
       </div>
+
+      <RecurringCard />
 
       {loadError ? <p className="mt-3 text-sm text-rose-600">{loadError}</p> : null}
       {listError ? <p className="mt-3 text-sm text-rose-600">{listError}</p> : null}

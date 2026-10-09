@@ -673,9 +673,12 @@ async function acceptInPage(row: Row): Promise<void> {
   }
   if (outcome.ok) {
     row.acceptState = outcome.state;
-    void sendToBackground({ kind: "RECORD_ACCEPT", campaignId, source: "manual" }).catch(
-      () => undefined,
-    );
+    void sendToBackground({
+      kind: "RECORD_ACCEPT",
+      campaignId,
+      source: "manual",
+      asins: row.campaign.asins,
+    }).catch(() => undefined);
   } else {
     row.acceptState = "failed";
     row.acceptNote = describeAcceptResult({ ...outcome, route: "standalone" });

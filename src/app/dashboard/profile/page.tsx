@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import DeleteAccountCard from "./DeleteAccountCard";
 
 type ProfileRow = {
   id: string;
@@ -562,6 +563,8 @@ export default function ProfilePage() {
           {signingOutEverywhere ? "Signing out…" : "Sign out everywhere"}
         </button>
       </section>
+
+      <DeleteAccountCard email={email} />
     </div>
   );
 }

@@ -933,7 +933,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       sendResponse(undefined);
       return false;
     case "RECORD_ACCEPT":
-      void noteAccept(message.campaignId, message.source).then(() => sendResponse(undefined));
+      void noteAccept(message.campaignId, message.source, message.asins).then(() =>
+        sendResponse(undefined),
+      );
       return true;
     // In-browser video bump (background/video-bump.ts).
     case "START_VIDEO_BUMP":
@@ -990,8 +992,6 @@ async function openDealsPage(query?: string): Promise<void> {
   });
 }
 
-function isCrossRetailerUrl(url: URL): boolean {
-  if (url.protocol !== "https:") return false;
 // The Creator Connections pages the brand-conversation chip opens (the campaigns
 // list or one campaign, carrying `#ib-open-thread=<brand>`): the creator's own
 // Amazon Associates host and its /p/connect/ section, nothing else.
@@ -1009,6 +1009,8 @@ function isCreatorConnectionsUrl(url: URL): boolean {
   );
 }
 
+function isCrossRetailerUrl(url: URL): boolean {
+  if (url.protocol !== "https:") return false;
   if (url.hostname === "www.walmart.com") {
     return /^\/ip\/(?:[^/]+\/)?\d{3,15}\/?$/.test(url.pathname) || url.pathname === "/search";
   }
