@@ -24,14 +24,16 @@ Two things need to be in place:
 3. Pick the **Facebook account** that manages the group. It defaults to your **Default** account. If a different account manages the group, choose it here so the removals come from the right place.
 4. Under **Which invites to remove**, choose **All pending invites**, **Profiles and Pages only**, or **Email invites only**.
 5. (Optional) Set **Only remove invites older than** to a number of days. `0` removes pending invites of any age. Set `7` to only cancel invites at least a week old. When an invite's date cannot be read, it is left in place.
-6. (Optional) Adjust the pacing under **Pacing**: **Seconds between removals** plus **Random extra seconds** on top, so the timing looks natural. Slower is safer.
-7. (Optional) Set **Removal limits**: **Removals per day** (a daily cap that carries across runs, `0` means no cap) and **Removals per run** (`0` clears every pending invite in scope).
-8. Click **Start Group Uninvite Butler**. Turn on **Watch it run** in the top right of the app to bring the browser to the front and watch each removal go out, or turn it off there to let it work in the background.
-9. Watch the **Results** table fill in. It shows each cancelled invite with its **Type**, who **Invited** it, the **Status**, and the **Time**, plus live **Removed** and **Failed** counts. Use the **All**, **Profiles**, and **Emails** chips to filter, **Export CSV** to save the list, or **Clear results** to reset the table. Click **Stop** any time.
+6. (Optional) Turn on **Send a reminder first** to give people a nudge before they are removed. Instead of cancelling a pending invite, the butler uses Facebook's **Send reminder** option on it. A later run then removes only the invites still pending after the number of days you set in **Remove if still pending after** (3 by default). Anyone who joins in the meantime is simply left alone. Reminders count toward your daily and per-run limits.
+7. (Optional) Adjust the pacing under **Pacing**: **Seconds between removals** plus **Random extra seconds** on top, so the timing looks natural. Slower is safer.
+8. (Optional) Set **Removal limits**: **Removals per day** (a daily cap that carries across runs, `0` means no cap) and **Removals per run** (`0` clears every pending invite in scope).
+9. Click **Start Group Uninvite Butler**. Turn on **Watch it run** in the top right of the app to bring the browser to the front and watch each removal go out, or turn it off there to let it work in the background.
+10. Watch the **Results** table fill in. It shows each cancelled invite with its **Type**, who **Invited** it, the **Status**, and the **Time**, plus live **Removed** and **Failed** counts. Use the **All**, **Profiles**, and **Emails** chips to filter, **Export CSV** to save the list, or **Clear results** to reset the table. Click **Stop** any time.
 
 ## Notes
 
 - Everything auto-saves as you type. There is no Save button.
+- With **Send a reminder first** on, the removal pass happens on a later run, so keep the **Schedule** on (or start it again once the wait is over). **Only remove invites older than** then decides when a reminder goes out. The results table marks these invites **Reminded**. If Facebook offers no reminder for an invite (an email invite, for example), the wait starts anyway and the table shows **Waiting (no reminder)**.
 - To run on a repeat, use the **Schedule** card: pick a **Start time**, choose a **Repeat every** cadence (15 or 30 minutes, or 1, 2, 3, 6, 12, or 24 hours, or **Custom** hours), and click **Enable Schedule**. Each scheduled run uses the same run settings and respects your limits. Click **Stop Schedule** to turn it off. The app has to stay open and signed in to Facebook for scheduled runs to fire.
 - If it will not start, check that the group URL is filled in and that you are signed in to Facebook (via Deals Butler).
 - If it says you are not signed in but you are, make sure the **Facebook account** you picked is one you actually signed in to in Deals Butler. Removals come from that exact account.
