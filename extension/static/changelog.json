@@ -1,6 +1,35 @@
 {
-  "lastUpdated": "2026-10-08",
+  "lastUpdated": "2026-10-12",
   "releases": [
+    {
+      "version": "0.1.33",
+      "date": "October 12, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "Creator Connections Messages: search your conversations by brand name, and jump straight to the first match with Enter",
+            "Messages now lists the older conversations Amazon's panel leaves out right after its own rows, with a Show more button instead of a cap, so a big inbox reads newest to oldest in one list",
+            "New Brand replied and Waiting on brand filters, so you can see who has written back and who still owes you an answer"
+          ]
+        },
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "The Live campaign and rate filters now count brands from the Sponsored Products for Creators tab, instead of reading 0 while campaigns were on screen",
+            "A filter that keeps nothing now says why, and the counts show where the full-inbox number comes from and how fresh it is",
+            "The support chat bubble no longer covers the open Messages panel",
+            "Dates in the older-conversations list match Amazon's own rows, and the filter bar stays in view while you scroll"
+          ]
+        },
+        {
+          "heading": "Other Notable Changes",
+          "items": [
+            "Everything in the Messages panel is now available in Spanish and French"
+          ]
+        }
+      ]
+    },
     {
       "version": "0.1.32",
       "date": "October 8, 2026",
