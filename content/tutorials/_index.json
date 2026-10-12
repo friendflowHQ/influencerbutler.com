@@ -688,6 +688,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "walmart-performance",
+      "title": "Walmart Performance: your Walmart Creator sales and commission, in the app",
+      "category": "Other",
+      "summary": "Read your own Walmart Creator numbers (sales, commissionable sales, commission, storefront visits, each collection and post) into the app, once or every day, so you can see what is earning without opening the portal.",
+      "order": 342.5,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "idea-list-butler",
       "title": "Idea List Butler: refresh your Amazon storefront with themed lists, collage photos, curations and pins",
       "category": "Other",
