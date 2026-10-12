@@ -134,6 +134,8 @@ const nextConfig: NextConfig = {
       { source: "/guides/:slug", destination: "/guides/:slug.html" },
       { source: "/for-agencies", destination: "/for-agencies.html" },
       { source: "/for-agencies/:slug", destination: "/for-agencies/:slug.html" },
+      { source: "/for-creator-connections", destination: "/for-creator-connections.html" },
+      { source: "/for-walmart-creators", destination: "/for-walmart-creators.html" },
       { source: "/legal/privacy", destination: "/legal/privacy.html" },
       { source: "/legal/terms", destination: "/legal/terms.html" },
       { source: "/legal/eula", destination: "/legal/eula.html" },

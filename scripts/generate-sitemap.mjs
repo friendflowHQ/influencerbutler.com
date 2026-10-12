@@ -19,6 +19,8 @@ const ROOT_PAGES = {
   "stop-messaging-brands.html": { url: "/stop-messaging-brands", priority: "0.7", changefreq: "weekly" },
   "best-amazon-influencer-tools.html": { url: "/best-amazon-influencer-tools", priority: "0.8", changefreq: "weekly" },
   "for-agencies.html": { url: "/for-agencies", priority: "0.8", changefreq: "weekly" },
+  "for-creator-connections.html": { url: "/for-creator-connections", priority: "0.8", changefreq: "weekly" },
+  "for-walmart-creators.html": { url: "/for-walmart-creators", priority: "0.8", changefreq: "weekly" },
   "security.html": { url: "/security", priority: "0.3", changefreq: "monthly" },
   "security-es.html": { url: "/es/security", priority: "0.2", changefreq: "monthly" },
   "security-fr.html": { url: "/fr/security", priority: "0.2", changefreq: "monthly" },
@@ -169,7 +171,8 @@ async function main() {
         if (!post || !post.id) continue;
         entries.push({
           loc: `${SITE_ORIGIN}/blog/${post.id}`,
-          lastmod: post.date || fmtDate(new Date()),
+          // updated (a real content edit) wins over the publish date.
+          lastmod: post.updated || post.date || fmtDate(new Date()),
           changefreq: "monthly",
           priority: "0.7",
         });

@@ -23,7 +23,13 @@ const PAGES = [
   "/contact",
   "/affiliates/apply",
   "/legal/accessibility",
+  "/extension",
   "/help/tutorials/extension",
+  "/features/instagram-like-butler",
+  "/features/campaign-butler",
+  "/for-creator-connections",
+  "/for-walmart-creators",
+  "/blog/amazon-storefront-idea-lists-that-convert",
   // Build Week is dark (404) until launch, so only check it when the flag is on.
   ...(process.env.NEXT_PUBLIC_BUILD_WEEK_ENABLED === "1"
     ? ["/build-week", "/build-week?lang=es-ES", "/legal/build-week-rules"]

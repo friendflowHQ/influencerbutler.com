@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Influencer Butler for Creator Connections | Influencer Butler</title>
+    <meta name="description" content="Built for creators who work onsite through Amazon Creator Connections and SPCC, not offsite affiliate links. Auto-accept the right campaigns, see your fill meter and Last Call alerts, and get a Butler's Brief verdict on what to film next.">
+    <meta name="keywords" content="amazon creator connections tools, spcc software, creator connections auto accept, campaign radar, onsite amazon creator tools">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://www.influencerbutler.com/for-creator-connections">
+
+    <meta property="og:title" content="Influencer Butler for Creator Connections">
+    <meta property="og:description" content="Auto-accept the right Creator Connections and SPCC campaigns, see fill meters and Last Call alerts, and get a Butler's Brief verdict on what to film next.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.influencerbutler.com/for-creator-connections">
+    <meta property="og:site_name" content="Influencer Butler">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:image" content="https://www.influencerbutler.com/assets/influencer-butler-og-image.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Influencer Butler for Creator Connections">
+    <meta name="twitter:description" content="Built for creators who work onsite through Amazon Creator Connections and SPCC, not offsite affiliate links.">
+    <meta name="twitter:image" content="https://www.influencerbutler.com/assets/influencer-butler-og-image.png">
+
+    <meta name="theme-color" content="#f97316">
+    <link rel="icon" type="image/png" href="/assets/influencer-butler-logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/styles.css">
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "name": "Influencer Butler for Creator Connections",
+          "description": "How onsite Amazon Creator Connections and SPCC creators use Influencer Butler to auto-accept campaigns, track fill and Last Call alerts, and get a Butler's Brief verdict on what to film next.",
+          "url": "https://www.influencerbutler.com/for-creator-connections",
+          "publisher": {
+            "@type": "Organization",
+            "name": "Influencer Butler",
+            "logo": { "@type": "ImageObject", "url": "https://www.influencerbutler.com/assets/influencer-butler-logo.png" }
+          }
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Is this different from the offsite affiliate-link tools?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. The Creator Connections cockpit is built for onsite creators who earn through Amazon's Creator Connections and SPCC programs rather than offsite affiliate links. It auto-accepts campaigns, scores the grid with fill meters and Last Call alerts, and gives a Butler's Brief verdict on what to film next. You can use it alongside the offsite tools if you do both."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Do I need the desktop app or just the Chrome extension?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The Chrome extension carries the Campaign Radar overlay, fill meters, Last Call watch bells, and Idea List Butler directly on the Creator Connections grid, free. The desktop app adds auto-accept scheduling, the Butler's Brief verdict, and CC Check across your whole campaign list."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What is the Butler's Brief?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The Butler's Brief is a plain-language verdict on a Creator Connections campaign: whether it is worth your time, what to film, and why, based on the campaign's rate, fill, and history."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
+
+    <style>
+      /* Page-specific layout, namespaced cc-* to avoid collision with site CSS. */
+      .cc-hero { padding: 4rem 0 2rem; }
+      .cc-eyebrow {
+        display: inline-block; font-size: 0.8rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.1em; color: #c2410c; margin-bottom: 0.75rem;
+      }
+      .cc-hero h1 { font-size: 2.6rem; line-height: 1.1; margin: 0 0 1rem; }
+      .cc-hero p.cc-lead { font-size: 1.2rem; color: var(--text-secondary); max-width: 48rem; }
+      .cc-ctarow { margin-top: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+      .cc-note { margin-top: 0.75rem; font-size: 0.9rem; color: var(--text-secondary); }
+      .cc-section { padding: 2.5rem 0; }
+      .cc-section h2 { font-size: 1.8rem; margin-bottom: 1rem; }
+      .cc-section p { color: var(--text-secondary); max-width: 52rem; }
+      .cc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+      .cc-card { border: 1px solid #e2e8f0; border-radius: 14px; padding: 1.35rem; background: #fff; }
+      .cc-card h3 { font-size: 1.05rem; margin: 0 0 0.4rem; color: #0f172a; }
+      .cc-card p { font-size: 0.92rem; margin: 0; }
+      .cc-compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem; margin-top: 1.5rem; }
+      .cc-compare-col { border-radius: 16px; padding: 1.75rem; }
+      .cc-compare-without { background: #f8fafc; border: 1px solid #e2e8f0; }
+      .cc-compare-with { background: #fff7ed; border: 1px solid #fed7aa; }
+      .cc-compare-label { display: block; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+      .cc-compare-without .cc-compare-label { color: #64748b; }
+      .cc-compare-with .cc-compare-label { color: #9a3412; }
+      .cc-about { background: var(--bg-subtle, #f8fafc); padding: 2.5rem 0; }
+      .cc-about-inner { max-width: 52rem; color: var(--text-secondary); }
+      .cc-faq-item summary { cursor: pointer; font-weight: 600; padding: 0.9rem 0; }
+      .cc-faq-item { border-bottom: 1px solid #e2e8f0; }
+      .cc-faq-answer { padding: 0 0 1rem; }
+      @media (max-width: 640px) { .cc-hero h1 { font-size: 2rem; } }
+    </style>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-S1TC1QLYNN"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-S1TC1QLYNN');
+  </script>
+</head>
+<body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <header id="site-header">
+        <nav class="container">
+            <a href="/" class="logo" aria-label="Influencer Butler home">
+                <img src="/assets/influencer-butler-logo.png" alt="Influencer Butler logo" class="logo-img" width="40" height="40">
+                <span class="logo-text">Influencer Butler</span>
+            </a>
+            <ul class="nav-menu" id="nav-menu">
+                <li><a href="/#features" class="nav-link">Features</a></li>
+                <li><a href="/#how-it-works" class="nav-link">How It Works</a></li>
+                <li><a href="/pricing" class="nav-link">Pricing</a></li>
+                <li><a href="#faq" class="nav-link">FAQ</a></li>
+                <li><a href="/blog" class="nav-link">Blog</a></li>
+                <li><a href="/download" class="nav-link">Download</a></li>
+                <li><a href="/extension" class="nav-link">Extension</a></li>
+                <li><a href="/tools" class="nav-link">Free Tools</a></li>
+                <li><a href="/login" class="nav-link" id="auth-nav-link">Login</a></li>
+            </ul>
+            <a href="/go/trial" class="btn btn-primary nav-cta">Start Free Trial</a>
+            <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
+                <span></span><span></span><span></span>
+            </button>
+        </nav>
+    </header>
+    <script>
+        (function () {
+            const authNavLink = document.getElementById('auth-nav-link');
+            if (!authNavLink) return;
+            const hasSupabaseAuthCookie = document.cookie.split(';').map((e) => e.trim()).some((e) => /^sb-[^=]+-auth-token=/.test(e));
+            authNavLink.textContent = hasSupabaseAuthCookie ? 'Dashboard' : 'Login';
+            authNavLink.setAttribute('href', hasSupabaseAuthCookie ? '/dashboard' : '/login');
+        })();
+    </script>
+
+    <main id="main-content">
+        <section class="cc-hero">
+            <div class="container">
+                <span class="cc-eyebrow">For Creator Connections</span>
+                <h1>Built for onsite creators, not offsite affiliate links</h1>
+                <p class="cc-lead">
+                    If you earn through Amazon Creator Connections and SPCC instead of posting offsite
+                    affiliate links, Influencer Butler runs the onsite side of your work: auto-accepting
+                    the right campaigns, scoring the grid so you know what is actually worth filming, and
+                    catching campaigns before they fill up.
+                </p>
+                <div class="cc-ctarow">
+                    <a class="btn btn-primary btn-lg" href="/go/download?src=for-creator-connections-hero">Start free trial</a>
+                    <a class="btn btn-outline btn-lg" href="/features/campaign-butler">See the Campaign Butler</a>
+                </div>
+                <p class="cc-note">Free forever tier, no card needed. Every Pro plan starts with a 14-day full-Pro trial.</p>
+            </div>
+        </section>
+
+        <section class="cc-section">
+            <div class="container">
+                <h2>The onsite cockpit</h2>
+                <p>Everything below runs on top of the Creator Connections and SPCC grid you already work in, in the free Chrome extension and the desktop app.</p>
+                <div class="cc-grid">
+                    <div class="cc-card"><h3>Butler's Brief verdict</h3><p>A plain-language call on whether a campaign is worth your time and what to film, based on its rate, fill, and history. Read the full breakdown on the <a href="/features/campaign-butler">Campaign Butler page</a>.</p></div>
+                    <div class="cc-card"><h3>Campaign Radar + Last Call</h3><p>Fill meters score every card on the grid, and Last Call watch bells alert you before a campaign you want fills up completely.</p></div>
+                    <div class="cc-card"><h3>Idea List Butler</h3><p>Money signals on your browse-to-Idea-List capture, so items you save already carry a read on whether they are worth pursuing.</p></div>
+                    <div class="cc-card"><h3>CC Check</h3><p>Checks your Creator Connections eligibility and flags issues before they cost you a campaign. See the <a href="/features/cc-check">CC Check page</a>.</p></div>
+                    <div class="cc-card"><h3>Campaign Deals auto-accept</h3><p>The Daily Commission Butler auto-accepts the Creator Connections and SPCC campaigns that match what you actually sell. See <a href="/features/cc-deals">Campaign Deals</a>.</p></div>
+                    <div class="cc-card"><h3>Message Cards drawer</h3><p>Every brand conversation from Creator Connections Messages in one drawer, so you are not hunting through the native inbox for a reply.</p></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="cc-section">
+            <div class="container">
+                <h2>Why onsite creators need a different toolkit</h2>
+                <div class="cc-compare">
+                    <div class="cc-compare-col cc-compare-without">
+                        <span class="cc-compare-label">Without this</span>
+                        <p>You scroll the Creator Connections grid by hand, guess which campaigns are worth accepting, and find out a good one filled up after it is already gone.</p>
+                    </div>
+                    <div class="cc-compare-col cc-compare-with">
+                        <span class="cc-compare-label">With the cockpit</span>
+                        <p>Fill meters and the Butler's Brief tell you what to go after before you open a single listing, and Last Call alerts catch the ones about to close.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="cc-section" id="faq">
+            <div class="container">
+                <h2>Frequently asked questions</h2>
+                <div class="cc-faq">
+                    <details class="cc-faq-item">
+                        <summary>Is this different from the offsite affiliate-link tools?</summary>
+                        <div class="cc-faq-answer"><p>Yes. The Creator Connections cockpit is built for onsite creators who earn through Amazon's Creator Connections and SPCC programs rather than offsite affiliate links. It auto-accepts campaigns, scores the grid with fill meters and Last Call alerts, and gives a Butler's Brief verdict on what to film next. You can use it alongside the offsite tools if you do both.</p></div>
+                    </details>
+                    <details class="cc-faq-item">
+                        <summary>Do I need the desktop app or just the Chrome extension?</summary>
+                        <div class="cc-faq-answer"><p>The Chrome extension carries the Campaign Radar overlay, fill meters, Last Call watch bells, and Idea List Butler directly on the Creator Connections grid, free. The desktop app adds auto-accept scheduling, the Butler's Brief verdict, and CC Check across your whole campaign list.</p></div>
+                    </details>
+                    <details class="cc-faq-item">
+                        <summary>What is the Butler's Brief?</summary>
+                        <div class="cc-faq-answer"><p>The Butler's Brief is a plain-language verdict on a Creator Connections campaign: whether it is worth your time, what to film, and why, based on the campaign's rate, fill, and history.</p></div>
+                    </details>
+                </div>
+                <p class="cc-note">More background: <a href="/guides/amazon-creator-connections-tips">Creator Connections tips</a> and <a href="/guides/how-to-auto-accept-amazon-creator-connections">how to auto-accept Creator Connections campaigns</a>.</p>
+            </div>
+        </section>
+
+        <section class="cc-section">
+            <div class="container">
+                <h2>Get the onsite cockpit, free</h2>
+                <p>The Campaign Radar overlay, fill meters, and Idea List Butler ship in the free Chrome extension. Add the desktop app for auto-accept and the Butler's Brief, starting at $39/mo with a 14-day full-Pro trial.</p>
+                <div class="cc-ctarow">
+                    <a class="btn btn-primary btn-lg" href="/go/download?src=for-creator-connections-footer">Download the free app</a>
+                    <a class="btn btn-outline btn-lg" href="/pricing">See pricing</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="cc-about" aria-label="About Influencer Butler">
+            <div class="container">
+                <p class="cc-about-inner">
+                    <strong>Influencer Butler</strong> is an all-in-one desktop application and free Chrome
+                    extension for Amazon creators, published by The Social Media Posse LLC. Onsite creators
+                    use the Campaign Radar overlay, Last Call alerts, Idea List Butler, CC Check, and the
+                    Butler's Brief verdict to run their Creator Connections and SPCC work without
+                    scrolling the grid by hand. Website: <a href="https://www.influencerbutler.com">influencerbutler.com</a>.
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container footer-grid">
+            <div class="footer-brand">
+                <a href="/" class="logo">
+                    <img src="/assets/influencer-butler-logo.png" alt="Influencer Butler logo" width="36" height="36">
+                    <span class="logo-text">Influencer Butler</span>
+                </a>
+                <p>The all-in-one command center for creators and influencers.</p>
+            </div>
+            <div class="footer-links">
+                <h4>Product</h4>
+                <a href="/#features">Features</a>
+                <a href="/pricing">Pricing</a>
+                <a href="/#how-it-works">How It Works</a>
+                <a href="/for-creator-connections">For Creator Connections</a>
+                <a href="/for-walmart-creators">For Walmart Creators</a>
+                <a href="/for-agencies">For Agencies</a>
+                <a href="/affiliates">Affiliates - Earn 30%</a>
+                <a href="/download">Download the App</a>
+                <a href="/extension">Chrome Extension: Free</a>
+                <a href="/tools">Free Tools</a>
+            </div>
+            <div class="footer-links">
+                <h4>Legal</h4>
+                <a href="/legal/privacy">Privacy Policy</a>
+                <a href="/legal/eula">EULA</a>
+                <a href="/legal/terms">Terms of Service</a>
+                <a href="/legal/accessibility">Accessibility</a>
+                <a href="/security">Security</a>
+            </div>
+            <div class="footer-links">
+                <h4>Support</h4>
+                <a href="/contact">Contact Us</a>
+                <a href="/dashboard">My Account</a>
+            </div>
+        </div>
+        <div class="container footer-bottom">
+            <p>&copy; 2026 The Social Media Posse LLC. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/js/main.js"></script>
+    <script src="/js/activity-widget.js" defer></script>
+    <script src="/js/webmcp.js" defer></script>
+    <script src="/js/image-lightbox.js" defer></script>
+</body>
+</html>
