@@ -27,6 +27,7 @@ const PAGES = [
   "/help/tutorials/extension",
   "/features/instagram-like-butler",
   "/features/campaign-butler",
+  "/features/brand-conversation-chips",
   "/for-creator-connections",
   "/for-walmart-creators",
   "/events",

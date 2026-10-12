@@ -12,6 +12,17 @@
  * Site copy (pricing page, feature catalog), the /api/entitlements endpoint,
  * and the desktop app spec (docs/entitlements-spec.md) all read from here so
  * "what is free" can never drift between the three.
+ *
+ * SCOPE GAP (flagged 2026-10-12, not yet gated - product decision pending):
+ * this module only gates the desktop app's butlers. The website dashboard
+ * (src/app/dashboard/**) reads none of it - earnings, affiliates, events,
+ * AI Concierge, and MCP API keys are all available to any signed-in account
+ * regardless of tier or subscription status. AI Concierge in particular has
+ * real per-message LLM cost (OpenAI/Groq) and only a daily usage cap, no
+ * subscription check at all (see src/app/api/ai-concierge/chat/route.ts).
+ * Left ungated intentionally for now since several of these (Affiliates,
+ * Events) are deliberately open to every account as growth levers - gating
+ * needs a feature-by-feature call, not a blanket rule.
  */
 
 export type EntitlementTier = "free" | "trial" | "pro";

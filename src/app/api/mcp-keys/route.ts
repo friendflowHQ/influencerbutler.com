@@ -1,3 +1,9 @@
+/**
+ * FLAGGED 2026-10-12: any signed-in account can create/list/revoke MCP API
+ * keys here, no subscription/tier check (see src/lib/entitlements.ts, which
+ * only gates the desktop app's butlers). Flagging as a candidate for a
+ * Pro-only gate - not gated yet, this is a product decision pending.
+ */
 import { NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import { createClient } from "@/lib/supabase/server";
