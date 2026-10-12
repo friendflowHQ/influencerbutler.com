@@ -688,6 +688,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "idea-list-butler",
+      "title": "Idea List Butler: refresh your Amazon storefront with themed lists, collage photos, curations and pins",
+      "category": "Other",
+      "summary": "Group your products into themed Idea Lists, make a styled collage photo for each one, post it as a shoppable photo, file everything into curations and pin a list and photo mix to the top. You review every list before it is built.",
+      "order": 342.5,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "group-invite-butler",
       "title": "Group Invite Butler: grow your Facebook group from a list of creator emails",
       "category": "Other",
