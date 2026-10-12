@@ -425,6 +425,31 @@ const CSS = `
 `;
 
 let mounted = false;
+// The mounted bubble's positioned wrapper, so a page tool can move the bubble out
+// of the way of something it overlaps (the Creator Connections Messages drawer).
+let wrapRef: HTMLElement | null = null;
+const AVOID_GAP_PX = 16;
+const AVOID_MIN_ROOM_PX = 80;
+
+// Keep the bubble clear of `rect` (a fixed panel on the right of the page): its
+// right edge moves to AVOID_GAP_PX left of the panel; when that leaves too little
+// room it hides until the panel goes away. `null` restores the usual corner.
+export function setChatBubbleAvoid(rect: DOMRect | null): void {
+  const wrap = wrapRef;
+  if (!wrap) return;
+  if (!rect || rect.width === 0 || window.innerWidth <= 600) {
+    wrap.style.removeProperty("right");
+    wrap.style.removeProperty("display");
+    return;
+  }
+  const right = Math.max(0, window.innerWidth - rect.left + AVOID_GAP_PX);
+  if (window.innerWidth - right < AVOID_MIN_ROOM_PX) {
+    wrap.style.display = "none";
+    return;
+  }
+  wrap.style.removeProperty("display");
+  wrap.style.right = `${Math.round(right)}px`;
+}
 
 // `popup: true` mounts the bubble inside the toolbar popup (the Feedback Butler
 // card there was replaced by it): pinned above the footer, and the launcher opens
@@ -600,6 +625,7 @@ class ChatBubble {
     this.panel.append(head, this.transcript, this.reportCta, this.composer, this.report, this.threadWrap);
     wrap.append(this.panel, this.launcher);
     this.root.append(wrap);
+    if (!this.inPopup) wrapRef = wrap;
   }
 
   private buildReport(): HTMLElement {
