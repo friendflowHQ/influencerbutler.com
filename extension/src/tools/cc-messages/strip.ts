@@ -19,6 +19,8 @@ export type StripModel = {
   openSlots?: number | null;
   allClaimed?: boolean;
   accepted?: boolean;
+  // The brand has a live Sponsored Products for Creators (SPCC) campaign.
+  spcc?: boolean;
   note?: string | null;
 };
 
@@ -58,6 +60,9 @@ function pillsFor(model: StripModel): Pill[] {
       text: rateBits.join(" · "),
       tip: "Best commission rate on a live Creator Connections campaign from this brand.",
     });
+  }
+  if (model.spcc) {
+    pills.push({ cls: "rate", text: "SPCC", tip: "This brand has a live Sponsored Products for Creators campaign." });
   }
   if (model.allClaimed) {
     pills.push({ cls: "muted", text: "Full", tip: "Every slot on this brand's campaigns is taken." });

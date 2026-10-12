@@ -57,6 +57,38 @@ describe("mergeCampaigns", () => {
   });
 });
 
+describe("SPCC campaigns", () => {
+  it("keeps one SPCC entry per brand across repeated grid reads", () => {
+    const spcc = rec({ campaignId: null, ratePct: null, endsAt: null, spcc: true });
+    let index = mergeCampaigns({}, [spcc], NOW);
+    index = mergeCampaigns(index, [spcc], NOW + 1000);
+    expect(index.playbolt!.campaigns).toHaveLength(1);
+    expect(index.playbolt!.campaigns[0]).toMatchObject({ spcc: true, id: null, ratePct: null });
+  });
+
+  it("counts as live but is never the Accept target", () => {
+    const index = mergeCampaigns({}, [rec({ campaignId: null, ratePct: null, endsAt: null, spcc: true })], NOW);
+    const summary = summarizeBrand(index.playbolt!, NOW)!;
+    expect(summary).toMatchObject({ liveCampaigns: 1, spccCampaigns: 1, bestCampaignId: null, bestRatePct: null });
+  });
+
+  it("sits beside a classic campaign from the same brand without merging into it", () => {
+    const index = mergeCampaigns(
+      {},
+      [rec({ campaignId: "A", ratePct: 12 }), rec({ campaignId: null, ratePct: null, endsAt: null, spcc: true })],
+      NOW,
+    );
+    const summary = summarizeBrand(index.playbolt!, NOW)!;
+    expect(index.playbolt!.campaigns).toHaveLength(2);
+    expect(summary).toMatchObject({ liveCampaigns: 2, spccCampaigns: 1, bestCampaignId: "A", bestRatePct: 12 });
+  });
+
+  it("survives pruning like any live campaign", () => {
+    const index = mergeCampaigns({}, [rec({ campaignId: null, ratePct: null, endsAt: null, spcc: true })], NOW);
+    expect(Object.keys(pruneIndex(index, NOW + 1000))).toEqual(["playbolt"]);
+  });
+});
+
 describe("applyFills", () => {
   it("writes fill counts onto a known campaign id", () => {
     const index = mergeCampaigns({}, [rec()], NOW);
@@ -91,6 +123,7 @@ describe("summarizeBrand", () => {
       slotsTaken: 11,
       slotsTotal: 15,
       liveCampaigns: 2,
+      spccCampaigns: 0,
       bestCampaignId: "B",
       allClaimed: false,
     });

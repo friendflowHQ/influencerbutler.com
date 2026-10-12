@@ -233,6 +233,7 @@ function rowModel(brand: string): { strip: StripModel; facts: RowFacts } {
     openSlots,
     allClaimed: summary?.allClaimed ?? false,
     accepted: entryAccepted(entry),
+    spcc: (summary?.spccCampaigns ?? 0) > 0,
     note,
   };
   const facts: RowFacts = {

@@ -27,6 +27,10 @@ export type CampaignLite = {
   required: number | null;
   fullyClaimed: boolean | null;
   source: CampaignSource;
+  // A Sponsored Products for Creators (SPCC) campaign: no commission rate, no
+  // end date and no campaign id on its card, so it is identified by brand alone.
+  // It counts as live but is never the Accept target.
+  spcc?: boolean;
 };
 
 export type BrandEntry = {
@@ -47,6 +51,7 @@ export type IncomingCampaign = {
   required?: number | null;
   fullyClaimed?: boolean | null;
   source: CampaignSource;
+  spcc?: boolean;
 };
 
 export type CampaignFillLite = {
@@ -67,13 +72,16 @@ export type BrandSummary = {
   slotsTaken: number | null;
   slotsTotal: number | null;
   liveCampaigns: number;
+  // How many of the live campaigns are SPCC (counted in liveCampaigns too).
+  spccCampaigns: number;
   // The highest-rate live campaign that has an id (what Accept would target).
   bestCampaignId: string | null;
   // True when every live campaign we know the fill of is fully claimed.
   allClaimed: boolean;
 };
 
-function identity(c: Pick<CampaignLite, "id" | "ratePct" | "endsAt">): string {
+function identity(c: Pick<CampaignLite, "id" | "ratePct" | "endsAt" | "spcc">): string {
+  if (c.spcc) return c.id ? `spcc:${c.id}` : "spcc";
   return c.id ? `id:${c.id}` : `r:${c.ratePct ?? "?"}|e:${c.endsAt ?? "?"}`;
 }
 
@@ -105,6 +113,7 @@ export function mergeCampaigns(
       required: rec.required ?? null,
       fullyClaimed: rec.fullyClaimed ?? null,
       source: rec.source,
+      ...(rec.spcc ? { spcc: true } : {}),
     };
     const at = entry.campaigns.findIndex((c) => identity(c) === identity(candidate));
     const old = at === -1 ? undefined : entry.campaigns[at];
@@ -120,6 +129,7 @@ export function mergeCampaigns(
         required: candidate.required ?? old.required,
         fullyClaimed: candidate.fullyClaimed ?? old.fullyClaimed,
         source: old.source === "grid" ? "grid" : candidate.source,
+        ...(old.spcc || candidate.spcc ? { spcc: true } : {}),
       };
     }
     next[key] = entry;
@@ -186,12 +196,14 @@ export function summarizeBrand(entry: BrandEntry, now: number): BrandSummary | n
   let slotsTotal: number | null = null;
   let known = 0;
   let claimed = 0;
+  let spccCampaigns = 0;
 
   for (const c of live) {
+    if (c.spcc) spccCampaigns += 1;
     if (c.ratePct !== null && (bestRatePct === null || c.ratePct > bestRatePct)) {
       bestRatePct = c.ratePct;
     }
-    if (c.id && !c.fullyClaimed) {
+    if (c.id && !c.fullyClaimed && !c.spcc) {
       if (!best || (c.ratePct ?? 0) > (best.ratePct ?? 0)) best = c;
     }
     if (c.endsAt !== null && (soonestEnd === null || c.endsAt < soonestEnd)) soonestEnd = c.endsAt;
@@ -215,6 +227,7 @@ export function summarizeBrand(entry: BrandEntry, now: number): BrandSummary | n
     slotsTaken,
     slotsTotal,
     liveCampaigns: live.length,
+    spccCampaigns,
     bestCampaignId: best?.id ?? null,
     allClaimed: known > 0 && claimed === known,
   };

@@ -46,7 +46,7 @@ export function cardSignature(model: CardModel): string {
   const s = model.summary;
   return [
     model.brand,
-    s ? `${s.bestRatePct}|${s.endsInDays}|${s.openSlots}|${s.slotsTaken}|${s.slotsTotal}|${s.allClaimed}` : "-",
+    s ? `${s.bestRatePct}|${s.endsInDays}|${s.openSlots}|${s.slotsTaken}|${s.slotsTotal}|${s.allClaimed}|${s.spccCampaigns}` : "-",
     model.cadence ?? "",
     model.pitchedKeyword ?? "",
     model.links.map((l) => l.url).join(","),
@@ -93,6 +93,7 @@ export function buildCard(model: CardModel, handlers: CardHandlers): HTMLElement
       }
     }
     if (s.liveCampaigns > 1) facts.append(el("span", "ccm-fact", `${s.liveCampaigns} live campaigns`));
+    if (s.spccCampaigns > 0) facts.append(el("span", "ccm-fact", "SPCC campaign"));
     if (facts.childElementCount > 0) card.append(facts);
 
     if (typeof s.slotsTaken === "number" && typeof s.slotsTotal === "number" && s.slotsTotal > 0) {

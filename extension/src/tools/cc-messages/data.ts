@@ -4,7 +4,7 @@
 // hook's campaign records and fill counts), the accepted-campaign ledger, and the
 // per-brand notes. No desktop app is needed for any of it.
 
-import { readCampaignGridByTestId } from "../../amazon/creator-campaigns";
+import { readCampaignGridByTestId, readSpccGrid } from "../../amazon/creator-campaigns";
 import { log } from "../../shared/log";
 import { sendToBackground, type AcceptLedgerView } from "../../shared/messages";
 import {
@@ -111,11 +111,15 @@ function endOfDay(date: Date | null): number | null {
 }
 
 // Read the rendered campaign grid (when this page has one) into the index. Cheap
-// to call on every sweep: it only merges when the grid's content changed.
+// to call on every sweep: it only merges when the grid's content changed. The
+// Affiliate+ tab and the SPCC tab are read separately: SPCC cards carry a brand
+// but no rate, date or campaign id, and still mean the brand has a live campaign.
 export function mergeGrid(): void {
   let cards;
+  let spccCards;
   try {
     cards = readCampaignGridByTestId(document);
+    spccCards = readSpccGrid(document);
   } catch {
     return;
   }
@@ -133,9 +137,20 @@ export function mergeGrid(): void {
       source: "grid",
     });
   }
+  for (const c of spccCards) {
+    if (!c.brand) continue;
+    incoming.push({
+      brand: c.brand,
+      campaignId: null,
+      ratePct: null,
+      endsAt: null,
+      source: "grid",
+      spcc: true,
+    });
+  }
   if (incoming.length === 0) return;
   const signature = incoming
-    .map((r) => `${r.brand}|${r.campaignId}|${r.ratePct}|${r.endsAt}|${r.accepted}|${r.required}`)
+    .map((r) => `${r.brand}|${r.campaignId}|${r.ratePct}|${r.endsAt}|${r.accepted}|${r.required}|${r.spcc ? "s" : ""}`)
     .join("~");
   if (signature === lastGridSignature) return;
   lastGridSignature = signature;
