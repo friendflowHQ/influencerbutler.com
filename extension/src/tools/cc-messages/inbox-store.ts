@@ -232,6 +232,16 @@ async function readThreads(myEpoch: number): Promise<void> {
   }
 }
 
+// The creator opened this conversation in the drawer, so it is read now even if
+// the API copy (at most a couple of minutes old) still says unread.
+export function markConversationRead(brandKey: string): void {
+  const row = cache.rows[brandKey];
+  if (!row || !row.unread) return;
+  cache = { ...cache, rows: { ...cache.rows, [brandKey]: { ...row, unread: false } } };
+  persistCache();
+  notify();
+}
+
 // Start reading the inbox on this Creator Connections page. Listeners added with
 // subscribeInbox hear about every change. Returns a stop function.
 export function startInboxSync(): () => void {
