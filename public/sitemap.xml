@@ -1028,9 +1028,15 @@
   </url>
   <url>
     <loc>https://www.influencerbutler.com/es/security</loc>
-    <lastmod>2026-10-07</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.2</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/events</loc>
+    <lastmod>2026-10-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.influencerbutler.com/extension</loc>
@@ -1364,7 +1370,7 @@
   </url>
   <url>
     <loc>https://www.influencerbutler.com/fr/security</loc>
-    <lastmod>2026-10-07</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.2</priority>
   </url>
@@ -1490,7 +1496,7 @@
   </url>
   <url>
     <loc>https://www.influencerbutler.com/legal/accessibility</loc>
-    <lastmod>2026-10-07</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
@@ -1514,7 +1520,7 @@
   </url>
   <url>
     <loc>https://www.influencerbutler.com/security</loc>
-    <lastmod>2026-10-07</lastmod>
+    <lastmod>2026-10-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>

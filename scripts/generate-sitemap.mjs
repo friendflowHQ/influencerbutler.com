@@ -112,6 +112,15 @@ async function main() {
     priority: "0.3",
   });
 
+  // /events is a public Next route (src/app/events) backed by live DB data,
+  // not a static .html page, so the walk above never sees it either.
+  entries.push({
+    loc: `${SITE_ORIGIN}/events`,
+    lastmod: fmtDate(new Date()),
+    changefreq: "weekly",
+    priority: "0.7",
+  });
+
   // The free tools live on public Next routes (src/app/tools), not static
   // .html pages, so the walk above never sees them. Emit the /tools hub plus
   // one URL per tool. Keep this slug list in sync with
