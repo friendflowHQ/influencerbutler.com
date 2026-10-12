@@ -541,6 +541,81 @@ export interface Dict {
   toolMessageCardsHint: string;
   toolBrandConversations: string;
   toolBrandConversationsHint: string;
+  // Messages drawer (tools/cc-messages): filter bar, older-conversations list,
+  // row strip, brand card, folded duplicates.
+  ccmFilterBarLabel: string;
+  ccmFilterAll: string;
+  ccmFilterUnread: string;
+  ccmFilterReplied: string;
+  ccmFilterWaiting: string;
+  ccmFilterLive: string;
+  ccmFilterPitched: string;
+  ccmFilterHighRate: (pct: number) => string;
+  ccmNextUnread: string;
+  ccmSearchLabel: string;
+  ccmSearchPlaceholder: string;
+  ccmSearchClear: string;
+  ccmEmptyUnread: string;
+  ccmEmptyThreads: (checked: string, total: string) => string;
+  ccmEmptyReplied: string;
+  ccmEmptyWaiting: string;
+  ccmEmptyLive: string;
+  ccmEmptyPitched: string;
+  ccmEmptySearch: (query: string) => string;
+  ccmSyncReading: string;
+  ccmSyncLine: (total: string, ago: string) => string;
+  ccmSyncThreads: (checked: string, total: string) => string;
+  ccmAgoJustNow: string;
+  ccmAgoMin: (n: number) => string;
+  ccmAgoHours: (n: number) => string;
+  ccmOlderHeader: (n: string) => string;
+  ccmShowMore: (step: string, left: string) => string;
+  ccmOpenConversation: (brand: string) => string;
+  ccmToday: string;
+  ccmYesterday: string;
+  ccmDaysAgo: (n: number) => string;
+  ccmPillAccepted: string;
+  ccmPillAcceptedTip: string;
+  ccmPillRateTip: string;
+  ccmPillSpcc: string;
+  ccmPillSpccTip: string;
+  ccmPillFull: string;
+  ccmPillFullTip: string;
+  ccmEndsToday: string;
+  ccmEndsIn: (days: number) => string;
+  ccmEndsTip: string;
+  ccmSlotsLeft: (n: number) => string;
+  ccmSlotsLeftTip: string;
+  ccmPitchedUnder: (keyword: string) => string;
+  ccmPitchedOn: (when: string) => string;
+  ccmPitchedAlso: (list: string) => string;
+  ccmCadenceRenews: string;
+  ccmCadenceOccasional: string;
+  ccmCadenceOneTime: string;
+  ccmCardSummary: (brand: string) => string;
+  ccmCardPitchedTip: string;
+  ccmAllSlotsTaken: string;
+  ccmSlotsOpen: (n: number) => string;
+  ccmLiveCampaigns: (n: number) => string;
+  ccmSpccCampaign: string;
+  ccmMeterLabel: (taken: number, total: number) => string;
+  ccmNoCampaignData: string;
+  ccmFromMessage: string;
+  ccmAcceptBest: string;
+  ccmAccepting: string;
+  ccmOpenCampaign: string;
+  ccmCopyBrand: string;
+  ccmCopied: string;
+  ccmCopyFailed: string;
+  ccmNote: string;
+  ccmNotePlaceholder: string;
+  ccmNoCampaignId: string;
+  ccmAcceptOff: string;
+  ccmNoCampaignToAccept: string;
+  ccmDupeShow: string;
+  ccmNotFoundTitle: string;
+  ccmNotFoundBody: (brand: string) => string;
+  ccmClose: string;
   toolBrandKeywords: string;
   toolMessageTemplates: string;
   sumBenableBadge: string;
@@ -1727,6 +1802,79 @@ const en: Dict = {
   toolMessageCardsHint: "In the Creator Connections Messages drawer, shows each brand's rate, days left and open slots, pulls the sample-form and content links out of their message, folds repeated messages, and adds filters. Works without the desktop app.",
   toolBrandConversations: "Brand conversation chips on products",
   toolBrandConversationsHint: "Shows \"Messaged\", \"Brand responded\" or \"Brand messaged you\" on a product when you have a conversation with its brand in Creator Connections, and opens that conversation when clicked. Works without the desktop app.",
+  ccmFilterBarLabel: "Filter conversations",
+  ccmFilterAll: "All",
+  ccmFilterUnread: "Unread",
+  ccmFilterReplied: "Brand replied",
+  ccmFilterWaiting: "Waiting on brand",
+  ccmFilterLive: "Live campaign",
+  ccmFilterPitched: "Pitched by me",
+  ccmFilterHighRate: (pct) => `${pct}%+ rate`,
+  ccmNextUnread: "Next unread",
+  ccmSearchLabel: "Search conversations by brand",
+  ccmSearchPlaceholder: "Search brands",
+  ccmSearchClear: "Clear search",
+  ccmEmptyUnread: "Nothing unread.",
+  ccmEmptyThreads: (checked, total) => `Still reading threads: ${checked} of ${total} checked. Counts fill in as it goes.`,
+  ccmEmptyReplied: "No brand has replied yet.",
+  ccmEmptyWaiting: "No pitch is waiting on a brand.",
+  ccmEmptyLive: "No brand with a live campaign is known yet. Open the campaigns tabs once and they fill in.",
+  ccmEmptyPitched: "Needs the desktop app paired: it reads what Message Brands sent.",
+  ccmEmptySearch: (query) => `No conversation matches "${query}".`,
+  ccmSyncReading: "Reading your full inbox...",
+  ccmSyncLine: (total, ago) => `${total} conversations, updated ${ago}`,
+  ccmSyncThreads: (checked, total) => `threads checked: ${checked} of ${total}`,
+  ccmAgoJustNow: "just now",
+  ccmAgoMin: (n) => `${n} min ago`,
+  ccmAgoHours: (n) => (n === 1 ? "1 hour ago" : `${n} hours ago`),
+  ccmOlderHeader: (n) => `${n} older conversations Messages does not list`,
+  ccmShowMore: (step, left) => `Show ${step} more (${left} left)`,
+  ccmOpenConversation: (brand) => `Open the conversation with ${brand}`,
+  ccmToday: "Today",
+  ccmYesterday: "Yesterday",
+  ccmDaysAgo: (n) => `${n} days ago`,
+  ccmPillAccepted: "Accepted",
+  ccmPillAcceptedTip: "You have accepted a campaign from this brand.",
+  ccmPillRateTip: "Best commission rate on a live Creator Connections campaign from this brand.",
+  ccmPillSpcc: "SPCC",
+  ccmPillSpccTip: "This brand has a live Sponsored Products for Creators campaign.",
+  ccmPillFull: "Full",
+  ccmPillFullTip: "Every slot on this brand's campaigns is taken.",
+  ccmEndsToday: "Ends today",
+  ccmEndsIn: (days) => `Ends in ${days}d`,
+  ccmEndsTip: "Days until the soonest-ending live campaign finishes.",
+  ccmSlotsLeft: (n) => (n === 1 ? "1 slot left" : `${n} slots left`),
+  ccmSlotsLeftTip: "Creator slots still open on this brand's live campaigns.",
+  ccmPitchedUnder: (keyword) => `You pitched this brand under "${keyword}"`,
+  ccmPitchedOn: (when) => ` on ${when}`,
+  ccmPitchedAlso: (list) => `. Also: ${list}`,
+  ccmCadenceRenews: "renews",
+  ccmCadenceOccasional: "occasional",
+  ccmCadenceOneTime: "one-time",
+  ccmCardSummary: (brand) => `${brand} summary`,
+  ccmCardPitchedTip: "The search keyword you pitched this brand under",
+  ccmAllSlotsTaken: "All slots taken",
+  ccmSlotsOpen: (n) => (n === 1 ? "1 slot open" : `${n} slots open`),
+  ccmLiveCampaigns: (n) => `${n} live campaigns`,
+  ccmSpccCampaign: "SPCC campaign",
+  ccmMeterLabel: (taken, total) => `${taken} of ${total} creator slots taken`,
+  ccmNoCampaignData: "No live campaign data for this brand yet. Open the Campaigns list once and it will fill in.",
+  ccmFromMessage: "From their message:",
+  ccmAcceptBest: "Accept best campaign",
+  ccmAccepting: "Accepting...",
+  ccmOpenCampaign: "Open campaign",
+  ccmCopyBrand: "Copy brand name",
+  ccmCopied: "Copied",
+  ccmCopyFailed: "Could not copy",
+  ccmNote: "Note",
+  ccmNotePlaceholder: "e.g. wants content by Friday",
+  ccmNoCampaignId: "No campaign id yet. Open the Campaigns list once so it can be found.",
+  ccmAcceptOff: "Accepting from here is turned off in the extension settings.",
+  ccmNoCampaignToAccept: "No campaign to accept.",
+  ccmDupeShow: "Same message sent again, folded. Show it",
+  ccmNotFoundTitle: "Conversation not found",
+  ccmNotFoundBody: (brand) => `Could not open the conversation with ${brand}. Find it in Messages.`,
+  ccmClose: "Close",
   toolBrandKeywords: "Keyword you pitched each brand under",
   toolMessageTemplates: "Message templates (save and load)",
   sumBenableBadge: "Benable money signals",
@@ -2952,6 +3100,79 @@ const es: Dict = {
   toolMessageCardsHint: "En el panel de Mensajes de Creator Connections, muestra la tasa, los días restantes y los cupos de cada marca, saca los enlaces del formulario de muestra y del contenido, pliega los mensajes repetidos y añade filtros. Funciona sin la app de escritorio.",
   toolBrandConversations: "Etiquetas de conversación con la marca en los productos",
   toolBrandConversationsHint: "Muestra \"Mensaje enviado\", \"La marca respondió\" o \"La marca te escribió\" en un producto cuando tienes una conversación con su marca en Creator Connections, y abre esa conversación al hacer clic. Funciona sin la app de escritorio.",
+  ccmFilterBarLabel: "Filtrar conversaciones",
+  ccmFilterAll: "Todas",
+  ccmFilterUnread: "Sin leer",
+  ccmFilterReplied: "La marca respondió",
+  ccmFilterWaiting: "Esperando a la marca",
+  ccmFilterLive: "Campaña activa",
+  ccmFilterPitched: "Contactadas por mí",
+  ccmFilterHighRate: (pct) => `Tasa ${pct}%+`,
+  ccmNextUnread: "Siguiente sin leer",
+  ccmSearchLabel: "Buscar conversaciones por marca",
+  ccmSearchPlaceholder: "Buscar marcas",
+  ccmSearchClear: "Borrar búsqueda",
+  ccmEmptyUnread: "Nada sin leer.",
+  ccmEmptyThreads: (checked, total) => `Todavía leyendo los hilos: ${checked} de ${total} revisados. Los recuentos se completan sobre la marcha.`,
+  ccmEmptyReplied: "Ninguna marca ha respondido todavía.",
+  ccmEmptyWaiting: "Ningún mensaje está esperando respuesta de una marca.",
+  ccmEmptyLive: "Aún no se conoce ninguna marca con campaña activa. Abre las pestañas de campañas una vez y se completarán.",
+  ccmEmptyPitched: "Necesita la app de escritorio emparejada: lee lo que envió Message Brands.",
+  ccmEmptySearch: (query) => `Ninguna conversación coincide con "${query}".`,
+  ccmSyncReading: "Leyendo toda tu bandeja de entrada...",
+  ccmSyncLine: (total, ago) => `${total} conversaciones, actualizado ${ago}`,
+  ccmSyncThreads: (checked, total) => `hilos revisados: ${checked} de ${total}`,
+  ccmAgoJustNow: "ahora mismo",
+  ccmAgoMin: (n) => `hace ${n} min`,
+  ccmAgoHours: (n) => (n === 1 ? "hace 1 hora" : `hace ${n} horas`),
+  ccmOlderHeader: (n) => `${n} conversaciones anteriores que Mensajes no muestra`,
+  ccmShowMore: (step, left) => `Mostrar ${step} más (quedan ${left})`,
+  ccmOpenConversation: (brand) => `Abrir la conversación con ${brand}`,
+  ccmToday: "Hoy",
+  ccmYesterday: "Ayer",
+  ccmDaysAgo: (n) => `hace ${n} días`,
+  ccmPillAccepted: "Aceptada",
+  ccmPillAcceptedTip: "Has aceptado una campaña de esta marca.",
+  ccmPillRateTip: "Mejor tasa de comisión en una campaña activa de Creator Connections de esta marca.",
+  ccmPillSpcc: "SPCC",
+  ccmPillSpccTip: "Esta marca tiene una campaña activa de Sponsored Products for Creators.",
+  ccmPillFull: "Completa",
+  ccmPillFullTip: "Todos los cupos de las campañas de esta marca están ocupados.",
+  ccmEndsToday: "Termina hoy",
+  ccmEndsIn: (days) => `Termina en ${days} d`,
+  ccmEndsTip: "Días hasta que termine la campaña activa que acaba antes.",
+  ccmSlotsLeft: (n) => (n === 1 ? "Queda 1 cupo" : `Quedan ${n} cupos`),
+  ccmSlotsLeftTip: "Cupos de creador aún abiertos en las campañas activas de esta marca.",
+  ccmPitchedUnder: (keyword) => `Contactaste a esta marca con "${keyword}"`,
+  ccmPitchedOn: (when) => ` el ${when}`,
+  ccmPitchedAlso: (list) => `. También: ${list}`,
+  ccmCadenceRenews: "se renueva",
+  ccmCadenceOccasional: "ocasional",
+  ccmCadenceOneTime: "única",
+  ccmCardSummary: (brand) => `Resumen de ${brand}`,
+  ccmCardPitchedTip: "La palabra clave con la que contactaste a esta marca",
+  ccmAllSlotsTaken: "Todos los cupos ocupados",
+  ccmSlotsOpen: (n) => (n === 1 ? "1 cupo abierto" : `${n} cupos abiertos`),
+  ccmLiveCampaigns: (n) => `${n} campañas activas`,
+  ccmSpccCampaign: "Campaña SPCC",
+  ccmMeterLabel: (taken, total) => `${taken} de ${total} cupos de creador ocupados`,
+  ccmNoCampaignData: "Aún no hay datos de campañas activas de esta marca. Abre la lista de campañas una vez y se completará.",
+  ccmFromMessage: "De su mensaje:",
+  ccmAcceptBest: "Aceptar la mejor campaña",
+  ccmAccepting: "Aceptando...",
+  ccmOpenCampaign: "Abrir campaña",
+  ccmCopyBrand: "Copiar nombre de la marca",
+  ccmCopied: "Copiado",
+  ccmCopyFailed: "No se pudo copiar",
+  ccmNote: "Nota",
+  ccmNotePlaceholder: "p. ej. quiere el contenido para el viernes",
+  ccmNoCampaignId: "Aún no hay id de campaña. Abre la lista de campañas una vez para encontrarlo.",
+  ccmAcceptOff: "Aceptar desde aquí está desactivado en los ajustes de la extensión.",
+  ccmNoCampaignToAccept: "No hay ninguna campaña que aceptar.",
+  ccmDupeShow: "Mismo mensaje enviado otra vez, plegado. Mostrarlo",
+  ccmNotFoundTitle: "Conversación no encontrada",
+  ccmNotFoundBody: (brand) => `No se pudo abrir la conversación con ${brand}. Búscala en Mensajes.`,
+  ccmClose: "Cerrar",
   toolBrandKeywords: "Palabra clave con la que contactaste a cada marca",
   toolMessageTemplates: "Plantillas de mensajes (guardar y cargar)",
   sumBenableBadge: "Señales de dinero en Benable",
@@ -4180,6 +4401,79 @@ const fr: Dict = {
   toolMessageCardsHint: "Dans le panneau Messages de Creator Connections, affiche le taux, les jours restants et les places de chaque marque, extrait les liens du formulaire d'échantillon et du contenu, replie les messages répétés et ajoute des filtres. Fonctionne sans l'application de bureau.",
   toolBrandConversations: "Pastilles de conversation avec la marque sur les produits",
   toolBrandConversationsHint: "Affiche \"Message envoyé\", \"La marque a répondu\" ou \"La marque vous a écrit\" sur un produit lorsque vous avez une conversation avec sa marque dans Creator Connections, et ouvre cette conversation au clic. Fonctionne sans l'application de bureau.",
+  ccmFilterBarLabel: "Filtrer les conversations",
+  ccmFilterAll: "Toutes",
+  ccmFilterUnread: "Non lues",
+  ccmFilterReplied: "La marque a répondu",
+  ccmFilterWaiting: "En attente de la marque",
+  ccmFilterLive: "Campagne en cours",
+  ccmFilterPitched: "Contactées par moi",
+  ccmFilterHighRate: (pct) => `Taux ${pct}%+`,
+  ccmNextUnread: "Suivante non lue",
+  ccmSearchLabel: "Rechercher des conversations par marque",
+  ccmSearchPlaceholder: "Rechercher une marque",
+  ccmSearchClear: "Effacer la recherche",
+  ccmEmptyUnread: "Rien de non lu.",
+  ccmEmptyThreads: (checked, total) => `Lecture des fils en cours : ${checked} sur ${total} vérifiés. Les compteurs se remplissent au fur et à mesure.`,
+  ccmEmptyReplied: "Aucune marque n'a encore répondu.",
+  ccmEmptyWaiting: "Aucun message n'attend la réponse d'une marque.",
+  ccmEmptyLive: "Aucune marque avec une campagne en cours n'est encore connue. Ouvrez une fois les onglets de campagnes et elles se rempliront.",
+  ccmEmptyPitched: "Nécessite l'application de bureau appairée : elle lit ce que Message Brands a envoyé.",
+  ccmEmptySearch: (query) => `Aucune conversation ne correspond à « ${query} ».`,
+  ccmSyncReading: "Lecture de toute votre boîte de réception...",
+  ccmSyncLine: (total, ago) => `${total} conversations, mis à jour ${ago}`,
+  ccmSyncThreads: (checked, total) => `fils vérifiés : ${checked} sur ${total}`,
+  ccmAgoJustNow: "à l'instant",
+  ccmAgoMin: (n) => `il y a ${n} min`,
+  ccmAgoHours: (n) => (n === 1 ? "il y a 1 heure" : `il y a ${n} heures`),
+  ccmOlderHeader: (n) => `${n} conversations plus anciennes que Messages n'affiche pas`,
+  ccmShowMore: (step, left) => `Afficher ${step} de plus (${left} restantes)`,
+  ccmOpenConversation: (brand) => `Ouvrir la conversation avec ${brand}`,
+  ccmToday: "Aujourd'hui",
+  ccmYesterday: "Hier",
+  ccmDaysAgo: (n) => `il y a ${n} jours`,
+  ccmPillAccepted: "Acceptée",
+  ccmPillAcceptedTip: "Vous avez accepté une campagne de cette marque.",
+  ccmPillRateTip: "Meilleur taux de commission sur une campagne Creator Connections en cours de cette marque.",
+  ccmPillSpcc: "SPCC",
+  ccmPillSpccTip: "Cette marque a une campagne Sponsored Products for Creators en cours.",
+  ccmPillFull: "Complète",
+  ccmPillFullTip: "Toutes les places des campagnes de cette marque sont prises.",
+  ccmEndsToday: "Se termine aujourd'hui",
+  ccmEndsIn: (days) => `Se termine dans ${days} j`,
+  ccmEndsTip: "Jours avant la fin de la campagne en cours qui se termine le plus tôt.",
+  ccmSlotsLeft: (n) => (n === 1 ? "1 place restante" : `${n} places restantes`),
+  ccmSlotsLeftTip: "Places de créateur encore ouvertes sur les campagnes en cours de cette marque.",
+  ccmPitchedUnder: (keyword) => `Vous avez contacté cette marque avec « ${keyword} »`,
+  ccmPitchedOn: (when) => ` le ${when}`,
+  ccmPitchedAlso: (list) => `. Aussi : ${list}`,
+  ccmCadenceRenews: "se renouvelle",
+  ccmCadenceOccasional: "occasionnelle",
+  ccmCadenceOneTime: "unique",
+  ccmCardSummary: (brand) => `Résumé de ${brand}`,
+  ccmCardPitchedTip: "Le mot-clé avec lequel vous avez contacté cette marque",
+  ccmAllSlotsTaken: "Toutes les places sont prises",
+  ccmSlotsOpen: (n) => (n === 1 ? "1 place ouverte" : `${n} places ouvertes`),
+  ccmLiveCampaigns: (n) => `${n} campagnes en cours`,
+  ccmSpccCampaign: "Campagne SPCC",
+  ccmMeterLabel: (taken, total) => `${taken} places de créateur sur ${total} prises`,
+  ccmNoCampaignData: "Pas encore de données de campagne en cours pour cette marque. Ouvrez une fois la liste des campagnes et elles se rempliront.",
+  ccmFromMessage: "Dans leur message :",
+  ccmAcceptBest: "Accepter la meilleure campagne",
+  ccmAccepting: "Acceptation...",
+  ccmOpenCampaign: "Ouvrir la campagne",
+  ccmCopyBrand: "Copier le nom de la marque",
+  ccmCopied: "Copié",
+  ccmCopyFailed: "Copie impossible",
+  ccmNote: "Note",
+  ccmNotePlaceholder: "p. ex. veut le contenu pour vendredi",
+  ccmNoCampaignId: "Pas encore d'identifiant de campagne. Ouvrez une fois la liste des campagnes pour le trouver.",
+  ccmAcceptOff: "Accepter depuis ici est désactivé dans les réglages de l'extension.",
+  ccmNoCampaignToAccept: "Aucune campagne à accepter.",
+  ccmDupeShow: "Même message envoyé à nouveau, replié. L'afficher",
+  ccmNotFoundTitle: "Conversation introuvable",
+  ccmNotFoundBody: (brand) => `Impossible d'ouvrir la conversation avec ${brand}. Retrouvez-la dans Messages.`,
+  ccmClose: "Fermer",
   toolBrandKeywords: "Mot-clé sous lequel vous avez contacté chaque marque",
   toolMessageTemplates: "Modèles de messages (enregistrer et charger)",
   sumBenableBadge: "Signaux d'argent Benable",

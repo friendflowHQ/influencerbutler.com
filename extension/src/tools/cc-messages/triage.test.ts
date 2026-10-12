@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  TRIAGE_FILTERS,
   countMatches,
   isTriageFilter,
   isUnreadDotColor,
@@ -21,7 +22,7 @@ describe("isUnreadDotColor", () => {
   });
 });
 
-const base: RowFacts = { unread: false, live: false, pitched: false, ratePct: null };
+const base: RowFacts = { unread: false, live: false, pitched: false, ratePct: null, state: null };
 
 describe("matchesFilter", () => {
   it("keeps everything for all", () => {
@@ -41,6 +42,26 @@ describe("matchesFilter", () => {
     expect(matchesFilter("highrate", { ...base, ratePct: 9.9 })).toBe(false);
     expect(matchesFilter("highrate", base)).toBe(false);
   });
+
+  it("Brand replied keeps every conversation the brand has written in", () => {
+    expect(matchesFilter("replied", { ...base, state: "brand-responded" })).toBe(true);
+    expect(matchesFilter("replied", { ...base, state: "you-replied" })).toBe(true);
+    expect(matchesFilter("replied", { ...base, state: "inbound" })).toBe(true);
+    expect(matchesFilter("replied", { ...base, state: "messaged" })).toBe(false);
+    expect(matchesFilter("replied", { ...base, state: "conversation" })).toBe(false);
+    expect(matchesFilter("replied", base)).toBe(false);
+  });
+
+  it("Waiting on brand keeps only one-sided pitches", () => {
+    expect(matchesFilter("waiting", { ...base, state: "messaged" })).toBe(true);
+    expect(matchesFilter("waiting", { ...base, state: "you-replied" })).toBe(false);
+    expect(matchesFilter("waiting", { ...base, state: "conversation" })).toBe(false);
+    expect(matchesFilter("waiting", base)).toBe(false);
+  });
+
+  it("lists the chips in display order", () => {
+    expect(TRIAGE_FILTERS).toEqual(["all", "unread", "replied", "waiting", "live", "pitched", "highrate"]);
+  });
 });
 
 describe("countMatches / isTriageFilter", () => {
@@ -52,6 +73,7 @@ describe("countMatches / isTriageFilter", () => {
 
   it("validates stored values", () => {
     expect(isTriageFilter("unread")).toBe(true);
+    expect(isTriageFilter("replied")).toBe(true);
     expect(isTriageFilter("bogus")).toBe(false);
     expect(isTriageFilter(undefined)).toBe(false);
   });

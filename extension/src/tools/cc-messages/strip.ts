@@ -1,18 +1,20 @@
+import { t } from "../../i18n";
 import { createInlineShadow } from "../../ui/host";
 import { el } from "../../ui/components";
 import { STRIP_HOST_CLASS } from "./dom";
 
 // The status strip under a conversation's brand name: one wrapping line of small
-// pills (pitched keyword, rate + cadence, days left, open slots, accepted, note).
-// One block-level shadow host per row, placed on its own line by dom.ts, so it
-// never floats over Amazon's timestamp and chevron the way the old end-of-row
-// chip did.
+// pills (pitched keyword, rate + cadence, SPCC, days left, open slots, accepted,
+// note). One block-level shadow host per row, placed on its own line by dom.ts,
+// so it never floats over Amazon's timestamp and chevron the way the old
+// end-of-row chip did.
 
 export type StripModel = {
   // The search keyword the desktop Message Brands tool pitched this brand under.
   keyword?: { text: string; tip: string } | null;
   ratePct?: number | null;
-  // "renews" | "occasional" | "one-shot" from the desktop app, when it answered.
+  // The translated cadence word ("renews" / "occasional" / "one-time") from the
+  // desktop app's answer, when it answered.
   cadence?: string | null;
   risky?: boolean;
   endsInDays?: number | null;
@@ -24,12 +26,6 @@ export type StripModel = {
   note?: string | null;
 };
 
-const CADENCE_LABEL: Record<string, string> = {
-  renews: "renews",
-  occasional: "occasional",
-  "one-shot": "one-time",
-};
-
 type Pill = { cls: string; glyph?: string; text: string; tip?: string };
 
 export function formatRate(pct: number): string {
@@ -37,48 +33,48 @@ export function formatRate(pct: number): string {
 }
 
 export function endsLabel(days: number): string {
-  if (days <= 0) return "Ends today";
-  return `Ends in ${days}d`;
+  if (days <= 0) return t().ccmEndsToday;
+  return t().ccmEndsIn(days);
 }
 
 function pillsFor(model: StripModel): Pill[] {
+  const s = t();
   const pills: Pill[] = [];
   if (model.keyword) {
     pills.push({ cls: "kw", glyph: "🔍", text: model.keyword.text, tip: model.keyword.tip });
   }
   if (model.accepted) {
-    pills.push({ cls: "good", text: "Accepted", tip: "You have accepted a campaign from this brand." });
+    pills.push({ cls: "good", text: s.ccmPillAccepted, tip: s.ccmPillAcceptedTip });
   }
   const rateBits: string[] = [];
   if (typeof model.ratePct === "number" && model.ratePct > 0) rateBits.push(`${formatRate(model.ratePct)}%`);
-  const cadence = model.cadence ? CADENCE_LABEL[model.cadence] : undefined;
-  if (cadence) rateBits.push(cadence);
+  if (model.cadence) rateBits.push(model.cadence);
   if (rateBits.length > 0) {
     pills.push({
       cls: model.risky ? "warn" : "rate",
       glyph: "📊",
       text: rateBits.join(" · "),
-      tip: "Best commission rate on a live Creator Connections campaign from this brand.",
+      tip: s.ccmPillRateTip,
     });
   }
   if (model.spcc) {
-    pills.push({ cls: "rate", text: "SPCC", tip: "This brand has a live Sponsored Products for Creators campaign." });
+    pills.push({ cls: "rate", text: s.ccmPillSpcc, tip: s.ccmPillSpccTip });
   }
   if (model.allClaimed) {
-    pills.push({ cls: "muted", text: "Full", tip: "Every slot on this brand's campaigns is taken." });
+    pills.push({ cls: "muted", text: s.ccmPillFull, tip: s.ccmPillFullTip });
   } else {
     if (typeof model.endsInDays === "number") {
       pills.push({
         cls: model.endsInDays <= 2 ? "warn" : "muted",
         text: endsLabel(model.endsInDays),
-        tip: "Days until the soonest-ending live campaign finishes.",
+        tip: s.ccmEndsTip,
       });
     }
     if (typeof model.openSlots === "number" && model.openSlots > 0) {
       pills.push({
         cls: "muted",
-        text: `${model.openSlots} slot${model.openSlots === 1 ? "" : "s"} left`,
-        tip: "Creator slots still open on this brand's live campaigns.",
+        text: s.ccmSlotsLeft(model.openSlots),
+        tip: s.ccmSlotsLeftTip,
       });
     }
   }

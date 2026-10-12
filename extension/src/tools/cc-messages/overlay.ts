@@ -1,3 +1,4 @@
+import { getLocale, t } from "../../i18n";
 import { log } from "../../shared/log";
 import { createInlineShadow } from "../../ui/host";
 import { el } from "../../ui/components";
@@ -5,6 +6,7 @@ import { sendToBackground, type AcceptOutcome, type AcceptResult } from "../../s
 import type { Settings } from "../../storage/schema";
 import { subscribeMessagesWidget } from "../cc-widget/observer";
 import { describeAcceptResult } from "../campaigns/accept";
+import { setChatBubbleAvoid } from "../chat-bubble/panel";
 import { getBrandSignals, onBrandSignalsChanged } from "../brand-keywords/overlay";
 import { normalizeBrand } from "../brand-keywords/normalize";
 import {
@@ -33,6 +35,7 @@ import {
   CARD_HOST_CLASS,
   DUPE_HOST_CLASS,
   FILTER_HOST_CLASS,
+  MORE_HOST_CLASS,
   STRIP_HOST_CLASS,
   hiddenSignature,
   hideBubble,
@@ -44,10 +47,23 @@ import {
   showBubble,
 } from "./dom";
 import { findDuplicateIndexes, normalizeMessageText } from "./dupes";
-import { buildFilterBar, filterBarSignature, type BuiltFilterBar, type FilterBarModel } from "./filterbar";
-import { getInbox, subscribeInbox } from "./inbox-store";
-import { buildInboxView, visibleExtras, type DomFact, type MoreItem } from "./inbox-view";
+import { buildFilterBar, filterBarSignature, formatCount, type BuiltFilterBar, type FilterBarModel } from "./filterbar";
+import { INBOX_STALE_MS, type InboxCache } from "./inbox-cache";
+import { getInbox, markConversationRead, subscribeInbox } from "./inbox-store";
+import {
+  MAX_MORE_ITEMS,
+  MORE_STEP,
+  buildInboxView,
+  inboxFacts,
+  matchesQuery,
+  threadProgress,
+  visibleExtras,
+  type DomFact,
+  type InboxView,
+  type MoreItem,
+} from "./inbox-view";
 import { extractMessageLinks } from "./links";
+import { buildMoreList, moreListSignature, type MoreListModel } from "./more-list";
 import { openBrandConversation } from "./open-conversation";
 import { getBrandNote, setBrandNote } from "./notes";
 import { buildStrip, stripSignature, type StripModel } from "./strip";
@@ -60,17 +76,19 @@ import {
   type RowFacts,
   type TriageFilter,
 } from "./triage";
+import { formatAgo, formatWhen, numericDate } from "./when";
 
 // Message Cards: the richer Creator Connections Messages drawer. A status strip
 // under each conversation's brand name, a brand card above an open thread (with
 // the links pulled out of the brand's message, a note, and Accept), duplicate
-// brand blasts folded, and an inbox filter bar. It runs from the campaigns the
-// page has already loaded (tools/cc-messages/data.ts), so it works with the
-// desktop app closed; the app's keyword and cadence answers (read through
-// brand-keywords) only add extras. Like Brand Keywords, it lives on the floating
-// widget that mounts, unmounts and toggles between a list and a thread on the
-// same /p/connect/* route, so it subscribes to the shared widget observer and is
-// torn down explicitly on every SPA navigation.
+// brand blasts folded, an inbox filter bar with brand search, and the
+// conversations the drawer does not render listed after its rows. It runs from
+// the campaigns the page has already loaded (tools/cc-messages/data.ts), so it
+// works with the desktop app closed; the app's keyword and cadence answers (read
+// through brand-keywords) only add extras. Like Brand Keywords, it lives on the
+// floating widget that mounts, unmounts and toggles between a list and a thread
+// on the same /p/connect/* route, so it subscribes to the shared widget observer
+// and is torn down explicitly on every SPA navigation.
 
 const RESWEEP_DEBOUNCE_MS = 200;
 
@@ -82,14 +100,18 @@ let settingsRef: Settings | null = null;
 let resweepTimer: number | null = null;
 
 let activeFilter: TriageFilter = "all";
+let query = "";
+let moreLimit = MAX_MORE_ITEMS;
 
 type RowEntry = { host: HTMLElement | null; sig: string };
 const rowEntries = new Map<HTMLElement, RowEntry>();
 let filterBar: { built: BuiltFilterBar; sig: string } | null = null;
+let moreList: { host: HTMLElement; sig: string } | null = null;
 let card: { host: HTMLElement; sig: string; brand: string } | null = null;
 const dupeBars = new Map<HTMLElement, HTMLElement>();
 // Duplicate bubbles the creator chose to show, so a sweep does not fold them again.
 const revealed = new Set<string>();
+let onResize: (() => void) | null = null;
 
 export function initMessageCards(settings: Settings): void {
   teardownMessageCards();
@@ -109,6 +131,9 @@ export function initMessageCards(settings: Settings): void {
   // Repaint when the full-inbox read (or a batch of thread reads) lands.
   unsubscribeInbox = subscribeInbox(() => requestSweep(myEpoch));
   unsubscribe = subscribeMessagesWidget(() => runSweep(myEpoch));
+  // The chat bubble is placed relative to the drawer, which moves on resize.
+  onResize = () => requestSweep(myEpoch);
+  window.addEventListener("resize", onResize);
 }
 
 export function teardownMessageCards(): void {
@@ -118,6 +143,8 @@ export function teardownMessageCards(): void {
   unsubscribeSignals = null;
   unsubscribeInbox?.();
   unsubscribeInbox = null;
+  if (onResize) window.removeEventListener("resize", onResize);
+  onResize = null;
   epoch += 1;
   if (resweepTimer !== null) {
     window.clearTimeout(resweepTimer);
@@ -129,16 +156,23 @@ export function teardownMessageCards(): void {
   dupeBars.clear();
   revealed.clear();
   filterBar = null;
+  moreList = null;
   card = null;
   activeFilter = "all";
+  query = "";
+  moreLimit = MAX_MORE_ITEMS;
   settingsRef = null;
+  setChatBubbleAvoid(null);
   resetData();
 }
 
 function removeAllHosts(): void {
-  const selector = `.${STRIP_HOST_CLASS}, .${CARD_HOST_CLASS}, .${FILTER_HOST_CLASS}, .${DUPE_HOST_CLASS}`;
+  const selector = `.${STRIP_HOST_CLASS}, .${CARD_HOST_CLASS}, .${FILTER_HOST_CLASS}, .${MORE_HOST_CLASS}, .${DUPE_HOST_CLASS}`;
   for (const host of Array.from(document.querySelectorAll(selector))) host.remove();
-  // Rows the filter hid.
+  unhideFilteredRows();
+}
+
+function unhideFilteredRows(): void {
   for (const row of Array.from(document.querySelectorAll<HTMLElement>("[data-ib-ccm-filtered]"))) {
     row.removeAttribute("data-ib-ccm-filtered");
     row.style.removeProperty("display");
@@ -164,6 +198,9 @@ function runSweep(myEpoch: number): void {
 
 function sweep(myEpoch: number): void {
   const widget = findMessagesWidget(document);
+  const open = widget !== null && widget.getClientRects().length > 0;
+  // Keep the extension's support bubble off the drawer while it is open.
+  setChatBubbleAvoid(open && widget ? widget.getBoundingClientRect() : null);
   if (!widget) {
     // Panel closed: drop our hosts so a reopen starts clean.
     dropListUi();
@@ -201,13 +238,28 @@ function entryAccepted(entry: BrandEntry | null): boolean {
 function formatDate(ms: number): string | null {
   if (!Number.isFinite(ms) || ms <= 0) return null;
   try {
-    return new Date(ms).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    return new Date(ms).toLocaleDateString(getLocale(), { year: "numeric", month: "short", day: "numeric" });
   } catch {
     return null;
   }
 }
 
+function cadenceLabel(cadence: string | null | undefined): string | null {
+  const s = t();
+  switch (cadence) {
+    case "renews":
+      return s.ccmCadenceRenews;
+    case "occasional":
+      return s.ccmCadenceOccasional;
+    case "one-shot":
+      return s.ccmCadenceOneTime;
+    default:
+      return null;
+  }
+}
+
 function rowModel(brand: string): { strip: StripModel; facts: RowFacts } {
+  const s = t();
   const { entry, summary } = liveEntry(brand);
   const { keyword, enrichment } = getBrandSignals(brand);
   const note = getBrandNote(getNotes(), brand)?.note ?? null;
@@ -219,15 +271,15 @@ function rowModel(brand: string): { strip: StripModel; facts: RowFacts } {
   if (keyword) {
     const when = formatDate(keyword.lastSentAt);
     const others = keyword.keywords.filter((k) => k && k !== keyword.keyword);
-    let tip = `You pitched this brand under "${keyword.keyword}"`;
-    if (when) tip += ` on ${when}`;
-    if (others.length > 0) tip += `. Also: ${others.join(", ")}`;
+    let tip = s.ccmPitchedUnder(keyword.keyword);
+    if (when) tip += s.ccmPitchedOn(when);
+    if (others.length > 0) tip += s.ccmPitchedAlso(others.join(", "));
     kw = { text: keyword.keyword, tip };
   }
   const strip: StripModel = {
     keyword: kw,
     ratePct,
-    cadence: enrichment?.cadence ?? null,
+    cadence: cadenceLabel(enrichment?.cadence),
     risky: enrichment?.verdict === "risky",
     endsInDays,
     openSlots,
@@ -237,10 +289,11 @@ function rowModel(brand: string): { strip: StripModel; facts: RowFacts } {
     note,
   };
   const facts: RowFacts = {
-    unread: false, // filled in by the caller (needs the row element)
+    unread: false, // filled in by the caller (needs the row element / inbox row)
     live: summary !== null || (typeof enrichment?.slotsOpen === "number" && enrichment.slotsOpen > 0),
     pitched: keyword !== null,
     ratePct,
+    state: null, // filled in by the caller from the inbox row
   };
   return { strip, facts };
 }
@@ -254,6 +307,7 @@ function sweepList(widget: HTMLElement, myEpoch: number): void {
     if (!row.isConnected) rowEntries.delete(row);
   }
 
+  const inbox = getInbox();
   const facts = new Map<HTMLElement, RowFacts>();
   const brandEls = new Map<HTMLElement, HTMLElement>();
   const brandKeys = new Map<HTMLElement, string>();
@@ -261,13 +315,18 @@ function sweepList(widget: HTMLElement, myEpoch: number): void {
     const brandEl = findListRowBrandEl(row);
     const brand = brandEl ? (brandEl.textContent ?? "").trim() : "";
     if (!brandEl || !brand) continue;
+    const brandKey = normalizeBrand(brand);
     brandEls.set(row, brandEl);
-    brandKeys.set(row, normalizeBrand(brand));
+    brandKeys.set(row, brandKey);
     const { strip, facts: rowFacts } = rowModel(brand);
-    rowFacts.unread = readRowUnread(row);
+    // Unread from either source: the drawer's red dot (current) or the inbox
+    // read (a couple of minutes old at most; cleared locally when a thread opens).
+    const fromInbox = inboxFacts(inbox.rows[brandKey]);
+    rowFacts.unread = readRowUnread(row) || fromInbox.unread;
+    rowFacts.state = fromInbox.state;
     facts.set(row, rowFacts);
 
-    const sig = `${normalizeBrand(brand)}#${stripSignature(strip)}`;
+    const sig = `${brandKey}#${stripSignature(strip)}`;
     const existing = rowEntries.get(row);
     if (existing && existing.sig === sig && (existing.host === null || existing.host.isConnected)) continue;
     existing?.host?.remove();
@@ -281,18 +340,26 @@ function sweepList(widget: HTMLElement, myEpoch: number): void {
   }
 
   const firstRow = rows[0];
-  if (facts.size === 0 || !firstRow) {
+  const lastRow = rows[rows.length - 1];
+  if (facts.size === 0 || !firstRow || !lastRow) {
     removeFilterBar();
+    removeMoreList();
     return;
   }
 
-  applyFilter(facts);
-  mountFilterBar(firstRow, facts, brandEls, brandKeys, myEpoch);
+  const view = inboxViewFor(facts, brandKeys, inbox);
+  applyFilter(facts, brandKeys);
+  mountFilterBar(firstRow, view, facts, brandEls, inbox, myEpoch);
+  mountMoreList(lastRow, view, myEpoch);
 }
 
-function applyFilter(facts: Map<HTMLElement, RowFacts>): void {
+function keepsRow(rowFacts: RowFacts, brandKey: string): boolean {
+  return matchesFilter(activeFilter, rowFacts) && matchesQuery(brandKey, query);
+}
+
+function applyFilter(facts: Map<HTMLElement, RowFacts>, brandKeys: Map<HTMLElement, string>): void {
   for (const [row, rowFacts] of facts) {
-    const show = matchesFilter(activeFilter, rowFacts);
+    const show = keepsRow(rowFacts, brandKeys.get(row) ?? "");
     const strip = rowEntries.get(row)?.host ?? null;
     if (show) {
       if (row.hasAttribute("data-ib-ccm-filtered")) {
@@ -308,87 +375,148 @@ function applyFilter(facts: Map<HTMLElement, RowFacts>): void {
   }
 }
 
-// "3 days ago" style label for an off-drawer conversation's last message.
-function relativeWhen(ms: number): string {
-  if (!Number.isFinite(ms) || ms <= 0) return "";
-  const days = Math.floor((Date.now() - ms) / (24 * 60 * 60 * 1000));
-  if (days < 1) return "Today";
-  if (days === 1) return "Yesterday";
-  if (days < 45) return `${days} days ago`;
-  return formatDate(ms) ?? "";
-}
-
 // Conversations the full-inbox read knows about and the drawer does not render
-// (it stops at 100 rows).
-function inboxViewFor(facts: Map<HTMLElement, RowFacts>, brandKeys: Map<HTMLElement, string>) {
+// (it stops at 100 rows), joined with the drawer's rows and narrowed to the
+// search query.
+function inboxViewFor(
+  facts: Map<HTMLElement, RowFacts>,
+  brandKeys: Map<HTMLElement, string>,
+  inbox: InboxCache,
+): InboxView {
   const dom: DomFact[] = [];
   for (const [row, rowFacts] of facts) {
     const brandKey = brandKeys.get(row);
     if (brandKey) dom.push({ brandKey, facts: rowFacts });
   }
-  return buildInboxView(dom, getInbox(), (brand, unread) => {
-    const made = rowModel(brand).facts;
-    return { ...made, unread };
-  });
+  return buildInboxView(
+    dom,
+    inbox,
+    (brand, inboxRow) => ({ ...rowModel(brand).facts, ...inboxFacts(inboxRow) }),
+    query,
+  );
+}
+
+// Why the active filter shows nothing, or "" when it shows rows.
+function emptyReason(view: InboxView, counts: Record<TriageFilter, number>, inbox: InboxCache): string {
+  const s = t();
+  const locale = getLocale();
+  if (view.all.length === 0 && normalizeBrand(query)) return s.ccmEmptySearch(query.trim());
+  if (activeFilter === "all" || counts[activeFilter] > 0) return "";
+  switch (activeFilter) {
+    case "unread":
+      return s.ccmEmptyUnread;
+    case "replied":
+    case "waiting": {
+      const progress = threadProgress(inbox);
+      if (progress.checked < progress.total) {
+        return s.ccmEmptyThreads(formatCount(progress.checked, locale), formatCount(progress.total, locale));
+      }
+      return activeFilter === "replied" ? s.ccmEmptyReplied : s.ccmEmptyWaiting;
+    }
+    case "live":
+    case "highrate":
+      return s.ccmEmptyLive;
+    case "pitched":
+      return s.ccmEmptyPitched;
+  }
+}
+
+// "1,480 conversations, updated 2 min ago, threads checked: 120 of 1,480".
+function syncLine(inbox: InboxCache): string {
+  const s = t();
+  const locale = getLocale();
+  if (inbox.syncedAt === 0) return s.ccmSyncReading;
+  const now = Date.now();
+  const total = Object.keys(inbox.rows).length;
+  const ago =
+    now - inbox.syncedAt > INBOX_STALE_MS
+      ? numericDate(inbox.syncedAt, locale)
+      : formatAgo(
+          inbox.syncedAt,
+          now,
+          { justNow: s.ccmAgoJustNow, minAgo: s.ccmAgoMin, hoursAgo: s.ccmAgoHours },
+          locale,
+        );
+  let line = s.ccmSyncLine(formatCount(total, locale), ago);
+  const progress = threadProgress(inbox);
+  if (progress.checked < progress.total) {
+    line += `, ${s.ccmSyncThreads(formatCount(progress.checked, locale), formatCount(progress.total, locale))}`;
+  }
+  return line;
 }
 
 function mountFilterBar(
   firstRow: HTMLElement,
+  view: InboxView,
   facts: Map<HTMLElement, RowFacts>,
   brandEls: Map<HTMLElement, HTMLElement>,
-  brandKeys: Map<HTMLElement, string>,
+  inbox: InboxCache,
   myEpoch: number,
 ): void {
-  const view = inboxViewFor(facts, brandKeys);
   const counts = Object.fromEntries(TRIAGE_FILTERS.map((f) => [f, countMatches(f, view.all)])) as Record<
     TriageFilter,
     number
   >;
-  const shownMore = visibleExtras(view.extras, (rowFacts) => matchesFilter(activeFilter, rowFacts));
   const model: FilterBarModel = {
     active: activeFilter,
     counts,
     total: view.all.length,
-    more: {
-      items: shownMore.items.map((item) => ({
-        brandKey: item.brandKey,
-        brand: item.brand,
-        when: relativeWhen(item.lastMsgAt),
-        unread: item.unread,
-      })),
-      hidden: shownMore.hidden,
-    },
+    query,
+    emptyReason: emptyReason(view, counts, inbox),
+    sync: syncLine(inbox),
   };
   const sig = filterBarSignature(model);
   if (filterBar && filterBar.sig === sig && filterBar.built.host.isConnected) return;
 
+  const searchHadFocus = filterBar?.built.isSearchFocused() ?? false;
   filterBar?.built.host.remove();
-  const built = buildFilterBar(model, {
-    onSelect: (filter) => {
-      activeFilter = filter;
-      saveFilter(filter);
-      runSweep(myEpoch);
-      filterBar?.built.focusFilter(filter);
+  const built = buildFilterBar(
+    model,
+    {
+      onSelect: (filter) => {
+        activeFilter = filter;
+        moreLimit = MAX_MORE_ITEMS;
+        saveFilter(filter);
+        runSweep(myEpoch);
+        filterBar?.built.focusFilter(filter);
+      },
+      onNextUnread: () => {
+        for (const [row, rowFacts] of facts) {
+          if (!rowFacts.unread || row.getAttribute("data-ib-ccm-filtered")) continue;
+          row.scrollIntoView({ block: "nearest" });
+          // Click the brand name: it bubbles to whichever ancestor Amazon wired.
+          (brandEls.get(row) ?? row).click();
+          return;
+        }
+        // Nothing unread in the drawer's rows: the next one may be an older
+        // conversation the drawer does not list.
+        const next: MoreItem | undefined = view.extras.find((item) => item.unread);
+        if (next) void openBrandConversation(next.brand);
+      },
+      onSearch: (next) => {
+        if (next === query) return;
+        query = next;
+        moreLimit = MAX_MORE_ITEMS;
+        runSweep(myEpoch);
+        filterBar?.built.focusSearch();
+      },
+      onSearchEnter: () => {
+        if (!normalizeBrand(query)) return;
+        // First visible drawer row, else the first older conversation.
+        for (const [row] of facts) {
+          if (row.getAttribute("data-ib-ccm-filtered")) continue;
+          (brandEls.get(row) ?? row).click();
+          return;
+        }
+        const first = view.extras.find((item) => matchesFilter(activeFilter, item.facts));
+        if (first) void openBrandConversation(first.brand);
+      },
     },
-    onNextUnread: () => {
-      for (const [row, rowFacts] of facts) {
-        if (!rowFacts.unread || row.getAttribute("data-ib-ccm-filtered")) continue;
-        row.scrollIntoView({ block: "nearest" });
-        // Click the brand name: it bubbles to whichever ancestor Amazon wired.
-        (brandEls.get(row) ?? row).click();
-        return;
-      }
-      // Nothing unread in the drawer's rows: the next one may be an older
-      // conversation the drawer does not list.
-      const next: MoreItem | undefined = view.extras.find((item) => item.unread);
-      if (next) void openBrandConversation(next.brand);
-    },
-    onOpenMore: (brand) => {
-      void openBrandConversation(brand);
-    },
-  });
+    getLocale(),
+  );
   if (!insertOnOwnLine(firstRow, firstRow, built.host, "before")) return;
   filterBar = { built, sig };
+  if (searchHadFocus) built.focusSearch();
 }
 
 function removeFilterBar(): void {
@@ -396,21 +524,68 @@ function removeFilterBar(): void {
   filterBar = null;
 }
 
+function mountMoreList(lastRow: HTMLElement, view: InboxView, myEpoch: number): void {
+  const s = t();
+  const locale = getLocale();
+  const shown = visibleExtras(view.extras, (rowFacts) => matchesFilter(activeFilter, rowFacts), moreLimit);
+  if (shown.items.length === 0) {
+    removeMoreList();
+    return;
+  }
+  const now = Date.now();
+  const words = { today: s.ccmToday, yesterday: s.ccmYesterday, daysAgo: s.ccmDaysAgo };
+  const model: MoreListModel = {
+    items: shown.items.map((item) => ({
+      brandKey: item.brandKey,
+      brand: item.brand,
+      when: formatWhen(item.lastMsgAt, now, locale, words),
+      unread: item.unread,
+    })),
+    hidden: shown.hidden,
+    step: MORE_STEP,
+  };
+  const sig = moreListSignature(model);
+  if (moreList && moreList.sig === sig && moreList.host.isConnected) return;
+
+  moreList?.host.remove();
+  const host = buildMoreList(
+    model,
+    {
+      onOpen: (brand) => {
+        void openBrandConversation(brand);
+      },
+      onShowMore: () => {
+        moreLimit += MORE_STEP;
+        runSweep(myEpoch);
+      },
+    },
+    locale,
+  );
+  if (!insertOnOwnLine(lastRow, lastRow, host, "after")) return;
+  moreList = { host, sig };
+}
+
+function removeMoreList(): void {
+  moreList?.host.remove();
+  moreList = null;
+}
+
 function dropListUi(): void {
   for (const entry of rowEntries.values()) entry.host?.remove();
   rowEntries.clear();
   removeFilterBar();
-  for (const row of Array.from(document.querySelectorAll<HTMLElement>("[data-ib-ccm-filtered]"))) {
-    row.removeAttribute("data-ib-ccm-filtered");
-    row.style.removeProperty("display");
-  }
+  removeMoreList();
+  unhideFilteredRows();
 }
 
 // ── thread view ──────────────────────────────────────────────────────────────
 
 function sweepThread(widget: HTMLElement, header: HTMLElement, myEpoch: number): void {
+  const s = t();
   const brand = readThreadBrand(header);
   if (!brand) return;
+  // The creator is looking at this thread, so it is read now.
+  markConversationRead(normalizeBrand(brand));
 
   const bubbles = readThreadBubbles(widget, brand);
   foldDuplicates(widget, brand, bubbles);
@@ -423,16 +598,16 @@ function sweepThread(widget: HTMLElement, header: HTMLElement, myEpoch: number):
   const bestId = summary?.bestCampaignId ?? null;
   const settings = settingsRef;
   let blocked = "";
-  if (!bestId) blocked = "No campaign id yet. Open the Campaigns list once so it can be found.";
+  if (!bestId) blocked = s.ccmNoCampaignId;
   else if (settings && !settings.tools.standaloneAccept) {
-    blocked = "Accepting from here is turned off in the extension settings.";
+    blocked = s.ccmAcceptOff;
   }
   const accepted = entryAccepted(entry) || isAccepted(bestId);
 
   const model: CardModel = {
     brand,
     summary,
-    cadence: enrichment?.cadence ?? null,
+    cadence: cadenceLabel(enrichment?.cadence),
     risky: enrichment?.verdict === "risky",
     pitchedKeyword: keyword?.keyword ?? null,
     links,
@@ -452,7 +627,7 @@ function sweepThread(widget: HTMLElement, header: HTMLElement, myEpoch: number):
       void saveNotes(setBrandNote(getNotes(), brand, text, Date.now()));
     },
     onAccept: async () => {
-      if (!bestId) return { ok: false, message: blocked || "No campaign to accept." };
+      if (!bestId) return { ok: false, message: blocked || s.ccmNoCampaignToAccept };
       let outcome: AcceptOutcome;
       try {
         outcome = await sendToBackground<AcceptOutcome>({
@@ -519,7 +694,7 @@ function unfold(el: HTMLElement): void {
 
 function buildDupeBar(onShow: () => void): HTMLElement {
   const { host, root } = createInlineShadow(DUPE_HOST_CLASS);
-  const btn = el("button", "ccm-dupe", "Same message sent again, folded. Show it");
+  const btn = el("button", "ccm-dupe", t().ccmDupeShow);
   btn.type = "button";
   btn.addEventListener("click", (event) => {
     event.preventDefault();

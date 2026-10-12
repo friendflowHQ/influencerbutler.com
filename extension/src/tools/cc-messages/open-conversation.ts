@@ -1,3 +1,4 @@
+import { t } from "../../i18n";
 import { log } from "../../shared/log";
 import { showToast } from "../../ui/toast";
 import {
@@ -141,9 +142,9 @@ export async function openBrandConversation(brand: string): Promise<OpenOutcome>
 
 function notFoundToast(brand: string): void {
   showToast({
-    title: "Conversation not found",
-    message: `Could not open the conversation with ${brand}. Find it in the Messages drawer.`,
-    closeLabel: "Close",
+    title: t().ccmNotFoundTitle,
+    message: t().ccmNotFoundBody(brand),
+    closeLabel: t().ccmClose,
   });
 }
 

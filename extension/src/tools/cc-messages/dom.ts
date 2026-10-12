@@ -21,12 +21,14 @@ export const OWN_HOST_SELECTOR = [
   ".ccm-strip-host",
   ".ccm-card-host",
   ".ccm-filter-host",
+  ".ccm-more-host",
   ".ccm-dupe-host",
 ].join(", ");
 
 export const STRIP_HOST_CLASS = "ccm-strip-host";
 export const CARD_HOST_CLASS = "ccm-card-host";
 export const FILTER_HOST_CLASS = "ccm-filter-host";
+export const MORE_HOST_CLASS = "ccm-more-host";
 export const DUPE_HOST_CLASS = "ccm-dupe-host";
 
 const TIME_RE = /^\d{1,2}:\d{2}\s*(?:am|pm)$/i;
