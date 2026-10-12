@@ -7,6 +7,8 @@ import DeviceManager from "@/components/dashboard/DeviceManager";
 import DiscountCodesCard from "@/components/dashboard/DiscountCodesCard";
 import GettingStartedChecklist from "@/components/dashboard/GettingStartedChecklist";
 import ReferralCard from "@/components/dashboard/ReferralCard";
+import FreeToolsBanner from "@/components/dashboard/FreeToolsBanner";
+import FacebookGroupBanner from "@/components/dashboard/FacebookGroupBanner";
 import { getStatusBadge } from "@/lib/subscription-status";
 
 declare global {
@@ -143,6 +145,9 @@ export default function DashboardOverviewPage() {
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Overview</h1>
         <p className="mt-1 text-sm text-slate-600">Welcome to your Influencer Butler dashboard.</p>
       </div>
+
+      <FreeToolsBanner />
+      <FacebookGroupBanner />
 
       <GettingStartedChecklist />
 

@@ -50,8 +50,9 @@ export const PERMISSIONS: readonly PermissionDef[] = [
   { key: "affiliates.tax.view", label: "View & verify tax forms", description: "Review affiliate W-9 / W-8BEN forms, verify or reject them, and reveal a TIN for 1099 prep. Every reveal is audited. Super-admin only.", domain: "Affiliates", risk: "money", built: true, adminOnly: true },
   { key: "affiliates.payout", label: "Pay out affiliates", description: "Disburse owed commissions to affiliates via PayPal. Moves money. Super-admin only.", domain: "Affiliates", risk: "money", built: true, adminOnly: true },
 
-  // Billing
-  { key: "billing.view", label: "View billing", description: "Look up any user's subscriptions and orders.", domain: "Billing", risk: "normal", built: false },
+  // Billing (view-by-email is covered by users.view -> admin/users; no
+  // separate billing.view permission - removed 2026-10-12, it had built:
+  // false and zero references anywhere in the app)
   { key: "billing.cancel", label: "Cancel subscription", description: "Cancel a user's subscription via Lemon Squeezy (at period end).", domain: "Billing", risk: "destructive", built: true },
   { key: "billing.comp", label: "Comp / extend subscription", description: "Guided: log intent and open Lemon Squeezy to grant a free period.", domain: "Billing", risk: "destructive", built: true },
   { key: "billing.plan.edit", label: "Change plan", description: "Guided: log intent and open Lemon Squeezy to change the plan/variant.", domain: "Billing", risk: "destructive", built: true },
@@ -103,6 +104,7 @@ export const PERMISSIONS: readonly PermissionDef[] = [
   { key: "reports.view", label: "View KPIs & reports", description: "Subscription counts, trial funnel, and conversion metrics on the admin overview and growth dashboard.", domain: "Operations", risk: "normal", built: true },
   { key: "webhooks.view", label: "View webhook log", description: "Recent Lemon Squeezy webhook deliveries and processing errors.", domain: "Operations", risk: "normal", built: true },
   { key: "audit.view", label: "View admin audit log", description: "Read the append-only log of admin and assistant actions. Super-admin only.", domain: "Operations", risk: "normal", built: true, adminOnly: true },
+  { key: "ai_sessions.view", label: "View AI Concierge sessions", description: "Read Butler AI concierge conversation transcripts and AI-generated summaries. Super-admin only.", domain: "Operations", risk: "normal", built: true, adminOnly: true },
 
   // Finance (super-admin only; every route additionally requires an email 2FA code)
   { key: "finance.view", label: "View finance dashboard", description: "Revenue recognition, bank payouts, expenses, tax planning, and the P&L report. Requires an email 2FA code. Super-admin only.", domain: "Finance", risk: "money", built: true, adminOnly: true },

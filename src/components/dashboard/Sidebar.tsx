@@ -37,8 +37,10 @@ const navItems: NavItem[] = [
   { href: "/dashboard/foyer", label: "Foyer Subscribers" },
   { href: "/dashboard/events", label: "Upcoming Events" },
   { href: "/dashboard/extension", label: "Extension" },
+  { href: "/dashboard/api-keys", label: "API Keys" },
   { href: "/dashboard/ai-concierge", label: "AI Assistant" },
   { href: "/dashboard/book", label: "Book a Call" },
+  { href: "/dashboard/feedback", label: "Leave a Review" },
   { href: "/help", label: "Help & Tutorials" },
   { href: "/help/community", label: "Community Q&A" },
 ];
@@ -162,6 +164,7 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
       { href: "/dashboard/admin/affiliates", label: "Affiliates", perm: "affiliates.view", built: true },
       { href: "/dashboard/admin/community", label: "Community", perm: "community.view", built: true },
       { href: "/dashboard/admin/support", label: "Support", perm: "support.view", built: true },
+      { href: "/dashboard/admin/extension-feedback", label: "Extension feedback", perm: "support.view", built: true },
       { href: "/dashboard/admin/scheduling", label: "Scheduling", perm: "scheduling.view", built: true },
       { href: "/dashboard/admin/events", label: "Events", perm: "events.manage", built: true },
       { href: "/dashboard/admin/catalogue-harvest", label: "Catalogue", perm: "catalogue.view", built: true },
@@ -173,6 +176,7 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
       { href: "/dashboard/admin/webhooks", label: "Webhooks", perm: "webhooks.view", built: true },
       { href: "/dashboard/admin/audit", label: "Audit log", perm: "audit.view", built: true },
       { href: "/dashboard/admin/staff", label: "Assistants", perm: "staff.manage", built: true },
+      { href: "/dashboard/admin/ai-sessions", label: "AI Concierge sessions", perm: "ai_sessions.view", built: true },
     ];
     return items.filter((i) => i.built && (isAdmin || perms.has(i.perm)));
   }, [adminRole, adminPerms]);

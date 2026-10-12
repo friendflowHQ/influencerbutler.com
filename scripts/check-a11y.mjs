@@ -28,6 +28,8 @@ const PAGES = [
   "/features/instagram-like-butler",
   "/features/campaign-butler",
   "/features/brand-conversation-chips",
+  "/features/video-money",
+  "/features/deal-sites-harvester",
   "/for-creator-connections",
   "/for-walmart-creators",
   "/events",

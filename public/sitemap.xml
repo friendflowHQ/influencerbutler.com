@@ -1165,6 +1165,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://www.influencerbutler.com/features/deal-sites-harvester</loc>
+    <lastmod>2026-10-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://www.influencerbutler.com/features/deals-butler</loc>
     <lastmod>2026-10-07</lastmod>
     <changefreq>weekly</changefreq>
@@ -1317,6 +1323,12 @@
   <url>
     <loc>https://www.influencerbutler.com/features/temu-butler</loc>
     <lastmod>2026-10-07</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.influencerbutler.com/features/video-money</loc>
+    <lastmod>2026-10-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
