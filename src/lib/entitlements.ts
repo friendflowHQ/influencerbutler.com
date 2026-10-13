@@ -28,6 +28,14 @@
 export type EntitlementTier = "free" | "trial" | "pro";
 
 /**
+ * Plan LEVEL (2026-10): "beginner" sees only BEGINNER_BUTLER_SLUGS, "power"
+ * everything, and "legacy" (every customer from before the split: all pre-split
+ * variants, comps, trials that predate it) also everything. Resolved from the
+ * subscription's LS variant (src/lib/lemonsqueezy.ts planLevelForVariantId).
+ */
+export type PlanLevel = "beginner" | "power" | "legacy";
+
+/**
  * The desktop butlers that are free forever, keyed by their feature-catalog
  * slug (see src/lib/mcp/feature-catalog.ts). These run on any account state:
  * trial, paid, expired, or cancelled.
@@ -49,6 +57,30 @@ export const FREE_BUTLER_SLUGS = [
 export type FreeButlerSlug = (typeof FREE_BUTLER_SLUGS)[number];
 
 const FREE_SLUG_SET: ReadonlySet<string> = new Set(FREE_BUTLER_SLUGS);
+
+/**
+ * Feature-catalog slugs a Beginner plan can see and run: the free set plus the
+ * starter money engines. Mirrors BEGINNER_WORKSPACES in the desktop catalog
+ * (InfluencerButler/src/shared/plan-catalog.js); keep the two in step when the
+ * owner changes the set.
+ */
+export const BEGINNER_BUTLER_SLUGS = [
+  ...FREE_BUTLER_SLUGS,
+  "deals-butler",
+  "amazon-butler",
+  "daily-commission-butler",
+  "video-reload-butler",
+  "api-integrations",
+  "feedback",
+] as const;
+
+const BEGINNER_SLUG_SET: ReadonlySet<string> = new Set(BEGINNER_BUTLER_SLUGS);
+
+/** Does this plan LEVEL unlock a butler? Power and legacy: everything. */
+export function levelUnlocks(level: PlanLevel | null | undefined, slug: string): boolean {
+  if (level !== "beginner") return true;
+  return BEGINNER_SLUG_SET.has(slug);
+}
 
 /** True when a butler (by feature-catalog slug) is free on every account. */
 export function isFreeButler(slug: string): boolean {
@@ -94,18 +126,26 @@ export type EntitlementsResponse = {
   allButlersUnlocked: boolean;
   /** The free-forever butler slugs, always present so the app can gate safely. */
   freeButlerSlugs: readonly string[];
+  /** Beginner / Power User / legacy. Legacy is every pre-split customer. */
+  planLevel: PlanLevel;
+  /** What a Beginner may run; empty for any other level (nothing to narrow). */
+  beginnerButlerSlugs: readonly string[];
 };
 
 /** Build the entitlements payload from a resolved tier + raw status. */
 export function entitlementsFor(
   tier: EntitlementTier,
   status: string | null,
+  planLevel: PlanLevel = "legacy",
 ): EntitlementsResponse {
+  const level: PlanLevel = planLevel === "beginner" || planLevel === "power" ? planLevel : "legacy";
   return {
     tier,
     status,
     allButlersUnlocked: tierUnlocksAll(tier),
     freeButlerSlugs: FREE_BUTLER_SLUGS,
+    planLevel: level,
+    beginnerButlerSlugs: level === "beginner" ? BEGINNER_BUTLER_SLUGS : [],
   };
 }
 

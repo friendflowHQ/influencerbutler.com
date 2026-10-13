@@ -75,6 +75,16 @@ Butler, Messenger, Levanta, Retag, Video Reload, Voiceover, YouTube, deals
 butlers, Goldmine, Earnings Intelligence, etc.) is trial + Pro only. Always read
 the live `freeButlerSlugs` rather than trusting this list, which can drift.
 
+## Plan level (Beginner / Power User)
+
+`planLevel` is `beginner`, `power` or `legacy`, resolved from the subscription's
+Lemon Squeezy variant (`planLevelForVariantId`). `legacy` is every customer from
+before the split (pre-split variants, comps, older trials) and behaves exactly
+like `power`. A `beginner` account may run only `beginnerButlerSlugs` (the free
+set plus the starter money engines); the desktop keeps its own copy of that
+list in `src/shared/plan-catalog.js` and enforces it in the run gate. The field
+is absent on older responses; treat a missing value as `legacy`.
+
 ## Trial send cap
 
 Trial users retain the existing 100 message-sends / 14-day cap (abuse

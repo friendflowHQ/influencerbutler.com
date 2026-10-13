@@ -373,6 +373,22 @@ const PLAN_ENV_VAR: Record<string, string> = {
   "agency-monthly": "LEMONSQUEEZY_VARIANT_AGENCY_MONTHLY",
   "agency-annual": "LEMONSQUEEZY_VARIANT_AGENCY_ANNUAL",
   "daily-deals-addon": "LEMONSQUEEZY_VARIANT_DAILY_DEALS_ADDON",
+  // Beginner / Power User levels (2026-10). NEW LS products; the pre-split
+  // variants above stay untouched ("legacy").
+  "beginner-solo-monthly": "LEMONSQUEEZY_VARIANT_BEGINNER_SOLO_MONTHLY",
+  "beginner-solo-annual": "LEMONSQUEEZY_VARIANT_BEGINNER_SOLO_ANNUAL",
+  "beginner-trio-monthly": "LEMONSQUEEZY_VARIANT_BEGINNER_TRIO_MONTHLY",
+  "beginner-trio-annual": "LEMONSQUEEZY_VARIANT_BEGINNER_TRIO_ANNUAL",
+  "beginner-agency-monthly": "LEMONSQUEEZY_VARIANT_BEGINNER_AGENCY_MONTHLY",
+  "beginner-agency-annual": "LEMONSQUEEZY_VARIANT_BEGINNER_AGENCY_ANNUAL",
+  "power-solo-monthly": "LEMONSQUEEZY_VARIANT_POWER_SOLO_MONTHLY",
+  "power-solo-annual": "LEMONSQUEEZY_VARIANT_POWER_SOLO_ANNUAL",
+  "power-trio-monthly": "LEMONSQUEEZY_VARIANT_POWER_TRIO_MONTHLY",
+  "power-trio-annual": "LEMONSQUEEZY_VARIANT_POWER_TRIO_ANNUAL",
+  "power-team-monthly": "LEMONSQUEEZY_VARIANT_POWER_TEAM_MONTHLY",
+  "power-team-annual": "LEMONSQUEEZY_VARIANT_POWER_TEAM_ANNUAL",
+  "power-agency-monthly": "LEMONSQUEEZY_VARIANT_POWER_AGENCY_MONTHLY",
+  "power-agency-annual": "LEMONSQUEEZY_VARIANT_POWER_AGENCY_ANNUAL",
 };
 
 export function resolveVariantId(
@@ -453,6 +469,20 @@ const CANONICAL_PLAN_STRINGS = [
   "agency-monthly",
   "agency-annual",
   "daily-deals-addon",
+  "beginner-solo-monthly",
+  "beginner-solo-annual",
+  "beginner-trio-monthly",
+  "beginner-trio-annual",
+  "beginner-agency-monthly",
+  "beginner-agency-annual",
+  "power-solo-monthly",
+  "power-solo-annual",
+  "power-trio-monthly",
+  "power-trio-annual",
+  "power-team-monthly",
+  "power-team-annual",
+  "power-agency-monthly",
+  "power-agency-annual",
 ] as const;
 
 export type CanonicalPlanString = (typeof CANONICAL_PLAN_STRINGS)[number];
@@ -475,6 +505,21 @@ export function planForVariantId(
     if (candidate && candidate === id) return plan;
   }
   return null;
+}
+
+/**
+ * Plan LEVEL for an LS variant id: "beginner" / "power" for the new products,
+ * "legacy" for every pre-split variant, add-on, comp or unknown id. Existing
+ * customers therefore read as legacy by construction.
+ */
+export function planLevelForVariantId(
+  variantId: string | number | null | undefined,
+): "beginner" | "power" | "legacy" {
+  const plan = planForVariantId(variantId);
+  if (!plan) return "legacy";
+  if (plan.startsWith("beginner-")) return "beginner";
+  if (plan.startsWith("power-")) return "power";
+  return "legacy";
 }
 
 /**

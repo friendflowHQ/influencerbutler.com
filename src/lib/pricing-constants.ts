@@ -130,6 +130,122 @@ export const FREE_TIER_FEATURES: readonly string[] = [
   "Optional AI butlers need your own OpenAI key (you pay OpenAI directly)",
 ];
 
+// ---------------------------------------------------------------------------
+// Beginner / Power User plan LEVELS (2026-10). A second axis on top of the seat
+// tiers above for NEW customers: Beginner (starter butlers, AI included on our
+// key, no 1:1 calls) and Power User (everything, own OpenAI key, 1:1 calls).
+// Every pre-split plan string / variant stays as it is ("legacy"): existing
+// customers are never re-levelled. Level plan strings use the public "trio"
+// word (the seat tier key stays "duo" internally, see TIER_NAME). The desktop
+// catalog (InfluencerButler/src/shared/plan-catalog.js) uses the same keys.
+// ---------------------------------------------------------------------------
+export type PlanLevel = "beginner" | "power";
+export const LEVEL_ORDER: readonly PlanLevel[] = ["beginner", "power"] as const;
+
+export const LEVEL_NAME: Record<PlanLevel, string> = {
+  beginner: "Beginner",
+  power: "Power User",
+};
+
+export const LEVEL_TAGLINE: Record<PlanLevel, string> = {
+  beginner: "The starter butlers, AI included, a guided path to your first posts",
+  power: "Every butler, unlimited AI on your own OpenAI key, 1:1 calls",
+};
+
+// What the LEVEL changes; the seat tier adds its device count on top.
+export const LEVEL_FEATURES: Record<PlanLevel, readonly string[]> = {
+  beginner: [
+    "The starter butlers: Amazon Deals, Message Brands, Daily Commission Butler, Video and Photo Reload, your Foyer page, plus every free tool",
+    "AI included: 150 actions a month on Influencer Butler's own key, no OpenAI account needed",
+    "A guided fast track to your first posts",
+    "Upgrade to Power User in one click, any time, no new key",
+  ],
+  power: [
+    "All 50+ automation tools",
+    "Unlimited CC brand messages and Instagram DMs",
+    "Commission harvesting, deep links and affiliate integrations",
+    "Unlimited AI on your own OpenAI key (you pay OpenAI directly, usually pennies)",
+    "1:1 call booking with the team",
+  ],
+};
+
+// Per level x seat tier price in cents. A tier missing from a level is not sold
+// on that level (Beginner Team is not offered today). Annual = 10 x monthly.
+export const LEVEL_PRICE_CENTS: Record<PlanLevel, Partial<Record<Tier, { monthly: number; annual: number }>>> = {
+  beginner: {
+    solo: { monthly: 2499, annual: 24900 },
+    duo: { monthly: 4499, annual: 44900 },
+    agency: { monthly: 19900, annual: 199000 },
+  },
+  power: {
+    solo: { monthly: 3900, annual: 39000 },
+    duo: { monthly: 6900, annual: 69000 },
+    team: { monthly: 12900, annual: 129000 },
+    agency: { monthly: 29900, annual: 299000 },
+  },
+};
+
+// The announced price change. Shown on the pricing page, the dashboard and (via
+// the licensing Worker's PRICE_CHANGE_NOTICE) the desktop until the date passes.
+// Existing subscriptions keep their price; only new checkouts after the date
+// pay the new one. Update LEVEL_PRICE_CENTS (and the LS variants) on the day.
+export const PRICE_CHANGE = {
+  effectiveAt: "2026-11-28T00:00:00Z",
+  prices: {
+    beginner: { solo: { monthly: 2900, annual: 29000 }, duo: { monthly: 5900, annual: 59000 }, agency: { monthly: 23900, annual: 239000 } },
+    power: { solo: { monthly: 4900, annual: 49000 }, duo: { monthly: 8900, annual: 89000 } },
+  } as Record<PlanLevel, Partial<Record<Tier, { monthly: number; annual: number }>>>,
+} as const;
+
+export function priceChangeActive(now: number = Date.now()): boolean {
+  return now < Date.parse(PRICE_CHANGE.effectiveAt);
+}
+
+/** Seat tiers sold on a level, in display order. */
+export function levelTiers(level: PlanLevel): Tier[] {
+  return (Object.keys(PRICE_CENTS) as Tier[]).filter((tier) => LEVEL_PRICE_CENTS[level][tier] != null);
+}
+
+const LEVEL_TIER_WORD: Record<Tier, string> = { solo: "solo", duo: "trio", team: "team", agency: "agency" };
+const LEVEL_WORD_TIER: Record<string, Tier> = { solo: "solo", trio: "duo", team: "team", agency: "agency" };
+
+export type LevelPlanString = `${PlanLevel}-${"solo" | "trio" | "team" | "agency"}-${Interval}`;
+
+/** "beginner-trio-annual" and friends (the public word "trio", never "duo"). */
+export function levelPlanString(level: PlanLevel, tier: Tier, interval: Interval): LevelPlanString {
+  return `${level}-${LEVEL_TIER_WORD[tier]}-${interval}` as LevelPlanString;
+}
+
+const LEVEL_PLAN_RE = /^(beginner|power)-(solo|trio|team|agency)-(monthly|annual)$/;
+
+/** Parse a level plan string; null for every pre-split string. */
+export function parseLevelPlan(
+  plan: string | undefined | null,
+): { level: PlanLevel; tier: Tier; interval: Interval } | null {
+  const m = LEVEL_PLAN_RE.exec(String(plan ?? "").toLowerCase());
+  if (!m) return null;
+  return { level: m[1] as PlanLevel, tier: LEVEL_WORD_TIER[m[2]], interval: m[3] as Interval };
+}
+
+/** "beginner" | "power" for a level plan string, "legacy" for anything else. */
+export function levelForPlan(plan: string | undefined | null): PlanLevel | "legacy" {
+  const parsed = parseLevelPlan(plan);
+  return parsed ? parsed.level : "legacy";
+}
+
+/** Price for a level x tier x cadence, null when not sold on that level. */
+export function levelPriceCents(level: PlanLevel, tier: Tier, interval: Interval): number | null {
+  const row = LEVEL_PRICE_CENTS[level][tier];
+  return row ? row[interval] : null;
+}
+
+/** The announced future price, null when none or the change has passed. */
+export function levelFuturePriceCents(level: PlanLevel, tier: Tier, interval: Interval, now: number = Date.now()): number | null {
+  if (!priceChangeActive(now)) return null;
+  const row = PRICE_CHANGE.prices[level]?.[tier];
+  return row ? row[interval] : null;
+}
+
 // Plan-string canonical form used by /api/checkout + /api/checkout/guest
 // and the dashboard/public pricing UIs. Legacy "monthly"/"annual" strings
 // (no tier prefix) resolve to Solo so existing checkout links keep working.
@@ -144,7 +260,8 @@ export type PlanString =
   | "team-annual"
   | "agency-monthly"
   | "agency-annual"
-  | typeof ADDON_PLAN_DAILY_DEALS;
+  | typeof ADDON_PLAN_DAILY_DEALS
+  | LevelPlanString;
 
 const TIER_BY_PLAN: Record<string, Tier | "addon"> = {
   monthly: "solo",
@@ -189,7 +306,10 @@ export function planStringFor(tier: Tier, interval: Interval): PlanString {
 export function tierForPlan(plan: string | undefined | null): Tier | null {
   if (!plan) return null;
   const t = TIER_BY_PLAN[plan];
-  return t && t !== "addon" ? t : null;
+  if (t && t !== "addon") return t;
+  // Beginner / Power User plan strings carry their seat tier too.
+  const level = parseLevelPlan(plan);
+  return level ? level.tier : null;
 }
 
 /**
@@ -207,6 +327,12 @@ export function planMetaFor(
   if (!plan) return null;
   if (plan === ADDON_PLAN_DAILY_DEALS) {
     return { priceCents: DAILY_DEALS_ADDON_PRICE_CENTS, interval: "month" };
+  }
+  const level = parseLevelPlan(plan);
+  if (level) {
+    const priceCents = levelPriceCents(level.level, level.tier, level.interval);
+    if (priceCents == null) return null;
+    return { priceCents, interval: INTERVAL_BY_CADENCE[level.interval] };
   }
   const tier = tierForPlan(plan);
   const cadence = CADENCE_BY_PLAN[plan];

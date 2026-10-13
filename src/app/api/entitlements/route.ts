@@ -15,6 +15,7 @@ import { resolveAuth } from "@/lib/license-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { jsonWithCors, optionsResponse } from "@/lib/extension-api";
 import { entitlementsFor, tierForSubscriptionStatus } from "@/lib/entitlements";
+import { planLevelForVariantId } from "@/lib/lemonsqueezy";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,24 +35,29 @@ export async function GET(request: Request) {
 
   const userId = result.auth.userId;
   let status: string | null = null;
+  let variantId: string | number | null = null;
 
   try {
     const admin = createAdminClient();
     // Service-role read (subscriptions RLS has no SELECT policy - see memory).
     const { data: subs } = await admin
       .from("subscriptions")
-      .select("status")
+      .select("status,ls_variant_id")
       .eq("user_id", userId)
       .in("status", VISIBLE_STATUSES)
       .order("created_at", { ascending: false })
       .limit(1);
-    const row = subs && subs.length > 0 ? (subs[0] as { status?: string | null }) : null;
+    const row = subs && subs.length > 0 ? (subs[0] as { status?: string | null; ls_variant_id?: string | number | null }) : null;
     status = row?.status ?? null;
+    variantId = row?.ls_variant_id ?? null;
   } catch (error) {
     // Never fail closed: a lookup error still lets the free butlers run.
     console.warn("entitlements: subscription lookup failed", error);
   }
 
   const tier = tierForSubscriptionStatus(status);
-  return jsonWithCors(entitlementsFor(tier, status));
+  // Plan level follows the live subscription's variant; a lapsed or free account
+  // has nothing to narrow and reads as legacy.
+  const planLevel = tier === "free" ? "legacy" : planLevelForVariantId(variantId);
+  return jsonWithCors(entitlementsFor(tier, status, planLevel));
 }
