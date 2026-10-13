@@ -8,12 +8,15 @@ import { csrfForApiRequest } from "@/lib/csrf-guard";
 
 const PROTECTED_PREFIXES = ["/dashboard", "/affiliates/portal", "/help"];
 
-// Public exceptions to the auth gate above. The Chrome-extension tutorial is the
+// Public exceptions to the auth gate above. The connect-your-domain guide is the
+// target of the desktop app's "Open the step-by-step guide" button (Link Butler and
+// Foyer Settings), and customers are usually signed out in their browser. The
+// Chrome-extension tutorial is the
 // target of the desktop app's baked-in Help link (/help/chrome-extension
 // redirects here in next.config.ts), and those users are typically logged out in
 // their browser, so it must be readable without a web session. Every other /help
 // page stays gated.
-const PUBLIC_PATHS = new Set(["/help/tutorials/extension"]);
+const PUBLIC_PATHS = new Set(["/help/tutorials/extension", "/help/tutorials/connect-your-domain"]);
 
 const MARKDOWN_PATH_MAP: Array<{ test: RegExp; resolve: (m: RegExpMatchArray) => string }> = [
   { test: /^\/$/, resolve: () => "/index.html" },
