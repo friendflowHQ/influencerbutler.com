@@ -211,6 +211,35 @@ Facebook limite la fréquence à laquelle un compte peut publier, et publier tro
 - **Si Facebook bloque quand même la publication.** Butler détecte le blocage, arrête de lui-même les publications Facebook programmées pour que le blocage ne dure pas plus longtemps, affiche une bannière et vous envoie un e-mail. Si votre page Facebook bénéficie d'un statut distinct et continue de publier, seuls vos groupes et votre profil sont mis en pause. Ne publiez pas sur Facebook à la main tant qu'un blocage est actif, car cela peut le prolonger. Facebook n'affiche pas la date de fin dans le blocage lui-même, mais le bouton **Ouvrir État du compte** de la bannière vous amène à la page qui l'indique. La publication reprend progressivement quand vous cliquez sur **Reprendre les publications Facebook** ou quand la limite se lève d'elle-même.
 - **Les blocages de commentaires mettent aussi tout en pause.** Facebook peut bloquer uniquement les commentaires (le message "Vous ne pouvez pas utiliser cette fonctionnalité pour le moment"), et cela compte car le lien d'affiliation vit dans le premier commentaire. Butler le détecte au moment de commenter, met en pause les commentaires ET les publications Facebook ensemble, affiche la bannière et vous envoie un e-mail. Par défaut le repos dure 3 jours ; modifiez-le avec **Pause après un blocage Facebook (jours)** dans la carte des heures calmes du Planificateur, et les blocages répétés se reposent plus longtemps d'eux-mêmes. Vous pouvez reprendre plus tôt à tout moment avec le bouton **Reprendre les commentaires et les publications** de la bannière. Une précaution : les blocages de commentaires n'apparaissent souvent pas sur la page État du compte, donc une page normale ne signifie pas que le blocage est levé.
 
+## Limites par groupe, alternance de comptes et heures de publication
+
+Les limites ci-dessus protègent votre **compte**. Celles-ci protègent chaque **groupe**, ce qui compte quand plus d'une connexion, ou plus d'un espace Offres, publie au même endroit.
+
+- **Limites par groupe.** Dans l'onglet Planificateur, sous la limite de publication Facebook, réglez **Max d'offres par groupe et par jour** et **Minutes entre deux publications dans le même groupe**. Elles comptent toutes les connexions et tous les espaces Offres de votre ordinateur, donc un groupe n'est jamais saturé même quand deux de vos espaces le listent. Un groupe à sa limite attend ; vos autres groupes continuent de publier. Les deux sont vides par défaut, c'est-à-dire sans limite.
+- **Une limite quotidienne par connexion.** Activez **Donner à chaque connexion Facebook sa propre limite quotidienne** et chaque connexion dispose de la limite complète au lieu d'en partager une.
+- **Mettre en pause seulement la connexion bloquée.** Sous les réglages de pause après blocage, **Mettre en pause seulement la connexion bloquée par Facebook** laisse vos autres connexions publier quand l'une d'elles est bloquée. Laissez-le désactivé quand vos connexions sont la même personne.
+- **Alterner les comptes dans un groupe.** Sur une ligne de groupe dans Destinations sociales, cliquez sur **Alterner les comptes** et cochez deux connexions ou plus. Le groupe alterne alors entre elles, pour qu'un seul compte ne porte pas toutes les publications. La connexion qui y a publié le moins récemment passe ensuite.
+- **Heures de publication par connexion.** Avec deux profils ou plus, chaque ligne de profil a **Choisir les heures**. Donnez le matin à une connexion et l'après-midi à une autre, et deux connexions dans un même groupe se relaient selon l'heure. Une connexion sans heures publie à tout moment.
+- **Le même groupe dans deux espaces.** Quand un autre espace Offres de votre ordinateur liste le même groupe, la ligne le signale, car chaque espace y publie de son côté. La limite par groupe est ce qui empêche ce groupe d'en recevoir trop.
+
+Le même groupe collé deux fois dans la case Groupes ne publie plus qu'une fois.
+
+## Partenaires de publication : partagez un groupe avec un ami qui utilise aussi Butler
+
+Deux personnes qui utilisent Butler et publient dans le même groupe Facebook ne se voient normalement pas, et peuvent donc publier la même offre deux fois ou publier coup sur coup. **Partenaires de publication**, en haut des Destinations sociales, jumelle vos deux ordinateurs pour qu'ils partagent une liste privée de ce que chacun a publié dans les groupes marqués comme partagés.
+
+1. L'un de vous clique sur **Créer un code de jumelage** et lit le code à 6 chiffres à l'autre (il dure 10 minutes).
+2. L'autre le saisit sous **Vous avez un code de votre partenaire ?** et clique sur **Rejoindre**. Saisissez d'abord un nom pour que votre partenaire sache qui vous êtes.
+3. Sur chaque groupe ou page où vous publiez tous les deux, cochez **Partagé avec mon partenaire**. Seuls ceux-là sont comparés.
+
+Ensuite, avant de publier dans un groupe partagé, Butler vérifie si votre partenaire y a déjà publié ce produit ces derniers jours (**Sauter une offre publiée par votre partenaire depuis**), y compris les produits quasi identiques quand **Sauter aussi les produits quasi identiques** est activé, et le saute là-bas. Il réserve aussi un court tour dans le groupe : quand votre partenaire vient de publier ou s'apprête à le faire, votre publication attend (**Minutes entre vous et votre partenaire dans un même groupe**). Vos autres destinations ne sont jamais retardées par cela.
+
+**Répartir les groupes partagés.** Cochez les catégories qui sont les vôtres ; ce que votre partenaire coche est à lui, et Butler lui laisse ces offres dans les groupes partagés. Définissez vos heures et vos groupes partagés ne publient qu'à ce moment. Laissez tout vide et vous publiez tout chacun. Désactivez **Laisser à mon partenaire ses catégories et ses heures** pour ignorer les règles de partage.
+
+**Voir qui a publié quoi.** La carte liste la dernière semaine de publications que vous et votre partenaire avez faites dans les groupes partagés, avec l'heure, le nom, le groupe et l'offre, pour repérer vous-mêmes les doublons. Cliquez sur **Actualiser** pour la mettre à jour.
+
+Les noms de vos groupes et vos listes d'offres ne quittent jamais votre ordinateur sans hachage ; votre partenaire ne voit qu'un titre de produit, la boutique, le nom que vous avez choisi et une heure. Si le service des partenaires est injoignable, Butler publie comme d'habitude et saute la vérification. Jusqu'à six personnes peuvent être partenaires dans une même équipe, et vous pouvez **Quitter les partenaires de publication** à tout moment.
+
 ## Réglages dans la durée
 
 - **percentOffMin** dans le préréglage - démarrez à 30 %, montez à 40-50 % une fois que vous savez quel seuil de remise marche pour votre audience.

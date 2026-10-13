@@ -211,6 +211,35 @@ Facebook limita la frecuencia con la que una cuenta puede publicar, y publicar d
 - **Si aun así Facebook bloquea las publicaciones.** Butler detecta el bloqueo, detiene por su cuenta las publicaciones programadas de Facebook para que el bloqueo no dure más, y muestra un aviso además de enviarte un correo. Si tu página de Facebook tiene otra consideración y sigue publicando, solo se pausan tus grupos y tu perfil. No publiques en Facebook a mano mientras el bloqueo esté activo, ya que puede prolongarlo. Facebook no muestra la fecha de finalización en el propio bloqueo, pero el botón **Abrir Estado de la cuenta** del aviso te lleva a la página que sí la muestra. Las publicaciones se reanudan poco a poco cuando pulsas **Reanudar publicaciones de Facebook** o cuando se levanta el límite por su cuenta.
 - **Los bloqueos de comentarios también lo pausan todo.** Facebook puede bloquear solo los comentarios (el mensaje "No puedes usar esta función en este momento"), y eso importa porque el enlace de afiliado vive en el primer comentario. Butler lo detecta al comentar, pausa los comentarios Y las publicaciones de Facebook a la vez, muestra el aviso y te envía un correo. Por defecto el descanso dura 3 días; cámbialo con **Pausa tras un bloqueo de Facebook (días)** en la tarjeta de horas de silencio del Programador, y los bloqueos repetidos descansan más tiempo por su cuenta. Puedes reanudar antes en cualquier momento con el botón **Reanudar comentarios y publicaciones** del aviso. Una advertencia: los bloqueos de comentarios a menudo no aparecen en la página de Estado de la cuenta, así que una página limpia no significa que el bloqueo se haya levantado.
 
+## Límites por grupo, alternancia de cuentas y horas de publicación
+
+Los límites de arriba protegen tu **cuenta**. Estos protegen cada **grupo**, lo que importa cuando más de un inicio de sesión, o más de un workspace de Ofertas, publica en el mismo sitio.
+
+- **Límites por grupo.** En la pestaña Programador, bajo el límite de publicación de Facebook, pon **Máximo de ofertas por grupo al día** y **Minutos entre publicaciones en el mismo grupo**. Cuentan todos los inicios de sesión y todos los workspaces de Ofertas de tu ordenador, así que un grupo nunca se satura aunque dos de tus workspaces lo tengan. Un grupo en su límite espera; tus otros grupos siguen publicando. Ambos están vacíos por defecto, es decir, sin límite.
+- **Un límite diario por inicio de sesión.** Activa **Dar a cada inicio de sesión de Facebook su propio límite diario** y cada inicio de sesión tiene el límite completo para sí mismo en vez de compartir uno.
+- **Pausar solo el inicio de sesión bloqueado.** Bajo los ajustes de pausa por bloqueo, **Pausar solo el inicio de sesión que Facebook bloqueó** mantiene publicando a tus otros inicios de sesión cuando uno está bloqueado. Déjalo desactivado cuando tus inicios de sesión son la misma persona.
+- **Alternar cuentas en un grupo.** En una fila de grupo en Destinos sociales, pulsa **Alternar cuentas** y marca dos o más de tus inicios de sesión. El grupo se turna entre ellos, así ninguna cuenta carga con todas las publicaciones. El inicio de sesión que publicó allí hace más tiempo va a continuación.
+- **Horas de publicación por inicio de sesión.** Con dos o más perfiles, cada fila de perfil tiene **Elegir horas**. Da a un inicio de sesión la mañana y a otro la tarde, y dos inicios de sesión en un mismo grupo se turnan según la hora del día. Un inicio de sesión sin horas publica a cualquier hora.
+- **El mismo grupo en dos workspaces.** Cuando otro workspace de Ofertas de tu ordenador tiene el mismo grupo, la fila lo indica, porque cada workspace publica allí por su cuenta. El límite por grupo es lo que evita que ese grupo reciba demasiado.
+
+El mismo grupo pegado dos veces en la caja de Grupos ahora publica una sola vez.
+
+## Compañeros de publicación: comparte un grupo con un amigo que también usa Butler
+
+Dos personas que usan Butler y publican en el mismo grupo de Facebook normalmente no se ven, así que pueden publicar la misma oferta dos veces o publicar una tras otra. **Compañeros de publicación**, en la parte superior de Destinos sociales, empareja vuestros dos ordenadores para que compartan una lista privada de lo que cada uno publicó en los grupos marcados como compartidos.
+
+1. Uno pulsa **Crear un código de emparejamiento** y le lee el código de 6 dígitos al otro (dura 10 minutos).
+2. El otro lo escribe en **¿Tienes un código de tu compañero?** y pulsa **Unirse**. Escribe antes un nombre para que tu compañero sepa quién eres.
+3. En cada grupo o página donde publicáis los dos, marca **Compartido con mi compañero**. Solo esos se comparan.
+
+A partir de ahí, antes de publicar en un grupo compartido, Butler comprueba si tu compañero ya publicó ese producto allí en los últimos días (**Omitir una oferta que tu compañero publicó en los últimos**), incluidos los productos casi idénticos cuando **Omitir también productos casi idénticos** está activado, y lo omite allí. También reserva un turno breve en el grupo, así que cuando tu compañero acaba de publicar o está a punto, tu publicación espera (**Minutos entre tú y tu compañero en un mismo grupo**). Tus otros destinos nunca se retrasan por esto.
+
+**Repartir los grupos compartidos.** Marca las categorías que son tuyas; lo que marque tu compañero es suyo, y Butler le deja esas ofertas en los grupos compartidos. Pon tus horas y tus grupos compartidos publican solo entonces. Déjalo todo vacío y los dos publicáis todo. Desactiva **Dejar a mi compañero sus categorías y horas** para ignorar las reglas de reparto.
+
+**Ver quién publicó qué.** La tarjeta muestra la última semana de publicaciones que tú y tu compañero hicisteis en los grupos compartidos, con la hora, el nombre, el grupo y la oferta, para que detectéis los solapamientos vosotros mismos. Pulsa **Actualizar** para ponerla al día.
+
+Los nombres de tus grupos y tus listas de ofertas nunca salen de tu ordenador sin cifrar; tu compañero solo ve el título del producto, la tienda, el nombre que elegiste y una hora. Si el servicio de compañeros no está disponible, Butler publica como siempre y omite la comprobación. Hasta seis personas pueden ser compañeros en un mismo equipo, y puedes **Salir de compañeros de publicación** en cualquier momento.
+
 ## Ajustes con el tiempo
 
 - **percentOffMin** en el preajuste - empieza en 30 %, súbelo a 40-50 % cuando tengas claro qué umbral de descuento engancha a tu audiencia.

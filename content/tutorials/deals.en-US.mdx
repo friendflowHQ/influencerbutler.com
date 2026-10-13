@@ -211,6 +211,35 @@ Facebook limits how often an account can post, and posting too many deals too fa
 - **If Facebook blocks posting anyway.** Butler notices the block, stops scheduled Facebook posting on its own so the block does not last longer, and shows a banner plus emails you. If your Facebook Page is on a separate standing and still posting, only your groups and profile are paused. Do not post to Facebook by hand while a block is active, as that can extend it. Facebook does not show the end date in the block itself, but the banner's **Open Account Status** button takes you to the page that does. Posting resumes gradually once you click **Resume Facebook posting** or the limit lifts on its own.
 - **Comment blocks pause everything too.** Facebook can block commenting on its own (the "You Can't Use This Feature Right Now" message), which matters because the affiliate link lives in the first comment. Butler detects it while commenting, pauses Facebook commenting AND posting together, shows the banner, and emails you. By default the rest lasts 3 days; change it with **Pause after a Facebook block (days)** in the Scheduler's quiet-hours card, and repeat blocks rest longer on their own. You can resume early any time with the banner's **Resume commenting and posting** button. One caution: comment blocks often do not appear on the Account Status page, so a clean status page does not mean the block has lifted.
 
+## Per group limits, account rotation and posting hours
+
+The limits above protect your **account**. These protect each **group**, which matters when more than one login, or more than one Deals workspace, posts into the same place.
+
+- **Per group limits.** In the Scheduler tab, under the Facebook posting limit, set **Max deals per group per day** and **Minutes between posts to the same group**. They count every login and every Deals workspace on your computer, so a group never gets flooded even when two of your workspaces list it. A group at its limit waits; your other groups still post. Both are empty by default, which means no limit.
+- **A daily limit per login.** Turn on **Give each Facebook login its own daily limit** and each login gets the full limit to itself instead of sharing one.
+- **Pause only the blocked login.** Under the block pause settings, **Pause only the login Facebook blocked** keeps your other logins posting when one of them is blocked. Leave it off when your logins are the same person.
+- **Rotate accounts in one group.** On a group row in Social Destinations, click **Rotate accounts** and tick two or more of your logins. The group then takes turns between them, so no single account carries every post. The login that posted there least recently goes next.
+- **Posting hours per login.** With two or more profiles, each profile row has **Choose hours**. Give one login the morning and another the afternoon, and two logins in one group take turns by time of day. A login with no hours posts any time.
+- **Same group in two workspaces.** When another Deals workspace on your computer lists the same group, the row says so, because each workspace posts there on its own. The per group limit is what keeps that group from getting too much.
+
+The same group pasted twice in the Groups box now posts once.
+
+## Posting partners: share a group with a friend who also uses Butler
+
+Two people who both use Butler and both post into the same Facebook group normally cannot see each other, so they can post the same deal twice or post back to back. **Posting partners**, at the top of Social Destinations, pairs your two computers so they share a private list of what each of you posted into the groups you mark as shared.
+
+1. One of you clicks **Create a pairing code** and reads the 6-digit code to the other (it lasts 10 minutes).
+2. The other types it under **Have a code from your partner?** and clicks **Join**. Type a name first so your partner knows who you are.
+3. On each group or page you both post into, tick **Shared with partner**. Only those are compared.
+
+From then on, before Butler posts into a shared group it checks whether your partner already posted that product there within the last few days (**Skip a deal your partner posted within**), including near-identical products when **Also skip near-identical products** is on, and skips it there. It also reserves a short turn in the group, so when your partner just posted or is about to, your post waits (**Minutes between you and your partner in one group**). Your other destinations are never held up by this.
+
+**Divide the shared groups.** Tick the categories that are yours; whatever your partner ticks is theirs, and Butler leaves those deals to them in the shared groups. Set your hours and your shared groups post only then. Leave everything empty and you both post everything. Turn **Leave my partner's categories and hours to them** off to ignore the split rules.
+
+**See who posted what.** The card lists the last week of posts you and your partner made into the shared groups, with the time, the name, the group and the deal, so you spot overlaps yourselves. Click **Refresh** to update it.
+
+Your group names and deal lists never leave your computer unhashed; your partner only sees a product title, the store, your chosen name and a time. If the partner service cannot be reached, Butler posts as usual and skips the check. Up to six people can be partners in one team, and you can **Leave posting partners** at any time.
+
 ## Tuning over time
 
 - **percentOffMin** in the preset - start at 30%, raise to 40-50% once you have a sense of which discount threshold gets engagement.
