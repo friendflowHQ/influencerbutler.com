@@ -760,6 +760,14 @@
       "locales": ["en-US", "es-ES", "fr-FR"]
     },
     {
+      "id": "community-share-butler",
+      "title": "Community Share Butler: find Facebook groups for your lists and share them safely",
+      "category": "Other",
+      "summary": "Find Facebook groups that fit your Benable lists and Walmart collections, read each group's rules, join the ones you pick, and share one list per group the way the group allows, so posts are not removed.",
+      "order": 344.3,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "facebook-goldmine",
       "title": "Facebook Goldmine: harvest viral group posts and repurpose them",
       "category": "Other",
