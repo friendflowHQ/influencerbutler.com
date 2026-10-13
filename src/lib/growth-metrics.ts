@@ -14,7 +14,18 @@
 import { computeMonthlyEarnings } from "@/lib/affiliate-commissions-data";
 import { SEED_SOURCE } from "@/lib/recent-activity";
 import { planForVariantId } from "@/lib/lemonsqueezy";
-import { planMetaFor, PRICE_CENTS, TIER_NAME } from "@/lib/pricing-constants";
+import {
+  planMetaFor,
+  PRICE_CENTS,
+  TIER_NAME,
+  LEVEL_ORDER,
+  LEVEL_NAME,
+  levelTiers,
+  levelPlanString,
+  levelPriceCents,
+  type PlanLevel,
+  type Tier,
+} from "@/lib/pricing-constants";
 import { DEFAULT_TIMEZONE, localDateStr, zonedTimeToUtc, currentMonthKey } from "@/lib/timezone";
 import { upcomingPayoutDatesMs } from "@/lib/finance-ls-payouts";
 
@@ -117,9 +128,11 @@ export type PayoutSettings = {
 
 /** Live subscriber counts for one plan (tier + billing interval). */
 export type PlanBreakdownRow = {
-  /** Canonical plan string ("solo-monthly", ...) or "other" for unmapped variants. */
+  /** Canonical plan string ("solo-monthly", "beginner-solo-monthly", ...) or "other" for unmapped variants. */
   plan: string;
   label: string;
+  /** Which group this row's table section belongs under. "other" has no section header. */
+  section: "legacy" | "beginner" | "power" | "other";
   /** All active subscribers, comped ones included (matches the Active subscribers tile). */
   active: number;
   /** The subset of `active` that are comps (free grants, never charged). */
@@ -236,10 +249,20 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const BREAKDOWN_TIERS = ["solo", "duo", "team", "agency"] as const;
 const BREAKDOWN_INTERVALS = ["monthly", "annual"] as const;
 
+// "Beginner Solo" / "Power User Trio": the level word plus the bare seat-tier
+// word (TIER_NAME's "Pro " prefix is legacy-only). Mirrors the identical
+// one-liner in PricingCardsClient.tsx's levelCardName; not imported from
+// there since that's a page component, not a lib export.
+function levelTierName(level: PlanLevel, tier: Tier): string {
+  return `${LEVEL_NAME[level]} ${TIER_NAME[tier].replace(/^Pro /, "")}`;
+}
+
 /**
  * Splits live subscriptions by plan (tier + billing interval), counting active
  * and on-trial separately. Every known plan gets a row (zeros included) so the
- * dashboard layout is stable; a variant we cannot map lands in a trailing
+ * dashboard layout is stable: the 8 legacy Pro plans first, then the live
+ * Beginner and Power User plans (Section field groups them for the table), in
+ * that order; a variant we cannot map to any of those lands in a trailing
  * "other" row, which is only emitted when non-empty.
  */
 export function planBreakdownFor(
@@ -255,6 +278,7 @@ export function planBreakdownFor(
       const row: PlanBreakdownRow = {
         plan,
         label: `${TIER_NAME[tier]} ${interval === "monthly" ? "monthly" : "yearly"}`,
+        section: "legacy",
         active: 0,
         comped: 0,
         onTrial: 0,
@@ -264,7 +288,25 @@ export function planBreakdownFor(
       byPlan.set(plan, row);
     }
   }
-  const other: PlanBreakdownRow = { plan: "other", label: "Other / unmapped plan", active: 0, comped: 0, onTrial: 0, mrrCents: null };
+  for (const level of LEVEL_ORDER) {
+    for (const tier of levelTiers(level)) {
+      for (const interval of BREAKDOWN_INTERVALS) {
+        const plan = levelPlanString(level, tier, interval);
+        const row: PlanBreakdownRow = {
+          plan,
+          label: `${levelTierName(level, tier)} ${interval === "monthly" ? "monthly" : "yearly"}`,
+          section: level,
+          active: 0,
+          comped: 0,
+          onTrial: 0,
+          mrrCents: 0,
+        };
+        rows.push(row);
+        byPlan.set(plan, row);
+      }
+    }
+  }
+  const other: PlanBreakdownRow = { plan: "other", label: "Other / unmapped plan", section: "other", active: 0, comped: 0, onTrial: 0, mrrCents: null };
 
   const tally = (list: Record<string, unknown>[], field: "active" | "onTrial") => {
     for (const r of list) {
@@ -285,6 +327,16 @@ export function planBreakdownFor(
       const monthlyCents =
         interval === "monthly" ? PRICE_CENTS[tier].monthly : PRICE_CENTS[tier].annual / 12;
       row.mrrCents = Math.round((row.active - row.comped) * monthlyCents);
+    }
+  }
+  for (const level of LEVEL_ORDER) {
+    for (const tier of levelTiers(level)) {
+      for (const interval of BREAKDOWN_INTERVALS) {
+        const row = byPlan.get(levelPlanString(level, tier, interval))!;
+        const priceCents = levelPriceCents(level, tier, interval) ?? 0;
+        const monthlyCents = interval === "monthly" ? priceCents : priceCents / 12;
+        row.mrrCents = Math.round((row.active - row.comped) * monthlyCents);
+      }
     }
   }
 

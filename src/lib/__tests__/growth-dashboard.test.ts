@@ -195,14 +195,21 @@ describe("projectedTrialConversionCents", () => {
       [sub("v-solo-monthly"), sub("v-solo-monthly"), sub("v-solo-annual")],
       [sub("v-duo-monthly")],
     );
-    expect(rows).toHaveLength(8);
-    expect(rows[0]).toMatchObject({ plan: "solo-monthly", label: "Pro Solo monthly", active: 2, onTrial: 0 });
-    expect(rows[1]).toMatchObject({ plan: "solo-annual", label: "Pro Solo yearly", active: 1 });
-    expect(rows[2]).toMatchObject({ plan: "duo-monthly", label: "Pro Trio monthly", active: 0, onTrial: 1 });
+    // 8 legacy (4 tiers x 2 intervals) + 6 beginner (solo/duo/agency, no Team, x2) +
+    // 8 power (all 4 tiers x2) = 22; no unmapped variant here, so no trailing "other".
+    expect(rows).toHaveLength(22);
+    expect(rows[0]).toMatchObject({ plan: "solo-monthly", label: "Pro Solo monthly", section: "legacy", active: 2, onTrial: 0 });
+    expect(rows[1]).toMatchObject({ plan: "solo-annual", label: "Pro Solo yearly", section: "legacy", active: 1 });
+    expect(rows[2]).toMatchObject({ plan: "duo-monthly", label: "Pro Trio monthly", section: "legacy", active: 0, onTrial: 1 });
+    // New live plans get their own rows too, grouped by section, zeros when nobody is on them yet.
+    expect(rows[8]).toMatchObject({ plan: "beginner-solo-monthly", label: "Beginner Solo monthly", section: "beginner", active: 0 });
+    expect(rows[13]).toMatchObject({ plan: "beginner-agency-annual", label: "Beginner Agency yearly", section: "beginner" });
+    expect(rows[14]).toMatchObject({ plan: "power-solo-monthly", label: "Power User Solo monthly", section: "power", active: 0 });
+    expect(rows[21]).toMatchObject({ plan: "power-agency-annual", label: "Power User Agency yearly", section: "power" });
 
     const withOther = planBreakdownFor([sub("nope"), sub(null)], []);
-    expect(withOther).toHaveLength(9);
-    expect(withOther[8]).toMatchObject({ plan: "other", active: 2, mrrCents: null });
+    expect(withOther).toHaveLength(23);
+    expect(withOther[22]).toMatchObject({ plan: "other", section: "other", active: 2, mrrCents: null });
 
     // Comps: marked by ls_subscription_id, counted in active but not in MRR.
     const withComps = planBreakdownFor(

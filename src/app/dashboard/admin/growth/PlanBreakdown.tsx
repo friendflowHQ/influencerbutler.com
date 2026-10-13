@@ -5,6 +5,7 @@
 // Active subscribers are split into Paid and Comps (free grants that never
 // charge), and MRR / average revenue count paid subscribers only.
 
+import React from "react";
 import { formatUsdFromCents, type PlanBreakdownRow } from "./format";
 
 const fmt = (n: number) => n.toLocaleString("en-US");
@@ -12,6 +13,13 @@ const fmt = (n: number) => n.toLocaleString("en-US");
 // Average monthly revenue per paid subscriber; "-" when there is no one to average.
 const avgPerSub = (mrrCents: number | null, paid: number) =>
   mrrCents === null ? "n/a" : paid === 0 ? "-" : formatUsdFromCents(Math.round(mrrCents / paid));
+
+const SECTION_LABEL: Record<PlanBreakdownRow["section"], string> = {
+  legacy: "Legacy Pro plans",
+  beginner: "Beginner",
+  power: "Power User",
+  other: "",
+};
 
 export default function PlanBreakdown({
   rows,
@@ -65,24 +73,36 @@ export default function PlanBreakdown({
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => {
+            {rows.map((r, i) => {
               const paid = r.active - r.comped;
               const total = r.active + r.onTrial;
+              const prevSection = i > 0 ? rows[i - 1].section : null;
+              const showDivider = r.section !== "other" && r.section !== prevSection;
               return (
-                <tr
-                  key={r.plan}
-                  className={`border-b border-slate-100 ${total === 0 ? "text-slate-500" : "text-slate-800"}`}
-                >
-                  <th scope="row" className="py-1.5 pr-3 text-left font-medium">{r.label}</th>
-                  <td className="px-3 py-1.5 text-right tabular-nums">{fmt(paid)}</td>
-                  <td className="px-3 py-1.5 text-right tabular-nums">{fmt(r.comped)}</td>
-                  <td className="px-3 py-1.5 text-right tabular-nums">{fmt(r.onTrial)}</td>
-                  <td className="px-3 py-1.5 text-right font-semibold tabular-nums">{fmt(total)}</td>
-                  <td className="px-3 py-1.5 text-right tabular-nums">
-                    {r.mrrCents === null ? "n/a" : formatUsdFromCents(r.mrrCents)}
-                  </td>
-                  <td className="py-1.5 pl-3 text-right tabular-nums">{avgPerSub(r.mrrCents, paid)}</td>
-                </tr>
+                <React.Fragment key={r.plan}>
+                  {showDivider ? (
+                    <tr className="border-b border-slate-200 bg-slate-50">
+                      <th
+                        scope="colgroup"
+                        colSpan={7}
+                        className="py-1 pr-3 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500"
+                      >
+                        {SECTION_LABEL[r.section]}
+                      </th>
+                    </tr>
+                  ) : null}
+                  <tr className={`border-b border-slate-100 ${total === 0 ? "text-slate-500" : "text-slate-800"}`}>
+                    <th scope="row" className="py-1.5 pr-3 text-left font-medium">{r.label}</th>
+                    <td className="px-3 py-1.5 text-right tabular-nums">{fmt(paid)}</td>
+                    <td className="px-3 py-1.5 text-right tabular-nums">{fmt(r.comped)}</td>
+                    <td className="px-3 py-1.5 text-right tabular-nums">{fmt(r.onTrial)}</td>
+                    <td className="px-3 py-1.5 text-right font-semibold tabular-nums">{fmt(total)}</td>
+                    <td className="px-3 py-1.5 text-right tabular-nums">
+                      {r.mrrCents === null ? "n/a" : formatUsdFromCents(r.mrrCents)}
+                    </td>
+                    <td className="py-1.5 pl-3 text-right tabular-nums">{avgPerSub(r.mrrCents, paid)}</td>
+                  </tr>
+                </React.Fragment>
               );
             })}
           </tbody>

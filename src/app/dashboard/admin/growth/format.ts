@@ -43,6 +43,8 @@ export type EarningsProjection = {
 export type PlanBreakdownRow = {
   plan: string;
   label: string;
+  /** Which group this row's table section belongs under. "other" has no section header. */
+  section: "legacy" | "beginner" | "power" | "other";
   active: number;
   comped: number;
   onTrial: number;
