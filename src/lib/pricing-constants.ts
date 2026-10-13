@@ -190,7 +190,8 @@ export const LEVEL_PRICE_CENTS: Record<PlanLevel, Partial<Record<Tier, { monthly
 // Existing subscriptions keep their price; only new checkouts after the date
 // pay the new one. Update LEVEL_PRICE_CENTS (and the LS variants) on the day.
 export const PRICE_CHANGE = {
-  effectiveAt: "2026-11-28T00:00:00Z",
+  // Nov 28 2026, 10pm MST (owner-specified cutover time).
+  effectiveAt: "2026-11-29T05:00:00Z",
   prices: {
     beginner: { solo: { monthly: 2900, annual: 29000 }, duo: { monthly: 5900, annual: 59000 }, agency: { monthly: 23900, annual: 239000 } },
     power: { solo: { monthly: 4900, annual: 49000 }, duo: { monthly: 8900, annual: 89000 } },

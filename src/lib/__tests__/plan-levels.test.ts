@@ -68,9 +68,9 @@ describe("level plan strings", () => {
     expect(planMetaFor("beginner-team-monthly")).toBeNull();
   });
 
-  it("price change: active before November 28 2026 with the announced numbers, gone after", () => {
+  it("price change: active before November 28 2026 10pm MST with the announced numbers, gone after", () => {
     const before = Date.parse("2026-11-01T00:00:00Z");
-    const after = Date.parse("2026-11-28T00:00:01Z");
+    const after = Date.parse("2026-11-29T05:00:01Z");
     expect(priceChangeActive(before)).toBe(true);
     expect(priceChangeActive(after)).toBe(false);
     expect(levelFuturePriceCents("beginner", "solo", "monthly", before)).toBe(2900);
@@ -78,7 +78,7 @@ describe("level plan strings", () => {
     expect(levelFuturePriceCents("power", "duo", "monthly", before)).toBe(8900);
     expect(levelFuturePriceCents("power", "team", "monthly", before)).toBeNull();
     expect(levelFuturePriceCents("beginner", "solo", "monthly", after)).toBeNull();
-    expect(PRICE_CHANGE.effectiveAt).toBe("2026-11-28T00:00:00Z");
+    expect(PRICE_CHANGE.effectiveAt).toBe("2026-11-29T05:00:00Z");
   });
 });
 
