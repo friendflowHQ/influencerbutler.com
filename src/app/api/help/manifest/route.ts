@@ -5,23 +5,26 @@
  * locale variant on disk.
  */
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { helpCorsHeaders } from "@/lib/help-cors";
 import { loadManifest } from "@/lib/tutorials";
 
 export const runtime = "nodejs";
 export const revalidate = 300;
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const manifest = await loadManifest();
     return NextResponse.json(manifest, {
       headers: {
         "Cache-Control": "public, max-age=300, s-maxage=300, stale-while-revalidate=600",
+        ...helpCorsHeaders(req.headers.get("origin")),
       },
     });
   } catch (err) {
     return NextResponse.json(
       { ok: false, error: (err as Error)?.message || "Manifest unavailable" },
-      { status: 500 },
+      { status: 500, headers: helpCorsHeaders(req.headers.get("origin")) },
     );
   }
 }

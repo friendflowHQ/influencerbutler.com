@@ -7,6 +7,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { loadManifest, loadSearchIndex } from "@/lib/tutorials";
+import { helpCorsHeaders } from "@/lib/help-cors";
 
 export const runtime = "nodejs";
 export const revalidate = 300;
@@ -20,13 +21,14 @@ export async function GET(req: NextRequest) {
       {
         headers: {
           "Cache-Control": "public, max-age=300, s-maxage=300, stale-while-revalidate=600",
+          ...helpCorsHeaders(req.headers.get("origin")),
         },
       },
     );
   } catch (err) {
     return NextResponse.json(
       { ok: false, error: (err as Error)?.message || "Search index unavailable" },
-      { status: 500 },
+      { status: 500, headers: helpCorsHeaders(req.headers.get("origin")) },
     );
   }
 }

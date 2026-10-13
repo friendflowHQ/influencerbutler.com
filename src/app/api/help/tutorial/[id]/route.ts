@@ -5,6 +5,7 @@
  */
 import { NextResponse } from "next/server";
 import { loadTutorial } from "@/lib/tutorials";
+import { helpCorsHeaders } from "@/lib/help-cors";
 
 export const runtime = "nodejs";
 export const revalidate = 300;
@@ -21,7 +22,7 @@ export async function GET(
   if (!tutorial) {
     return NextResponse.json(
       { ok: false, error: "Tutorial not found" },
-      { status: 404 },
+      { status: 404, headers: helpCorsHeaders(request.headers.get("origin")) },
     );
   }
 
@@ -36,6 +37,7 @@ export async function GET(
     {
       headers: {
         "Cache-Control": "public, max-age=300, s-maxage=300, stale-while-revalidate=600",
+        ...helpCorsHeaders(request.headers.get("origin")),
       },
     },
   );
