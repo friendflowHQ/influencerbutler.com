@@ -17,6 +17,8 @@ export type TutorialManifestEntry = {
   /** Course grouping: tutorials sharing a `series` form an ordered course. */
   series?: string;
   seriesOrder?: number;
+  /** Plan level the guide is written for: "beginner" | "power" | "all" (absent = all). The desktop Help panel hides "power" guides on a Beginner plan. */
+  audience?: string;
   /** YouTube id of the AI-narrated walkthrough, from content/tutorials/_videos.json. */
   videoId?: string;
 };
