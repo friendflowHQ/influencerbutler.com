@@ -26,6 +26,8 @@ import { resolveLicenseOnly } from "@/lib/license-auth";
 import { maskEmail } from "@/lib/mask-email";
 import { jsonWithCors, optionsResponse } from "@/lib/extension-api";
 import { attributeExtensionReferral } from "@/lib/extension-affiliate-attribution";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { planLevelForVariantId } from "@/lib/lemonsqueezy";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -74,8 +76,29 @@ export async function POST(request: Request) {
     });
   }
 
+  // Plan level (Beginner / Power User / legacy) so the popup can hide Power-only
+  // entry points and show the upgrade line. Best-effort: any lookup failure
+  // reads as legacy, which is today's behavior.
+  let planLevel: "beginner" | "power" | "legacy" = "legacy";
+  try {
+    const admin = createAdminClient();
+    const { data: subs } = await admin
+      .from("subscriptions")
+      .select("status,ls_variant_id")
+      .eq("user_id", result.auth.userId)
+      .in("status", ["active", "on_trial", "past_due", "paused"])
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const row = subs && subs.length > 0 ? (subs[0] as { ls_variant_id?: string | number | null }) : null;
+    planLevel = planLevelForVariantId(row?.ls_variant_id ?? null);
+  } catch (error) {
+    console.warn("extension/auth/check: plan level lookup failed", error);
+    planLevel = "legacy";
+  }
+
   return jsonWithCors({
     ok: true,
     maskedEmail: maskEmail(result.auth.email),
+    planLevel,
   });
 }

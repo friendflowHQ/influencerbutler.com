@@ -44,6 +44,8 @@ const USER_TZ_LABEL = `${tzFriendly()} (${USER_TZ})`;
 
 export default function BookCallPage() {
   const [isSubscriber, setIsSubscriber] = useState<boolean | null>(null);
+  // Beginner plan: the Priority 1:1 call is Power User only (server is the real gate).
+  const [isBeginner, setIsBeginner] = useState<boolean | null>(null);
   const [callType, setCallType] = useState<"support" | "demo">("demo");
   const [days, setDays] = useState<DaySlots[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
@@ -70,6 +72,17 @@ export default function BookCallPage() {
           ["active", "on_trial", "past_due", "paused"].includes(s?.subscription?.status || ""));
         setIsSubscriber(active);
       } catch { setIsSubscriber(false); }
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch("/api/entitlements", { cache: "no-store" });
+        if (!res.ok) { setIsBeginner(false); return; }
+        const j = await res.json();
+        setIsBeginner(j?.planLevel === "beginner");
+      } catch { setIsBeginner(false); }
     })();
   }, []);
 
@@ -219,11 +232,12 @@ export default function BookCallPage() {
           <div className="font-semibold text-slate-900">{CALL_TYPES.demo.label}</div>
           <div className="mt-1 text-sm text-slate-500">{CALL_TYPES.demo.description}</div>
         </button>
-        <button type="button" disabled={isSubscriber === false} onClick={() => isSubscriber !== false && setCallType("support")}
-          className={`rounded-2xl border p-4 text-left ${callType === "support" ? "border-[#f97316] ring-1 ring-[#f97316]" : "border-slate-200"} bg-white ${isSubscriber === false ? "opacity-60" : ""}`}>
+        <button type="button" disabled={isSubscriber === false || isBeginner === true} onClick={() => isSubscriber !== false && isBeginner !== true && setCallType("support")}
+          className={`rounded-2xl border p-4 text-left ${callType === "support" ? "border-[#f97316] ring-1 ring-[#f97316]" : "border-slate-200"} bg-white ${isSubscriber === false || isBeginner === true ? "opacity-60" : ""}`}>
           <div className="font-semibold text-slate-900">{CALL_TYPES.support.label}</div>
           <div className="mt-1 text-sm text-slate-500">{CALL_TYPES.support.description}</div>
           {isSubscriber === false && <div className="mt-2 text-xs text-slate-500">New to Butler? Book the free <strong>{CALL_TYPES.demo.label}</strong> above (or Butler AI) for setup help at no cost, or <a href="/dashboard/subscription" className="underline">start a plan</a> (no credit card required).</div>}
+          {isSubscriber !== false && isBeginner === true && <div className="mt-2 text-xs text-slate-500">Priority 1:1 calls are part of the Power User plan. <a href="/dashboard/subscription" className="underline">Upgrade in one click</a> (same license key), or book the free <strong>{CALL_TYPES.demo.label}</strong> above.</div>}
         </button>
       </div>
 

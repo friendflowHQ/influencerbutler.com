@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getAdmin, validateSlot, loadConfig } from "@/lib/scheduling-server";
 import { CALL_TYPES, type CallTypeKey } from "@/lib/scheduling";
 import { tierForSubscriptionStatus } from "@/lib/entitlements";
+import { planLevelForVariantId } from "@/lib/lemonsqueezy";
 import { createMeetEvent, isGoogleConfigured } from "@/lib/google-meet";
 import { scheduleBot, isRecallConfigured, shouldScheduleRecordingBot } from "@/lib/recall";
 import { sendBookingConfirmation, sendOwnerNotification, type BookingEmailData } from "@/lib/call-emails";
@@ -41,9 +42,14 @@ export async function POST(request: Request) {
   // Gate: support calls require an active/trial subscription.
   if (ct.requiresSubscription) {
     const { data: sub } = await admin
-      .from("subscriptions").select("status").eq("user_id", user.id)
+      .from("subscriptions").select("status,ls_variant_id").eq("user_id", user.id)
       .order("created_at", { ascending: false }).limit(1).maybeSingle();
     const tier = tierForSubscriptionStatus((sub?.status as string) ?? null);
+    // Beginner plans do not include 1:1 calls (Power User and every pre-split
+    // plan do). The free Setup call stays open to everyone.
+    if (tier !== "free" && planLevelForVariantId((sub?.ls_variant_id as string | number | null | undefined) ?? null) === "beginner") {
+      return NextResponse.json({ error: "Priority 1:1 calls are part of the Power User plan. Upgrade in one click from the app (Settings, Subscription) or from your dashboard, or book the free Setup call instead." }, { status: 403 });
+    }
     if (tier === "free") {
       return NextResponse.json({ error: "The Priority 1:1 call is included with any plan. Start a plan (no credit card required) to book one, or book the free Setup call instead." }, { status: 403 });
     }
