@@ -79,7 +79,7 @@ export default function BlogShareButtons({
     },
     {
       name: "Facebook",
-      bg: "bg-[#1877F2] hover:bg-[#0d6ad8]",
+      bg: "bg-[#1565D8] hover:bg-[#1050b0]",
       onClick: () =>
         openShare(
           `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
@@ -92,7 +92,7 @@ export default function BlogShareButtons({
     },
     {
       name: "Reddit",
-      bg: "bg-[#FF4500] hover:bg-[#e03d00]",
+      bg: "bg-[#C13B00] hover:bg-[#a33200]",
       onClick: () =>
         openShare(
           `https://www.reddit.com/submit?url=${encodedUrl}&title=${encodedTitle}`,
@@ -105,7 +105,7 @@ export default function BlogShareButtons({
     },
     {
       name: "WhatsApp",
-      bg: "bg-[#25D366] hover:bg-[#1ebd5a]",
+      bg: "bg-[#0F7A6B] hover:bg-[#0c6458]",
       onClick: () =>
         openShare(
           `https://wa.me/?text=${encodeURIComponent(`${title} ${url}`)}`,

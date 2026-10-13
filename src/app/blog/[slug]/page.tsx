@@ -1,13 +1,15 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import {
+  parseFrontmatter,
   loadBlogManifest,
   loadBlogPost,
   loadPublishedPosts,
   availableBlogLocales,
   resolveBlogLocale,
   isPublished,
+  isListed,
   formatBlogDate,
   resolvePinImage,
   DEFAULT_BLOG_LOCALE,
@@ -16,6 +18,8 @@ import {
 import { SiteHeader, SiteFooter } from "@/components/blog/SiteChrome";
 import BlogShareButtons from "@/components/blog/BlogShareButtons";
 import { buildPinDescription } from "@/lib/pinterest";
+import { pickResources, type LinkKind } from "@/lib/blog-links";
+import { authorJsonLd, findBlogAuthor, resolveModifiedDate } from "@/lib/blog-authors";
 
 export const revalidate = 300;
 
@@ -34,6 +38,10 @@ const LOCALE_LABEL: Record<BlogLocale, string> = {
 const UI: Record<BlogLocale, {
   back: string;
   by: string;
+  updated: string;
+  goDeeper: string;
+  goDeeperLead: string;
+  kinds: Record<LinkKind, string>;
   moreIn: string;
   latest: string;
   ctaTitle: string;
@@ -46,6 +54,10 @@ const UI: Record<BlogLocale, {
   "en-US": {
     back: "Back to blog",
     by: "By",
+    updated: "Updated",
+    goDeeper: "Tools and guides for this topic",
+    goDeeperLead: "Put this into practice with the tools and walkthroughs that match what you just read.",
+    kinds: { feature: "Feature", tool: "Free tool", guide: "Guide", course: "Free course", extension: "Free extension" },
     moreIn: "More in",
     latest: "Latest posts",
     ctaTitle: "Let a butler handle the busywork.",
@@ -60,6 +72,10 @@ const UI: Record<BlogLocale, {
   "es-ES": {
     back: "Volver al blog",
     by: "Por",
+    updated: "Actualizado",
+    goDeeper: "Herramientas y guías sobre este tema",
+    goDeeperLead: "Pon esto en práctica con las herramientas y guías relacionadas.",
+    kinds: { feature: "Función", tool: "Herramienta gratis", guide: "Guía", course: "Curso gratis", extension: "Extensión gratis" },
     moreIn: "Más en",
     latest: "Últimas publicaciones",
     ctaTitle: "Deja que un butler se encargue del trabajo repetitivo.",
@@ -74,6 +90,10 @@ const UI: Record<BlogLocale, {
   "fr-FR": {
     back: "Retour au blog",
     by: "Par",
+    updated: "Mis à jour",
+    goDeeper: "Outils et guides sur ce sujet",
+    goDeeperLead: "Mettez cela en pratique avec les outils et guides correspondants.",
+    kinds: { feature: "Fonction", tool: "Outil gratuit", guide: "Guide", course: "Cours gratuit", extension: "Extension gratuite" },
     moreIn: "Plus dans",
     latest: "Derniers articles",
     ctaTitle: "Laissez un butler s'occuper des tâches répétitives.",
@@ -124,6 +144,10 @@ export async function generateMetadata({
   const keywords = (post.frontmatter.keywords as string) || entry?.keywords || "";
   const absImage = image ? `${SITE}${image}` : undefined;
   const published = entry?.date || (post.frontmatter.date as string);
+  const modifiedAt = resolveModifiedDate(
+    published,
+    entry?.updated || (post.frontmatter.updated as string | undefined),
+  );
 
   // hreflang map over every locale this post actually ships, plus x-default.
   const locales = await availableBlogLocales(slug);
@@ -132,7 +156,8 @@ export async function generateMetadata({
   languages["x-default"] = localeUrl(slug, DEFAULT_BLOG_LOCALE);
 
   return {
-    title: `${title} | Influencer Butler`,
+    // The root layout's title template already appends " | Influencer Butler".
+    title,
     description,
     keywords,
     alternates: {
@@ -149,6 +174,7 @@ export async function generateMetadata({
       siteName: "Influencer Butler",
       locale: post.locale.replace("-", "_"),
       publishedTime: published,
+      ...(modifiedAt !== published ? { modifiedTime: modifiedAt } : {}),
       images: absImage ? [{ url: absImage }] : undefined,
     },
     twitter: {
@@ -181,6 +207,11 @@ export default async function BlogPostPage({
   const manifest = await loadBlogManifest();
   const entry = manifest.posts.find((p) => p.id === slug);
 
+  // Retired posts (a seasonal run that is over) keep their files but send
+  // readers to the blog index. Temporary redirect on purpose: the post can be
+  // un-retired next season without fighting a browser-cached 301.
+  if (entry?.retired) redirect("/blog");
+
   // Date gate: a future-dated post is not live yet, so 404 until its day.
   const publishDate = entry?.date || (post.frontmatter.date as string);
   if (!isPublished(publishDate)) notFound();
@@ -190,6 +221,11 @@ export default async function BlogPostPage({
   const summary = (post.frontmatter.summary as string) || entry?.summary || "";
   const author = (post.frontmatter.author as string) || entry?.author || "Influencer Butler Team";
   const date = entry?.date || (post.frontmatter.date as string) || "";
+  const modified = resolveModifiedDate(
+    date,
+    entry?.updated || (post.frontmatter.updated as string | undefined),
+  );
+  const authorProfile = findBlogAuthor(author);
   const readingTime = (post.frontmatter.readingTime as string) || entry?.readingTime || "";
   const keywords = (post.frontmatter.keywords as string) || entry?.keywords || "";
   const image = (post.frontmatter.image as string) || entry?.image || "";
@@ -204,11 +240,18 @@ export default async function BlogPostPage({
   const shareImage = pinImage ? `${SITE}${pinImage}` : "";
   const pinDescription = buildPinDescription(title, summary, keywords);
 
-  const live = manifest.posts.filter((p) => isPublished(p.date));
+  const live = manifest.posts.filter((p) => isListed(p));
   const related = live
     .filter((p) => p.category === category && p.id !== slug)
     .slice(0, 3);
   const morePosts = live.filter((p) => p.id !== slug).slice(0, 4);
+  const resources = pickResources({
+    title,
+    summary,
+    keywords,
+    category,
+    body: parseFrontmatter(post.raw).body,
+  });
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -217,8 +260,8 @@ export default async function BlogPostPage({
     description: summary,
     image: image ? `${SITE}${image}` : undefined,
     datePublished: date,
-    dateModified: date,
-    author: { "@type": "Organization", name: author, url: SITE },
+    dateModified: modified,
+    author: authorJsonLd(author),
     publisher: {
       "@type": "Organization",
       name: "Influencer Butler",
@@ -260,7 +303,7 @@ export default async function BlogPostPage({
                     aria-current={l === locale ? "true" : undefined}
                     className={
                       l === locale
-                        ? "rounded-full bg-orange-600 px-3 py-1 font-semibold text-white"
+                        ? "rounded-full bg-orange-700 px-3 py-1 font-semibold text-white"
                         : "rounded-full border border-slate-200 px-3 py-1 font-semibold text-slate-600 hover:border-orange-300 hover:text-orange-600"
                     }
                   >
@@ -270,14 +313,22 @@ export default async function BlogPostPage({
               </nav>
             ) : null}
           </div>
-          <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-orange-600">
+          <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-orange-700">
             {category}
           </p>
           <h1 className="help-article-title">{title}</h1>
           {summary ? <p className="help-article-lead">{summary}</p> : null}
           <p className="mt-4 text-sm text-slate-500">
-            {t.by} {author}
+            {t.by}{" "}
+            {authorProfile ? (
+              <a href={authorProfile.path} rel="author" className="font-medium text-slate-700 underline hover:text-orange-700">
+                {author}
+              </a>
+            ) : (
+              author
+            )}
             {date ? ` · ${formatBlogDate(date, locale)}` : ""}
+            {modified !== date ? ` · ${t.updated} ${formatBlogDate(modified, locale)}` : ""}
             {readingTime ? ` · ${readingTime}` : ""}
           </p>
 
@@ -308,6 +359,56 @@ export default async function BlogPostPage({
             keywords={keywords}
           />
 
+          {resources.length ? (
+            <section aria-labelledby="go-deeper-heading" className="mt-12">
+              <h2 id="go-deeper-heading" className="text-xl font-bold tracking-tight text-slate-900">
+                {t.goDeeper}
+              </h2>
+              <p className="mt-2 text-sm text-slate-600">{t.goDeeperLead}</p>
+              <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+                {resources.map((r) => (
+                  <li key={r.href}>
+                    <a
+                      href={r.href}
+                      className="block h-full rounded-xl border border-slate-200 p-4 transition hover:border-orange-300 hover:bg-orange-50/40"
+                    >
+                      <span className="text-xs font-semibold uppercase tracking-widest text-orange-700">
+                        {t.kinds[r.kind]}
+                      </span>
+                      <span className="mt-1 block font-semibold text-slate-900">{r.label}</span>
+                      {locale === DEFAULT_BLOG_LOCALE ? (
+                        <span className="mt-1 block text-sm text-slate-600">{r.blurb}</span>
+                      ) : null}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+
+          {authorProfile ? (
+            <aside className="mt-10 flex items-start gap-4 rounded-2xl border border-slate-200 p-5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={authorProfile.image}
+                alt={authorProfile.name}
+                width={64}
+                height={64}
+                className="h-16 w-16 rounded-full object-cover"
+                loading="lazy"
+              />
+              <div>
+                <p className="font-semibold text-slate-900">
+                  <a href={authorProfile.path} rel="author" className="hover:text-orange-700">
+                    {authorProfile.name}
+                  </a>
+                </p>
+                <p className="text-sm text-slate-500">{authorProfile.jobTitle}</p>
+                <p className="mt-2 text-sm text-slate-600">{authorProfile.bio}</p>
+              </div>
+            </aside>
+          ) : null}
+
           <div className="mt-12 rounded-2xl border border-orange-200 bg-orange-50 p-8">
             <h2 className="text-xl font-bold tracking-tight text-slate-900">
               {t.ctaTitle}
@@ -315,7 +416,7 @@ export default async function BlogPostPage({
             <p className="mt-3 text-slate-600">{t.ctaBody}</p>
             <a
               href="/go/trial?src=blog-post"
-              className="mt-5 inline-block rounded-md bg-orange-600 px-5 py-3 text-sm font-semibold text-white hover:bg-orange-700"
+              className="mt-5 inline-block rounded-md bg-orange-700 px-5 py-3 text-sm font-semibold text-white hover:bg-orange-800"
             >
               {t.ctaBtn}
             </a>
@@ -368,7 +469,7 @@ export default async function BlogPostPage({
             <p className="mt-3 text-sm text-slate-600">{t.tryBody}</p>
             <Link
               href="/signup"
-              className="mt-4 inline-block rounded-md bg-orange-600 px-3 py-2 text-sm font-semibold text-white hover:bg-orange-700"
+              className="mt-4 inline-block rounded-md bg-orange-700 px-3 py-2 text-sm font-semibold text-white hover:bg-orange-800"
             >
               {t.tryBtn}
             </Link>

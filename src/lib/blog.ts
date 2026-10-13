@@ -21,6 +21,10 @@ export type BlogManifestEntry = {
   category: string;
   summary: string;
   date: string; // ISO yyyy-mm-dd
+  // Optional ISO yyyy-mm-dd of the last substantive edit. Drives dateModified in
+  // structured data, the "Updated" label and the sitemap lastmod. Set it only
+  // after a real content update; when absent the publish date is used.
+  updated?: string;
   author: string;
   readingTime: string;
   keywords: string;
@@ -35,6 +39,11 @@ export type BlogManifestEntry = {
   // Optional pre-written Pinterest description. The public page recomputes its
   // own via buildPinDescription; kept here so the admin editor round-trips it.
   pinDescription?: string;
+  // Optional. A retired post keeps its MDX on disk but leaves the listing,
+  // related-post rails, search and sitemap, and its URL redirects to /blog.
+  // Used to pull a seasonal run (Prime Day) once the season is over without
+  // deleting the files, so it can be un-retired next year by flipping the flag.
+  retired?: boolean;
   order: number;
 };
 
@@ -68,6 +77,7 @@ export type LoadedBlogPost = {
     summary?: string;
     category?: string;
     date?: string;
+    updated?: string;
     author?: string;
     readingTime?: string;
     keywords?: string;
@@ -131,11 +141,18 @@ export function isPublished(dateISO?: string): boolean {
   return dateISO <= todayISO();
 }
 
-// All posts whose publish date has arrived, newest first (manifest is already
-// sorted newest-first by loadBlogManifest).
+// A post is "listed" when it has published and has not been retired. This is
+// the filter every public surface (listing, related rails, search, sitemap)
+// should use; isPublished alone would resurface retired seasonal posts.
+export function isListed(entry: Pick<BlogManifestEntry, "date" | "retired">): boolean {
+  return !entry.retired && isPublished(entry.date);
+}
+
+// All posts whose publish date has arrived and that are not retired, newest
+// first (manifest is already sorted newest-first by loadBlogManifest).
 export async function loadPublishedPosts(): Promise<BlogManifestEntry[]> {
   const manifest = await loadBlogManifest();
-  return manifest.posts.filter((p) => isPublished(p.date));
+  return manifest.posts.filter((p) => isListed(p));
 }
 
 async function readBlogFile(id: string, locale: BlogLocale): Promise<string | null> {

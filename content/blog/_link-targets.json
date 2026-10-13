@@ -1,0 +1,639 @@
+{
+  "version": 1,
+  "notes": "Link targets for blog posts. Shared by src/lib/blog-links.ts (the 'Tools and guides for this topic' block rendered under every post) and scripts/link-blog-posts.mjs (the inline-link pass). 'match' regexes score relevance for the block; 'inline' regexes are the stricter phrases the script may wrap in a link. 'match' regexes are case-insensitive; 'inline' regexes are CASE-SENSITIVE (so a lowercase 'cc check' is never linked as a product name) and spell out [Aa] where either case is fine. 'avoidCategories' (lowercase) and 'avoidLine' (regex, case-insensitive) stop a link where the post's wording describes the product differently than its feature page. No competitor names: public pages never name competitors.",
+  "fallbacks": [
+    "/course/amazon-influencer",
+    "/tools",
+    "/extension/get",
+    "/download"
+  ],
+  "targets": [
+    {
+      "href": "/features/instagram-like-butler",
+      "kind": "feature",
+      "label": "Instagram Like Butler",
+      "blurb": "Free auto-liker for Instagram posts, with per-account caps and safe pacing.",
+      "match": [
+        "auto[- ]?lik(?:e|es|ing)[^.\\n]{0,24}instagram",
+        "instagram[^.\\n]{0,24}auto[- ]?lik",
+        "instagram like butler",
+        "like (?:the )?(?:recent )?(?:posts|reels)[^.\\n]{0,24}instagram"
+      ],
+      "inline": [
+        "Instagram Like Butler",
+        "[Aa]uto[- ]?like(?:s|d)?(?: on)? Instagram(?: posts)?"
+      ]
+    },
+    {
+      "href": "/features/instagram-butler",
+      "kind": "feature",
+      "label": "Instagram Butler",
+      "blurb": "DM outreach to brands and creators without it feeling like a full-time job.",
+      "match": [
+        "instagram dms?",
+        "dm outreach",
+        "instagram butler",
+        "cold dms?"
+      ],
+      "inline": [
+        "Instagram Butler",
+        "Instagram DM outreach"
+      ]
+    },
+    {
+      "href": "/features/instagram-goldmine",
+      "kind": "feature",
+      "label": "Instagram Goldmine",
+      "blurb": "Find creators who have active brand deals.",
+      "match": [
+        "instagram goldmine",
+        "creators with active brand deals"
+      ],
+      "inline": [
+        "Instagram Goldmine"
+      ]
+    },
+    {
+      "href": "/features/instagram-email-collection",
+      "kind": "feature",
+      "label": "Instagram Email Collection",
+      "blurb": "Grab the business contact emails creators list on Instagram.",
+      "match": [
+        "instagram email",
+        "business contact emails?",
+        "email collection"
+      ],
+      "inline": [
+        "Instagram Email Collection"
+      ]
+    },
+    {
+      "href": "/features/close-friends-butler",
+      "kind": "feature",
+      "label": "Close Friends Butler",
+      "blurb": "Grow your Instagram Close Friends list on autopilot.",
+      "match": [
+        "close friends"
+      ],
+      "inline": [
+        "Close Friends Butler"
+      ]
+    },
+    {
+      "href": "/features/storefront-butler",
+      "kind": "feature",
+      "label": "Storefront Butler",
+      "blurb": "Know your storefront inside and out: items, lists, and what is moving.",
+      "match": [
+        "storefront butler",
+        "storefront",
+        "idea lists?"
+      ],
+      "inline": [
+        "Storefront Butler"
+      ]
+    },
+    {
+      "href": "/features/daily-commission-butler",
+      "kind": "feature",
+      "label": "Daily Commission Butler",
+      "blurb": "Never miss a paid Creator Connections campaign.",
+      "match": [
+        "daily commission",
+        "creator connections",
+        "commission rates?"
+      ],
+      "inline": [
+        "Daily Commission Butler"
+      ]
+    },
+    {
+      "href": "/features/cc-check",
+      "kind": "feature",
+      "label": "CC Check",
+      "blurb": "Grab every ASIN from any page and check it against Creator Connections.",
+      "match": [
+        "cc check",
+        "asins?"
+      ],
+      "inline": [
+        "CC Check"
+      ]
+    },
+    {
+      "href": "/features/cc-deals",
+      "kind": "feature",
+      "label": "Campaign Deals",
+      "blurb": "Track on-sale items inside your Creator Connections campaigns.",
+      "match": [
+        "campaign deals",
+        "on-sale items"
+      ],
+      "inline": [
+        "Campaign Deals"
+      ]
+    },
+    {
+      "href": "/features/pricecrash-butler",
+      "kind": "feature",
+      "label": "Pricecrash Butler",
+      "blurb": "Catch Amazon pricing errors and big price drops fast.",
+      "match": [
+        "pricecrash",
+        "pricing errors?",
+        "price errors?",
+        "price drops?"
+      ],
+      "inline": [
+        "Pricecrash Butler"
+      ]
+    },
+    {
+      "href": "/features/deals-butler",
+      "kind": "feature",
+      "label": "Deals Butler",
+      "blurb": "Find and post the best deals faster.",
+      "match": [
+        "deals butler",
+        "deal posts?",
+        "post(?:ing)? deals?"
+      ],
+      "inline": [
+        "Deals Butler"
+      ]
+    },
+    {
+      "href": "/features/prime-day-butler",
+      "kind": "feature",
+      "label": "Prime Day Butler",
+      "blurb": "Win Prime Day without the scramble.",
+      "match": [
+        "prime day",
+        "prime big deal days"
+      ],
+      "inline": [
+        "Prime Day Butler"
+      ]
+    },
+    {
+      "href": "/features/black-friday-butler",
+      "kind": "feature",
+      "label": "Black Friday Butler",
+      "blurb": "Do not sleep through the Black Friday and Cyber Monday surge.",
+      "match": [
+        "black friday",
+        "cyber monday"
+      ],
+      "inline": [
+        "Black Friday Butler"
+      ]
+    },
+    {
+      "href": "/features/benable-butler",
+      "kind": "feature",
+      "label": "Benable Butler",
+      "blurb": "Build a Benable collection from one keyword.",
+      "match": [
+        "benable"
+      ],
+      "inline": [
+        "Benable Butler"
+      ]
+    },
+    {
+      "href": "/features/benable-like-butler",
+      "kind": "feature",
+      "label": "Benable Like Butler",
+      "blurb": "Free auto-liker for Benable collections.",
+      "match": [
+        "benable like"
+      ],
+      "inline": [
+        "Benable Like Butler"
+      ]
+    },
+    {
+      "href": "/features/benable-comment-butler",
+      "kind": "feature",
+      "label": "Benable Comment Butler",
+      "blurb": "AI comments on Benable lists.",
+      "match": [
+        "benable comment"
+      ],
+      "inline": [
+        "Benable Comment Butler"
+      ]
+    },
+    {
+      "href": "/features/pitch-butler",
+      "kind": "feature",
+      "label": "Pitch Butler",
+      "blurb": "One outbound queue for every brand source.",
+      "match": [
+        "pitch butler",
+        "brand pitch(?:es)?",
+        "pitch(?:ing)? brands?",
+        "outbound"
+      ],
+      "inline": [
+        "Pitch Butler"
+      ]
+    },
+    {
+      "href": "/features/amazon-butler",
+      "kind": "feature",
+      "label": "Amazon Butler",
+      "blurb": "Message brands without typing twice.",
+      "match": [
+        "amazon butler",
+        "message brands?",
+        "brand messages?"
+      ],
+      "inline": [
+        "Amazon Butler"
+      ]
+    },
+    {
+      "href": "/features/messenger-butler",
+      "kind": "feature",
+      "label": "Messenger Butler",
+      "blurb": "Clean up your Amazon inbox.",
+      "match": [
+        "messenger butler",
+        "amazon inbox"
+      ],
+      "inline": [
+        "Messenger Butler"
+      ],
+      "avoidCategories": [
+        "instagram"
+      ],
+      "avoidLine": "instagram"
+    },
+    {
+      "href": "/features/goldmine-butler",
+      "kind": "feature",
+      "label": "Goldmine Butler",
+      "blurb": "Find the brands already paying creators.",
+      "match": [
+        "goldmine butler",
+        "brands already paying"
+      ],
+      "inline": [
+        "Goldmine Butler"
+      ]
+    },
+    {
+      "href": "/features/like-butler",
+      "kind": "feature",
+      "label": "Like Butler",
+      "blurb": "Free auto-liker for Amazon storefronts.",
+      "match": [
+        "like butler",
+        "auto[- ]?lik(?:e|ing) storefronts?"
+      ],
+      "inline": [
+        "(?<!Instagram |Benable |TikTok |YouTube )Like Butler"
+      ],
+      "avoidCategories": [
+        "instagram"
+      ],
+      "avoidLine": "instagram"
+    },
+    {
+      "href": "/features/earnings-intelligence",
+      "kind": "feature",
+      "label": "Earnings Intelligence",
+      "blurb": "See what is actually making money.",
+      "match": [
+        "earnings intelligence",
+        "what(?:'|’)?s actually making money",
+        "earnings report"
+      ],
+      "inline": [
+        "Earnings Intelligence"
+      ]
+    },
+    {
+      "href": "/features/retag-butler",
+      "kind": "feature",
+      "label": "Retag Butler",
+      "blurb": "Fix dead product links in your old content.",
+      "match": [
+        "retag butler",
+        "dead (?:product )?links?",
+        "broken links?"
+      ],
+      "inline": [
+        "Retag Butler"
+      ]
+    },
+    {
+      "href": "/features/relink-butler",
+      "kind": "feature",
+      "label": "Relink Butler",
+      "blurb": "Rewrite published affiliate links in bulk (Beta).",
+      "match": [
+        "relink butler",
+        "rewrite (?:published )?(?:affiliate )?links"
+      ],
+      "inline": [
+        "Relink Butler"
+      ]
+    },
+    {
+      "href": "/features/pinterest-butler",
+      "kind": "feature",
+      "label": "Pinterest Butler",
+      "blurb": "Idea Lists in, Pins out.",
+      "match": [
+        "pinterest"
+      ],
+      "inline": [
+        "Pinterest Butler"
+      ]
+    },
+    {
+      "href": "/features/youtube-butler",
+      "kind": "feature",
+      "label": "YouTube Butler",
+      "blurb": "Turn storefront videos into YouTube views.",
+      "match": [
+        "youtube butler",
+        "youtube shorts?"
+      ],
+      "inline": [
+        "YouTube Butler"
+      ]
+    },
+    {
+      "href": "/features/collab-butler",
+      "kind": "feature",
+      "label": "Collab Butler",
+      "blurb": "Never lose track of a brand deal.",
+      "match": [
+        "collab butler",
+        "track(?:ing)? (?:your )?brand deals?",
+        "brand deal tracking"
+      ],
+      "inline": [
+        "Collab Butler"
+      ]
+    },
+    {
+      "href": "/features/content-butler",
+      "kind": "feature",
+      "label": "Content Butler",
+      "blurb": "Plan your content like a calendar, not a mess.",
+      "match": [
+        "content butler",
+        "content calendar"
+      ],
+      "inline": [
+        "Content Butler"
+      ]
+    },
+    {
+      "href": "/features/walmart-butler",
+      "kind": "feature",
+      "label": "Walmart Butler",
+      "blurb": "Collection Builder, Walmart price research and storefront reposting.",
+      "match": [
+        "walmart",
+        "collection builder"
+      ],
+      "inline": [
+        "Walmart Butler"
+      ]
+    },
+    {
+      "href": "/features/voiceover-butler",
+      "kind": "feature",
+      "label": "Voiceover Butler",
+      "blurb": "AI voiceover with FTC disclosures baked in.",
+      "match": [
+        "voiceover",
+        "ftc disclosures?"
+      ],
+      "inline": [
+        "Voiceover Butler"
+      ]
+    },
+    {
+      "href": "/features/group-invite-butler",
+      "kind": "feature",
+      "label": "Group Invite Butler",
+      "blurb": "Grow your Facebook group on autopilot.",
+      "match": [
+        "group invite",
+        "facebook groups?"
+      ],
+      "inline": [
+        "Group Invite Butler"
+      ]
+    },
+    {
+      "href": "/guides/how-to-auto-accept-amazon-creator-connections",
+      "kind": "guide",
+      "label": "How to auto-accept Amazon Creator Connections",
+      "blurb": "The step-by-step guide to accepting matching campaigns automatically.",
+      "match": [
+        "auto[- ]?accept(?:ing|ed)?"
+      ],
+      "inline": [
+        "[Aa]uto[- ]?accept(?:ing)? (?:Amazon )?Creator Connections(?: campaigns)?"
+      ]
+    },
+    {
+      "href": "/guides/amazon-brand-pitch-email-templates",
+      "kind": "guide",
+      "label": "Amazon brand pitch email templates",
+      "blurb": "Copy-ready pitch emails for brands.",
+      "match": [
+        "pitch emails?",
+        "pitch templates?",
+        "email templates?"
+      ],
+      "inline": [
+        "[Bb]rand pitch email templates?",
+        "[Pp]itch email templates?"
+      ]
+    },
+    {
+      "href": "/guides/amazon-deal-post-templates",
+      "kind": "guide",
+      "label": "Amazon deal post templates",
+      "blurb": "Deal post formats you can reuse.",
+      "match": [
+        "deal post templates?"
+      ],
+      "inline": [
+        "[Dd]eal post templates?"
+      ]
+    },
+    {
+      "href": "/guides/how-to-track-amazon-affiliate-commissions",
+      "kind": "guide",
+      "label": "How to track Amazon affiliate commissions",
+      "blurb": "Where the numbers live and how to total them.",
+      "match": [
+        "track(?:ing)? (?:your )?(?:amazon )?(?:affiliate )?commissions?"
+      ],
+      "inline": [
+        "[Tt]rack(?:ing)? (?:your )?(?:Amazon )?(?:affiliate )?commissions"
+      ]
+    },
+    {
+      "href": "/best-amazon-influencer-tools",
+      "kind": "guide",
+      "label": "Best Amazon influencer tools",
+      "blurb": "A side-by-side look at the tools Amazon creators use.",
+      "match": [
+        "influencer tools?",
+        "tool stack"
+      ],
+      "inline": [
+        "[Bb]est Amazon influencer tools"
+      ]
+    },
+    {
+      "href": "/tools/amazon-affiliate-earnings-calculator",
+      "kind": "tool",
+      "label": "Amazon Affiliate Earnings Calculator",
+      "blurb": "Estimate monthly and yearly commissions from clicks and conversion rate.",
+      "match": [
+        "how much (?:do |can |does )?[^.\\n]{0,40}(?:make|earn)",
+        "earnings calculator",
+        "commission estimate"
+      ],
+      "inline": [
+        "[Ee]arnings calculator"
+      ]
+    },
+    {
+      "href": "/tools/amazon-sales-estimator",
+      "kind": "tool",
+      "label": "Amazon Sales Estimator",
+      "blurb": "Turn a Best Sellers Rank into estimated monthly units.",
+      "match": [
+        "best sellers? rank",
+        "\\bBSR\\b",
+        "sales estimat"
+      ],
+      "inline": [
+        "Best Sellers? Rank",
+        "\\bBSR\\b"
+      ]
+    },
+    {
+      "href": "/tools/engagement-rate-calculator",
+      "kind": "tool",
+      "label": "Engagement Rate Calculator",
+      "blurb": "See your true engagement rate against your platform's benchmark.",
+      "match": [
+        "engagement rates?"
+      ],
+      "inline": [
+        "[Ee]ngagement rate"
+      ]
+    },
+    {
+      "href": "/tools/hashtag-generator",
+      "kind": "tool",
+      "label": "Hashtag Generator",
+      "blurb": "A ready-to-paste mix of broad, niche, and shopping hashtags.",
+      "match": [
+        "hashtags?"
+      ],
+      "inline": [
+        "[Hh]ashtag generator"
+      ]
+    },
+    {
+      "href": "/tools/affiliate-link-builder",
+      "kind": "tool",
+      "label": "Affiliate Link Builder",
+      "blurb": "Add clean channel tags and UTM parameters to storefront links.",
+      "match": [
+        "\\butm\\b",
+        "tracking links?",
+        "channel tags?",
+        "tagged links?"
+      ],
+      "inline": [
+        "UTM parameters?",
+        "UTM tags?"
+      ]
+    },
+    {
+      "href": "/course/amazon-influencer",
+      "kind": "course",
+      "label": "Free Amazon Influencer course",
+      "blurb": "A free step-by-step course from first storefront to first commissions.",
+      "match": [
+        "amazon influencer program",
+        "beginners?",
+        "getting started",
+        "get started"
+      ],
+      "inline": []
+    },
+    {
+      "href": "/extension/get",
+      "kind": "extension",
+      "label": "Free Chrome extension",
+      "blurb": "Money signals on the Amazon pages you already browse, free.",
+      "match": [
+        "chrome extension",
+        "browser extension",
+        "butler score"
+      ],
+      "inline": [
+        "[Ff]ree Chrome extension",
+        "Influencer Butler(?:'s|’s)? (?:free )?Chrome extension"
+      ]
+    },
+    {
+      "href": "/tools",
+      "kind": "tool",
+      "label": "All free creator tools",
+      "blurb": "Calculators and generators for Amazon and social creators, no signup.",
+      "match": [],
+      "inline": []
+    },
+    {
+      "href": "/download",
+      "kind": "feature",
+      "label": "Download the desktop app",
+      "blurb": "Windows and Mac. Try every butler free for 14 days.",
+      "match": [],
+      "inline": []
+    },
+    {
+      "href": "/help/tutorials/foyer-butler",
+      "kind": "guide",
+      "label": "Foyer Butler tutorial",
+      "blurb": "Build a shoppable link-in-bio page with a newsletter list.",
+      "match": [
+        "foyer butler",
+        "link[- ]in[- ]bio"
+      ],
+      "inline": [
+        "Foyer Butler"
+      ]
+    },
+    {
+      "href": "/help/tutorials/walmart-collection-builder",
+      "kind": "guide",
+      "label": "Collection Builder tutorial",
+      "blurb": "Turn an Amazon idea list into a Walmart collection.",
+      "match": [
+        "collection builder",
+        "walmart collections?"
+      ],
+      "inline": [
+        "Collection Builder"
+      ]
+    }
+  ]
+}

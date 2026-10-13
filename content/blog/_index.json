@@ -448,13 +448,14 @@
     },
     {
       "id": "amazon-storefront-idea-lists-that-convert",
-      "title": "How to Build Amazon Idea Lists That Actually Convert",
+      "title": "Amazon Idea Lists: How to Create Ones That Convert",
       "category": "Amazon",
-      "summary": "Idea lists are mini sales pages. How to theme, title, and order them so shoppers add to cart instead of bouncing.",
+      "summary": "What an Amazon idea list is, how to create one, and how to theme, title and order it so shoppers add to cart instead of bouncing.",
       "date": "2026-07-04",
+      "updated": "2026-10-09",
       "author": "The Influencer Butler Team",
       "readingTime": "8 min read",
-      "keywords": "amazon idea lists, amazon storefront idea list, idea lists that convert",
+      "keywords": "amazon idea list, amazon idea lists, how to create an amazon idea list, amazon storefront idea list, idea lists that convert",
       "image": "/assets/blog/amazon-storefront-idea-lists-that-convert.png",
       "imageAlt": "Illustration of tidy themed idea lists",
       "imagePrompt": "neatly themed list cards stacked on a phone, each with a clear cover image, a shopper tapping add to cart",
@@ -556,7 +557,8 @@
       "imagePrompt": "a countdown clock over a storefront with deal tags ready, a creator lining up content cards",
       "order": 102,
       "pinImage": "/assets/blog/pins/amazon-prime-day-influencer-prep.png",
-      "pinDescription": "Prime Day is a sprint you win in advance. A prep checklist to maximize commissions during Amazon's biggest shopping window. Save this pin so you can come back to it. #PrimeDayInfluencer #AmazonPrimeDayStrategy #AmazonInfluencer #AmazonStorefront"
+      "pinDescription": "Prime Day is a sprint you win in advance. A prep checklist to maximize commissions during Amazon's biggest shopping window. Save this pin so you can come back to it. #PrimeDayInfluencer #AmazonPrimeDayStrategy #AmazonInfluencer #AmazonStorefront",
+      "retired": true
     },
     {
       "id": "amazon-storefront-metrics-to-track",
@@ -1148,7 +1150,8 @@
       "imagePrompt": "a creator at a command desk during a big sale event with deal tags streaming, energetic",
       "order": 107,
       "pinImage": "/assets/blog/pins/prime-day-deal-strategy.png",
-      "pinDescription": "Prime Day is the deal poster's Super Bowl. How to prepare, pace, and post so you capture the surge without burning out. Save this pin so you can come back to it. #PrimeDayDealsStrategy #PrimeDayDealPosting #AmazonDeals #DealFinder"
+      "pinDescription": "Prime Day is the deal poster's Super Bowl. How to prepare, pace, and post so you capture the surge without burning out. Save this pin so you can come back to it. #PrimeDayDealsStrategy #PrimeDayDealPosting #AmazonDeals #DealFinder",
+      "retired": true
     },
     {
       "id": "black-friday-deal-prep",
@@ -1788,7 +1791,8 @@
       "imagePrompt": "a creator at a command desk with a Prime Day countdown banner, deal tags and a ready storefront, energetic anticipation",
       "order": 101,
       "pinImage": "/assets/blog/pins/prime-day-2026-creator-playbook.png",
-      "pinDescription": "Prime Day 2026 runs June 23-26. Here is the creator playbook to prep your storefront, pick the right deals, and earn the most during Amazon's biggest week. Save this pin so you can come back to it. #AmazonPrimeDay2026 #PrimeDayCreatorPlaybook #AmazonInfluencer #AmazonStorefront"
+      "pinDescription": "Prime Day 2026 runs June 23-26. Here is the creator playbook to prep your storefront, pick the right deals, and earn the most during Amazon's biggest week. Save this pin so you can come back to it. #AmazonPrimeDay2026 #PrimeDayCreatorPlaybook #AmazonInfluencer #AmazonStorefront",
+      "retired": true
     },
     {
       "id": "prime-day-storefront-checklist",
@@ -1804,7 +1808,8 @@
       "imagePrompt": "a tidy storefront being polished with a checklist clipboard and orange checkmarks, a countdown clock nearby",
       "order": 103,
       "pinImage": "/assets/blog/pins/prime-day-storefront-checklist.png",
-      "pinDescription": "A pre-event checklist to get your Amazon storefront and idea lists ready before Prime Day 2026 starts, so you capture the surge instead of scrambling. Save this pin so you can come back to it. #PrimeDayStorefrontChecklist #PrepareStorefrontPrimeDay #AmazonInfluencer #AmazonStorefront"
+      "pinDescription": "A pre-event checklist to get your Amazon storefront and idea lists ready before Prime Day 2026 starts, so you capture the surge instead of scrambling. Save this pin so you can come back to it. #PrimeDayStorefrontChecklist #PrepareStorefrontPrimeDay #AmazonInfluencer #AmazonStorefront",
+      "retired": true
     },
     {
       "id": "prime-day-content-ideas",
@@ -1820,7 +1825,8 @@
       "imagePrompt": "a lightbulb spraying content idea cards toward a phone showing deal videos, creative energetic mood with a Prime Day vibe",
       "order": 104,
       "pinImage": "/assets/blog/pins/prime-day-content-ideas.png",
-      "pinDescription": "Stuck on what to post for Prime Day? Content formats and angles that turn the Prime Day rush into clicks and commissions. Save this pin so you can come back to it. #PrimeDayContentIdeas #WhatToPostPrimeDay #AmazonInfluencer #AmazonStorefront"
+      "pinDescription": "Stuck on what to post for Prime Day? Content formats and angles that turn the Prime Day rush into clicks and commissions. Save this pin so you can come back to it. #PrimeDayContentIdeas #WhatToPostPrimeDay #AmazonInfluencer #AmazonStorefront",
+      "retired": true
     },
     {
       "id": "prime-day-creator-connections",
@@ -1836,7 +1842,8 @@
       "imagePrompt": "brand campaign cards with boosted percentage badges raining down during a sale event, a creator catching the best ones",
       "order": 105,
       "pinImage": "/assets/blog/pins/prime-day-creator-connections.png",
-      "pinDescription": "Prime Day floods Creator Connections with boosted campaigns. How to spot and accept the best ones so the bonus rates work for you. Save this pin so you can come back to it. #CreatorConnectionsPrimeDay #PrimeDayCampaigns #AmazonInfluencer #AmazonStorefront"
+      "pinDescription": "Prime Day floods Creator Connections with boosted campaigns. How to spot and accept the best ones so the bonus rates work for you. Save this pin so you can come back to it. #CreatorConnectionsPrimeDay #PrimeDayCampaigns #AmazonInfluencer #AmazonStorefront",
+      "retired": true
     },
     {
       "id": "prime-day-last-minute-prep",
@@ -1852,7 +1859,8 @@
       "imagePrompt": "a 48-hour countdown clock beside a short checklist with items ticked off fast, a focused creator",
       "order": 106,
       "pinImage": "/assets/blog/pins/prime-day-last-minute-prep.png",
-      "pinDescription": "Prime Day is almost here. The exact things to do in the final 48 hours so you are ready the moment the deals go live. Save this pin so you can come back to it. #LastMinutePrimeDayPrep #PrimeDay48HourChecklist #AmazonInfluencer #AmazonStorefront"
+      "pinDescription": "Prime Day is almost here. The exact things to do in the final 48 hours so you are ready the moment the deals go live. Save this pin so you can come back to it. #LastMinutePrimeDayPrep #PrimeDay48HourChecklist #AmazonInfluencer #AmazonStorefront",
+      "retired": true
     },
     {
       "id": "prime-day-instagram-promotion",
@@ -1868,7 +1876,8 @@
       "imagePrompt": "a phone showing an Instagram story with a Prime Day deal and a link sticker, fans tapping through, lively mood",
       "order": 108,
       "pinImage": "/assets/blog/pins/prime-day-instagram-promotion.png",
-      "pinDescription": "Your Instagram is a Prime Day goldmine if you use it right. Story, Reel, and Close Friends tactics to drive deal clicks during the event. Save this pin so you can come back to it. #PromotePrimeDayOnInstagram #PrimeDayInstagramStories #InstagramTips #ContentCreator"
+      "pinDescription": "Your Instagram is a Prime Day goldmine if you use it right. Story, Reel, and Close Friends tactics to drive deal clicks during the event. Save this pin so you can come back to it. #PromotePrimeDayOnInstagram #PrimeDayInstagramStories #InstagramTips #ContentCreator",
+      "retired": true
     },
     {
       "id": "prime-day-live-day-tactics",
@@ -1884,7 +1893,8 @@
       "imagePrompt": "a creator rapidly posting live deal cards as a countdown ticks, deal tags flying to an active audience, urgent but cheerful",
       "order": 109,
       "pinImage": "/assets/blog/pins/prime-day-live-day-tactics.png",
-      "pinDescription": "When the deals are live, speed and clarity win. How to post during Prime Day so your audience acts before the deals disappear. Save this pin so you can come back to it. #PrimeDayLiveTactics #PostingDuringPrimeDay #AmazonDeals #DealFinder"
+      "pinDescription": "When the deals are live, speed and clarity win. How to post during Prime Day so your audience acts before the deals disappear. Save this pin so you can come back to it. #PrimeDayLiveTactics #PostingDuringPrimeDay #AmazonDeals #DealFinder",
+      "retired": true
     },
     {
       "id": "prime-day-after-momentum",
@@ -1900,7 +1910,8 @@
       "imagePrompt": "a creator riding a wave of momentum past a finished sale banner, reviewing a simple results chart, satisfied forward-looking mood",
       "order": 110,
       "pinImage": "/assets/blog/pins/prime-day-after-momentum.png",
-      "pinDescription": "Prime Day ends but the opportunity does not. How to ride the post-event wave, review what worked, and turn buyers into repeat fans. Save this pin so you can come back to it. #AfterPrimeDay #PostPrimeDayStrategy #CreatorTips #ContentCreator"
+      "pinDescription": "Prime Day ends but the opportunity does not. How to ride the post-event wave, review what worked, and turn buyers into repeat fans. Save this pin so you can come back to it. #AfterPrimeDay #PostPrimeDayStrategy #CreatorTips #ContentCreator",
+      "retired": true
     },
     {
       "id": "amazon-influencer-prime-day-prep-routine",
@@ -1916,7 +1927,8 @@
       "imagePrompt": "an experienced confident content creator at a desk while their videos flow out to five country marketplaces marked with small flag-like badges (US, Canada, UK, Australia, Singapore), a Prime Day countdown on screen, organized veteran mood",
       "pinImage": "/assets/blog/pins/amazon-influencer-prime-day-prep-routine.png",
       "pinDescription": "A veteran Amazon influencer's full Prime Day prep routine: earn across five country marketplaces from content you already made, mostly while you sleep. Save this pin so you can come back to it. #AmazonPrimeDayPrep #AmazonInfluencerPrimeDay #AmazonInfluencer #AmazonStorefront",
-      "order": 99
+      "order": 99,
+      "retired": true
     },
     {
       "id": "keep-your-butler-running-while-traveling",
@@ -1946,7 +1958,8 @@
       "image": "/assets/blog/prime-day-2026-creator-playbook.png",
       "imageAlt": "Illustration of a creator preparing for a big October sale event",
       "imagePrompt": "a creator at a command desk in autumn colors preparing for a big October sale, deal tags streaming, energetic and organized",
-      "order": 200
+      "order": 200,
+      "retired": true
     },
     {
       "id": "prime-big-deal-days-find-the-deals",
@@ -1960,7 +1973,8 @@
       "image": "/assets/blog/prime-day-deal-strategy.png",
       "imageAlt": "Illustration of a creator sorting a large list of deals down to the best ones",
       "imagePrompt": "a creator sorting a large stream of deal cards down to a short curated pile, focused and organized",
-      "order": 201
+      "order": 201,
+      "retired": true
     },
     {
       "id": "prime-big-deal-days-content-plan",
@@ -1974,7 +1988,8 @@
       "image": "/assets/blog/prime-day-content-ideas.png",
       "imageAlt": "Illustration of a printable checklist of products to film",
       "imagePrompt": "a printed checklist of products to film taped to a desk, with a camera and a coffee, calm and organized",
-      "order": 202
+      "order": 202,
+      "retired": true
     },
     {
       "id": "prime-big-deal-days-posting-schedule",
@@ -1988,7 +2003,8 @@
       "image": "/assets/blog/prime-day-live-day-tactics.png",
       "imageAlt": "Illustration of posts spaced evenly across a two-day timeline",
       "imagePrompt": "a calendar timeline with deal posts spaced evenly across two days, steady and automated",
-      "order": 203
+      "order": 203,
+      "retired": true
     },
     {
       "id": "prime-big-deal-days-day-of-playbook",
@@ -2002,7 +2018,8 @@
       "image": "/assets/blog/prime-day-last-minute-prep.png",
       "imageAlt": "Illustration of a creator calmly monitoring a running schedule on the big day",
       "imagePrompt": "a creator calmly watching a running schedule on the big sale day, relaxed and in control",
-      "order": 204
+      "order": 204,
+      "retired": true
     },
     {
       "id": "prime-big-deal-days-stock-your-storefront",
@@ -2016,7 +2033,8 @@
       "image": "/assets/blog/prime-big-deal-days-stock-your-storefront.png",
       "imageAlt": "Illustration of a creator tidying and filling shelves on a storefront page before a rush of shoppers arrives",
       "imagePrompt": "a creator arranging products neatly on a storefront display just before a crowd of shoppers arrives, tidy and ready",
-      "order": 205
+      "order": 205,
+      "retired": true
     },
     {
       "id": "prime-big-deal-days-know-your-baseline",
@@ -2030,7 +2048,8 @@
       "image": "/assets/blog/prime-big-deal-days-know-your-baseline.png",
       "imageAlt": "Illustration of a creator writing down a few key numbers in a notebook before a big event",
       "imagePrompt": "a creator jotting a few key numbers into a notebook with a calm before-the-storm feeling, a calendar marked in the background",
-      "order": 206
+      "order": 206,
+      "retired": true
     },
     {
       "id": "prime-big-deal-days-captions-that-convert",
@@ -2044,7 +2063,8 @@
       "image": "/assets/blog/prime-big-deal-days-captions-that-convert.png",
       "imageAlt": "Illustration of a creator writing a short punchy caption on a phone screen with a deal price highlighted",
       "imagePrompt": "a creator writing a short punchy caption on a phone, a price tag and a small clock icon beside it, focused and quick",
-      "order": 207
+      "order": 207,
+      "retired": true
     },
     {
       "id": "prime-big-deal-days-deals-to-skip",
@@ -2058,7 +2078,8 @@
       "image": "/assets/blog/prime-big-deal-days-deals-to-skip.png",
       "imageAlt": "Illustration of a creator sorting deals into keep and skip piles at a desk",
       "imagePrompt": "a creator sorting a stack of deal cards into two piles, keep and skip, calm and deliberate, one pile glowing",
-      "order": 208
+      "order": 208,
+      "retired": true
     },
     {
       "id": "prime-big-deal-days-prioritize-creator-connections",
@@ -2072,7 +2093,8 @@
       "image": "/assets/blog/prime-big-deal-days-prioritize-creator-connections.png",
       "imageAlt": "Illustration of two similar products with one showing a noticeably larger payout tag",
       "imagePrompt": "two similar products side by side, one with a small commission tag and one with a much larger payout tag, a clear this-pays-more comparison",
-      "order": 209
+      "order": 209,
+      "retired": true
     },
     {
       "id": "prime-big-deal-days-48-hour-setup-checklist",
@@ -2086,7 +2108,8 @@
       "image": "/assets/blog/prime-big-deal-days-48-hour-setup-checklist.png",
       "imageAlt": "Illustration of a creator ticking items off a two-day countdown checklist at a tidy desk",
       "imagePrompt": "a creator ticking items off a countdown checklist pinned to a wall, a calendar showing two days left, organized and calm",
-      "order": 210
+      "order": 210,
+      "retired": true
     },
     {
       "id": "prime-big-deal-days-night-before-check",
@@ -2100,7 +2123,8 @@
       "image": "/assets/blog/prime-big-deal-days-night-before-check.png",
       "imageAlt": "Illustration of a creator doing a calm last check on a laptop the evening before a big event",
       "imagePrompt": "a creator doing a calm final check on a laptop in the evening, a mug of tea nearby, everything ready and quiet",
-      "order": 211
+      "order": 211,
+      "retired": true
     },
     {
       "id": "prime-big-deal-days-final-hours-push",
@@ -2114,7 +2138,8 @@
       "image": "/assets/blog/prime-big-deal-days-final-hours-push.png",
       "imageAlt": "Illustration of a countdown clock near zero with a creator posting one last deal",
       "imagePrompt": "a countdown clock ticking toward zero with a creator confidently posting one last deal, warm evening light, a final-push mood",
-      "order": 212
+      "order": 212,
+      "retired": true
     },
     {
       "id": "prime-big-deal-days-morning-after-recap",
@@ -2128,7 +2153,8 @@
       "image": "/assets/blog/prime-big-deal-days-morning-after-recap.png",
       "imageAlt": "Illustration of a creator reviewing results on a calm morning after a big event",
       "imagePrompt": "a creator reviewing results on a laptop on a calm sunny morning, a coffee and a notebook nearby, reflective and satisfied",
-      "order": 213
+      "order": 213,
+      "retired": true
     },
     {
       "id": "prime-big-deal-days-winners-into-evergreen",
@@ -2142,7 +2168,8 @@
       "image": "/assets/blog/prime-big-deal-days-winners-into-evergreen.png",
       "imageAlt": "Illustration of a single winning product branching into several pieces of lasting content",
       "imagePrompt": "a single glowing winning product branching into several content formats like video, list, and post, a lasting-value feeling",
-      "order": 214
+      "order": 214,
+      "retired": true
     },
     {
       "id": "prime-big-deal-days-reconcile-commissions",
@@ -2156,7 +2183,8 @@
       "image": "/assets/blog/prime-big-deal-days-reconcile-commissions.png",
       "imageAlt": "Illustration of a creator checking event earnings against returns and adjustments on a ledger",
       "imagePrompt": "a creator checking earnings against a ledger with some entries adjusted down, honest and clear-eyed, a calculator nearby",
-      "order": 215
+      "order": 215,
+      "retired": true
     },
     {
       "id": "prime-big-deal-days-to-black-friday",
@@ -2170,7 +2198,8 @@
       "image": "/assets/blog/prime-big-deal-days-to-black-friday.png",
       "imageAlt": "Illustration of a creator carrying momentum from one event marker forward to a Black Friday marker on a calendar",
       "imagePrompt": "a calendar with a path connecting an October event marker to a Black Friday marker, a creator walking the path with momentum, forward-looking",
-      "order": 216
+      "order": 216,
+      "retired": true
     },
     {
       "id": "prime-big-deal-days-keep-the-audience",
@@ -2184,7 +2213,8 @@
       "image": "/assets/blog/prime-big-deal-days-keep-the-audience.png",
       "imageAlt": "Illustration of a wave of new visitors with some choosing to stay and follow",
       "imagePrompt": "a wave of new visitors arriving with a few of them choosing to stay and follow, a keep-them mood, warm and welcoming",
-      "order": 217
+      "order": 217,
+      "retired": true
     },
     {
       "id": "reload-videos-amazon-repost-walmart",
@@ -2268,7 +2298,8 @@
       "image": "/assets/blog/prime-day-deal-strategy.png",
       "imageAlt": "Illustration of a creator dashboard with a Prime Day switch turning itself on while deal cards queue up",
       "imagePrompt": "a friendly creator dashboard with a big event switch flipping on by itself, a calendar clock beside it, and a neat queue of deal cards ready to post",
-      "order": 223
+      "order": 223,
+      "retired": true
     },
     {
       "id": "prime-day-butler-find-and-auto-post-deals",
@@ -2282,7 +2313,8 @@
       "image": "/assets/blog/prime-day-live-day-tactics.png",
       "imageAlt": "Illustration of a creator following a numbered checklist while deal posts flow out to social channels",
       "imagePrompt": "a creator ticking off a numbered checklist as a stream of deal posts flows out to social media icons on its own, calm and organized",
-      "order": 224
+      "order": 224,
+      "retired": true
     },
     {
       "id": "how-the-butler-score-works",
@@ -2297,6 +2329,166 @@
       "imageAlt": "Amazon search results with Butler Score chips under each product",
       "imagePrompt": "Amazon search results with small score chips under each product, shown as a clean extension screenshot",
       "order": 225
+    },
+    {
+      "id": "foyer-butler-link-in-bio-that-sells",
+      "title": "Your Link in Bio Should Sell Something: Meet Foyer Butler",
+      "category": "Growth",
+      "summary": "Foyer Butler turns the products and deals you already track into a shoppable link-in-bio page, with a subscriber list and analytics built in. The page is free to keep.",
+      "date": "2026-10-13",
+      "author": "The Influencer Butler Team",
+      "readingTime": "7 min read",
+      "keywords": "foyer butler, link in bio for amazon influencers, shoppable link in bio, free link in bio page, link in bio with newsletter, amazon influencer bio link",
+      "image": "/assets/blog/foyer-butler-link-in-bio-that-sells.png",
+      "imageAlt": "Illustration of a phone showing a shoppable link-in-bio page with product tiles, a deals row and a subscribe button",
+      "imagePrompt": "a smartphone held upright showing a tidy link-in-bio page made of product tiles and a small subscribe form, a few coins and a tiny mail envelope floating beside it, a welcoming front-door feeling",
+      "pinImage": "/assets/blog/pins/foyer-butler-link-in-bio-that-sells.png",
+      "pinDescription": "Your link in bio should sell something. Foyer Butler builds a shoppable bio page from products you already track, with a free subscriber list and analytics. Save this pin so you can come back to it. #LinkInBio #AmazonInfluencer #CreatorTools #FoyerButler",
+      "order": 226
+    },
+    {
+      "id": "walmart-collection-builder-amazon-list-to-collection",
+      "title": "Collection Builder: Turn an Amazon Idea List Into a Walmart Collection",
+      "category": "Walmart",
+      "summary": "Paste an Amazon idea list and Collection Builder finds matching Walmart products, writes a similar name and description, and builds the collection on your Walmart Creator storefront after you review it.",
+      "date": "2026-10-13",
+      "author": "The Influencer Butler Team",
+      "readingTime": "8 min read",
+      "keywords": "walmart collection builder, walmart creator collections, amazon idea list to walmart, walmart creator storefront, walmart butler, build walmart collection from amazon list",
+      "image": "/assets/blog/walmart-collection-builder-amazon-list-to-collection.png",
+      "imageAlt": "Illustration of an Amazon-style idea list card being matched item by item into a new Walmart-style collection card",
+      "imagePrompt": "a list card of product thumbnails on the left connected by a curved arrow to a matching collection card on the right, small check marks on each matched pair, a building-a-twin feeling",
+      "pinImage": "/assets/blog/pins/walmart-collection-builder-amazon-list-to-collection.png",
+      "pinDescription": "Turn an Amazon idea list into a Walmart collection in one paste. Collection Builder matches every product, writes the description and builds it after you review. Save this pin so you can come back to it. #WalmartCreator #AmazonInfluencer #WalmartCollections #CreatorTools",
+      "order": 227
+    },
+    {
+      "id": "foyer-butler-todays-deals-on-your-page",
+      "title": "Put Today's Deals on Your Link-in-Bio Page, Automatically",
+      "category": "Growth",
+      "summary": "Foyer Butler's Today's Deals keeps a live grid of your Amazon, Walmart and TikTok Shop deals on your bio page, filtered by your packs, sorted by what pays, with no daily editing.",
+      "date": "2026-10-15",
+      "author": "The Influencer Butler Team",
+      "readingTime": "7 min read",
+      "keywords": "foyer butler today's deals, deals on link in bio, link in bio deals page, amazon deals page for creators, walmart deals link in bio, deal packs",
+      "image": "/assets/blog/foyer-butler-todays-deals-on-your-page.png",
+      "imageAlt": "Illustration of a phone bio page where a grid of deal tiles with percent-off badges refreshes itself",
+      "imagePrompt": "a smartphone showing a grid of product tiles with small percent-off badges, a circular refresh arrow and a tiny clock beside it, deals arriving on their own",
+      "pinImage": "/assets/blog/pins/foyer-butler-todays-deals-on-your-page.png",
+      "pinDescription": "A deals page in your bio that updates itself. Today's Deals keeps your Amazon, Walmart and TikTok Shop deals live on your link-in-bio page with zero daily editing. Save this pin so you can come back to it. #LinkInBio #DealsPage #AmazonDeals #CreatorTools",
+      "order": 227
+    },
+    {
+      "id": "recreate-amazon-storefront-on-walmart",
+      "title": "Recreate Your Whole Amazon Storefront on Walmart in One Run",
+      "category": "Walmart",
+      "summary": "Collection Builder's storefront mode finds every public idea list on your Amazon storefront and rebuilds each one as a Walmart collection, one after another, with stock checks and a status per list.",
+      "date": "2026-10-16",
+      "author": "The Influencer Butler Team",
+      "readingTime": "7 min read",
+      "keywords": "recreate amazon storefront on walmart, walmart creator storefront setup, bulk walmart collections, walmart collection builder, amazon idea lists to walmart collections, walmart butler",
+      "image": "/assets/blog/recreate-amazon-storefront-on-walmart.png",
+      "imageAlt": "Illustration of a storefront full of idea lists feeding a conveyor that stacks up finished Walmart collections with status ticks",
+      "imagePrompt": "a small shop front with many list cards flowing along a conveyor belt into a neat stack of finished collection cards, each stamped with a check mark, a progress bar underneath, an assembly-line feeling",
+      "pinImage": "/assets/blog/pins/recreate-amazon-storefront-on-walmart.png",
+      "pinDescription": "Every Amazon idea list, rebuilt as a Walmart collection in one run. How the bulk storefront mode works, when to use Review first, and how stock is handled. Save this pin so you can come back to it. #WalmartCreator #WalmartStorefront #AmazonInfluencer #CreatorTools",
+      "order": 229
+    },
+    {
+      "id": "foyer-butler-newsletter-that-writes-itself",
+      "title": "The Deals Newsletter That Writes Itself (and Sends Itself)",
+      "category": "Growth",
+      "summary": "Foyer Butler builds a newsletter from the live deals on your bio page, sends it on a schedule you pick, handles unsubscribes and disclosures, and can send from your own domain.",
+      "date": "2026-10-17",
+      "author": "The Influencer Butler Team",
+      "readingTime": "8 min read",
+      "keywords": "deals newsletter for creators, foyer butler newsletter, automated deals email, amazon influencer email list, send newsletter from own domain, creator email marketing",
+      "image": "/assets/blog/foyer-butler-newsletter-that-writes-itself.png",
+      "imageAlt": "Illustration of an open envelope with a newsletter of deal tiles sliding out, a clock and calendar beside it for scheduled sends",
+      "imagePrompt": "an open envelope with a newsletter sheet of product deal tiles sliding out of it, a small clock and calendar page beside it, a sense of the email composing and sending itself",
+      "pinImage": "/assets/blog/pins/foyer-butler-newsletter-that-writes-itself.png",
+      "pinDescription": "A deals newsletter you never have to write. Foyer Butler builds it from your live deals, sends on a schedule, handles unsubscribes and disclosures. Save this pin so you can come back to it. #EmailList #CreatorNewsletter #AmazonInfluencer #DealsNewsletter",
+      "order": 230
+    },
+    {
+      "id": "share-walmart-collections-on-facebook",
+      "title": "Post Your Walmart Collections to Facebook, No Affiliate Link Needed",
+      "category": "Walmart",
+      "summary": "Every collection you build in Collection Builder can go straight to your Facebook groups and pages through Deals Butler, with a product-photo cover and a caption, or into your Deals queue for later.",
+      "date": "2026-10-18",
+      "author": "The Influencer Butler Team",
+      "readingTime": "6 min read",
+      "keywords": "post walmart collection to facebook, walmart creator collection link, share walmart collections, walmart collections facebook group, deals queue walmart, walmart butler",
+      "image": "/assets/blog/share-walmart-collections-on-facebook.png",
+      "imageAlt": "Illustration of a Walmart-style collection card with a photo collage cover turning into a social post with a caption",
+      "imagePrompt": "a collection card with a four-photo collage cover sliding into a social media post frame with a short caption line and a thumbs-up, a calendar queue of posts lined up behind it",
+      "pinImage": "/assets/blog/pins/share-walmart-collections-on-facebook.png",
+      "pinDescription": "Post your Walmart collections to Facebook with a photo cover and caption, or queue them with your deal posts. No affiliate link needed. Save this pin so you can come back to it. #WalmartCreator #FacebookDeals #WalmartCollections #CreatorTools",
+      "order": 231
+    },
+    {
+      "id": "foyer-butler-free-download-grows-your-list",
+      "title": "Grow Your Email List With a Free Download From Your Bio Link",
+      "category": "Growth",
+      "summary": "Foyer Butler's Digital Products card lets you give away an ebook, template or preset from your link-in-bio page in exchange for an email, with instant delivery and a resend link built in.",
+      "date": "2026-10-19",
+      "author": "The Influencer Butler Team",
+      "readingTime": "6 min read",
+      "keywords": "free download for email list, lead magnet link in bio, foyer butler digital products, creator lead magnet ideas, grow email list as influencer, free ebook link in bio",
+      "image": "/assets/blog/foyer-butler-free-download-grows-your-list.png",
+      "imageAlt": "Illustration of a download tile with a small ebook, an email form beneath it and a rising subscriber chart",
+      "imagePrompt": "a bio-page tile showing a small ebook or template with a download arrow, an email sign-up field under it, and a little rising chart of new subscribers, a fair-trade feeling",
+      "pinImage": "/assets/blog/pins/foyer-butler-free-download-grows-your-list.png",
+      "pinDescription": "Grow your email list with a free download from your bio link. What to give away, how delivery works, and where to put the tile. Save this pin so you can come back to it. #LeadMagnet #EmailList #LinkInBio #CreatorTips",
+      "order": 232
+    },
+    {
+      "id": "walmart-butler-tools-explained",
+      "title": "Walmart Butler Explained: What Each Tool Does for Your Storefront",
+      "category": "Walmart",
+      "summary": "A plain tour of Walmart Butler and its helpers: Collection Builder, Video and Photo Repost, Walmart Research, Walmart Performance, Walmart deal links, plus where Walmart shows up elsewhere in the app.",
+      "date": "2026-10-20",
+      "author": "The Influencer Butler Team",
+      "readingTime": "8 min read",
+      "keywords": "walmart butler, walmart creator tools, walmart creator automation, walmart collection builder, walmart video repost, walmart research, walmart performance, walmart creator storefront",
+      "image": "/assets/blog/walmart-butler-tools-explained.png",
+      "imageAlt": "Illustration of a central Walmart Butler hub with six tool chips around it, each with its own icon",
+      "imagePrompt": "a central round hub badge with six smaller chips orbiting it, each chip holding a simple icon (a list, a video clip, a photo, a chart line, a dollar sign, a link), a tidy control-center feeling",
+      "pinImage": "/assets/blog/pins/walmart-butler-tools-explained.png",
+      "pinDescription": "Walmart Butler explained: Collection Builder, Video and Photo Repost, Walmart Research, Walmart Performance and deal links, each in plain English. Save this pin so you can come back to it. #WalmartCreator #CreatorTools #AmazonInfluencer #WalmartButler",
+      "order": 233
+    },
+    {
+      "id": "switch-link-in-bio-tool-to-foyer-butler",
+      "title": "Leaving a Paid Link-in-Bio Tool? Move to Foyer Butler in an Afternoon",
+      "category": "Growth",
+      "summary": "How to rebuild a link-in-bio page in Foyer Butler without a gap: what maps to what, the order to do it in, when to repoint your bios, and what to check before you cancel the old plan.",
+      "date": "2026-10-21",
+      "author": "The Influencer Butler Team",
+      "readingTime": "7 min read",
+      "keywords": "switch link in bio tool, link in bio alternative for creators, move link in bio page, cancel link in bio subscription, foyer butler migration, free link in bio page",
+      "image": "/assets/blog/switch-link-in-bio-tool-to-foyer-butler.png",
+      "imageAlt": "Illustration of tiles moving from a faded old phone page to a bright new one with an arrow between them",
+      "imagePrompt": "two smartphones side by side, the left one faded with plain buttons, the right one bright with product tiles, a curved arrow carrying tiles from left to right, a moving-house feeling",
+      "pinImage": "/assets/blog/pins/switch-link-in-bio-tool-to-foyer-butler.png",
+      "pinDescription": "Leaving a paid link-in-bio tool? What maps to what, the order to rebuild in, when to repoint your bios and what to check before you cancel. Save this pin so you can come back to it. #LinkInBio #CreatorTools #AmazonInfluencer #FoyerButler",
+      "order": 234
+    },
+    {
+      "id": "walmart-creator-sales-vs-commission-explained",
+      "title": "Sales vs Commissionable Sales vs Commission on Walmart Creator",
+      "category": "Walmart",
+      "summary": "The three numbers on your Walmart Creator dashboard mean very different things. What each one counts, why commission is so much smaller than sales, and how Walmart Performance reads them into the app.",
+      "date": "2026-10-22",
+      "author": "The Influencer Butler Team",
+      "readingTime": "7 min read",
+      "keywords": "walmart creator commission, walmart creator commissionable sales, walmart creator sales explained, walmart creator commission rates, walmart performance butler, walmart creator earnings",
+      "image": "/assets/blog/walmart-creator-sales-vs-commission-explained.png",
+      "imageAlt": "Illustration of three bars shrinking from sales to commissionable sales to commission, with a shopping cart beside them",
+      "imagePrompt": "three vertical bars stepping down in height from tall to short, labeled only by icons (a full cart, a partial cart, a coin), a small receipt beside them, a clear this-is-what-you-keep feeling",
+      "pinImage": "/assets/blog/pins/walmart-creator-sales-vs-commission-explained.png",
+      "pinDescription": "Sales, commissionable sales and commission on Walmart Creator are three different numbers. What each counts and which products actually pay. Save this pin so you can come back to it. #WalmartCreator #CreatorEarnings #AffiliateMarketing #WalmartButler",
+      "order": 235
     }
   ]
 }
