@@ -98,9 +98,10 @@ Benable Butler peut annoncer chaque liste qu'il publie : une épingle Pinterest,
 - **Partager les nouvelles listes automatiquement** publie une annonce pour chaque liste que Butler publie et rend publique. Chaque liste n'est annoncée qu'une seule fois, même sur des exécutions répétées.
 - **Où partager** choisit les destinations. Ce sont les Destinations sociales configurées dans Amazon Deals Butler (jeton et tableau Pinterest, bot Telegram, Facebook et Instagram connectés), configurez-les donc là d'abord. Une destination non configurée est ignorée avec une raison claire dans le journal.
 - **Texte** : gardez votre propre modèle, avec les balises `{{title}}` et `{{url}}`, ou laissez l'IA écrire un texte différent par liste avec votre clé OpenAI. Le lien de la liste est ajouté automatiquement là où chaque plateforme l'attend : sur Facebook il va dans le premier commentaire, et sur Pinterest il devient le lien de l'épingle.
-- L'annonce embarque l'image de couverture générée de la liste, donc les épingles Pinterest et les publications Instagram arrivent avec votre couverture de marque.
+- L'annonce embarque l'image de couverture de la liste. Quand une liste n'a pas la sienne, Butler crée une couverture rapide à vos couleurs à partir des photos de ses produits, donc les épingles Pinterest et les publications Instagram arrivent quand même avec une vraie couverture.
+- **Ajouter aussi chaque liste à ma page Foyer** place chaque liste publique que vous publiez sur votre page Foyer, dans une section **Mes listes**, pour que votre lien en bio pointe toujours vers vos listes les plus récentes. Cela fonctionne avec ou sans destination sociale cochée, et une liste n'est jamais ajoutée deux fois.
 
-Vous préférez partager à la main ? Laissez le partage automatique désactivé et cliquez sur **Partager** à côté d'une liste dans la carte des résultats après une exécution.
+Vous préférez partager à la main ? Laissez le partage automatique désactivé et cliquez sur **Partager** à côté d'une liste dans la carte des résultats après une exécution. **Ajouter à Foyer** se trouve juste à côté.
 
 ## Privilégier les enseignes les mieux rémunérées et les fenêtres de cookie les plus longues
 

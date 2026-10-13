@@ -98,9 +98,10 @@ Benable Butler puede anunciar cada lista que publica: un pin de Pinterest, una p
 - **Compartir listas nuevas automáticamente** publica un anuncio por cada lista que Butler publica y hace pública. Cada lista se anuncia solo una vez, incluso entre ejecuciones repetidas.
 - **Dónde compartir** elige los destinos. Se usan los Destinos sociales que configuraste en Amazon Deals Butler (token y tablero de Pinterest, bot de Telegram, Facebook e Instagram con sesión iniciada), así que configúralos allí primero. Un destino sin configurar se omite con un motivo claro en el registro.
 - **Texto**: usa tu propia plantilla, con los marcadores `{{title}}` y `{{url}}`, o deja que la IA escriba un texto nuevo por lista con tu clave de OpenAI. El enlace de la lista se añade automáticamente donde cada plataforma lo espera: en Facebook va en el primer comentario y en Pinterest se convierte en el enlace del pin.
-- El anuncio lleva la imagen de portada generada de la lista, así que los pines de Pinterest y las publicaciones de Instagram llegan con la portada de tu marca.
+- El anuncio lleva la imagen de portada de la lista. Cuando una lista no tiene la suya, Butler crea una portada rápida con la marca a partir de las fotos de sus productos, así que los pines de Pinterest y las publicaciones de Instagram siguen llegando con una portada adecuada.
+- **Añadir también cada lista a mi página Foyer** coloca cada lista pública que publicas en tu página Foyer, en una sección **Mis listas**, para que tu enlace en la bio apunte siempre a tus listas más recientes. Funciona con o sin destinos sociales marcados, y una lista nunca se añade dos veces.
 
-¿Prefieres compartir a mano? Deja el compartir automático desactivado y pulsa **Compartir** junto a cualquier lista en la tarjeta de resultados tras una ejecución.
+¿Prefieres compartir a mano? Deja el compartir automático desactivado y pulsa **Compartir** junto a cualquier lista en la tarjeta de resultados tras una ejecución. **Añadir a Foyer** está justo al lado.
 
 ## Prioriza los minoristas que mejor pagan y las ventanas de cookie más largas
 
