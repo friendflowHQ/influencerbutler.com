@@ -988,6 +988,14 @@
       "summary": "Put your own web address on your Foyer page and your Butler Links, with step-by-step DNS help for GoDaddy, Namecheap, Cloudflare and Squarespace, and fixes for the most common problems.",
       "order": 125.5,
       "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "move-to-a-new-computer",
+      "title": "Move Influencer Butler to a new computer",
+      "category": "Other",
+      "summary": "Save your setup to one file on your old computer, open it on the new one, and finish with a short checklist. Your settings, templates, images and saved connections come along. Your browser logins do not, so you sign in to those again.",
+      "order": 126,
+      "locales": ["en-US", "es-ES", "fr-FR"]
     }
   ]
 }

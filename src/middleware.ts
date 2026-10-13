@@ -16,7 +16,12 @@ const PROTECTED_PREFIXES = ["/dashboard", "/affiliates/portal", "/help"];
 // redirects here in next.config.ts), and those users are typically logged out in
 // their browser, so it must be readable without a web session. Every other /help
 // page stays gated.
-const PUBLIC_PATHS = new Set(["/help/tutorials/extension", "/help/tutorials/connect-your-domain"]);
+const PUBLIC_PATHS = new Set([
+  "/help/tutorials/extension",
+  "/help/tutorials/connect-your-domain",
+  // Linked from support replies and the desktop app for customers who are signed out in their browser.
+  "/help/tutorials/move-to-a-new-computer",
+]);
 
 const MARKDOWN_PATH_MAP: Array<{ test: RegExp; resolve: (m: RegExpMatchArray) => string }> = [
   { test: /^\/$/, resolve: () => "/index.html" },
