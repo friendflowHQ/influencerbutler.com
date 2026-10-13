@@ -18,13 +18,15 @@ type Props = {
 export default function AiKeyNote({ className = "", compact = false }: Props) {
   return (
     <aside
-      aria-label="AI butlers need your own OpenAI key"
+      aria-label="How AI is paid for on each plan"
       className={`rounded-xl border border-[#f97316]/30 bg-[#f97316]/5 p-4 text-left ${className}`.trim()}
     >
-      <p className="text-sm font-semibold text-[#c2410c]">Needs your OpenAI key</p>
+      <p className="text-sm font-semibold text-[#c2410c]">How AI is paid for</p>
       <p className="mt-1 text-sm text-slate-700">
-        AI butlers use your own OpenAI API key. You pay OpenAI directly for what you use (usually
-        pennies), not Influencer Butler. A ChatGPT subscription does not work.{" "}
+        Beginner plans include 150 AI actions a month on Influencer Butler&apos;s own key, no OpenAI
+        account needed. Power User plans run AI without a cap on your own OpenAI API key: you pay
+        OpenAI directly for what you use (usually pennies), not Influencer Butler. A ChatGPT
+        subscription does not work.{" "}
         <Link
           href={OPENAI_SETUP_HREF}
           className="font-semibold text-[#c2410c] underline hover:text-[#9a3412]"

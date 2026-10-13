@@ -27,7 +27,15 @@ const FAQ: { q: string; a: ReactNode }[] = [
   },
   {
     q: "How does the 14-day Pro trial work?",
-    a: "When you're ready for the money engines (outreach automation, DMs, commission harvesting, and the rest of the 50+ butlers), start a 14-day Pro trial. You get full Pro Solo access, then it converts to Pro. Cancel anytime before day 14 and you won't be charged.",
+    a: "When you're ready for the money engines, start a 14-day trial on Beginner or Power User. You get everything that plan includes for 14 days, then it converts to the plan you picked. Cancel anytime before day 14 and you won't be charged.",
+  },
+  {
+    q: "Beginner or Power User: which one is for me?",
+    a: "Beginner is the calm start: the starter butlers (Amazon Deals, Message Brands, Daily Commission Butler, Video and Photo Reload, your Foyer page) plus every free tool, with AI included on our key (150 actions a month) and a guided fast track. Power User opens all 50+ butlers, runs AI without a cap on your own OpenAI key, and includes 1:1 call booking. You can upgrade from Beginner to Power User in one click inside the app, with no new license key.",
+  },
+  {
+    q: "What changes on November 28?",
+    a: "New prices for new subscriptions: Beginner Solo goes to $29 a month, Power User Solo to $49, Power User Trio to $89 (annual plans stay 10 months for the price of 12). Anyone subscribed before that date keeps the price they signed up at for as long as they stay subscribed.",
   },
   {
     q: "What happens to my Foyer page if I don't upgrade to Pro?",

@@ -12,15 +12,22 @@ import {
   type PromoTier,
 } from "@/lib/promo";
 import {
-  PRICE_CENTS,
   TIER_NAME,
-  TIER_TAGLINE,
-  TIER_FEATURES,
+  SEAT_COPY,
   FREE_TIER_NAME,
   FREE_TIER_TAGLINE,
   FREE_TIER_FEATURES,
-  annualSavingsPct,
-  planStringFor,
+  LEVEL_NAME,
+  LEVEL_TAGLINE,
+  LEVEL_FEATURES,
+  LEVEL_ORDER,
+  PRICE_CHANGE,
+  levelTiers,
+  levelPlanString,
+  levelPriceCents,
+  levelFuturePriceCents,
+  priceChangeActive,
+  type PlanLevel,
   type Tier,
   type Interval,
 } from "@/lib/pricing-constants";
@@ -30,9 +37,23 @@ type Props = {
   affiliateCode: string | null;
   signedIn: boolean;
   initialCode: string | null;
+  // Preselected level (?level=beginner|power from the desktop app's links).
+  initialLevel?: PlanLevel | null;
 };
 
-const TIER_ORDER: readonly Tier[] = ["solo", "duo", "team", "agency"] as const;
+// "Beginner Solo" / "Power User Trio": the level word plus the seat tier.
+function levelCardName(level: PlanLevel, tier: Tier): string {
+  return `${LEVEL_NAME[level]} ${TIER_NAME[tier].replace(/^Pro /, "")}`;
+}
+
+// Annual saving per level x tier (Beginner annual is rounded to a clean sticker).
+function levelAnnualSavingsPct(level: PlanLevel, tier: Tier): number {
+  const monthly = levelPriceCents(level, tier, "monthly");
+  const annual = levelPriceCents(level, tier, "annual");
+  if (monthly == null || annual == null) return 0;
+  const fullYear = monthly * 12;
+  return Math.round(((fullYear - annual) / fullYear) * 100);
+}
 
 function formatMoney(cents: number): string {
   return formatMoneyFromDollars(cents / 100);
@@ -67,7 +88,11 @@ export default function PricingCardsClient({
   affiliateCode,
   signedIn,
   initialCode,
+  initialLevel = null,
 }: Props) {
+  // Beginner first: the whole point of the split is a calmer first look. A
+  // desktop link or a returning Power User lands on their own level.
+  const [level, setLevel] = useState<PlanLevel>(initialLevel === "power" ? "power" : "beginner");
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const [errorPlan, setErrorPlan] = useState<string | null>(null);
   // Default to annual: it bills the full year up front (cash now) and annual
@@ -199,29 +224,39 @@ export default function PricingCardsClient({
 
       <FreeTierBand />
 
-      <BillingToggle value={billing} onChange={setBilling} />
+      <LevelToggle value={level} onChange={setLevel} />
+
+      <PriceChangeNotice level={level} />
+
+      <div className="mt-6">
+        <BillingToggle value={billing} onChange={setBilling} />
+      </div>
 
       <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {TIER_ORDER.map((tier) => {
-          const cents = PRICE_CENTS[tier][billing];
-          const plan = planStringFor(tier, billing);
+        {levelTiers(level).map((tier) => {
+          const cents = levelPriceCents(level, tier, billing) ?? 0;
+          const plan = levelPlanString(level, tier, billing);
           const pricePerCycle = formatMoney(cents);
           const monthlyEquivalent =
             billing === "annual" ? formatMoneyFromDollars(cents / 100 / 12) : null;
           const discountedCents = buyingDiscount
             ? Math.round(cents * (1 - buyingDiscount.pct / 100))
             : null;
+          const futureCents = levelFuturePriceCents(level, tier, billing);
+          const trialLabel = futureCents != null
+            ? `14-day trial included. From ${formatChangeDate()} this plan is ${formatMoney(futureCents)}${billing === "monthly" ? "/month" : "/year"}; buy before then and keep ${pricePerCycle}.`
+            : "14-day trial included - cancel before day 14 to avoid charges.";
 
           return (
             <PlanCard
-              key={tier}
+              key={`${level}-${tier}`}
               featured={tier === "solo"}
               badge={tier === "solo" ? "Most popular" : undefined}
               saveBadge={
-                billing === "annual" ? `Save ${annualSavingsPct(tier)}%` : undefined
+                billing === "annual" ? `Save ${levelAnnualSavingsPct(level, tier)}%` : undefined
               }
-              name={TIER_NAME[tier]}
-              desc={TIER_TAGLINE[tier]}
+              name={levelCardName(level, tier)}
+              desc={`${LEVEL_TAGLINE[level]}. ${SEAT_COPY[tier]}.`}
               priceLabel={pricePerCycle}
               periodLabel={billing === "monthly" ? "/ month" : "/ year"}
               originalPriceLabel={discountedCents !== null ? pricePerCycle : undefined}
@@ -236,8 +271,8 @@ export default function PricingCardsClient({
               effectiveLabel={
                 monthlyEquivalent ? `That's just ${monthlyEquivalent}/month` : undefined
               }
-              trialLabel="14-day Pro trial included - cancel before day 14 to avoid charges."
-              features={[...TIER_FEATURES[tier]]}
+              trialLabel={trialLabel}
+              features={[...LEVEL_FEATURES[level], SEAT_COPY[tier]]}
               cta="Buy Now!"
               loading={loadingPlan === plan}
               error={
@@ -251,6 +286,64 @@ export default function PricingCardsClient({
         })}
       </div>
     </>
+  );
+}
+
+function formatChangeDate(): string {
+  try {
+    return new Date(PRICE_CHANGE.effectiveAt).toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "UTC" });
+  } catch {
+    return "November 28";
+  }
+}
+
+type LevelToggleProps = { value: PlanLevel; onChange: (level: PlanLevel) => void };
+
+// Beginner vs Power User. One axis, two choices, each with its one-line tagline,
+// so the page never shows more than four cards at once.
+function LevelToggle({ value, onChange }: LevelToggleProps) {
+  return (
+    <div className="mx-auto grid max-w-3xl gap-3 sm:grid-cols-2" role="tablist" aria-label="Plan level">
+      {LEVEL_ORDER.map((level) => {
+        const active = value === level;
+        return (
+          <button
+            key={level}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(level)}
+            className={`rounded-2xl border p-4 text-left transition ${
+              active
+                ? "border-[#f97316] bg-[#f97316]/5 ring-2 ring-[#f97316]/20"
+                : "border-slate-200 bg-white hover:border-slate-300"
+            }`}
+          >
+            <span className="block text-base font-semibold text-slate-900">{LEVEL_NAME[level]}</span>
+            <span className="mt-1 block text-sm text-slate-600">{LEVEL_TAGLINE[level]}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// The announced price change, shown until the date passes. Existing
+// subscriptions keep their price; this is for people deciding today.
+function PriceChangeNotice({ level }: { level: PlanLevel }) {
+  if (!priceChangeActive()) return null;
+  const parts = levelTiers(level)
+    .map((tier) => {
+      const future = levelFuturePriceCents(level, tier, "monthly");
+      return future == null ? null : `${levelCardName(level, tier)} ${formatMoney(future)}/month`;
+    })
+    .filter((p): p is string => Boolean(p));
+  if (!parts.length) return null;
+  return (
+    <p className="mx-auto mt-5 max-w-3xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-900">
+      <strong className="font-semibold">Prices go up on {formatChangeDate()}:</strong> {parts.join(", ")}.
+      Buy before then and keep today&apos;s price for as long as you stay subscribed.
+    </p>
   );
 }
 

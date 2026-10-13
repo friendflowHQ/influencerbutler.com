@@ -12,14 +12,44 @@ import {
   TIER_NAME,
   TIER_TAGLINE,
   TIER_FEATURES,
+  SEAT_COPY,
+  LEVEL_NAME,
+  LEVEL_TAGLINE,
+  LEVEL_FEATURES,
+  LEVEL_ORDER,
   annualSavingsPct,
   planStringFor,
   tierForPlan,
+  levelTiers,
+  levelPlanString,
+  levelPriceCents,
+  levelFuturePriceCents,
+  levelForPlan,
+  parseLevelPlan,
+  type PlanLevel,
   type Tier,
   type Interval,
 } from "@/lib/pricing-constants";
 
 const TIER_ORDER: readonly Tier[] = ["solo", "duo", "team", "agency"] as const;
+
+function levelCardName(level: PlanLevel, tier: Tier): string {
+  return `${LEVEL_NAME[level]} ${TIER_NAME[tier].replace(/^Pro /, "")}`;
+}
+
+function levelAnnualSavingsPct(level: PlanLevel, tier: Tier): number {
+  const monthly = levelPriceCents(level, tier, "monthly");
+  const annual = levelPriceCents(level, tier, "annual");
+  if (monthly == null || annual == null) return 0;
+  const fullYear = monthly * 12;
+  return Math.round(((fullYear - annual) / fullYear) * 100);
+}
+
+function priceChangeLine(level: PlanLevel, tier: Tier, cadence: Interval): string | null {
+  const future = levelFuturePriceCents(level, tier, cadence);
+  if (future == null) return null;
+  return `From November 28: ${formatPrice(future)}${cadence === "monthly" ? "/month" : "/year"}. Subscribe before then and keep today's price.`;
+}
 
 function formatPrice(cents: number): string {
   const dollars = cents / 100;
@@ -69,6 +99,8 @@ export default function SubscriptionPage() {
   const [promoCode, setPromoCode] = useState<string>("");
   const [promoCodeOpen, setPromoCodeOpen] = useState(false);
   const [billingCadence, setBillingCadence] = useState<Interval>("monthly");
+  // New subscriptions are sold by level (Beginner / Power User); Beginner first.
+  const [level, setLevel] = useState<PlanLevel>("beginner");
   // First-touch affiliate code from ?code= - preserved across edits to the
   // promo input so the affiliate still gets aff_ref credit even if the user
   // types a better promo over it.
@@ -153,7 +185,7 @@ export default function SubscriptionPage() {
   }, []);
 
   const handleStartCheckout = async (tier: Tier) => {
-    const plan = planStringFor(tier, billingCadence);
+    const plan = levelPlanString(level, tier, billingCadence);
     setCheckoutLoading(plan);
     setError(null);
 
@@ -227,25 +259,28 @@ export default function SubscriptionPage() {
           onToggle={() => setPromoCodeOpen((v) => !v)}
         />
 
+        <LevelToggle value={level} onChange={setLevel} />
+
         <BillingToggle value={billingCadence} onChange={setBillingCadence} />
 
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-          {TIER_ORDER.map((tier) => {
-            const cents = PRICE_CENTS[tier][billingCadence];
-            const plan = planStringFor(tier, billingCadence);
+          {levelTiers(level).map((tier) => {
+            const cents = levelPriceCents(level, tier, billingCadence) ?? 0;
+            const plan = levelPlanString(level, tier, billingCadence);
             const isLoading = checkoutLoading === plan;
+            const change = priceChangeLine(level, tier, billingCadence);
             return (
               <PricingCard
-                key={tier}
-                name={TIER_NAME[tier]}
-                tagline={TIER_TAGLINE[tier]}
+                key={`${level}-${tier}`}
+                name={levelCardName(level, tier)}
+                tagline={`${LEVEL_TAGLINE[level]}. ${SEAT_COPY[tier]}.`}
                 price={formatPrice(cents)}
                 period={billingCadence === "monthly" ? "/month" : "/year"}
                 highlight={
-                  billingCadence === "annual" ? `Save ${annualSavingsPct(tier)}%` : undefined
+                  billingCadence === "annual" ? `Save ${levelAnnualSavingsPct(level, tier)}%` : undefined
                 }
-                features={[...TIER_FEATURES[tier]]}
-                cta={isLoading ? "Starting…" : "Start 14-day Pro trial"}
+                features={change ? [...LEVEL_FEATURES[level], SEAT_COPY[tier], change] : [...LEVEL_FEATURES[level], SEAT_COPY[tier]]}
+                cta={isLoading ? "Starting…" : `Start 14-day ${LEVEL_NAME[level]} trial`}
                 disabled={checkoutLoading !== null}
                 featured={tier === "solo"}
                 onSelect={() => handleStartCheckout(tier)}
@@ -419,11 +454,16 @@ function SwitchPlanSection({ subscriptionId, currentPlan, status }: SwitchPlanSe
   const currentTier = tierForPlan(currentPlan);
   const currentCadence: Interval = currentPlan.endsWith("-annual") ? "annual" : "monthly";
   const [cadence, setCadence] = useState<Interval>(currentCadence);
+  // A Beginner / Power User subscription switches within the level grid (and
+  // across levels); a pre-split (legacy) subscription keeps today's grid exactly.
+  const currentLevel = levelForPlan(currentPlan);
+  const [level, setLevel] = useState<PlanLevel>(currentLevel === "legacy" ? "power" : currentLevel);
+  const isLevelPlan = parseLevelPlan(currentPlan) != null;
   const [switchingPlan, setSwitchingPlan] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleSwitch = async (tier: Tier) => {
-    const targetPlan = planStringFor(tier, cadence);
+    const targetPlan = isLevelPlan ? levelPlanString(level, tier, cadence) : planStringFor(tier, cadence);
     setSwitchingPlan(targetPlan);
     setError(null);
 
@@ -467,39 +507,45 @@ function SwitchPlanSection({ subscriptionId, currentPlan, status }: SwitchPlanSe
         </div>
       ) : null}
 
+      {isLevelPlan ? (
+        <div className="mt-4">
+          <LevelToggle value={level} onChange={setLevel} />
+        </div>
+      ) : null}
+
       <div className="mt-4">
         <BillingToggle value={cadence} onChange={setCadence} />
       </div>
 
-      <AiKeyNote compact className="mt-4" />
+      {!isLevelPlan || level === "power" ? <AiKeyNote compact className="mt-4" /> : null}
 
       <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-        {TIER_ORDER.map((tier) => {
-          const cents = PRICE_CENTS[tier][cadence];
-          const plan = planStringFor(tier, cadence);
-          const isCurrent = tier === currentTier && cadence === currentCadence;
+        {(isLevelPlan ? levelTiers(level) : TIER_ORDER).map((tier) => {
+          const cents = isLevelPlan ? (levelPriceCents(level, tier, cadence) ?? 0) : PRICE_CENTS[tier][cadence];
+          const plan = isLevelPlan ? levelPlanString(level, tier, cadence) : planStringFor(tier, cadence);
+          const isCurrent = tier === currentTier && cadence === currentCadence && (!isLevelPlan || level === currentLevel);
           const isLoading = switchingPlan === plan;
           return (
             <PricingCard
-              key={tier}
-              name={TIER_NAME[tier]}
-              tagline={TIER_TAGLINE[tier]}
+              key={isLevelPlan ? `${level}-${tier}` : tier}
+              name={isLevelPlan ? levelCardName(level, tier) : TIER_NAME[tier]}
+              tagline={isLevelPlan ? `${LEVEL_TAGLINE[level]}. ${SEAT_COPY[tier]}.` : TIER_TAGLINE[tier]}
               price={formatPrice(cents)}
               period={cadence === "monthly" ? "/month" : "/year"}
               highlight={
                 isCurrent
                   ? "Current plan"
                   : cadence === "annual"
-                  ? `Save ${annualSavingsPct(tier)}%`
+                  ? `Save ${isLevelPlan ? levelAnnualSavingsPct(level, tier) : annualSavingsPct(tier)}%`
                   : undefined
               }
-              features={[...TIER_FEATURES[tier]]}
+              features={isLevelPlan ? [...LEVEL_FEATURES[level], SEAT_COPY[tier]] : [...TIER_FEATURES[tier]]}
               cta={
                 isCurrent
                   ? "Current plan"
                   : isLoading
                   ? "Switching…"
-                  : `Switch to ${TIER_NAME[tier]}`
+                  : `Switch to ${isLevelPlan ? levelCardName(level, tier) : TIER_NAME[tier]}`
               }
               disabled={isCurrent || switchingPlan !== null}
               featured={tier === currentTier}
@@ -592,6 +638,33 @@ type BillingToggleProps = {
   value: Interval;
   onChange: (next: Interval) => void;
 };
+
+type LevelToggleProps = { value: PlanLevel; onChange: (level: PlanLevel) => void };
+
+function LevelToggle({ value, onChange }: LevelToggleProps) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2" role="tablist" aria-label="Plan level">
+      {LEVEL_ORDER.map((lvl) => {
+        const active = value === lvl;
+        return (
+          <button
+            key={lvl}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(lvl)}
+            className={`rounded-2xl border p-4 text-left transition ${
+              active ? "border-[#f97316] bg-[#f97316]/5 ring-2 ring-[#f97316]/20" : "border-slate-200 bg-white hover:border-slate-300"
+            }`}
+          >
+            <span className="block text-base font-semibold text-slate-900">{LEVEL_NAME[lvl]}</span>
+            <span className="mt-1 block text-sm text-slate-600">{LEVEL_TAGLINE[lvl]}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 function BillingToggle({ value, onChange }: BillingToggleProps) {
   return (

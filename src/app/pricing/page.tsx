@@ -37,7 +37,7 @@ export const metadata = {
   },
 };
 
-type SearchParams = Promise<{ code?: string; from?: string }>;
+type SearchParams = Promise<{ code?: string; from?: string; level?: string }>;
 
 export default async function PricingPage({
   searchParams,
@@ -143,9 +143,11 @@ export default async function PricingPage({
             Start free, upgrade when you&apos;re ready
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-slate-600 sm:text-lg">
-            The whole Chrome extension and six See &amp; Organize butlers are free forever. Go Pro
-            for all 50+ tools, unlimited messages, and priority support, starting with a 14-day
-            free trial. Cancel anytime - no questions asked.
+            The whole Chrome extension and six See &amp; Organize butlers are free forever. When
+            you&apos;re ready, pick <strong>Beginner</strong> (the starter butlers, AI included) or{" "}
+            <strong>Power User</strong> (all 50+ tools, unlimited AI on your own key, 1:1 calls),
+            starting with a 14-day free trial. Switch between them any time. Cancel anytime - no
+            questions asked.
           </p>
           <AiKeyNote compact className="mx-auto mt-4 max-w-2xl" />
           <div className="mt-5 flex justify-center">
@@ -167,6 +169,7 @@ export default async function PricingPage({
             affiliateCode={affiliate?.code ?? null}
             signedIn={signedIn}
             initialCode={rawCode || null}
+            initialLevel={params.level === "power" ? "power" : params.level === "beginner" ? "beginner" : null}
           />
         </div>
 
