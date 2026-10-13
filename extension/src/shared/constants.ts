@@ -2,6 +2,9 @@ export const API_BASE = "https://www.influencerbutler.com";
 
 export const ENDPOINTS = {
   authCheck: `${API_BASE}/api/extension/auth/check`,
+  // Beginner / Power User plan: GET = current plan + the one-click upgrade
+  // price, POST = the upgrade itself (the site proxies the licensing Worker).
+  plan: `${API_BASE}/api/extension/plan`,
   scans: `${API_BASE}/api/extension/scans`,
   gaps: `${API_BASE}/api/extension/gaps`,
   storefrontIssues: `${API_BASE}/api/extension/storefront-issues`,

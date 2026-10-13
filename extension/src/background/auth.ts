@@ -1,6 +1,7 @@
 import { ENDPOINTS } from "../shared/constants";
 import { getState, patchState } from "../storage/store";
 import type { SignInResult } from "../shared/messages";
+import { normalizePlanLevel } from "../shared/plan-level";
 
 export async function signIn(licenseKey: string): Promise<SignInResult> {
   const trimmed = licenseKey.trim();
@@ -42,13 +43,15 @@ export async function signIn(licenseKey: string): Promise<SignInResult> {
     // The server returns only a masked email (e***@gmail.com), never the raw
     // address: a license key is an account credential, so the connector is not
     // necessarily the account owner. We store and display the masked value.
-    const data = (await response.json()) as { maskedEmail?: string | null };
+    const data = (await response.json()) as { maskedEmail?: string | null; planLevel?: unknown };
     const maskedEmail = data.maskedEmail ?? null;
+    const planLevel = normalizePlanLevel(data.planLevel);
     await patchState((state) => {
       state.auth = {
         licenseKey: trimmed,
         email: maskedEmail,
         verifiedAt: Date.now(),
+        planLevel,
       };
     });
     return { ok: true, email: maskedEmail ?? undefined };
@@ -59,7 +62,7 @@ export async function signIn(licenseKey: string): Promise<SignInResult> {
 
 export async function signOut(): Promise<void> {
   await patchState((state) => {
-    state.auth = { licenseKey: null, email: null, verifiedAt: null };
+    state.auth = { licenseKey: null, email: null, verifiedAt: null, planLevel: null };
     state.queue = [];
   });
 }

@@ -186,6 +186,15 @@ export interface Dict {
   uploadHelperReady: string;
   reloadTabToActivate: string;
   connectedFallback: string;
+  planBeginnerLine: string;
+  planUpgradeBtn: string;
+  planUpgradePrice: (price: string) => string;
+  planUpgradePriceChange: (price: string, next: string, date: string) => string;
+  planUpgradeWorking: string;
+  planUpgradeDone: string;
+  planUpgradeFailed: string;
+  planIntervalMonth: string;
+  planIntervalYear: string;
   findingsWaiting: (n: number) => string;
   lastSynced: (time: string) => string;
   nothingToSync: string;
@@ -1459,6 +1468,15 @@ const en: Dict = {
   uploadHelperReady: "Upload helper is ready.",
   reloadTabToActivate: "Reload this tab to activate the tools (the page was open before install).",
   connectedFallback: "connected",
+  planBeginnerLine: "Beginner plan: the starter butlers, AI included. Power User opens every butler, unlimited AI on your own OpenAI key, and 1:1 calls.",
+  planUpgradeBtn: "Upgrade to Power User",
+  planUpgradePrice: (price) => `Power User is ${price}. One click, same license key; you pay only the difference for the rest of this billing period.`,
+  planUpgradePriceChange: (price, next, date) => `Power User is ${price} (goes up to ${next} on ${date}; upgrade now and keep ${price}). One click, same license key; you pay only the difference for the rest of this billing period.`,
+  planUpgradeWorking: "Upgrading...",
+  planUpgradeDone: "Welcome to Power User. Everything is unlocked on your computer too.",
+  planUpgradeFailed: "The upgrade did not go through. Nothing was charged. Try again from the desktop app, or on your dashboard.",
+  planIntervalMonth: "month",
+  planIntervalYear: "year",
   findingsWaiting: (n) => `${n} findings waiting to sync`,
   lastSynced: (time) => `Last synced ${time}`,
   nothingToSync: "Nothing to sync yet",
@@ -2756,6 +2774,15 @@ const es: Dict = {
   uploadHelperReady: "El asistente de subida está listo.",
   reloadTabToActivate: "Recarga esta pestaña para activar las herramientas (la página estaba abierta antes de instalar).",
   connectedFallback: "conectado",
+  planBeginnerLine: "Plan Principiante: los butlers de inicio, IA incluida. Usuario avanzado abre todos los butlers, IA ilimitada con tu propia clave de OpenAI y llamadas 1:1.",
+  planUpgradeBtn: "Pasar a Usuario avanzado",
+  planUpgradePrice: (price) => `Usuario avanzado cuesta ${price}. Un clic, misma clave de licencia; solo pagas la diferencia por el resto de este periodo de facturación.`,
+  planUpgradePriceChange: (price, next, date) => `Usuario avanzado cuesta ${price} (sube a ${next} el ${date}; mejora ahora y conserva ${price}). Un clic, misma clave de licencia; solo pagas la diferencia por el resto de este periodo de facturación.`,
+  planUpgradeWorking: "Mejorando...",
+  planUpgradeDone: "Bienvenido a Usuario avanzado. Todo está desbloqueado también en tu ordenador.",
+  planUpgradeFailed: "La mejora no se completó. No se cobró nada. Inténtalo desde la app de escritorio o en tu panel.",
+  planIntervalMonth: "mes",
+  planIntervalYear: "año",
   findingsWaiting: (n) => `${n} hallazgos esperando sincronizar`,
   lastSynced: (time) => `Última sincronización ${time}`,
   nothingToSync: "Nada que sincronizar todavía",
@@ -4057,6 +4084,15 @@ const fr: Dict = {
   uploadHelperReady: "L'assistant de mise en ligne est prêt.",
   reloadTabToActivate: "Rechargez cet onglet pour activer les outils (la page était ouverte avant l'installation).",
   connectedFallback: "connecté",
+  planBeginnerLine: "Plan Débutant : les butlers de départ, IA incluse. Utilisateur avancé ouvre tous les butlers, l'IA illimitée avec votre propre clé OpenAI et les appels 1:1.",
+  planUpgradeBtn: "Passer à Utilisateur avancé",
+  planUpgradePrice: (price) => `Utilisateur avancé coûte ${price}. Un clic, même clé de licence ; vous ne payez que la différence pour le reste de cette période de facturation.`,
+  planUpgradePriceChange: (price, next, date) => `Utilisateur avancé coûte ${price} (passe à ${next} le ${date} ; passez au niveau supérieur maintenant et gardez ${price}). Un clic, même clé de licence ; vous ne payez que la différence pour le reste de cette période de facturation.`,
+  planUpgradeWorking: "Changement en cours...",
+  planUpgradeDone: "Bienvenue dans Utilisateur avancé. Tout est débloqué aussi sur votre ordinateur.",
+  planUpgradeFailed: "Le changement n'a pas abouti. Rien n'a été facturé. Réessayez depuis l'application de bureau ou sur votre tableau de bord.",
+  planIntervalMonth: "mois",
+  planIntervalYear: "an",
   findingsWaiting: (n) => `${n} découvertes en attente de synchronisation`,
   lastSynced: (time) => `Dernière synchro ${time}`,
   nothingToSync: "Rien à synchroniser pour l'instant",

@@ -372,6 +372,9 @@ export type AuthState = {
   // raw address to a license-bearer client. API auth uses licenseKey, not this.
   email: string | null;
   verifiedAt: number | null;
+  // Beginner / Power User / legacy, learned from the auth check and refreshed
+  // from the desktop bridge. Absent = legacy (today's behavior).
+  planLevel?: "beginner" | "power" | "legacy" | null;
 };
 
 // The affiliate who referred this install, captured first-touch from the

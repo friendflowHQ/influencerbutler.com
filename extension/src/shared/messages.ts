@@ -68,6 +68,8 @@ export type AuthStatus = {
   email: string | null;
   /** Last 4 characters of the connected license key, so the user can confirm which key is live. */
   keyTail: string | null;
+  /** Beginner / Power User / legacy (every pre-split customer). The popup shows the upgrade line for beginner only. */
+  planLevel: "beginner" | "power" | "legacy";
   queueDepth: number;
   lastSyncAt: number | null;
   /** Why the latest dashboard sync failed, or null when it is healthy. */
@@ -99,6 +101,9 @@ export type RuntimeMessage =
   | { kind: "GET_AUTH_STATUS" }
   | { kind: "SIGN_IN"; licenseKey: string }
   | { kind: "SIGN_OUT" }
+  // Beginner / Power User plan (popup): live upgrade price, and the upgrade.
+  | { kind: "PLAN_OPTIONS" }
+  | { kind: "PLAN_UPGRADE" }
   // Sent by the site-referral content script when it reads an affiliate code
   // (from the ib_aff_src cookie or a ?code= param) on an influencerbutler.com
   // page. The background stores it first-touch so a later license activation can
@@ -780,6 +785,17 @@ export type MarkThreadReadResult = { ok: boolean; unread?: number };
 export type CaptureScreenshotResult = { ok: boolean; dataUrl?: string; error?: string };
 
 export type SignInResult = { ok: boolean; email?: string; error?: string };
+
+// Beginner / Power User plan (src/background/plan.ts).
+export type PlanOptionsResult =
+  | {
+      ok: true;
+      level: "beginner" | "power" | "legacy";
+      upgrade: { priceCents: number; interval: string } | null;
+      priceChange: { upgradeCents: number; effectiveAt: string } | null;
+    }
+  | { ok: false; error: string };
+export type PlanUpgradeResult = { ok: true; level: "power" } | { ok: false; error: string };
 
 // Settings sync with the desktop app. `status` distinguishes not-paired (connect
 // the app), app-unavailable (paired but the app is closed or too old to answer

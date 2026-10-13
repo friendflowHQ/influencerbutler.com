@@ -14,6 +14,8 @@ import {
 import { enqueue, flush, queueDepth } from "../transport/router";
 import { detectRetailerForUrl, isBenableListUrl } from "../content/page-type";
 import { authSnapshot, signIn, signOut } from "./auth";
+import { getPlanOptions, upgradePlan } from "./plan";
+import { normalizePlanLevel } from "../shared/plan-level";
 import { captureAffiliateReferral } from "./affiliate";
 import { getHudStatus, lookupEarnings, fetchDesktopHistory, fetchOutreachKeywords, fetchMessengerStatus, fetchMessageTemplates, fetchBrandEnrichment, fetchOwnership, fetchCampaignStatus, fetchYouTubeStatus, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
 import { relayClaimLink, relayListTargets, relaySend, sendCommandPreferLocal } from "./relay";
@@ -433,6 +435,12 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "SIGN_OUT":
       void signOut().then(() => sendResponse(undefined));
+      return true;
+    case "PLAN_OPTIONS":
+      void getPlanOptions().then(sendResponse);
+      return true;
+    case "PLAN_UPGRADE":
+      void upgradePlan().then(sendResponse);
       return true;
     case "CAPTURE_AFFILIATE_CODE":
       void captureAffiliateReferral(message.code, message.source).then(() =>
@@ -1056,6 +1064,7 @@ async function buildAuthStatus(): Promise<AuthStatus> {
     signedIn,
     email,
     keyTail: key ? key.slice(-4) : null,
+    planLevel: normalizePlanLevel(state.auth.planLevel),
     queueDepth: depth,
     lastSyncAt: state.lastSyncAt,
     lastSyncError: state.lastSyncError?.message ?? null,

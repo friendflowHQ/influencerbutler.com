@@ -298,6 +298,9 @@ export type HudStatus = {
   // "both"), so the extension can surface only the relevant tools. Absent on
   // older app builds; the reader defaults to "both".
   creatorMode?: CreatorMode;
+  // Beginner / Power User / legacy, from the app's license record. Absent on
+  // older app builds (then the auth check's answer stands).
+  planLevel?: "beginner" | "power" | "legacy";
   // Amazon Idea Lists the app knows about (durable id + title), offered as
   // targets by the "Add to Idea List" capture menu. Absent on older app
   // builds; the menu then offers "New list" only.

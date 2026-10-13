@@ -36,6 +36,7 @@ import { activePageTab } from "./active-tab";
 import { initChatBubble } from "../tools/chat-bubble/panel";
 import { autoFillFromDesktop, runSyncReconcile } from "../tools/settings-sync/ui";
 import { getLocale, resolveLocale, setLocale, t } from "../i18n";
+import type { PlanOptionsResult, PlanUpgradeResult } from "../shared/messages";
 import { CHROME_REVIEW_URL, EXTENSION_FEEDBACK_URL, guideUrlFor } from "../shared/constants";
 
 // Popup: page status via the active tab's content script, account sign-in via
@@ -1200,6 +1201,58 @@ async function renderPageStatus(): Promise<void> {
   }
 }
 
+// Beginner -> Power User from the popup. Price and date come live from the
+// licensing Worker (via the site); nothing is hardcoded here.
+function formatPlanPrice(cents: number, interval: string): string {
+  const dollars = (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+  return `${dollars}/${/year|annual/i.test(interval) ? t().planIntervalYear : t().planIntervalMonth}`;
+}
+function formatPlanDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString(getLocale(), { month: "long", day: "numeric", timeZone: "UTC" });
+  } catch {
+    return iso.slice(0, 10);
+  }
+}
+
+function renderPlanUpgrade(planLevel: string): void {
+  const planLine = byId("account-plan");
+  const upgradeBtn = byId<HTMLButtonElement>("plan-upgrade-btn");
+  const upgradeMsg = byId("plan-upgrade-msg");
+  const beginner = planLevel === "beginner";
+  planLine.hidden = !beginner;
+  upgradeBtn.hidden = !beginner;
+  upgradeMsg.hidden = true;
+  if (!beginner) return;
+  planLine.textContent = t().planBeginnerLine;
+  upgradeBtn.textContent = t().planUpgradeBtn;
+  upgradeBtn.disabled = false;
+  void sendToBackground<PlanOptionsResult>({ kind: "PLAN_OPTIONS" }).then((opts) => {
+    if (!opts || !opts.ok || !opts.upgrade) return;
+    const price = formatPlanPrice(opts.upgrade.priceCents, opts.upgrade.interval);
+    upgradeMsg.hidden = false;
+    upgradeMsg.textContent = opts.priceChange
+      ? t().planUpgradePriceChange(price, formatPlanPrice(opts.priceChange.upgradeCents, opts.upgrade.interval), formatPlanDate(opts.priceChange.effectiveAt))
+      : t().planUpgradePrice(price);
+  });
+  upgradeBtn.onclick = async () => {
+    upgradeBtn.disabled = true;
+    upgradeMsg.hidden = false;
+    upgradeMsg.textContent = t().planUpgradeWorking;
+    const result = await sendToBackground<PlanUpgradeResult>({ kind: "PLAN_UPGRADE" });
+    if (result && result.ok) {
+      upgradeMsg.textContent = t().planUpgradeDone;
+      await renderAccount();
+      const msg = byId("plan-upgrade-msg");
+      msg.hidden = false;
+      msg.textContent = t().planUpgradeDone;
+    } else {
+      upgradeMsg.textContent = t().planUpgradeFailed;
+      upgradeBtn.disabled = false;
+    }
+  };
+}
+
 // Set after a successful key connect/switch and shown as a banner (until
 // dismissed) so the user can see which account and key are now live.
 let keyConnectedNotice: { email: string | null; keyTail: string | null } | null = null;
@@ -1218,6 +1271,7 @@ async function renderAccount(): Promise<void> {
   if (status.signedIn) {
     byId("account-email").textContent = status.email ?? t().connectedFallback;
     byId("account-key-tail").textContent = status.keyTail ? t().accountKeyTail(status.keyTail) : "";
+    renderPlanUpgrade(status.planLevel);
 
     const banner = byId("key-connected-banner");
     banner.hidden = !keyConnectedNotice;

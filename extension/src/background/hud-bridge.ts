@@ -6,6 +6,8 @@ import {
   BRIDGE_STATUS_TTL_MS,
 } from "../shared/constants";
 import { normalizeCreatorMode } from "../shared/creator-mode";
+import { normalizePlanLevel } from "../shared/plan-level";
+import { rememberPlanLevel } from "./plan";
 import { log } from "../shared/log";
 import { isAndroid } from "../shared/platform";
 import { getSettings, patchSettings } from "../storage/store";
@@ -118,6 +120,11 @@ export async function getHudStatus(force = false): Promise<HudStatus> {
       // storage may be unavailable; filtering falls back to the stored default
     }
   }
+  // The desktop app knows the plan level best (it holds the license record and
+  // the trial's plan choice): mirror it onto the auth record when reported.
+  if (status.connected && status.planLevel) {
+    await rememberPlanLevel(status.planLevel);
+  }
   return { ...status, paired };
 }
 
@@ -164,6 +171,7 @@ function probePort(port: number): Promise<HudStatus | null> {
           appVersion?: string;
           dealWorkspaces?: Array<{ key: string; label: string }>;
           creatorMode?: unknown;
+          planLevel?: unknown;
           ideaLists?: Array<{ listId?: unknown; title?: unknown }>;
         };
         if (frame.type === "hello" || frame.type === "status") {
@@ -172,6 +180,10 @@ function probePort(port: number): Promise<HudStatus | null> {
             appVersion: frame.appVersion,
             dealWorkspaces: frame.dealWorkspaces,
             creatorMode: normalizeCreatorMode(frame.creatorMode),
+            // Plan level from the app's license record; only present on app
+            // builds that know about plans, so an older app never overrides
+            // what the auth check reported.
+            planLevel: typeof frame.planLevel === "string" ? normalizePlanLevel(frame.planLevel) : undefined,
             // Idea List capture targets; absent on older app builds. Kept to
             // well-shaped rows so a malformed frame cannot poison the menu.
             ideaLists: Array.isArray(frame.ideaLists)
