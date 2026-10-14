@@ -1,9 +1,15 @@
 /**
  * POST /api/admin/events/upload-image
- * multipart/form-data: id, file
- * Stores a user-provided image as the event's banner (replacing any
- * AI-generated cover), in the same Supabase Storage bucket and image_url
- * convention as generateEventImage. Gated by events.manage; audit-logged.
+ * JSON body: { id, filename, contentType, data } where data is base64 image
+ * bytes (no data: prefix). Stores a user-provided image as the event's banner
+ * (replacing any AI-generated cover), in the same Supabase Storage bucket and
+ * image_url convention as generateEventImage. Gated by events.manage;
+ * audit-logged.
+ *
+ * JSON (not multipart) because the central CSRF guard requires
+ * application/json bodies on every /api/admin/* mutation (see
+ * src/lib/csrf-guard.ts) — a multipart body is rejected before this handler
+ * ever runs.
  */
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
@@ -26,23 +32,34 @@ export async function POST(request: Request) {
   const actor = await requirePermission("events.manage", request);
   if (!actor) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  let form: FormData;
+  let body: { id?: string; contentType?: string; data?: string };
   try {
-    form = await request.formData();
+    body = (await request.json()) as { id?: string; contentType?: string; data?: string };
   } catch {
-    return NextResponse.json({ error: "Invalid form data" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const id = String(form.get("id") || "").trim();
-  const file = form.get("file");
+  const id = (body.id || "").trim();
+  const contentType = (body.contentType || "").trim().toLowerCase();
+  const data = body.data || "";
   if (!id) return NextResponse.json({ error: "Missing event id" }, { status: 400 });
-  if (!(file instanceof File)) return NextResponse.json({ error: "Missing image file" }, { status: 400 });
+  if (!data) return NextResponse.json({ error: "Missing image data" }, { status: 400 });
 
-  const ext = EXT_BY_TYPE[file.type];
+  const ext = EXT_BY_TYPE[contentType];
   if (!ext) {
     return NextResponse.json({ error: "Image must be PNG, JPEG, WEBP, or GIF." }, { status: 400 });
   }
-  if (file.size > MAX_BYTES) {
+
+  let bytes: Uint8Array;
+  try {
+    bytes = new Uint8Array(Buffer.from(data, "base64"));
+  } catch {
+    return NextResponse.json({ error: "Could not decode the image data." }, { status: 400 });
+  }
+  if (bytes.length === 0) {
+    return NextResponse.json({ error: "Missing image data" }, { status: 400 });
+  }
+  if (bytes.length > MAX_BYTES) {
     return NextResponse.json({ error: "Image is too large (max 8MB)." }, { status: 400 });
   }
 
@@ -52,10 +69,9 @@ export async function POST(request: Request) {
   const event = await getEvent(admin, id);
   if (!event) return NextResponse.json({ error: "Event not found" }, { status: 404 });
 
-  const bytes = new Uint8Array(await file.arrayBuffer());
   const path = `events/${id}.${ext}`;
   const { error: uploadError } = await admin.storage.from(BUCKET).upload(path, bytes, {
-    contentType: file.type,
+    contentType,
     upsert: true,
   });
   if (uploadError) {
@@ -63,12 +79,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Could not upload the image." }, { status: 500 });
   }
 
-  const { data } = admin.storage.from(BUCKET).getPublicUrl(path);
-  if (!data?.publicUrl) {
+  const { data: pub } = admin.storage.from(BUCKET).getPublicUrl(path);
+  if (!pub?.publicUrl) {
     return NextResponse.json({ error: "Could not resolve the image URL." }, { status: 500 });
   }
   // Cache-bust so a re-upload (same path, upsert) shows the new image.
-  const imageUrl = `${data.publicUrl}?v=${Date.now()}`;
+  const imageUrl = `${pub.publicUrl}?v=${Date.now()}`;
 
   const { error: dbError } = await admin.from("events").update({ image_url: imageUrl }).eq("id", id);
   if (dbError) {
@@ -81,7 +97,7 @@ export async function POST(request: Request) {
     action: "event.image.upload",
     targetType: "event",
     targetId: id,
-    details: { title: event.title, contentType: file.type },
+    details: { title: event.title, contentType },
   });
 
   return NextResponse.json({ ok: true, imageUrl });

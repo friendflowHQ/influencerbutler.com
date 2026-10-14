@@ -495,10 +495,21 @@ export default function AdminEventsPage() {
     setUploadingImageId(id);
     setMessage("Uploading image...");
     try {
-      const body = new FormData();
-      body.set("id", id);
-      body.set("file", file);
-      const res = await fetch("/api/admin/events/upload-image", { method: "POST", body });
+      // Admin API routes require an application/json body (see csrf-guard.ts),
+      // so the file goes up as base64 rather than multipart/form-data.
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+      });
+      const base64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
+
+      const res = await fetch("/api/admin/events/upload-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, contentType: file.type, data: base64 }),
+      });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
       setMessage(res.ok ? "Event image uploaded." : data.error || "Could not upload the image.");
       await refetch();
