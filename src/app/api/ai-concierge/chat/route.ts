@@ -75,7 +75,7 @@ export async function POST(request: Request) {
     source: authed.auth.kind === "license" ? "license" : "session",
   };
   const messages: Array<Record<string, unknown>> = [
-    { role: "system", content: buildInstructions(client?.persona, tours) },
+    { role: "system", content: buildInstructions(client?.persona, tours, client?.platform) },
     // Live app status the desktop captured at send time (paused butlers + restart
     // times). A separate system message, clearly framed as data, so the model
     // answers pause/resume questions with the real numbers. Only when provided.

@@ -68,6 +68,66 @@ describe("buildInstructions", () => {
   });
 });
 
+describe("buildInstructions: moving to a new computer", () => {
+  it("knows which kind of computer the desktop app is on", () => {
+    expect(buildInstructions(undefined, [], "darwin")).toContain("The user's computer is a Mac.");
+    expect(buildInstructions(undefined, [], "win32")).toContain("The user's computer is a Windows PC.");
+    const other = buildInstructions(undefined, [], "linux");
+    expect(other).not.toContain("The user's computer is a Mac");
+    expect(other).not.toContain("The user's computer is a Windows PC");
+    expect(buildInstructions()).not.toContain("The user's computer is a");
+  });
+
+  it("carries the real click path, the real button names and the order for a one-seat plan", () => {
+    const s = buildInstructions();
+    for (const phrase of [
+      "Settings, then Data & Backup, then Move to a new computer",
+      "Save a move package",
+      "Choose a move package",
+      "Import and restart",
+      "Guide me through it",
+      "Show me where",
+      "only AFTER saving",
+      "Settings, Devices & Seats",
+      "/help/tutorials/move-to-a-new-computer",
+      "Schedules start PAUSED",
+      "Turn schedules back on",
+    ]) {
+      expect(s).toContain(phrase);
+    }
+  });
+
+  it("gives separate Mac and Windows specifics, including how to really quit", () => {
+    const s = buildInstructions();
+    expect(s).toContain("MAC steps");
+    expect(s).toContain("WINDOWS steps");
+    expect(s).toContain("influencerbutler.com/dl/mac");
+    expect(s).toContain("influencerbutler.com/dl/mac-intel");
+    expect(s).toContain("influencerbutler.com/dl/win");
+    expect(s).toContain("Command+Q");
+    expect(s).toContain("AirDrop (Mac to Mac only");
+    expect(s).toContain("Safely Remove");
+    expect(s).toContain("only hides Influencer Butler");
+    expect(s).toContain("notification area next to the clock");
+  });
+
+  it("steers away from the old transfer zip and from copying the data folder by hand", () => {
+    const s = buildInstructions();
+    expect(s).toContain("NEVER tell them to copy the data folder by hand");
+    expect(s).toContain("Full transfer archive");
+  });
+
+  it("offers the on-screen walkthrough, and describes it richly when the desktop ships it", () => {
+    const s = buildInstructions(undefined, [{ id: "move-to-new-computer", title: "Move to a new computer" }]);
+    expect(s).toContain("move-to-new-computer (Move to a new computer: where to save the file on the old computer");
+    expect(s).toContain("start_walkthrough with it so they get the Show me each step button");
+  });
+
+  it("never contains an em-dash", () => {
+    expect(buildInstructions(undefined, [], "darwin")).not.toContain("—");
+  });
+});
+
 describe("extractReplyImages", () => {
   it("lifts /assets/ markdown images out of the reply text", () => {
     const { text, images } = extractReplyImages(

@@ -224,6 +224,7 @@ const WALKTHROUGH_TOURS: Array<{ id: string; about: string }> = [
 const DESKTOP_ONLY_TOUR_ABOUT: Record<string, string> = {
   "prime-day-deals-setup": "Prime Day Deals workspace and Prime Day mode: Search Deals, catalogue, caption formulas, calls to action, then the switch that posts the event queue",
   "prime-day-foyer": "Choose whether the Foyer page shows Prime Day deals during the event",
+  "move-to-new-computer": "Move to a new computer: where to save the file on the old computer, how to open it on the new one, and the Mac and Windows specifics, on screen",
 };
 
 /**
@@ -301,9 +302,21 @@ function walkthroughListLine(extra: TourCatalogEntry[]): string {
  * the deep how-to knowledge is fetched on demand via the search_help tool rather
  * than dumped in here.
  */
+/**
+ * One line telling the model what kind of computer the desktop app is running on. The desktop sends
+ * process.platform ("darwin" / "win32" / "linux"); anything else (website, extension) adds nothing.
+ */
+export function platformLine(platform?: string): string {
+  const p = typeof platform === "string" ? platform.trim().toLowerCase() : "";
+  if (p === "darwin") return "The user's computer is a Mac. When steps differ between Mac and Windows, give the Mac steps.";
+  if (p === "win32") return "The user's computer is a Windows PC. When steps differ between Mac and Windows, give the Windows steps.";
+  return "";
+}
+
 export function buildInstructions(
   persona?: { butlerName?: string; firstName?: string },
   tours: TourCatalogEntry[] = [],
+  platform?: string,
 ): string {
   const firstName = persona && typeof persona.firstName === "string" ? persona.firstName.trim() : "";
   const butlerName = persona && typeof persona.butlerName === "string" ? persona.butlerName.trim() : "";
@@ -316,6 +329,7 @@ export function buildInstructions(
     firstName ? `The user's first name is ${firstName}. Address them by their first name naturally, not in every sentence.` : "",
     butlerName ? `The user has named their assistant "${butlerName}". You ARE ${butlerName}: refer to yourself as ${butlerName} when it reads naturally, and do not call yourself "Butler AI" to them.` : "",
     (firstName || butlerName) ? "" : "",
+    platformLine(platform),
     "Your job: give a live product demo and answer setup questions in real time, like a helpful",
     "pre-sales and onboarding specialist. Be warm, concise, and concrete. In voice mode, speak in",
     "short spoken sentences. Ask a clarifying question when the user's goal is unclear.",
@@ -435,6 +449,63 @@ export function buildInstructions(
     "  only when they appear in the curated tours list above; otherwise compose steps from the menu map.",
     "- Do not call Black Friday Butler a Prime Day tool. It is the separate Black Friday and Cyber",
     "  Monday radar.",
+    "",
+    "Moving to a new computer (desktop app):",
+    "- Use this whenever someone asks how to move, switch, transfer or migrate Influencer Butler to a new",
+    "  laptop, Mac or Windows PC, or asks how to keep their setup on a new computer. Reply in the language",
+    "  they wrote in. NEVER tell them to copy the data folder by hand, and do not point them to the old",
+    "  \"Full transfer archive\" card unless they specifically ask about it: it has no import button and",
+    "  leaves out their saved connections. The way is the Move to a new computer card.",
+    "- Where it is: In the left menu, click Settings, then Data & Backup, then Move to a new computer. The",
+    "  card has two sides. On the OLD computer click Save a move package. On the NEW computer, signed in",
+    "  with the same license, click Choose a move package, check where the file came from, then click",
+    "  Import and restart. It also has a Guide me through it button and a Show me where button.",
+    "- The order matters, especially for a plan with ONE seat: (1) update the app on both computers; (2)",
+    "  on the old computer click Save a move package and save the file outside the Influencer Butler",
+    "  folder (Desktop or a USB drive); (3) copy the file to the new computer; (4) only AFTER saving, if the",
+    "  new computer says the plan is full, open Settings, Devices & Seats on the OLD computer and remove it",
+    "  there; (5) on the new computer install the app, sign in with the license email, then Choose a move",
+    "  package and Import and restart; (6) finish the Finish your move checklist at the top of the app.",
+    "- The file is locked with their license key, so it only opens when the new computer is signed in with",
+    "  the same license. Nothing is changed or deleted on the old computer. The import checks the whole file",
+    "  first, takes a few minutes for a big setup (keep the window open), saves anything it replaces to a",
+    "  backup folder, then restarts the app by itself. If the app does not reopen, open it again.",
+    "- What comes along: settings, templates, keywords, queues, schedules, images, saved lists, saved",
+    "  connections (like their OpenAI key and connected accounts) and progress. What does NOT travel: browser",
+    "  logins to Amazon, Instagram, Facebook, Walmart and other sites (they sign in again with the Sign in",
+    "  buttons in the checklist; Chrome, Brave or Edge must be installed), the license seat, the Chrome",
+    "  extension and phone pairing (pair again from Settings), and videos and very large files (they copy",
+    "  those folders themselves). Folder locations from the old computer are listed in the checklist to pick",
+    "  again, and ALL of them need picking again when moving between a Mac and a Windows PC.",
+    "- Schedules start PAUSED on the new computer, on purpose, so nothing runs before they have signed in and",
+    "  the old and new computers never post from the same accounts together. The checklist has steps to quit",
+    "  the app on the old computer and then Turn schedules back on.",
+    "- Quitting matters: clicking the window's close button only hides Influencer Butler, and its schedules",
+    "  keep running. On a Mac, click Influencer Butler in the menu bar then Quit Influencer Butler (or press",
+    "  Command+Q), or click its menu bar icon and choose Quit. On Windows, right-click the Influencer Butler",
+    "  icon in the notification area next to the clock (click the small up arrow if it is hidden) and choose",
+    "  Quit.",
+    "- MAC steps: save the file to the Desktop or a USB drive; to bring it over, use a USB drive (eject it in",
+    "  the Finder sidebar first), AirDrop (Mac to Mac only, Finder > AirDrop), or a cloud folder. To install on",
+    "  the new Mac: influencerbutler.com/dl/mac for Apple chip Macs (M1 or newer) or",
+    "  influencerbutler.com/dl/mac-intel for Intel Macs (Apple menu > About This Mac shows Chip or",
+    "  Processor); open the downloaded file, drag Influencer Butler onto Applications, open it from",
+    "  Applications and click Open if macOS asks about an app downloaded from the internet. It needs macOS 11",
+    "  Big Sur or newer. If they open it from the download window the app offers to move itself to",
+    "  Applications; say yes.",
+    "- WINDOWS steps: save the file to the Desktop or a USB drive (File Explorer, then use Safely Remove",
+    "  Hardware near the clock before unplugging), or a cloud folder; AirDrop does not exist on Windows. To",
+    "  install on the new PC: influencerbutler.com/dl/win downloads Influencer Butler Setup; run it and click",
+    "  Yes if Windows asks to allow changes.",
+    "- Give the steps for the computer they are on (the first line of this prompt may say Mac or Windows PC).",
+    "  If you do not know their system and the answer depends on it, ask \"Are you on a Mac or a Windows",
+    "  PC?\" before giving steps. If they are moving between a Mac and a PC, give each computer its own",
+    "  system's steps.",
+    "- Keep the chat answer short: the key order, then the Mac or Windows specifics for the computer they",
+    "  are on. If a walkthrough with the id move-to-new-computer is in the curated list, END by calling",
+    "  start_walkthrough with it so they get the Show me each step button. The full guide, with both systems",
+    "  side by side, is at /help/tutorials/move-to-a-new-computer. If a step fails, point them to Report a",
+    "  bug in the chat bubble.",
     "",
     "Giving directions:",
     "- When you tell the user how to do something in the desktop app, give the exact click path,",
