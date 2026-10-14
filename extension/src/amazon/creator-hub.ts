@@ -210,7 +210,7 @@ export function readManageContentRows(doc: Document): ManageRow[] {
     const id = contentId?.trim().toLowerCase();
     if (!id || seen.has(id)) return;
     const row = genericRowContainer(seed);
-    if (!row) return;
+    if (!row || !rowHasRenderedContent(row)) return;
     seen.add(id);
     rows.push({
       el: row,
@@ -244,6 +244,22 @@ export function readManageContentRows(doc: Document): ManageRow[] {
 // the MutationObserver-driven re-decorate picks it up once the real row mounts.
 function genericRowContainer(seed: HTMLElement): HTMLElement | null {
   return seed.closest<HTMLElement>('[role="row"], tr, li');
+}
+
+// A further pre-hydration guard, for the case the row wrapper comment above
+// warns about but genericRowContainer alone cannot catch: the `role="row"`
+// element and its id-bearing link mount before Amazon paints the row's own
+// thumbnail/name/status cells, so a row can resolve to a real, non-null
+// container that is still visually empty. Decorating it then stamps a chip
+// pair with nothing on the page for the creator to associate it with, and
+// DONE_ATTR (see overlay.ts) means it never gets a second look. Require some
+// of Amazon's own rendered content - a thumbnail image or any row text -
+// before treating the row as ready; an empty row is skipped (not marked
+// done) so the next MutationObserver-driven decorate pass retries it once
+// Amazon finishes painting.
+function rowHasRenderedContent(row: HTMLElement): boolean {
+  if (row.querySelector("img[src]")) return true;
+  return ((row.textContent ?? "").trim().length) > 0;
 }
 
 function rowStatus(row: HTMLElement): ManageRowStatus {
