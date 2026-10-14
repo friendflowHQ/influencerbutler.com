@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { EVENT_IMAGE_BUCKET } from "@/lib/event-image-upload";
 
 type BannerSurface = "web" | "extension" | "desktop";
 
@@ -486,32 +488,68 @@ export default function AdminEventsPage() {
     uploadInputRef.current?.click();
   };
 
+  const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
+
+  // Uploads straight to Supabase Storage with a short-lived signed URL (see
+  // /api/admin/events/upload-image), instead of sending the file through our
+  // own JSON-only admin API: every /api/admin/* route requires an
+  // application/json body (csrf-guard.ts), and base64-encoding a real photo
+  // there is ~33% larger than the raw bytes and can silently exceed the
+  // platform's request-body limit for this server.
   const handleImageFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const id = uploadTargetId.current;
     const file = e.target.files?.[0];
     e.target.value = ""; // allow re-selecting the same file later
     if (!id || !file) return;
 
+    if (file.size > MAX_UPLOAD_BYTES) {
+      window.alert(`That image is ${(file.size / 1024 / 1024).toFixed(1)}MB; please pick one under 15MB.`);
+      return;
+    }
+
     setUploadingImageId(id);
     setMessage("Uploading image...");
     try {
-      // Admin API routes require an application/json body (see csrf-guard.ts),
-      // so the file goes up as base64 rather than multipart/form-data.
-      const dataUrl: string = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(String(reader.result));
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(file);
-      });
-      const base64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
-
-      const res = await fetch("/api/admin/events/upload-image", {
+      const startRes = await fetch("/api/admin/events/upload-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, contentType: file.type, data: base64 }),
+        body: JSON.stringify({ id, contentType: file.type }),
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
-      setMessage(res.ok ? "Event image uploaded." : data.error || "Could not upload the image.");
+      const start = (await startRes.json().catch(() => ({}))) as {
+        error?: string;
+        token?: string;
+        path?: string;
+      };
+      if (!startRes.ok || !start.token || !start.path) {
+        const err = start.error || "Could not start the upload.";
+        setMessage(err);
+        window.alert(err);
+        return;
+      }
+
+      const { error: putError } = await createClient()
+        .storage.from(EVENT_IMAGE_BUCKET)
+        .uploadToSignedUrl(start.path, start.token, file, { contentType: file.type });
+      if (putError) {
+        setMessage(putError.message || "Could not upload the image.");
+        window.alert(putError.message || "Could not upload the image.");
+        return;
+      }
+
+      const confirmRes = await fetch("/api/admin/events/upload-image/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, path: start.path }),
+      });
+      const confirm = (await confirmRes.json().catch(() => ({}))) as { error?: string };
+      if (!confirmRes.ok) {
+        const err = confirm.error || "Uploaded, but could not save it to the event.";
+        setMessage(err);
+        window.alert(err);
+        return;
+      }
+
+      setMessage("Event image uploaded.");
       await refetch();
     } finally {
       setUploadingImageId(null);
