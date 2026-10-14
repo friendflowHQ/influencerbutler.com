@@ -20,7 +20,26 @@ export type SyncProviderPayload = {
 // credential. An integration the app has no verdict for is simply absent.
 export type SessionConnection = { connected: boolean; label?: string };
 
+// YouTube Butler's own settings/schedule/channel, folded into the same
+// settings.get/settings.push frames under a youtubeButler key (loopback-only,
+// same as everything else here; YTB fields carry no secrets, so there is no
+// isolation reason to use a separate frame). Unlike the rest of this payload,
+// this one is a REMOTE CONTROL for one canonical desktop engine rather than a
+// two-source merge: the extension sends only the fields the creator actually
+// edited (a sparse object, see background/youtube-butler-settings.ts), and
+// the desktop applies every present key unconditionally (presence already
+// means explicit intent). `schedule` is read on pull but the extension only
+// ever pushes the fields it edited, same sparse convention.
+export type YtbSyncPayload = {
+  settings: Record<string, unknown>;
+  schedule?: Record<string, unknown> | null;
+  channel?: Record<string, unknown> | null;
+};
+
 export type SyncSettingsPayload = {
+  // Present on both pull and (optionally, sparse) push. Absent on an older
+  // desktop build that does not yet know about YouTube Butler settings sync.
+  youtubeButler?: YtbSyncPayload;
   storefrontHandle: string | null;
   primaryDeeplinkProvider: string | null;
   walmartLinkProvider: string | null;

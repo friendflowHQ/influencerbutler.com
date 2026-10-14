@@ -229,6 +229,89 @@ export interface OptionsDict {
   viaAppNote: string;
   viaAppNoteAs: string;
   statusNotConnected: string;
+  // YouTube Butler settings card: these mirror the desktop app's own YouTube
+  // Butler settings window so a creator can view/edit them from the extension
+  // even when the desktop app is not running. Edits are saved locally right
+  // away and queued to push to the desktop app next time it connects.
+  ytbHeading: string;
+  ytbIntro: string;
+  ytbGeneralGroup: string;
+  ytbVisibility: string;
+  ytbVisPublic: string;
+  ytbVisUnlisted: string;
+  ytbVisPrivate: string;
+  ytbPublishMode: string;
+  ytbPublishPublish: string;
+  ytbPublishDraft: string;
+  ytbMonetization: string;
+  ytbMonetizeLeave: string;
+  ytbMonetizeOn: string;
+  ytbDetailsGroup: string;
+  ytbMadeForKids: string;
+  ytbKidsYes: string;
+  ytbKidsNo: string;
+  ytbAlteredContent: string;
+  ytbAlteredAuto: string;
+  ytbAlteredYes: string;
+  ytbAlteredNo: string;
+  ytbCategory: string;
+  ytbVideoLanguage: string;
+  ytbLicense: string;
+  ytbLicenseStandard: string;
+  ytbLicenseCC: string;
+  ytbAllowEmbedding: string;
+  ytbNotifySubscribers: string;
+  ytbAgeRestriction: string;
+  ytbPublishDraftsVisibility: string;
+  ytbTemplatesGroup: string;
+  ytbTitleTemplate: string;
+  ytbDescriptionTemplate: string;
+  ytbTagsTemplate: string;
+  ytbPlaylistTemplate: string;
+  ytbTemplateHint: string;
+  ytbLimitsGroup: string;
+  ytbMaxPerDay: string;
+  ytbRampEnabled: string;
+  ytbDelayBetweenUploads: string;
+  ytbMaxPerSession: string;
+  ytbShortsGroup: string;
+  ytbShortsHashtag: string;
+  ytbPostingMode: string;
+  ytbPostingBoth: string;
+  ytbPostingShortsOnly: string;
+  ytbPostingRegularOnly: string;
+  ytbAntiShortsStrategy: string;
+  ytbAntiShortsOff: string;
+  ytbAntiShortsConvert: string;
+  ytbAntiShortsExtend: string;
+  ytbLocalizationGroup: string;
+  ytbAiVoiceoverEnabled: string;
+  ytbAiVoiceoverMode: string;
+  ytbModeDub: string;
+  ytbModeCaptions: string;
+  ytbTargetLocale: string;
+  ytbSourceLocale: string;
+  ytbVoice: string;
+  ytbTranslateMetadata: string;
+  ytbAiSeoEnabled: string;
+  ytbAiSeoLanguage: string;
+  ytbAiSeoSpendCap: string;
+  ytbScheduleGroup: string;
+  ytbScheduleEnabled: string;
+  ytbScheduleEvery: string;
+  ytbScheduleUnit: string;
+  ytbChannelGroup: string;
+  ytbChannelNotConnected: string;
+  ytbChannelConnectHint: string;
+  ytbSyncHeading: string;
+  ytbSyncNow: string;
+  ytbSyncing: string;
+  ytbPendingLabel: string;
+  ytbNoPending: string;
+  ytbLastSyncedPrefix: string;
+  ytbNeverSynced: string;
+  ytbSyncErrorPrefix: string;
+  ytbNotPairedHint: string;
 }
 
 const en: OptionsDict = {
@@ -465,6 +548,86 @@ const en: OptionsDict = {
   viaAppNoteAs:
     "Connected through the Influencer Butler app as {account}. Your links mint there, so you do not need to sign in here. If the app signs out, this card will ask you to reconnect.",
   statusNotConnected: "Not connected",
+  ytbHeading: "YouTube Butler",
+  ytbIntro:
+    "Settings for the desktop app's YouTube Butler. Edit them here even when the desktop app is not open: changes save right away and apply next time it connects.",
+  ytbGeneralGroup: "Upload defaults",
+  ytbVisibility: "Visibility",
+  ytbVisPublic: "Public",
+  ytbVisUnlisted: "Unlisted",
+  ytbVisPrivate: "Private",
+  ytbPublishMode: "Publish mode",
+  ytbPublishPublish: "Publish right away",
+  ytbPublishDraft: "Save as draft",
+  ytbMonetization: "Monetization",
+  ytbMonetizeLeave: "Leave as is",
+  ytbMonetizeOn: "Turn on",
+  ytbDetailsGroup: "Video details",
+  ytbMadeForKids: "Made for kids",
+  ytbKidsYes: "Yes",
+  ytbKidsNo: "No",
+  ytbAlteredContent: "Altered or synthetic content",
+  ytbAlteredAuto: "Detect automatically",
+  ytbAlteredYes: "Yes",
+  ytbAlteredNo: "No",
+  ytbCategory: "Category",
+  ytbVideoLanguage: "Video language",
+  ytbLicense: "License",
+  ytbLicenseStandard: "Standard YouTube license",
+  ytbLicenseCC: "Creative Commons",
+  ytbAllowEmbedding: "Allow embedding",
+  ytbNotifySubscribers: "Notify subscribers",
+  ytbAgeRestriction: "Age-restricted",
+  ytbPublishDraftsVisibility: "Visibility when promoting drafts",
+  ytbTemplatesGroup: "Title & description templates",
+  ytbTitleTemplate: "Title template",
+  ytbDescriptionTemplate: "Description template",
+  ytbTagsTemplate: "Tags template",
+  ytbPlaylistTemplate: "Playlist template",
+  ytbTemplateHint: "Use {product_name}, {brand_name}, {category}, and {affiliate_link} as placeholders.",
+  ytbLimitsGroup: "Upload limits",
+  ytbMaxPerDay: "Max uploads per day",
+  ytbRampEnabled: "Ramp up gradually for a new channel",
+  ytbDelayBetweenUploads: "Delay between uploads (seconds)",
+  ytbMaxPerSession: "Max uploads per session",
+  ytbShortsGroup: "Shorts",
+  ytbShortsHashtag: "Add a #Shorts hashtag",
+  ytbPostingMode: "Posting mode",
+  ytbPostingBoth: "Shorts and regular videos",
+  ytbPostingShortsOnly: "Shorts only",
+  ytbPostingRegularOnly: "Regular videos only",
+  ytbAntiShortsStrategy: "When a video is too short for Shorts",
+  ytbAntiShortsOff: "Leave it as a Short",
+  ytbAntiShortsConvert: "Convert to landscape",
+  ytbAntiShortsExtend: "Extend past the Shorts limit",
+  ytbLocalizationGroup: "Localization & AI",
+  ytbAiVoiceoverEnabled: "AI voiceover",
+  ytbAiVoiceoverMode: "Voiceover mode",
+  ytbModeDub: "Dub the audio",
+  ytbModeCaptions: "Captions only",
+  ytbTargetLocale: "Target language",
+  ytbSourceLocale: "Source language",
+  ytbVoice: "Voice",
+  ytbTranslateMetadata: "Translate title & description",
+  ytbAiSeoEnabled: "AI SEO",
+  ytbAiSeoLanguage: "AI SEO language",
+  ytbAiSeoSpendCap: "AI SEO monthly spend cap (USD)",
+  ytbScheduleGroup: "Upload schedule",
+  ytbScheduleEnabled: "Run on a schedule",
+  ytbScheduleEvery: "Every",
+  ytbScheduleUnit: "Unit (e.g. days)",
+  ytbChannelGroup: "Connected channel",
+  ytbChannelNotConnected: "Not connected",
+  ytbChannelConnectHint: "Connect a channel in the desktop app's YouTube Butler.",
+  ytbSyncHeading: "Sync with desktop app",
+  ytbSyncNow: "Sync now",
+  ytbSyncing: "Syncing...",
+  ytbPendingLabel: "pending change(s)",
+  ytbNoPending: "Up to date",
+  ytbLastSyncedPrefix: "Last synced",
+  ytbNeverSynced: "Never synced",
+  ytbSyncErrorPrefix: "Sync issue",
+  ytbNotPairedHint: "Connect the desktop app to sync: edits are saved here and will apply next time it connects.",
 };
 
 const es: OptionsDict = {
@@ -701,6 +864,86 @@ const es: OptionsDict = {
   viaAppNoteAs:
     "Conectado a través de la app de Influencer Butler como {account}. Tus enlaces se crean allí, así que no necesitas iniciar sesión aquí. Si la app cierra sesión, esta tarjeta te pedirá reconectar.",
   statusNotConnected: "Sin conectar",
+  ytbHeading: "YouTube Butler",
+  ytbIntro:
+    "Ajustes del YouTube Butler de la app de escritorio. Edítalos aquí aunque la app no esté abierta: los cambios se guardan de inmediato y se aplican la próxima vez que se conecte.",
+  ytbGeneralGroup: "Valores de subida",
+  ytbVisibility: "Visibilidad",
+  ytbVisPublic: "Público",
+  ytbVisUnlisted: "No listado",
+  ytbVisPrivate: "Privado",
+  ytbPublishMode: "Modo de publicación",
+  ytbPublishPublish: "Publicar de inmediato",
+  ytbPublishDraft: "Guardar como borrador",
+  ytbMonetization: "Monetización",
+  ytbMonetizeLeave: "Dejar como está",
+  ytbMonetizeOn: "Activar",
+  ytbDetailsGroup: "Detalles del video",
+  ytbMadeForKids: "Dirigido a niños",
+  ytbKidsYes: "Sí",
+  ytbKidsNo: "No",
+  ytbAlteredContent: "Contenido alterado o sintético",
+  ytbAlteredAuto: "Detectar automáticamente",
+  ytbAlteredYes: "Sí",
+  ytbAlteredNo: "No",
+  ytbCategory: "Categoría",
+  ytbVideoLanguage: "Idioma del video",
+  ytbLicense: "Licencia",
+  ytbLicenseStandard: "Licencia estándar de YouTube",
+  ytbLicenseCC: "Creative Commons",
+  ytbAllowEmbedding: "Permitir inserción",
+  ytbNotifySubscribers: "Notificar a los suscriptores",
+  ytbAgeRestriction: "Restringido por edad",
+  ytbPublishDraftsVisibility: "Visibilidad al publicar borradores",
+  ytbTemplatesGroup: "Plantillas de título y descripción",
+  ytbTitleTemplate: "Plantilla de título",
+  ytbDescriptionTemplate: "Plantilla de descripción",
+  ytbTagsTemplate: "Plantilla de etiquetas",
+  ytbPlaylistTemplate: "Plantilla de lista de reproducción",
+  ytbTemplateHint: "Usa {product_name}, {brand_name}, {category} y {affiliate_link} como marcadores.",
+  ytbLimitsGroup: "Límites de subida",
+  ytbMaxPerDay: "Máximo de subidas al día",
+  ytbRampEnabled: "Aumentar gradualmente para un canal nuevo",
+  ytbDelayBetweenUploads: "Retraso entre subidas (segundos)",
+  ytbMaxPerSession: "Máximo de subidas por sesión",
+  ytbShortsGroup: "Shorts",
+  ytbShortsHashtag: "Añadir la etiqueta #Shorts",
+  ytbPostingMode: "Modo de publicación",
+  ytbPostingBoth: "Shorts y videos normales",
+  ytbPostingShortsOnly: "Solo Shorts",
+  ytbPostingRegularOnly: "Solo videos normales",
+  ytbAntiShortsStrategy: "Cuando un video es demasiado corto para Shorts",
+  ytbAntiShortsOff: "Dejarlo como Short",
+  ytbAntiShortsConvert: "Convertir a horizontal",
+  ytbAntiShortsExtend: "Extender más allá del límite de Shorts",
+  ytbLocalizationGroup: "Localización e IA",
+  ytbAiVoiceoverEnabled: "Voz en off con IA",
+  ytbAiVoiceoverMode: "Modo de voz en off",
+  ytbModeDub: "Doblar el audio",
+  ytbModeCaptions: "Solo subtítulos",
+  ytbTargetLocale: "Idioma de destino",
+  ytbSourceLocale: "Idioma de origen",
+  ytbVoice: "Voz",
+  ytbTranslateMetadata: "Traducir título y descripción",
+  ytbAiSeoEnabled: "SEO con IA",
+  ytbAiSeoLanguage: "Idioma del SEO con IA",
+  ytbAiSeoSpendCap: "Límite de gasto mensual del SEO con IA (USD)",
+  ytbScheduleGroup: "Calendario de subidas",
+  ytbScheduleEnabled: "Ejecutar según un calendario",
+  ytbScheduleEvery: "Cada",
+  ytbScheduleUnit: "Unidad (p. ej. días)",
+  ytbChannelGroup: "Canal conectado",
+  ytbChannelNotConnected: "Sin conectar",
+  ytbChannelConnectHint: "Conecta un canal en el YouTube Butler de la app de escritorio.",
+  ytbSyncHeading: "Sincronizar con la app de escritorio",
+  ytbSyncNow: "Sincronizar ahora",
+  ytbSyncing: "Sincronizando...",
+  ytbPendingLabel: "cambio(s) pendiente(s)",
+  ytbNoPending: "Al día",
+  ytbLastSyncedPrefix: "Última sincronización",
+  ytbNeverSynced: "Nunca sincronizado",
+  ytbSyncErrorPrefix: "Problema de sincronización",
+  ytbNotPairedHint: "Conecta la app de escritorio para sincronizar: los cambios se guardan aquí y se aplicarán la próxima vez que se conecte.",
 };
 
 const fr: OptionsDict = {
@@ -937,6 +1180,86 @@ const fr: OptionsDict = {
   viaAppNoteAs:
     "Connecté via l'application Influencer Butler en tant que {account}. Vos liens y sont créés, vous n'avez donc pas besoin de vous connecter ici. Si l'application se déconnecte, cette carte vous demandera de vous reconnecter.",
   statusNotConnected: "Non connecté",
+  ytbHeading: "YouTube Butler",
+  ytbIntro:
+    "Réglages du YouTube Butler de l'application de bureau. Modifiez-les ici même quand l'application n'est pas ouverte : les changements sont enregistrés tout de suite et s'appliquent à la prochaine connexion.",
+  ytbGeneralGroup: "Réglages de publication",
+  ytbVisibility: "Visibilité",
+  ytbVisPublic: "Public",
+  ytbVisUnlisted: "Non répertorié",
+  ytbVisPrivate: "Privé",
+  ytbPublishMode: "Mode de publication",
+  ytbPublishPublish: "Publier tout de suite",
+  ytbPublishDraft: "Enregistrer comme brouillon",
+  ytbMonetization: "Monétisation",
+  ytbMonetizeLeave: "Laisser tel quel",
+  ytbMonetizeOn: "Activer",
+  ytbDetailsGroup: "Détails de la vidéo",
+  ytbMadeForKids: "Destiné aux enfants",
+  ytbKidsYes: "Oui",
+  ytbKidsNo: "Non",
+  ytbAlteredContent: "Contenu modifié ou synthétique",
+  ytbAlteredAuto: "Détecter automatiquement",
+  ytbAlteredYes: "Oui",
+  ytbAlteredNo: "Non",
+  ytbCategory: "Catégorie",
+  ytbVideoLanguage: "Langue de la vidéo",
+  ytbLicense: "Licence",
+  ytbLicenseStandard: "Licence YouTube standard",
+  ytbLicenseCC: "Creative Commons",
+  ytbAllowEmbedding: "Autoriser l'intégration",
+  ytbNotifySubscribers: "Avertir les abonnés",
+  ytbAgeRestriction: "Contenu à accès restreint",
+  ytbPublishDraftsVisibility: "Visibilité lors de la publication des brouillons",
+  ytbTemplatesGroup: "Modèles de titre et de description",
+  ytbTitleTemplate: "Modèle de titre",
+  ytbDescriptionTemplate: "Modèle de description",
+  ytbTagsTemplate: "Modèle de tags",
+  ytbPlaylistTemplate: "Modèle de playlist",
+  ytbTemplateHint: "Utilisez {product_name}, {brand_name}, {category} et {affiliate_link} comme espaces réservés.",
+  ytbLimitsGroup: "Limites de publication",
+  ytbMaxPerDay: "Maximum de publications par jour",
+  ytbRampEnabled: "Augmenter progressivement pour une nouvelle chaîne",
+  ytbDelayBetweenUploads: "Délai entre les publications (secondes)",
+  ytbMaxPerSession: "Maximum de publications par session",
+  ytbShortsGroup: "Shorts",
+  ytbShortsHashtag: "Ajouter le tag #Shorts",
+  ytbPostingMode: "Mode de publication",
+  ytbPostingBoth: "Shorts et vidéos classiques",
+  ytbPostingShortsOnly: "Shorts uniquement",
+  ytbPostingRegularOnly: "Vidéos classiques uniquement",
+  ytbAntiShortsStrategy: "Quand une vidéo est trop courte pour un Short",
+  ytbAntiShortsOff: "La laisser en Short",
+  ytbAntiShortsConvert: "Convertir au format paysage",
+  ytbAntiShortsExtend: "Prolonger au-delà de la limite des Shorts",
+  ytbLocalizationGroup: "Localisation et IA",
+  ytbAiVoiceoverEnabled: "Voix off par IA",
+  ytbAiVoiceoverMode: "Mode de voix off",
+  ytbModeDub: "Doubler l'audio",
+  ytbModeCaptions: "Sous-titres uniquement",
+  ytbTargetLocale: "Langue cible",
+  ytbSourceLocale: "Langue source",
+  ytbVoice: "Voix",
+  ytbTranslateMetadata: "Traduire le titre et la description",
+  ytbAiSeoEnabled: "SEO par IA",
+  ytbAiSeoLanguage: "Langue du SEO par IA",
+  ytbAiSeoSpendCap: "Plafond de dépenses mensuel du SEO par IA (USD)",
+  ytbScheduleGroup: "Calendrier de publication",
+  ytbScheduleEnabled: "Exécuter selon un calendrier",
+  ytbScheduleEvery: "Chaque",
+  ytbScheduleUnit: "Unité (ex. jours)",
+  ytbChannelGroup: "Chaîne connectée",
+  ytbChannelNotConnected: "Non connectée",
+  ytbChannelConnectHint: "Connectez une chaîne dans le YouTube Butler de l'application de bureau.",
+  ytbSyncHeading: "Synchroniser avec l'application de bureau",
+  ytbSyncNow: "Synchroniser maintenant",
+  ytbSyncing: "Synchronisation...",
+  ytbPendingLabel: "changement(s) en attente",
+  ytbNoPending: "À jour",
+  ytbLastSyncedPrefix: "Dernière synchronisation",
+  ytbNeverSynced: "Jamais synchronisé",
+  ytbSyncErrorPrefix: "Problème de synchronisation",
+  ytbNotPairedHint: "Connectez l'application de bureau pour synchroniser : les changements sont enregistrés ici et s'appliqueront à la prochaine connexion.",
 };
 
 export const OPTIONS_CATALOG: Record<Locale, OptionsDict> = { en, es, fr };

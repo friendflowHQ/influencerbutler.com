@@ -615,3 +615,31 @@ export type YouTubeStatusResult = {
   results: YouTubeStatusRecord[];
   message?: string;
 };
+
+// Account-wide upload progress: the real counts behind the "Uploading" button,
+// from a youtube.progress.lookup request. `running` is true while the desktop
+// engine has an active run; `capReached` means the daily cap is used up (the
+// button should say so rather than imply it is hung).
+export type YouTubeProgressSnapshot = {
+  running: boolean;
+  state: string; // idle | running | error | stopping
+  total: number;
+  uploaded: number;
+  queued: number;
+  failed: number;
+  cap: number;
+  usedToday: number;
+  remainingToday: number;
+  capReached: boolean;
+  label: string | null;
+  error: string | null;
+};
+
+// Result of a youtube.progress.lookup request. `paired` is false when the
+// extension has never connected the app, same convention as YouTubeStatusResult.
+export type YouTubeProgressResult = {
+  ok: boolean;
+  paired?: boolean;
+  snapshot: YouTubeProgressSnapshot | null;
+  message?: string;
+};

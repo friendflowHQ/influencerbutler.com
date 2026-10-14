@@ -234,17 +234,16 @@ export function readManageContentRows(doc: Document): ManageRow[] {
 }
 
 // Row-container climb for list rows that expose no preview-image count to anchor
-// on (the /manage-content list): prefer a real row element, else the first
-// ancestor that holds a handful of children (a whole card, not just the link).
+// on (the /manage-content list): the list's React table marks every real row
+// `role="row"` (verified live against /manage-content; a plain `tr`/`li` covers
+// older markup). No fallback beyond that: during the list's brief pre-hydration
+// pass a seed link can exist before its row wrapper does, and guessing an
+// ancestor there used to land on a shared container (e.g. the table header),
+// permanently stamping a chip onto it since callers mark the seed "done" once a
+// container is returned. Returning null here lets that pass skip the target so
+// the MutationObserver-driven re-decorate picks it up once the real row mounts.
 function genericRowContainer(seed: HTMLElement): HTMLElement | null {
-  const row = seed.closest<HTMLElement>('[role="row"], tr, li');
-  if (row) return row;
-  let node: HTMLElement | null = seed.parentElement;
-  for (let i = 0; i < 6 && node; i += 1) {
-    if (node.querySelectorAll("*").length > 6) return node;
-    node = node.parentElement;
-  }
-  return seed.parentElement ?? seed;
+  return seed.closest<HTMLElement>('[role="row"], tr, li');
 }
 
 function rowStatus(row: HTMLElement): ManageRowStatus {

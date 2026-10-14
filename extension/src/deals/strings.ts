@@ -42,6 +42,32 @@ export interface DealsDict {
   colPrice: string;
   colDiscount: string;
   colCommission: string;
+  catalogHeading: string;
+  catalogNote: string;
+  tabLabel: string;
+  tabAll: string;
+  tabCc: string;
+  tabEpc: string;
+  tabPromo: string;
+  filtersHeading: string;
+  filterMinDiscount: string;
+  filterMinCommission: string;
+  filterMinEpc: string;
+  filterMaxPrice: string;
+  filterOnlyPromo: string;
+  sortLabel: string;
+  sortNewest: string;
+  sortDiscount: string;
+  sortCommission: string;
+  sortEpc: string;
+  colCc: string;
+  colEpc: string;
+  colAction: string;
+  aiPostButton: string;
+  noMatches: string;
+  perClick: (amount: string) => string;
+  budget: (level: string) => string;
+  endsOn: (date: string) => string;
   colSource: string;
   noResults: string;
   someErrors: string;
@@ -111,6 +137,33 @@ const en: DealsDict = {
   colPrice: "Price",
   colDiscount: "Discount",
   colCommission: "Commission",
+  catalogHeading: "Deals Catalog",
+  catalogNote:
+    "Every deal you have harvested, with Creator Connections commission and Earn on Clicks (EPC) forecasts added. Percent off only shows when the deal site printed one.",
+  tabLabel: "Deal type",
+  tabAll: "All deals",
+  tabCc: "Creator Connections",
+  tabEpc: "EPC deals",
+  tabPromo: "Promo codes",
+  filtersHeading: "Filters",
+  filterMinDiscount: "Minimum percent off",
+  filterMinCommission: "Minimum commission %",
+  filterMinEpc: "Minimum EPC ($ per click)",
+  filterMaxPrice: "Maximum price ($)",
+  filterOnlyPromo: "Only deals with a promo code",
+  sortLabel: "Sort by",
+  sortNewest: "Newest",
+  sortDiscount: "Percent off",
+  sortCommission: "Commission",
+  sortEpc: "EPC",
+  colCc: "Creator Connections",
+  colEpc: "EPC",
+  colAction: "Post",
+  aiPostButton: "AI Post",
+  noMatches: "No deals match these filters.",
+  perClick: (amount) => `${amount} per click`,
+  budget: (level) => `${level} budget`,
+  endsOn: (date) => `ends ${date}`,
   colSource: "From",
   noResults: "No Amazon products were found on those sites.",
   someErrors: "Some sites could not be read:",
@@ -181,6 +234,33 @@ const es: DealsDict = {
   colPrice: "Precio",
   colDiscount: "Descuento",
   colCommission: "Comisión",
+  catalogHeading: "Catálogo de ofertas",
+  catalogNote:
+    "Todas las ofertas que has recopilado, con la comisión de Creator Connections y el pronóstico de Earn on Clicks (EPC). El porcentaje de descuento solo aparece cuando el sitio de ofertas lo indica.",
+  tabLabel: "Tipo de oferta",
+  tabAll: "Todas",
+  tabCc: "Creator Connections",
+  tabEpc: "Ofertas EPC",
+  tabPromo: "Códigos promocionales",
+  filtersHeading: "Filtros",
+  filterMinDiscount: "Descuento mínimo (%)",
+  filterMinCommission: "Comisión mínima (%)",
+  filterMinEpc: "EPC mínimo ($ por clic)",
+  filterMaxPrice: "Precio máximo ($)",
+  filterOnlyPromo: "Solo ofertas con código promocional",
+  sortLabel: "Ordenar por",
+  sortNewest: "Más recientes",
+  sortDiscount: "Descuento",
+  sortCommission: "Comisión",
+  sortEpc: "EPC",
+  colCc: "Creator Connections",
+  colEpc: "EPC",
+  colAction: "Publicar",
+  aiPostButton: "Publicación IA",
+  noMatches: "Ninguna oferta coincide con estos filtros.",
+  perClick: (amount) => `${amount} por clic`,
+  budget: (level) => `presupuesto ${level}`,
+  endsOn: (date) => `termina ${date}`,
   colSource: "De",
   noResults: "No se encontraron productos de Amazon en esos sitios.",
   someErrors: "Algunos sitios no se pudieron leer:",
@@ -251,6 +331,33 @@ const fr: DealsDict = {
   colPrice: "Prix",
   colDiscount: "Remise",
   colCommission: "Commission",
+  catalogHeading: "Catalogue d'offres",
+  catalogNote:
+    "Toutes les offres que vous avez collectées, avec la commission Creator Connections et la prévision Earn on Clicks (EPC). Le pourcentage de réduction n'apparaît que si le site d'offres l'indique.",
+  tabLabel: "Type d'offre",
+  tabAll: "Toutes",
+  tabCc: "Creator Connections",
+  tabEpc: "Offres EPC",
+  tabPromo: "Codes promo",
+  filtersHeading: "Filtres",
+  filterMinDiscount: "Réduction minimale (%)",
+  filterMinCommission: "Commission minimale (%)",
+  filterMinEpc: "EPC minimal ($ par clic)",
+  filterMaxPrice: "Prix maximum ($)",
+  filterOnlyPromo: "Seulement les offres avec code promo",
+  sortLabel: "Trier par",
+  sortNewest: "Plus récentes",
+  sortDiscount: "Réduction",
+  sortCommission: "Commission",
+  sortEpc: "EPC",
+  colCc: "Creator Connections",
+  colEpc: "EPC",
+  colAction: "Publier",
+  aiPostButton: "Publication IA",
+  noMatches: "Aucune offre ne correspond à ces filtres.",
+  perClick: (amount) => `${amount} par clic`,
+  budget: (level) => `budget ${level}`,
+  endsOn: (date) => `se termine le ${date}`,
   colSource: "De",
   noResults: "Aucun produit Amazon trouvé sur ces sites.",
   someErrors: "Certains sites n'ont pas pu être lus:",

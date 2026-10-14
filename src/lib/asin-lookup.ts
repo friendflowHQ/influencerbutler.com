@@ -10,7 +10,8 @@
  * The Worker answers per ASIN with parallel `campaignIds[]` / `campaigns[]`
  * ({ r: rate %, e: end date, s: open slots }) arrays; the best ACTIVE campaign
  * is picked here, the same rule the old build used (highest rate, skipping
- * campaigns that ended more than a day ago).
+ * campaigns that ended more than a day ago, and fully claimed ones with 0 open
+ * slots).
  */
 
 const DEFAULT_LOOKUP_URL = "https://asin-lookup.influencerbutler.com";
@@ -30,6 +31,7 @@ type LookupRecord = {
   brand?: string;
   bestRate?: number | null;
   soonestExpiry?: string | null;
+  maxSlots?: number | null;
   campaignIds?: string[];
   campaigns?: Array<{ r: number | null; e: string | null; s: number | null }>;
 };
@@ -56,6 +58,9 @@ export function pickBestCcRate(rec: LookupRecord, now: number = Date.now()): CcR
     if (!c || typeof c.r !== "number" || !Number.isFinite(c.r)) return;
     const endsAt = isoOrNull(c.e);
     if (endsAt && Date.parse(endsAt) < now - ENDED_GRACE_MS) return;
+    // Zero open slots = fully claimed: nobody can accept it, so it is not an
+    // offer. null (unknown fill) stays in, only a known 0 is dropped.
+    if (c.s === 0) return;
     if (best && c.r <= best.ratePct) return;
     best = { ratePct: c.r, brand, endsAt, campaignId: ids[i] || null };
   });
@@ -63,6 +68,7 @@ export function pickBestCcRate(rec: LookupRecord, now: number = Date.now()): CcR
 
   // Rows published before per-campaign tuples existed carry only the summary.
   if (tuples.length === 0 && typeof rec.bestRate === "number" && Number.isFinite(rec.bestRate)) {
+    if (rec.maxSlots === 0) return null;
     const endsAt = isoOrNull(rec.soonestExpiry);
     if (endsAt && Date.parse(endsAt) < now - ENDED_GRACE_MS) return null;
     return { ratePct: rec.bestRate, brand, endsAt, campaignId: ids[0] || null };

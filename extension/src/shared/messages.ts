@@ -25,6 +25,8 @@ import type {
   TemplatesLookupResult,
   YouTubeStatusRecord,
   YouTubeStatusResult,
+  YouTubeProgressSnapshot,
+  YouTubeProgressResult,
   YouTubeVideoRef,
   ReachItem,
   AudioSuppressedItem,
@@ -173,6 +175,11 @@ export type RuntimeMessage =
   // lives only on the desktop, so there is no server fallback: returns
   // paired:false when the app was never connected.
   | { kind: "LOOKUP_YOUTUBE_STATUS"; contentIds: string[] }
+  // Real account-wide upload progress (uploaded/queued/failed today, daily
+  // cap, remaining) behind the extension's "Uploading" button, so it can show
+  // live numbers instead of guessing when a run will finish. Same no-fallback
+  // convention as LOOKUP_YOUTUBE_STATUS: paired:false when never connected.
+  | { kind: "LOOKUP_YOUTUBE_PROGRESS" }
   // Read pooled data for a product from the shared catalogue ("internal Keepa"):
   // latest snapshot, price/rank trend, real bought-past-month, and an estimated
   // monthly-sales figure. Routed through the worker so it carries the license
@@ -1311,6 +1318,8 @@ export type {
   TemplatesLookupResult,
   YouTubeStatusRecord,
   YouTubeStatusResult,
+  YouTubeProgressSnapshot,
+  YouTubeProgressResult,
   YouTubeVideoRef,
   ReachItem,
   AudioSuppressedItem,

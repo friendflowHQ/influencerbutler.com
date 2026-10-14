@@ -88,3 +88,68 @@ textarea.paste {
   font-family: inherit;
   font-size: 13px;
 }
+
+/* ---- Deals Catalog: type tabs, filters, sort ------------------------------ */
+.deal-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 10px 0 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.deal-tab {
+  appearance: none;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  padding: 8px 12px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+}
+
+.deal-tab.active {
+  color: #c2410c;
+  border-bottom-color: #c2410c;
+}
+
+.deal-tab:focus-visible {
+  outline: 2px solid #c2410c;
+  outline-offset: 2px;
+}
+
+.deal-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  align-items: flex-end;
+  margin: 0 0 10px;
+}
+
+.deal-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.deal-filter input[type="number"],
+.deal-filter select {
+  width: 150px;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 13px;
+}
+
+.deal-filter-check {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}

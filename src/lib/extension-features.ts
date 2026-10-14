@@ -131,7 +131,7 @@ export const EXTENSION_TOOLS: readonly ExtensionTool[] = [
   },
 
   // Creator Connections (extension/src/tools/campaign-radar, message-templates,
-  // campaigns + hud-actions).
+  // campaigns + hud-actions, plus the SPCC scoring and Messages drawer surfaces).
   {
     id: "campaign-radar",
     name: "Campaign Radar",
@@ -149,12 +149,28 @@ export const EXTENSION_TOOLS: readonly ExtensionTool[] = [
       "Open a campaign and get The Butler's Brief: a verdict, why to take it, what to film, and which product to lead with. Then drop a saved message template into the Creator Connections composer with placeholders filled in.",
   },
   {
-    id: "one-tap-accept",
-    name: "One-tap accept via the paired desktop app",
+    id: "spcc-scoring",
+    name: "Sponsored Products scoring",
     group: "creator-connections",
-    tagline: "See it in the browser, accept it from the panel",
+    tagline: "Score the pay-per-click tab by Amazon's own EPC",
     description:
-      "When the desktop app is paired, the product panel shows Accept buttons for available Creator Connections and Sponsored Products campaigns and hands the click to the app, which confirms enrollment.",
+      "On the Sponsored Products for Creators tab, every card is scored on Amazon's Estimated EPC and budget availability, plus whether you already own or have earned on the product, and a strong-picks filter keeps only the top band.",
+  },
+  {
+    id: "messages-drawer",
+    name: "Messages drawer cards",
+    group: "creator-connections",
+    tagline: "Work your Creator Connections inbox faster",
+    description:
+      "Each brand in the Messages drawer shows its best rate, days left, and open slots. Filter to unread, live campaigns, or brands you pitched, jump to the next unread, and accept the brand's best live campaign from the thread.",
+  },
+  {
+    id: "one-tap-accept",
+    name: "One-tap accept and Auto mode, no desktop app needed",
+    group: "creator-connections",
+    tagline: "Accept from the panel, or let Auto mode do it within your caps",
+    description:
+      "Accept Creator Connections and Sponsored Products campaigns from the product panel or a search tile, and submit your own storefront video as the content link. Optional Auto mode checks every 30 minutes while Chrome is open and accepts only what matches your rules, within daily caps. The desktop app is not required.",
   },
 
   // Deep links (extension/src/tools/my-link, quick-links, and the Link Butler
@@ -196,6 +212,14 @@ export const EXTENSION_TOOLS: readonly ExtensionTool[] = [
     description:
       "One click checks your storefront videos for missing product tags, over-tagging that dilutes clicks, and tagged products that have gone unavailable, and exports the results as a CSV.",
   },
+  {
+    id: "video-money",
+    name: "Video Money + YouTube status",
+    group: "storefront",
+    tagline: "See which of your videos actually earn",
+    description:
+      "On Creator Hub, every video row shows what it earned, its earnings per view, the live commission rate, and a demand badge, plus a chip for whether it is already on YouTube with an Upload button when it is not. Earnings and uploads use the paired desktop app.",
+  },
 ] as const;
 
 // Bonus surfaces mentioned under "Also in the box". They are real tools
@@ -203,6 +227,18 @@ export const EXTENSION_TOOLS: readonly ExtensionTool[] = [
 // not counted in the headline number, so the count stays about research and
 // Creator Connections rather than everything that ships.
 export const EXTENSION_ALSO_IN_THE_BOX: readonly { name: string; description: string }[] = [
+  {
+    name: "Walmart",
+    description: "Price, rating, estimated commission, and a Butler Score on Walmart product pages, a Send to Deals Butler button, and tracked Walmart links through Mavely or Walmart Creator.",
+  },
+  {
+    name: "Target and cross-retailer card",
+    description: "Money signals on Target product pages, plus an Also on Walmart or Target card that matches the same product by UPC.",
+  },
+  {
+    name: "Benable",
+    description: "A Butler badge on every Amazon product in a Benable list, with commission, campaign eligibility, and demand.",
+  },
   {
     name: "Deal Sites Harvester",
     description: "Collect the deals from a deal roundup page you visit into one table, each with your own affiliate link.",

@@ -12,6 +12,19 @@ import type { SyncApplyResult, SyncPreviewResult } from "../shared/messages";
 // tools/settings-sync/merge.ts; nothing here touches the network except the two
 // bridge calls, which are local-only.
 
+// When settings last synced with the desktop app (ms epoch), surfaced in the
+// popup's Desktop-app card. Kept in sync with BRIDGE_LAST_SYNC_KEY in
+// src/shared/bridge-token.ts.
+const LAST_SYNC_KEY = "ib-bridge-last-sync";
+
+async function recordLastSync(): Promise<void> {
+  try {
+    await chrome.storage.local.set({ [LAST_SYNC_KEY]: Date.now() });
+  } catch {
+    // best effort: the popup just keeps showing the previous time
+  }
+}
+
 // The non-destructive pass, run on pairing / reconnect and behind "Sync now".
 // Pulls the desktop settings, fills only the extension's EMPTY fields from them,
 // pushes the extension's values to fill the desktop's empty fields, and reports
@@ -37,6 +50,7 @@ export async function previewSync(): Promise<SyncPreviewResult> {
 
   const diffs = diffPayloads(merged, desktop.payload);
   log("settings-sync", "preview", { filled, pushed, diffs: diffs.length });
+  await recordLastSync();
   return { status: "ok", filled, pushed, diffs };
 }
 
@@ -56,6 +70,7 @@ export async function applySync(direction: "app-wins" | "ext-wins"): Promise<Syn
     // Give the desktop anything only the extension had (non-destructive).
     await pushDesktopSettings(merged, "fill");
     log("settings-sync", "apply app-wins", { changed });
+    await recordLastSync();
     return { status: "ok", changed };
   }
 
@@ -66,6 +81,7 @@ export async function applySync(direction: "app-wins" | "ext-wins"): Promise<Syn
   const { merged, filled } = fillEmpty(ext, desktop.payload);
   if (filled > 0) await writeSyncPayload(merged);
   log("settings-sync", "apply ext-wins", { changed: push.applied });
+  await recordLastSync();
   return { status: "ok", changed: push.applied };
 }
 
@@ -75,7 +91,8 @@ export async function applySync(direction: "app-wins" | "ext-wins"): Promise<Syn
 export async function pushSettingsToDesktopIfPaired(): Promise<void> {
   if (!(await isPaired())) return;
   const ext = await buildSyncPayload();
-  await pushDesktopSettings(ext, "fill");
+  const push = await pushDesktopSettings(ext, "fill");
+  if (push.status === "ok") await recordLastSync();
 }
 
 // A fingerprint of just the syncable fields, so a change to some unrelated slice

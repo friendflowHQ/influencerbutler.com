@@ -644,6 +644,136 @@ export const DEFAULT_ONBOARDING_STATE: OnboardingState = {
   skipped: false,
 };
 
+// YouTube Butler settings, mirrored from the desktop app's youtube-butler
+// workspace so the extension can read + edit them even when the desktop app
+// is not running (see background/youtube-butler-settings.ts for the
+// reconciler). Field names match the desktop's DEFAULT_SETTINGS 1:1 so no
+// translation table is needed on either side. Excludes anything that needs a
+// local file picker, canvas/thumbnail compositing, AI image generation, QR
+// video composition, or the Creator Hub discovery filters - those stay
+// desktop-only.
+export type YoutubeButlerPlainSettings = {
+  uploadVisibility: "public" | "unlisted" | "private";
+  publishMode: "publish" | "draft";
+  monetization: "leave" | "on";
+  madeForKids: "yes" | "no";
+  alteredContent: "auto" | "yes" | "no";
+  category: string;
+  videoLanguage: string;
+  license: "standard" | "creativeCommon";
+  allowEmbedding: boolean;
+  notifySubscribers: boolean;
+  ageRestriction: boolean;
+  publishDraftsVisibility: string;
+  titleTemplate: string;
+  descriptionTemplate: string;
+  tagsTemplate: string;
+  playlistTemplate: string;
+  uploadCap: { maxPerDay: number; rampEnabled: boolean };
+  delayBetweenUploads: number;
+  maxPerSession: number;
+  shortsHashtag: boolean;
+  postingMode: "both" | "shorts-only" | "regular-only";
+  antiShortsStrategy: "off" | "convert-landscape" | "extend-duration";
+  aiVoiceover: {
+    enabled: boolean;
+    mode: "dub" | "captions";
+    targetLocale: string;
+    sourceLocale: string;
+    voice: string;
+  };
+  translateMetadata: boolean;
+  aiSeo: { enabled: boolean; language: string; spendCapUsd: number };
+};
+
+// Flattened mirror of the desktop scheduler's own snapshot shape
+// ({enabled, schedule:{every,unit,startISO}, armed, nextRunAt, lastRunAt,
+// lastError} - see youtube-scheduler-service.js's status()). The flattening
+// happens at the sync boundary (background/youtube-butler-settings.ts) so the
+// options-page form can bind directly to flat fields; `setSchedule` on the
+// desktop accepts either shape, so a push sends these fields flat.
+export type YoutubeButlerSchedule = {
+  enabled: boolean;
+  armed: boolean;
+  every: number;
+  unit: string;
+  startISO: string | null;
+  lastRunAt: number | null;
+  nextRunAt: number | null;
+  lastError: string;
+};
+
+// Read-only mirror of the desktop's connected YouTube channel(s). Null until
+// the first successful pull. Re-auth/channel switching needs a local OAuth
+// popup and stays desktop-only - there is no write path for this.
+export type YoutubeButlerChannel = {
+  authenticated: boolean;
+  channelId: string;
+  channelName: string;
+  secondaryChannelId: string;
+  secondaryChannelName: string;
+};
+
+export type YoutubeButlerState = {
+  settings: YoutubeButlerPlainSettings;
+  schedule: YoutubeButlerSchedule;
+  channel: YoutubeButlerChannel | null;
+  // Dotted-path keys (e.g. "uploadCap.maxPerDay", "schedule.every") edited
+  // locally since the last successful push to the desktop app. A field listed
+  // here is left alone on pull (the local edit wins until it is pushed) and
+  // is exactly what gets sent on push. See
+  // background/youtube-butler-settings.ts.
+  pendingFields: string[];
+  lastPushedAt: number | null;
+  lastPullAt: number | null;
+  lastPushError: string | null;
+};
+
+export const DEFAULT_YOUTUBE_BUTLER_STATE: YoutubeButlerState = {
+  settings: {
+    uploadVisibility: "unlisted",
+    publishMode: "publish",
+    monetization: "leave",
+    madeForKids: "no",
+    alteredContent: "auto",
+    category: "",
+    videoLanguage: "",
+    license: "standard",
+    allowEmbedding: true,
+    notifySubscribers: true,
+    ageRestriction: false,
+    publishDraftsVisibility: "public",
+    titleTemplate: "",
+    descriptionTemplate: "",
+    tagsTemplate: "",
+    playlistTemplate: "",
+    uploadCap: { maxPerDay: 25, rampEnabled: true },
+    delayBetweenUploads: 30,
+    maxPerSession: 10,
+    shortsHashtag: true,
+    postingMode: "both",
+    antiShortsStrategy: "off",
+    aiVoiceover: { enabled: false, mode: "dub", targetLocale: "es-ES", sourceLocale: "en-US", voice: "alloy" },
+    translateMetadata: false,
+    aiSeo: { enabled: false, language: "", spendCapUsd: 10 },
+  },
+  schedule: {
+    enabled: false,
+    armed: false,
+    every: 1,
+    unit: "days",
+    startISO: null,
+    lastRunAt: null,
+    nextRunAt: null,
+    lastError: "",
+  },
+  channel: null,
+  pendingFields: [],
+  lastPushedAt: null,
+  lastPullAt: null,
+  lastPushError: null,
+};
+
 export type StorageShape = {
   schemaVersion: number;
   settings: Settings;
@@ -682,6 +812,10 @@ export type StorageShape = {
   hints: HintsState;
   // First-run walkthrough progress (see OnboardingState).
   onboarding: OnboardingState;
+  // YouTube Butler settings mirrored from the desktop app, editable from the
+  // extension even when the desktop app is not running (see
+  // YoutubeButlerState above and background/youtube-butler-settings.ts).
+  youtubeButler: YoutubeButlerState;
 };
 
 // The rules behind "accept campaigns that match rules you set". Every number is
@@ -869,7 +1003,7 @@ const DEFAULT_AUTO_ACCEPT: AutoAcceptSettings = {
 };
 
 export const DEFAULTS: StorageShape = {
-  schemaVersion: 37,
+  schemaVersion: 38,
   settings: {
     commissionRatePct: 2.5,
     categoryKey: "default",
@@ -1030,6 +1164,7 @@ export const DEFAULTS: StorageShape = {
   },
   hints: { ...DEFAULT_HINTS_STATE },
   onboarding: { ...DEFAULT_ONBOARDING_STATE },
+  youtubeButler: structuredClone(DEFAULT_YOUTUBE_BUTLER_STATE),
 };
 
 export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
@@ -1136,7 +1271,13 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
   // v36 -> v37 added settings.autoAccept.{scope,submitLinks,spccMinEpcCents,
   // spccMinBudget} (normalizeAutoAccept backfills them; scope defaults to
   // "matched") and the contentLinkSubmit tool flag (the tools shallow-merge
-  // backfills it).
+  // backfills it). v37 -> v38 added the top-level `youtubeButler` slice
+  // (YouTube Butler settings/schedule/channel mirrored from the desktop app,
+  // editable from the extension even when the app is not running); an
+  // existing user starts with the desktop's own defaults and no pending
+  // edits, deep-merged below because settings/aiVoiceover/aiSeo/schedule are
+  // nested objects (a bare shallow spread would drop a sibling key added in a
+  // later version, same reasoning as the voiceover block above).
   const migratedProviders = { ...(raw.integrations?.providers ?? {}) };
   delete migratedProviders.impact;
   if (migratedProviders.walmartCreator) {
@@ -1234,7 +1375,35 @@ export function migrate(raw: Partial<StorageShape> | undefined): StorageShape {
       raw.priceHistory && typeof raw.priceHistory === "object" ? raw.priceHistory : {},
     variantParents:
       raw.variantParents && typeof raw.variantParents === "object" ? raw.variantParents : {},
-    schemaVersion: 37,
+    youtubeButler: {
+      ...structuredClone(DEFAULTS.youtubeButler),
+      ...(raw.youtubeButler ?? {}),
+      settings: {
+        ...structuredClone(DEFAULTS.youtubeButler.settings),
+        ...(raw.youtubeButler?.settings ?? {}),
+        uploadCap: {
+          ...DEFAULTS.youtubeButler.settings.uploadCap,
+          ...(raw.youtubeButler?.settings?.uploadCap ?? {}),
+        },
+        aiVoiceover: {
+          ...DEFAULTS.youtubeButler.settings.aiVoiceover,
+          ...(raw.youtubeButler?.settings?.aiVoiceover ?? {}),
+        },
+        aiSeo: {
+          ...DEFAULTS.youtubeButler.settings.aiSeo,
+          ...(raw.youtubeButler?.settings?.aiSeo ?? {}),
+        },
+      },
+      schedule: {
+        ...DEFAULTS.youtubeButler.schedule,
+        ...(raw.youtubeButler?.schedule ?? {}),
+      },
+      channel: raw.youtubeButler?.channel ?? null,
+      pendingFields: Array.isArray(raw.youtubeButler?.pendingFields)
+        ? raw.youtubeButler.pendingFields
+        : [],
+    },
+    schemaVersion: 38,
   };
 }
 

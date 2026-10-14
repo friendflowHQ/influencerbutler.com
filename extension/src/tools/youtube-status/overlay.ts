@@ -9,9 +9,15 @@ import {
   readUploadState,
   contentIdFromVseId,
 } from "../../amazon/creator-hub";
-import { resolveYouTubeStatus, type YouTubeStatusLookup } from "./status";
+import {
+  resolveYouTubeStatus,
+  resolveYouTubeProgress,
+  type YouTubeStatusLookup,
+  type YouTubeProgressLookup,
+} from "./status";
 import {
   youtubeChipState,
+  youtubeProgressLabelKind,
   amazonShowingState,
   parseReachBanner,
   type ReachContentKind,
@@ -436,21 +442,70 @@ async function triggerUpload(tg: Target, body: HTMLElement, btn: HTMLButtonEleme
   }
   // Queued + uploading on the desktop. Poll for the flip to "On YouTube" while the
   // page stays open; the desktop finishes regardless, so a later visit shows green.
-  void pollUntilUploaded(tg, body);
+  void pollUploadProgress(tg, body, btn);
 }
 
-async function pollUntilUploaded(tg: Target, body: HTMLElement): Promise<void> {
+// Fast polling for the first few minutes, then backs off for a long batch run
+// (the desktop YouTube Butler has no single-video upload: a run processes the
+// whole queued set up to the daily cap, which can take 15-25+ minutes). Every
+// tick checks both this video's own status and the account-wide progress, so
+// the button shows real numbers while waiting instead of a static "Uploading..."
+// that silently gives up. Three terminal states: success (chip flips "on"),
+// failure (record status "failed", falls back to the normal retry chip), or
+// the outer bound is hit with neither - an honest "still processing" label,
+// never a silently-stuck button.
+const POLL_FAST_MS = 20000;
+const POLL_FAST_WINDOW_MS = 5 * 60 * 1000;
+const POLL_SLOW_MS = 45000;
+const POLL_TOTAL_WINDOW_MS = 45 * 60 * 1000;
+
+async function pollUploadProgress(tg: Target, body: HTMLElement, btn: HTMLButtonElement): Promise<void> {
   const signal = controller?.signal;
-  for (let i = 0; i < 12; i += 1) {
-    await sleep(20000);
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < POLL_TOTAL_WINDOW_MS) {
+    const elapsed = Date.now() - startedAt;
+    await sleep(elapsed < POLL_FAST_WINDOW_MS ? POLL_FAST_MS : POLL_SLOW_MS);
     if (signal?.aborted || !body.isConnected) return;
-    const lookup = await resolveYouTubeStatus([tg.contentId]);
+
+    const [lookup, progress] = await Promise.all([
+      resolveYouTubeStatus([tg.contentId]),
+      resolveYouTubeProgress(),
+    ]);
     if (signal?.aborted || !body.isConnected) return;
+
     const chip = youtubeChipState(tg.contentId, lookup);
     if (chip.state === "on") {
       renderChips(body, tg, "resolved", lookup);
       return;
     }
+    if (chip.record?.status === "failed") {
+      renderChips(body, tg, "resolved", lookup);
+      return;
+    }
+    renderUploadingLabel(btn, progress);
+  }
+  // Bound hit without a per-video flip: an honest "we don't know yet" state,
+  // re-enabled so the creator can try again rather than being stuck forever.
+  btn.disabled = false;
+  btn.textContent = t().ytStillProcessing;
+  btn.title = t().ytStillProcessing;
+}
+
+function renderUploadingLabel(btn: HTMLButtonElement, progress: YouTubeProgressLookup): void {
+  const label = youtubeProgressLabelKind(progress);
+  switch (label.kind) {
+    case "not-paired":
+      btn.textContent = t().ytQueuedWaitingApp;
+      break;
+    case "cap-reached":
+      btn.textContent = t().ytCapReached;
+      break;
+    case "running":
+      btn.textContent = t().ytUploadingProgress(label.usedToday, label.cap, label.queued);
+      break;
+    case "idle":
+      btn.textContent = t().ytUploadQueuedIdle;
+      break;
   }
 }
 

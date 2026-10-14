@@ -30,6 +30,11 @@ export function isRecallConfigured(): boolean {
   return !!apiKey();
 }
 
+/** Link to a bot's detail page in the Recall.ai dashboard explorer, for admins to inspect a recording directly. */
+export function recallDashboardBotUrl(botId: string): string {
+  return `${base()}/dashboard/explorer/bot/${encodeURIComponent(botId)}`;
+}
+
 /**
  * True for a joinable Google Meet room URL (a recording bot can be sent into it),
  * whether we created the room on the owner's calendar or an admin hand-pasted the

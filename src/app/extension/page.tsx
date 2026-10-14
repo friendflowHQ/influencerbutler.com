@@ -4,14 +4,14 @@ import ExtensionLandingContent from "./ExtensionLandingContent";
 const SITE = "https://www.influencerbutler.com";
 
 export const metadata: Metadata = {
-  title: "Free Amazon Influencer Chrome Extension",
+  title: "Free Amazon and Walmart Influencer Chrome Extension",
   description:
-    "Free Chrome extension for Amazon influencers: Butler Score, BSR and revenue estimates, price history, influencer vs brand video counts, Creator Connections Campaign Radar, and deep links. Never throttled. 100% free.",
+    "Free Chrome extension for Amazon and Walmart influencers: Butler Score, BSR and revenue estimates, price history, influencer vs brand video counts, Creator Connections Campaign Radar and campaign accept, Walmart, Target and Benable support, and deep links. Never throttled. 100% free.",
   alternates: { canonical: `${SITE}/extension` },
   openGraph: {
-    title: "Free Amazon Influencer Chrome Extension",
+    title: "Free Amazon and Walmart Influencer Chrome Extension",
     description:
-      "Product research, Creator Connections radar, and deep links on the Amazon pages you already browse. Free forever.",
+      "Product research, Creator Connections radar and accept, Walmart, Target and Benable support, and deep links on the pages you already browse. Free forever.",
     url: `${SITE}/extension`,
     type: "website",
   },

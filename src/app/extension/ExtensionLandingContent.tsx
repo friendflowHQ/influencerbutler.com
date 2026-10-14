@@ -48,7 +48,9 @@ const COMPARISON: Array<{ feature: string; ib: string; others: string }> = [
   { feature: "Deep links that open the Amazon app", ib: "Yes, free", others: "Usually a paid tier" },
   { feature: "Localized links for 12 marketplaces", ib: "Yes", others: "Rarely" },
   { feature: "Storefront untagged and dead-product checks", ib: "Yes", others: "Usually a paid tier" },
-  { feature: "Syncs with a full automation suite (42+ butlers)", ib: "Yes", others: "No" },
+  { feature: "Accepts Creator Connections campaigns without a desktop app", ib: "Yes", others: "Rarely" },
+  { feature: "Walmart, Target, and Benable support", ib: "Yes", others: "Usually separate tools" },
+  { feature: "Syncs with a full automation suite (50+ butlers)", ib: "Yes", others: "No" },
 ];
 
 // Free Chrome extension vs the desktop app. `true`/`false` render a check / x;
@@ -65,7 +67,8 @@ const APP_VS_EXTENSION: Array<{ feature: string; ext: boolean | string; app: boo
     ext: true,
     app: false,
   },
-  { feature: "One-tap campaign accept", ext: "Via the paired desktop app", app: true },
+  { feature: "Campaign accept, one-offs and Auto mode (runs while Chrome is open)", ext: true, app: true },
+  { feature: "Sponsored Products for Creators scoring (EPC and budget)", ext: true, app: false },
   { feature: "Creator Connections auto-outreach", ext: false, app: true },
   {
     feature: "Deep linking (free tagged link that opens the Amazon app; branded short links with a free sign-in)",
@@ -74,6 +77,11 @@ const APP_VS_EXTENSION: Array<{ feature: string; ext: boolean | string; app: boo
   },
   { feature: "Localized links for 12 marketplaces (Global Maximizer)", ext: true, app: false },
   { feature: "Deal Sites Harvester (turn deal lists into deals)", ext: true, app: true },
+  {
+    feature: "Walmart, Target, and Benable overlays (Walmart products can be sent to your Deals Butler)",
+    ext: true,
+    app: "Receives and posts the deals",
+  },
   { feature: "Auto-post deals to Facebook, Instagram, and more", ext: false, app: true },
   { feature: "Scheduling and autopilot posting", ext: false, app: true },
   { feature: "Like Butler (auto-like storefronts)", ext: false, app: true },
@@ -115,7 +123,7 @@ const FAQ = [
   },
   {
     q: "Do I need the desktop app?",
-    a: "No. The extension stands on its own. The desktop app adds the automation side: posting, deal harvesting, Creator Connections outreach, one-tap campaign accept, and more, and the two are better together.",
+    a: "No. The extension stands on its own, including accepting Creator Connections campaigns, scoring them, and optional Auto mode. The desktop app adds the automation side: posting, deal harvesting, Creator Connections outreach, real earnings on the money tools, and more, and the two are better together.",
   },
   {
     q: "How does it count influencer videos?",
@@ -131,14 +139,18 @@ const FAQ = [
   },
   {
     q: "Which marketplaces are supported?",
-    a: "The on-page panel runs on Amazon.com, .ca, and .co.uk, and Global Maximizer builds localized links for 12 marketplaces (US, CA, UK, AU, DE, FR, IT, ES, JP, IN, MX, BR). Additional storefronts are on the roadmap.",
+    a: "The full on-page panel and the Creator Connections tools are built and checked on Amazon.com, .ca, and .co.uk. Global Maximizer builds localized links for 12 marketplaces (US, CA, UK, AU, DE, FR, IT, ES, JP, IN, MX, BR), and the extension also loads on those other Amazon storefronts while we verify the full panel on each. Walmart, Target, and Benable are covered too.",
+  },
+  {
+    q: "Does it work on Walmart, Target, or Benable?",
+    a: "Yes. On Walmart product pages it shows the price, rating, estimated commission, and Butler Score, and copies tracked Walmart links when Mavely or Walmart Creator is connected. Target pages get money signals and an Also on Walmart or Target card. Benable lists get a Butler badge on every Amazon product.",
   },
 ];
 
 function GroupHeading({ group, index }: { group: ExtensionGroup; index: number }) {
   return (
     <div className="flex items-baseline gap-3">
-      <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">
+      <span className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-700">
         {String(index + 1).padStart(2, "0")}
       </span>
       <div>
@@ -160,7 +172,7 @@ function GroupBlock({ group, index }: { group: ExtensionGroup; index: number }) 
         <ul className="mt-4 grid gap-3 text-sm text-slate-600 md:grid-cols-2">
           {NEVER_THROTTLED_POINTS.map((point) => (
             <li key={point} className="flex items-start gap-2">
-              <span className="mt-0.5 font-semibold text-[#f97316]">•</span>
+              <span className="mt-0.5 font-semibold text-orange-700">•</span>
               <span>{point}</span>
             </li>
           ))}
@@ -180,7 +192,7 @@ function GroupBlock({ group, index }: { group: ExtensionGroup; index: number }) 
         <ul className="mt-4 grid gap-3 text-sm text-slate-600 md:grid-cols-3">
           {FAST_POINTS.map((point) => (
             <li key={point} className="flex items-start gap-2">
-              <span className="mt-0.5 font-semibold text-[#f97316]">•</span>
+              <span className="mt-0.5 font-semibold text-orange-700">•</span>
               <span>{point}</span>
             </li>
           ))}
@@ -195,7 +207,7 @@ function GroupBlock({ group, index }: { group: ExtensionGroup; index: number }) 
       <div className={`mt-6 grid gap-6 ${tools.length > 1 ? "md:grid-cols-2" : ""}`}>
         {tools.map((tool) => (
           <div key={tool.id} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wider text-[#f97316]">{tool.tagline}</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-orange-700">{tool.tagline}</p>
             <h4 className="mt-2 text-xl font-semibold text-slate-900">{tool.name}</h4>
             <p className="mt-2 text-sm leading-relaxed text-slate-600">{tool.description}</p>
           </div>
@@ -203,7 +215,7 @@ function GroupBlock({ group, index }: { group: ExtensionGroup; index: number }) 
       </div>
       {group.id === "storefront" ? (
         <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Also in the box</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Also in the box: Walmart, Target, Benable, and more</p>
           <ul className="mt-3 grid gap-3 text-sm text-slate-600 md:grid-cols-2">
             {EXTENSION_ALSO_IN_THE_BOX.map((item) => (
               <li key={item.name}>
@@ -255,7 +267,7 @@ export default function ExtensionLandingContent() {
             </Link>
             <a
               href={CHROME_STORE_URL}
-              className="rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
+              className="rounded-lg bg-orange-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-800"
             >
               Add to Chrome - Free
             </a>
@@ -268,33 +280,33 @@ export default function ExtensionLandingContent() {
         <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-[#f97316]/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-amber-200/40 blur-3xl" />
         <div className="relative mx-auto max-w-6xl px-6 py-20 lg:py-28">
-          <span className="inline-flex items-center gap-2 rounded-full border border-[#f97316]/30 bg-white/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">
+          <span className="inline-flex items-center gap-2 rounded-full border border-[#f97316]/30 bg-white/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-orange-700">
             Free Chrome Extension
           </span>
           <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
             Product research and Creator Connections intel,{" "}
-            <span className="bg-gradient-to-r from-[#f97316] to-amber-500 bg-clip-text text-transparent">
-              on the Amazon pages you already browse.
+            <span className="bg-gradient-to-r from-orange-700 to-amber-700 bg-clip-text text-transparent">
+              on the Amazon and Walmart pages you already browse.
             </span>
             <br className="hidden sm:block" /> Free. Never throttled.
           </h1>
           <p className="mt-6 max-w-2xl text-lg text-slate-600">
             Butler Score, BSR and revenue estimates, price history, influencer vs brand video counts,
-            Campaign Radar with fill meters and Last Call alerts, deep links that open the Amazon
-            app, and localized links for 12 marketplaces: {EXTENSION_TOOL_COUNT} tools, all while
-            you shop like normal.
+            Campaign Radar with fill meters and Last Call alerts, campaign accept with no desktop app,
+            deep links that open the Amazon app, localized links for 12 marketplaces, and Walmart,
+            Target, and Benable support: {EXTENSION_TOOL_COUNT} tools, all while you shop like normal.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <a
               href={CHROME_STORE_URL}
               id="install"
-              className="rounded-xl bg-[#f97316] px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
+              className="rounded-xl bg-orange-700 px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-orange-800"
             >
               Add to Chrome - it&apos;s free →
             </a>
             <Link
               href="/dashboard/extension"
-              className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-base font-semibold text-slate-800 transition hover:border-[#f97316] hover:text-[#f97316]"
+              className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-base font-semibold text-slate-800 transition hover:border-orange-700 hover:text-orange-700"
             >
               See your synced data
             </Link>
@@ -308,7 +320,7 @@ export default function ExtensionLandingContent() {
               { k: "$0", v: "Every tool, no card" },
               { k: String(EXTENSION_TOOL_COUNT), v: "Tools in your browser" },
               { k: "12", v: "Marketplaces linked" },
-              { k: "42+", v: "Butlers it syncs with" },
+              { k: "50+", v: "Butlers it syncs with" },
             ].map((stat) => (
               <div key={stat.v} className="rounded-xl border border-slate-200 bg-white/80 p-4 shadow-sm">
                 <dt className="text-xs font-semibold uppercase tracking-wider text-slate-500">{stat.v}</dt>
@@ -322,7 +334,7 @@ export default function ExtensionLandingContent() {
       {/* Panel screenshots: the on-page money panel, top to bottom */}
       <section className="border-y border-slate-200 bg-slate-50 py-20">
         <div className="mx-auto max-w-6xl px-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-700">
             See it on the page
           </p>
           <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
@@ -388,13 +400,14 @@ export default function ExtensionLandingContent() {
 
       {/* Tools, grouped */}
       <section className="mx-auto max-w-6xl px-6 py-20" id="tools">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">The toolkit</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-700">The toolkit</p>
         <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
           {EXTENSION_TOOL_COUNT} tools that live where you shop.
         </h2>
         <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-600">
-          Seven groups, in the order a creator meets them: research the product, read the campaign,
-          trust the pacing, get the link, go global, keep the storefront clean.
+          Seven groups, in the order a creator meets them: research the product, read and accept the
+          campaign, trust the pacing, get the link, go global, keep the storefront clean and see what
+          your videos earn.
         </p>
         <div className="mt-12 space-y-14">
           {EXTENSION_GROUPS.map((group, index) => (
@@ -406,7 +419,7 @@ export default function ExtensionLandingContent() {
       {/* Comparison */}
       <section className="bg-slate-50 py-20">
         <div className="mx-auto max-w-6xl px-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">Why pay?</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-700">Why pay?</p>
           <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
             Everything they sell. Nothing to buy.
           </h2>
@@ -415,7 +428,7 @@ export default function ExtensionLandingContent() {
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
                   <th className="px-4 py-3 font-semibold">Feature</th>
-                  <th className="px-4 py-3 font-semibold text-[#f97316]">Influencer Butler</th>
+                  <th className="px-4 py-3 font-semibold text-orange-700">Influencer Butler</th>
                   <th className="px-4 py-3 font-semibold">Typical paid extensions</th>
                 </tr>
               </thead>
@@ -423,7 +436,7 @@ export default function ExtensionLandingContent() {
                 {COMPARISON.map((row) => (
                   <tr key={row.feature} className="border-b border-slate-100">
                     <td className="px-4 py-3 font-medium text-slate-900">{row.feature}</td>
-                    <td className="px-4 py-3 font-semibold text-[#f97316]">{row.ib}</td>
+                    <td className="px-4 py-3 font-semibold text-orange-700">{row.ib}</td>
                     <td className="px-4 py-3 text-slate-600">{row.others}</td>
                   </tr>
                 ))}
@@ -441,7 +454,7 @@ export default function ExtensionLandingContent() {
       <section className="mx-auto max-w-6xl px-6 py-20">
         <div className="grid items-center gap-10 lg:grid-cols-2">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-700">
               Better together
             </p>
             <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
@@ -461,7 +474,7 @@ export default function ExtensionLandingContent() {
                 "Open your dashboard and see everything your butler saw.",
               ].map((step, index) => (
                 <li key={step} className="flex items-start gap-3 rounded-xl bg-slate-50 p-4">
-                  <span className="mt-0.5 font-semibold text-[#f97316]">{index + 1}.</span>
+                  <span className="mt-0.5 font-semibold text-orange-700">{index + 1}.</span>
                   <span>{step}</span>
                 </li>
               ))}
@@ -481,7 +494,7 @@ export default function ExtensionLandingContent() {
             </p>
             <Link
               href="/#pricing"
-              className="mt-4 inline-flex items-center justify-center rounded-lg bg-[#f97316] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
+              className="mt-4 inline-flex items-center justify-center rounded-lg bg-orange-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-800"
             >
               Explore the desktop app
             </Link>
@@ -491,7 +504,7 @@ export default function ExtensionLandingContent() {
 
       {/* Extension vs Desktop App */}
       <section className="mx-auto max-w-6xl px-6 py-20">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-700">
           Which one do I need?
         </p>
         <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
@@ -508,7 +521,7 @@ export default function ExtensionLandingContent() {
               <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wider text-slate-500">
                 <th className="px-4 py-3 font-semibold">Feature</th>
                 <th className="px-4 py-3 text-center font-semibold">Free Extension</th>
-                <th className="px-4 py-3 text-center font-semibold text-[#f97316]">Desktop App (Pro)</th>
+                <th className="px-4 py-3 text-center font-semibold text-orange-700">Desktop App (Pro)</th>
               </tr>
             </thead>
             <tbody>
@@ -536,7 +549,7 @@ export default function ExtensionLandingContent() {
       {/* FAQ */}
       <section className="bg-slate-50 py-20">
         <div className="mx-auto max-w-4xl px-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">FAQ</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-700">FAQ</p>
           <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Fair questions.</h2>
           <div className="mt-8 space-y-3">
             {FAQ.map((item) => (
@@ -566,13 +579,13 @@ export default function ExtensionLandingContent() {
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <a
             href={CHROME_STORE_URL}
-            className="rounded-xl bg-[#f97316] px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
+            className="rounded-xl bg-orange-700 px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-orange-800"
           >
             Add to Chrome - Free →
           </a>
           <Link
             href="/help/tutorials/extension"
-            className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-base font-semibold text-slate-800 transition hover:border-[#f97316] hover:text-[#f97316]"
+            className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-base font-semibold text-slate-800 transition hover:border-orange-700 hover:text-orange-700"
           >
             Read the tutorial
           </Link>
@@ -580,7 +593,7 @@ export default function ExtensionLandingContent() {
             href="/guides/influencer-butler-extension-guide-en.pdf"
             target="_blank"
             rel="noopener"
-            className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-base font-semibold text-slate-800 transition hover:border-[#f97316] hover:text-[#f97316]"
+            className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-base font-semibold text-slate-800 transition hover:border-orange-700 hover:text-orange-700"
           >
             Download the guide (PDF)
           </a>
@@ -606,26 +619,26 @@ export default function ExtensionLandingContent() {
           </div>
           <div className="flex flex-col gap-2.5">
             <h4 className="mb-1 text-[0.85rem] font-bold uppercase tracking-wider text-slate-900">Product</h4>
-            <a href="/#features" className="text-sm text-slate-500 transition hover:text-[#f97316]">Features</a>
-            <a href="/#pricing" className="text-sm text-slate-500 transition hover:text-[#f97316]">Pricing</a>
-            <Link href="/extension" className="text-sm text-slate-500 transition hover:text-[#f97316]">Chrome Extension - Free</Link>
-            <Link href="/affiliates" className="text-sm text-slate-500 transition hover:text-[#f97316]">Affiliates - Earn 30%</Link>
+            <a href="/#features" className="text-sm text-slate-500 transition hover:text-orange-700">Features</a>
+            <a href="/#pricing" className="text-sm text-slate-500 transition hover:text-orange-700">Pricing</a>
+            <Link href="/extension" className="text-sm text-slate-500 transition hover:text-orange-700">Chrome Extension - Free</Link>
+            <Link href="/affiliates" className="text-sm text-slate-500 transition hover:text-orange-700">Affiliates - Earn 30%</Link>
           </div>
           <div className="flex flex-col gap-2.5">
             <h4 className="mb-1 text-[0.85rem] font-bold uppercase tracking-wider text-slate-900">Legal</h4>
-            <a href="/legal/privacy.html" className="text-sm text-slate-500 transition hover:text-[#f97316]">Privacy Policy</a>
-            <Link href="/extension/privacy" className="text-sm text-slate-500 transition hover:text-[#f97316]">Extension Privacy</Link>
-            <a href="/legal/eula.html" className="text-sm text-slate-500 transition hover:text-[#f97316]">EULA</a>
-            <a href="/legal/terms.html" className="text-sm text-slate-500 transition hover:text-[#f97316]">Terms of Service</a>
-            <a href="/legal/accessibility" className="text-sm text-slate-500 transition hover:text-[#f97316]">Accessibility</a>
-            <a href="/security" className="text-sm text-slate-500 transition hover:text-[#f97316]">Security</a>
+            <a href="/legal/privacy.html" className="text-sm text-slate-500 transition hover:text-orange-700">Privacy Policy</a>
+            <Link href="/extension/privacy" className="text-sm text-slate-500 transition hover:text-orange-700">Extension Privacy</Link>
+            <a href="/legal/eula.html" className="text-sm text-slate-500 transition hover:text-orange-700">EULA</a>
+            <a href="/legal/terms.html" className="text-sm text-slate-500 transition hover:text-orange-700">Terms of Service</a>
+            <a href="/legal/accessibility" className="text-sm text-slate-500 transition hover:text-orange-700">Accessibility</a>
+            <a href="/security" className="text-sm text-slate-500 transition hover:text-orange-700">Security</a>
           </div>
           <div className="flex flex-col gap-2.5">
             <h4 className="mb-1 text-[0.85rem] font-bold uppercase tracking-wider text-slate-900">Support</h4>
-            <Link href="/contact" className="text-sm text-slate-500 transition hover:text-[#f97316]">Contact Us</Link>
-            <Link href="/help/tutorials/extension" className="text-sm text-slate-500 transition hover:text-[#f97316]">Extension tutorial</Link>
-            <a href="/guides/influencer-butler-extension-guide-en.pdf" target="_blank" rel="noopener" className="text-sm text-slate-500 transition hover:text-[#f97316]">Extension guide (PDF)</a>
-            <Link href="/dashboard" className="text-sm text-slate-500 transition hover:text-[#f97316]">My Account</Link>
+            <Link href="/contact" className="text-sm text-slate-500 transition hover:text-orange-700">Contact Us</Link>
+            <Link href="/help/tutorials/extension" className="text-sm text-slate-500 transition hover:text-orange-700">Extension tutorial</Link>
+            <a href="/guides/influencer-butler-extension-guide-en.pdf" target="_blank" rel="noopener" className="text-sm text-slate-500 transition hover:text-orange-700">Extension guide (PDF)</a>
+            <Link href="/dashboard" className="text-sm text-slate-500 transition hover:text-orange-700">My Account</Link>
           </div>
         </div>
         <div className="mx-auto mt-10 max-w-6xl border-t border-slate-200 px-6 pt-6">

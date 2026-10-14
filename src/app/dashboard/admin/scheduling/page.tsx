@@ -78,6 +78,7 @@ export default function SchedulingAdminPage() {
   const [view, setView] = useState<View>("list");
   const [layout, setLayout] = useState<Layout>("table");
   const [topicFilter, setTopicFilter] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
   const [addPrefill, setAddPrefill] = useState<{ start: string; n: number } | null>(null);
   const [reschedOpen, setReschedOpen] = useState(false);
   const [showExpired, setShowExpired] = useState(false);
@@ -105,18 +106,22 @@ export default function SchedulingAdminPage() {
   const chooseView = (v: View) => { setView(v); try { localStorage.setItem("ib.sched.view", v); } catch { /* ignore */ } };
   const chooseLayout = (l: Layout) => { setLayout(l); try { localStorage.setItem("ib.sched.layout", l); } catch { /* ignore */ } };
 
+  // While a search is active the List view pulls every call (not just the
+  // selected scope) so an older or already-resolved call can still be found.
+  const searching = search.trim().length > 0;
+
   const loadList = useCallback(async () => {
     // The calendar views fetch their own exact visible window (uncapped) instead
     // of the scope-filtered, 200-row list, so navigating the grid doesn't run
     // into calls that were simply never fetched.
     const qs = view === "list"
-      ? `scope=${scope}${layout === "cards" ? "&enrich=1" : ""}`
+      ? `scope=${searching ? "all" : scope}${layout === "cards" ? "&enrich=1" : ""}`
       : (() => { const { from, to } = visibleRange(view, calendarAnchor); return `from=${from.toUTC().toJSDate().toISOString()}&to=${to.toUTC().toJSDate().toISOString()}`; })();
     const res = await fetch(`/api/admin/scheduling/list?${qs}`, { cache: "no-store" });
     if (res.status === 403) { setForbidden(true); return; }
     if (res.ok) { const j = await res.json(); setBookings(j.bookings ?? []); setEvents(j.events ?? []); setListError(null); }
     else { setBookings([]); setEvents([]); setListError(`Couldn't load calls (server error ${res.status}). This is a load failure, not an empty schedule. Check the /api/admin/scheduling/list response.`); }
-  }, [scope, view, layout, calendarAnchor]);
+  }, [scope, view, layout, calendarAnchor, searching]);
 
   const loadSettings = useCallback(async () => {
     const res = await fetch("/api/admin/scheduling/settings", { cache: "no-store" });
@@ -138,14 +143,30 @@ export default function SchedulingAdminPage() {
       : "Could not connect Google Calendar. Please try again.");
   }, []);
 
-  // The topic chip filter applies to every view.
-  const shown = useMemo(
-    () => (topicFilter ? bookings.filter((b) => topicsForBooking(b).some((t) => t.key === topicFilter)) : bookings),
-    [bookings, topicFilter],
-  );
+  // The topic chip filter and the search box apply to every view.
+  const shown = useMemo(() => {
+    const terms = search.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    return bookings.filter((b) => {
+      if (topicFilter && !topicsForBooking(b).some((t) => t.key === topicFilter)) return false;
+      if (terms.length === 0) return true;
+      const hay = [
+        b.user_email, b.user_name, b.call_type, b.status, b.topic, b.host_notes, fmtWhen(b.starts_at),
+        ...topicsForBooking(b).map((t) => t.label),
+      ].filter(Boolean).join(" ").toLowerCase();
+      return terms.every((t) => hay.includes(t));
+    });
+  }, [bookings, topicFilter, search]);
 
-  // Group events have no topic chips, so a topic filter hides them.
-  const shownEvents = useMemo(() => (topicFilter ? [] : events), [events, topicFilter]);
+  // Group events have no topic chips, so a topic filter hides them; search matches their title and status.
+  const shownEvents = useMemo(() => {
+    if (topicFilter) return [];
+    const terms = search.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    if (terms.length === 0) return events;
+    return events.filter((e) => {
+      const hay = `event ${e.title} ${e.status} ${fmtWhen(e.starts_at)}`.toLowerCase();
+      return terms.every((t) => hay.includes(t));
+    });
+  }, [events, topicFilter, search]);
   const eventsByDay = useMemo(() => {
     const m = new Map<string, CalEvent[]>();
     for (const e of shownEvents) { const k = eventDayKey(e); (m.get(k) ?? m.set(k, []).get(k)!).push(e); }
@@ -301,6 +322,26 @@ export default function SchedulingAdminPage() {
             </div>
             <button type="button" onClick={() => { setShowAdd((v) => !v); setAddMsg(null); setAddPrefill(null); }} className="rounded-lg bg-[#c2410c] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#9a3412]">{showAdd ? "Close" : "Add call"}</button>
           </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="relative block w-full max-w-md">
+              <span className="sr-only">Search calls</span>
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by email, name, topic, notes, status..."
+                className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 placeholder:text-slate-500"
+              />
+            </label>
+            {searching && (
+              <span role="status" className="text-sm text-slate-600">
+                {shown.length + shownEvents.length} {shown.length + shownEvents.length === 1 ? "match" : "matches"}
+                {view === "list" ? " across all calls" : " in this view"}
+                {" "}
+                <button type="button" onClick={() => setSearch("")} className="text-orange-700 underline">Clear</button>
+              </span>
+            )}
+          </div>
           <TopicFilterBar bookings={bookings} active={topicFilter} onChange={setTopicFilter} />
           {showAdd && <AddCall busy={busy} msg={addMsg} onAdd={createCall} prefill={addPrefill} />}
           {actMsg && !prep && (
@@ -313,7 +354,7 @@ export default function SchedulingAdminPage() {
               bookings={shown}
               events={shownEvents}
               descending={scope !== "upcoming"}
-              emptyText={topicFilter ? "No calls with that topic." : "No calls."}
+              emptyText={topicFilter || searching ? "No calls match." : "No calls."}
               a={{ onOpen: (id) => openPrep(id), onReschedule: (id) => openPrep(id, { reschedule: true }), onAct: (id, body) => act(id, body), busy }}
             />
           ) : view === "list" ? (
@@ -323,7 +364,7 @@ export default function SchedulingAdminPage() {
                   <tr><th className="px-3 py-2">When</th><th className="px-3 py-2">Type</th><th className="px-3 py-2">Customer</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Topic</th></tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
-                  {tableRows.length === 0 ? <tr><td colSpan={5} className="px-3 py-8 text-center text-slate-500">{topicFilter ? "No calls with that topic." : "No calls."}</td></tr> :
+                  {tableRows.length === 0 ? <tr><td colSpan={5} className="px-3 py-8 text-center text-slate-500">{topicFilter || searching ? "No calls match." : "No calls."}</td></tr> :
                     tableRows.map(({ b, e }) => e ? (
                       <tr key={`e-${e.id}`} className="bg-indigo-50/40">
                         <td className="px-3 py-2 text-slate-700"><a href={EVENTS_HREF} className="hover:underline">{fmtWhen(e.starts_at)}</a></td>

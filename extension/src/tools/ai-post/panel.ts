@@ -4,7 +4,7 @@ import { getLocale } from "../../i18n";
 import { sendToBackground, type GenAiPostResult, type GenerateLinkResult } from "../../shared/messages";
 import type { ProductSignals } from "../../amazon/product-signals";
 import { cleanLink } from "../../integrations/clean-link";
-import { buildAiPostFacts } from "./facts";
+import { buildAiPostFacts, type AiPostFacts } from "./facts";
 import { copyImageToClipboard } from "./image";
 import {
   FORMULA_TOKENS,
@@ -170,7 +170,7 @@ export function renderAiPost(signals: ProductSignals): HTMLElement | null {
   const btn = el("button", "btn secondary") as HTMLButtonElement;
   btn.type = "button";
   btn.textContent = s.open;
-  btn.addEventListener("click", () => openAiPostModal(signals));
+  btn.addEventListener("click", () => openAiPostModal(productFromSignals(signals)));
   row.append(btn);
   section.append(row);
   return section;
@@ -191,10 +191,40 @@ function labelled<T extends HTMLElement>(text: string, control: T, id: string): 
   return wrap;
 }
 
-export function openAiPostModal(signals: ProductSignals): void {
+// What the popup needs to know about a product. Built from a live product page
+// (productFromSignals) or from a Deals Catalog row, so the same popup serves both.
+export type AiPostProduct = {
+  asin: string;
+  marketplace: string;
+  // Which retailer the link is minted for; Amazon when omitted.
+  retailer?: "amazon" | "walmart";
+  title: string | null;
+  imageUrl: string | null;
+  facts: AiPostFacts;
+  // The promo as the page shows it, for the details tab.
+  promoText: string | null;
+  hasPromo: boolean;
+  // The product page the post is about; its cleaned form is the fallback link.
+  pageUrl: string;
+};
+
+export function productFromSignals(signals: ProductSignals): AiPostProduct {
+  return {
+    asin: signals.asin as string,
+    marketplace: signals.marketplace,
+    title: signals.title,
+    imageUrl: signals.imageUrl,
+    facts: buildAiPostFacts(signals),
+    promoText: signals.promo?.text ?? null,
+    hasPromo: !!signals.promo,
+    pageUrl: location.href,
+  };
+}
+
+export function openAiPostModal(product: AiPostProduct): void {
   const s = strings();
-  const facts = buildAiPostFacts(signals);
-  const fallbackLink = cleanLink(location.href).cleanUrl;
+  const facts = product.facts;
+  const fallbackLink = cleanLink(product.pageUrl).cleanUrl;
 
   let formulas: PostFormula[] = [];
   let current: PostFormula | null = null;
@@ -253,10 +283,10 @@ export function openAiPostModal(signals: ProductSignals): void {
   // ---- Shared product image --------------------------------------------
   const makeImage = (): HTMLElement => {
     const box = el("div", "aip-image");
-    if (signals.imageUrl) {
+    if (product.imageUrl) {
       const img = el("img") as HTMLImageElement;
-      img.src = signals.imageUrl;
-      img.alt = signals.title ?? "";
+      img.src = product.imageUrl;
+      img.alt = product.title ?? "";
       box.append(img);
     }
     return box;
@@ -265,14 +295,14 @@ export function openAiPostModal(signals: ProductSignals): void {
   // ---- Product Details tab ---------------------------------------------
   const detailsRow = el("div", "aip-grid");
   const detailsText = el("div", "aip-col");
-  detailsText.append(el("p", "aip-product-title", signals.title ?? ""));
+  detailsText.append(el("p", "aip-product-title", product.title ?? ""));
   if (facts.brand) detailsText.append(el("p", "note", facts.brand));
   const chips = el("div", "counts");
   if (facts.percentOff !== null) chips.append(el("span", "chip good", s.percentOff(facts.percentOff)));
-  if (signals.promo) chips.append(el("span", "chip good", s.promo));
+  if (product.hasPromo) chips.append(el("span", "chip good", s.promo));
   if (!chips.childElementCount) chips.append(el("span", "chip muted", s.noDiscount));
   detailsText.append(chips);
-  if (signals.promo) detailsText.append(el("p", "note", signals.promo.text));
+  if (product.promoText) detailsText.append(el("p", "note", product.promoText));
   const linkLine = el("p", "note");
   detailsText.append(linkLine);
   const renderLinkLine = (): void => {
@@ -462,13 +492,13 @@ export function openAiPostModal(signals: ProductSignals): void {
   });
 
   copyImageBtn.addEventListener("click", () => {
-    if (!signals.imageUrl) return;
-    void copyImageToClipboard(signals.imageUrl).then((ok) => {
+    if (!product.imageUrl) return;
+    void copyImageToClipboard(product.imageUrl).then((ok) => {
       if (ok) flash(copyImageBtn, s.imageCopied, s.copyImage);
       else status.textContent = s.imageFailed;
     });
   });
-  copyImageBtn.disabled = !signals.imageUrl;
+  copyImageBtn.disabled = !product.imageUrl;
 
   // ---- Open ------------------------------------------------------------
   showTab("post");
@@ -486,8 +516,9 @@ export function openAiPostModal(signals: ProductSignals): void {
   // the fallback so a copied post always carries a working link.
   linkReady = sendToBackground<GenerateLinkResult>({
     kind: "GENERATE_AFFILIATE_LINK",
-    asin: signals.asin as string,
-    marketplace: signals.marketplace,
+    asin: product.asin,
+    marketplace: product.marketplace,
+    retailer: product.retailer,
   })
     .then((res) => {
       if (res.ok && res.url) link = res.url;

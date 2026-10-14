@@ -6,6 +6,7 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { getAdmin, listEvents, registrationCounts } from "@/lib/events";
+import { recallDashboardBotUrl } from "@/lib/recall";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,6 +23,10 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     ok: true,
-    events: events.map((e) => ({ ...e, registrations: counts[e.id] ?? 0 })),
+    events: events.map((e) => ({
+      ...e,
+      registrations: counts[e.id] ?? 0,
+      recallDashboardUrl: e.recallBotId ? recallDashboardBotUrl(e.recallBotId) : null,
+    })),
   });
 }

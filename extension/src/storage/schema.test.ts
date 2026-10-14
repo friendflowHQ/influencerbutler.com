@@ -35,6 +35,81 @@ describe("migrate: v36 -> v37 auto-accept scope", () => {
   });
 });
 
+describe("migrate: v37 -> v38 youtubeButler slice", () => {
+  it("backfills the whole slice on a store that predates it", () => {
+    const v37 = { schemaVersion: 37, settings: structuredClone(DEFAULTS.settings) } as unknown as Partial<StorageShape>;
+    const out = migrate(v37);
+    expect(out.schemaVersion).toBe(DEFAULTS.schemaVersion);
+    expect(out.youtubeButler.settings.uploadVisibility).toBe("unlisted");
+    expect(out.youtubeButler.schedule.every).toBe(1);
+    expect(out.youtubeButler.channel).toBeNull();
+    expect(out.youtubeButler.pendingFields).toEqual([]);
+  });
+
+  it("deep-merges a partial uploadCap so a sibling key is not dropped", () => {
+    const raw = {
+      schemaVersion: 37,
+      settings: structuredClone(DEFAULTS.settings),
+      youtubeButler: {
+        settings: { uploadCap: { maxPerDay: 5 } },
+      },
+    } as unknown as Partial<StorageShape>;
+    const out = migrate(raw);
+    // rampEnabled was never stored -> still gets the default, not dropped by a
+    // shallow spread.
+    expect(out.youtubeButler.settings.uploadCap).toEqual({ maxPerDay: 5, rampEnabled: true });
+  });
+
+  it("deep-merges a partial aiVoiceover/aiSeo block the same way", () => {
+    const raw = {
+      schemaVersion: 37,
+      settings: structuredClone(DEFAULTS.settings),
+      youtubeButler: {
+        settings: {
+          aiVoiceover: { enabled: true },
+          aiSeo: { language: "es" },
+        },
+      },
+    } as unknown as Partial<StorageShape>;
+    const out = migrate(raw);
+    expect(out.youtubeButler.settings.aiVoiceover).toEqual({
+      enabled: true,
+      mode: "dub",
+      targetLocale: "es-ES",
+      sourceLocale: "en-US",
+      voice: "alloy",
+    });
+    expect(out.youtubeButler.settings.aiSeo).toEqual({ enabled: false, language: "es", spendCapUsd: 10 });
+  });
+
+  it("preserves a creator's own pending edits and schedule across a migration", () => {
+    const raw = {
+      schemaVersion: 37,
+      settings: structuredClone(DEFAULTS.settings),
+      youtubeButler: {
+        settings: { titleTemplate: "my template" },
+        schedule: { enabled: true, every: 3 },
+        pendingFields: ["titleTemplate"],
+        channel: { authenticated: true, channelName: "Creator Channel" },
+      },
+    } as unknown as Partial<StorageShape>;
+    const out = migrate(raw);
+    expect(out.youtubeButler.settings.titleTemplate).toBe("my template");
+    expect(out.youtubeButler.schedule).toMatchObject({ enabled: true, every: 3, unit: "days" });
+    expect(out.youtubeButler.pendingFields).toEqual(["titleTemplate"]);
+    expect(out.youtubeButler.channel).toEqual({ authenticated: true, channelName: "Creator Channel" });
+  });
+
+  it("drops a malformed pendingFields array rather than throwing", () => {
+    const raw = {
+      schemaVersion: 37,
+      settings: structuredClone(DEFAULTS.settings),
+      youtubeButler: { pendingFields: "not-an-array" },
+    } as unknown as Partial<StorageShape>;
+    expect(migrate(raw).youtubeButler.pendingFields).toEqual([]);
+  });
+});
+
 describe("migrate", () => {
   it("returns fresh defaults for empty or version-less state", () => {
     expect(migrate(undefined).schemaVersion).toBe(DEFAULTS.schemaVersion);

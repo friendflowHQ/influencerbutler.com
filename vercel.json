@@ -119,6 +119,10 @@
     {
       "path": "/api/cron/ops-health-heartbeat",
       "schedule": "0 16 * * *"
+    },
+    {
+      "path": "/api/cron/striking-distance-snapshot",
+      "schedule": "0 14 * * 1"
     }
   ]
 }

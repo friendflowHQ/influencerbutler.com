@@ -2,6 +2,7 @@ import type {
   SessionConnection,
   SyncProviderPayload,
   SyncSettingsPayload,
+  YtbSyncPayload,
 } from "../../transport/sync-settings";
 
 // Session-based integrations the desktop app can vouch for (no portable secret).
@@ -93,7 +94,21 @@ export function coerceSyncPayload(raw: unknown): SyncSettingsPayload | null {
     perCountryTags,
     providers,
     sessionConnections,
+    youtubeButler: coerceYtbPayload(o.youtubeButler),
   };
+}
+
+// Defensively coerce the YouTube Butler sub-object: a malformed/missing field
+// must never throw, same reasoning as the rest of coerceSyncPayload. Returns
+// undefined (field absent) rather than a payload with no settings, so an
+// older desktop build that never sends youtubeButler degrades cleanly.
+function coerceYtbPayload(raw: unknown): YtbSyncPayload | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const o = raw as Record<string, unknown>;
+  const settings = o.settings && typeof o.settings === "object" ? (o.settings as Record<string, unknown>) : {};
+  const schedule = o.schedule && typeof o.schedule === "object" ? (o.schedule as Record<string, unknown>) : null;
+  const channel = o.channel && typeof o.channel === "object" ? (o.channel as Record<string, unknown>) : null;
+  return { settings, schedule, channel };
 }
 
 function providerHasValue(p: SyncProviderPayload | undefined): boolean {

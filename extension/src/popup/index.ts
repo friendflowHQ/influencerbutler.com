@@ -30,7 +30,8 @@ import {
   OPTIONAL_MARKET_ORIGINS,
 } from "../background/market-availability";
 import { channelAllowed } from "../shared/creator-mode";
-import { isPairedLocal } from "../shared/bridge-token";
+import { getLastSyncAt, getPairedAt, isPairedLocal } from "../shared/bridge-token";
+import { formatAgo, numericDate } from "../tools/cc-messages/when";
 import { isAndroid, isMobileUserAgent } from "../shared/platform";
 import { activePageTab } from "./active-tab";
 import { initChatBubble } from "../tools/chat-bubble/panel";
@@ -892,11 +893,47 @@ async function renderAppBridge(): Promise<void> {
   const pairing = byId("app-bridge-pairing");
   const connected = byId("app-bridge-connected");
   const status = byId("app-pair-status");
+  const chip = byId("app-sync-chip");
+  const meta = byId("app-sync-meta");
+
+  // The "what syncs" blurb moved from a paragraph into the tooltip on the info
+  // dot next to Sync now; the dot is focusable so keyboard users get it too.
+  const info = byId("app-sync-info");
+  info.dataset.tip = t().syncBlurb;
+  info.setAttribute("aria-label", `${t().syncInfoLabel} ${t().syncBlurb}`);
 
   const show = (state: "disconnected" | "pairing" | "connected") => {
     disconnected.hidden = state !== "disconnected";
     pairing.hidden = state !== "pairing";
     connected.hidden = state !== "connected";
+  };
+
+  // The chip by the heading plus the "last synced / connected since" line.
+  // Re-rendered after every sync so the time stays honest while the popup is
+  // open. When not paired locally the chip is left to renderRemoteDevices,
+  // which shows the linked computer relay users send to instead.
+  const renderSyncState = async (): Promise<void> => {
+    if (!(await isPairedLocal())) {
+      meta.textContent = "";
+      return;
+    }
+    const s = t();
+    const locale = getLocale();
+    chip.textContent = s.syncChipLocal;
+    chip.hidden = false;
+    const [lastSync, pairedAt] = await Promise.all([getLastSyncAt(), getPairedAt()]);
+    const ago = lastSync
+      ? formatAgo(
+          lastSync,
+          Date.now(),
+          { justNow: s.ccmAgoJustNow, minAgo: s.ccmAgoMin, hoursAgo: s.ccmAgoHours },
+          locale,
+        )
+      : "";
+    const parts = [ago ? s.syncLastSynced(ago) : s.syncNeverSynced];
+    // Older installs paired before the timestamp existed have no paired-at.
+    if (pairedAt) parts.push(s.syncConnectedOn(numericDate(pairedAt, locale)));
+    meta.textContent = parts.join(" ");
   };
   // Android (Lemur): the app cannot answer on this device's loopback, so swap
   // the pairing flow for a pointer to the relay card below.
@@ -910,11 +947,14 @@ async function renderAppBridge(): Promise<void> {
   }
   const paired = await isPairedLocal();
   show(paired ? "connected" : "disconnected");
+  void renderSyncState();
 
   const syncStatus = byId("app-sync-status");
-  byId<HTMLButtonElement>("app-sync-btn").onclick = () => void runSyncReconcile(syncStatus);
-  // Already paired when the popup opens: quietly fill any empty settings both ways.
-  if (paired) void autoFillFromDesktop();
+  byId<HTMLButtonElement>("app-sync-btn").onclick = () =>
+    void runSyncReconcile(syncStatus, () => void renderSyncState());
+  // Already paired when the popup opens: quietly fill any empty settings both
+  // ways, then refresh the last-synced line that fill just advanced.
+  if (paired) void autoFillFromDesktop().then(renderSyncState);
 
   // Guide freshly-connected users to the (optional) next step: once they've
   // linked a license but haven't paired the desktop app, surface a hint so the
@@ -945,8 +985,9 @@ async function renderAppBridge(): Promise<void> {
     if (r.ok && r.stage === "paired") {
       show("connected");
       status.textContent = t().appPaired;
+      void renderSyncState();
       // Newly paired: fill any empty settings both ways so the two apps line up.
-      void autoFillFromDesktop();
+      void autoFillFromDesktop().then(renderSyncState);
     } else {
       status.textContent = r.message ?? t().appPairFailed;
     }
@@ -956,6 +997,8 @@ async function renderAppBridge(): Promise<void> {
     await sendToBackground({ kind: "UNPAIR_APP" });
     show("disconnected");
     status.textContent = "";
+    chip.hidden = true;
+    meta.textContent = "";
   };
 }
 
@@ -973,6 +1016,7 @@ async function renderRemoteDevices(): Promise<void> {
 
   const state = await sendToBackground<RelayStateView>({ kind: "RELAY_GET_STATE" });
   card.hidden = false;
+  void renderRemoteSyncChip(state);
   // Guided checklist: tick step 1 once signed in, step 3 once a computer is linked.
   byId("relay-step-1").classList.toggle("done", state.signedIn);
   byId("relay-step-3").classList.toggle("done", state.signedIn && state.targets.length > 0);
@@ -1002,10 +1046,27 @@ async function renderRemoteDevices(): Promise<void> {
       const next = await sendToBackground<RelayStateView>({ kind: "RELAY_GET_STATE" });
       renderRelayTargets(next, targetsWrap, targetsLabel, status);
       byId("relay-step-3").classList.toggle("done", next.targets.length > 0);
+      void renderRemoteSyncChip(next);
     } else {
       status.textContent = r.error || "Could not link. Check the code and try again.";
     }
   };
+}
+
+// The Desktop-app card's "Synced" chip for relay users: no app paired on THIS
+// computer, but one linked on another, so name the computer deals sync to.
+// When the app is paired locally, renderAppBridge owns the chip instead.
+async function renderRemoteSyncChip(state: RelayStateView): Promise<void> {
+  if (await isPairedLocal()) return;
+  const chip = byId("app-sync-chip");
+  if (!state.targets.length) {
+    chip.hidden = true;
+    return;
+  }
+  const computer =
+    state.defaultTarget?.label || state.targets[0]?.receiverLabel || "Linked computer";
+  chip.textContent = t().syncChipRemote(computer);
+  chip.hidden = false;
 }
 
 function renderRelayTargets(
@@ -1041,6 +1102,7 @@ function renderRelayTargets(
       });
       const next = await sendToBackground<RelayStateView>({ kind: "RELAY_GET_STATE" });
       renderRelayTargets(next, wrap, label, status);
+      void renderRemoteSyncChip(next);
       status.textContent = `Deals will send to ${target.receiverLabel || "this computer"} when the app is not running here.`;
     };
     row.append(btn);

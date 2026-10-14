@@ -2,6 +2,8 @@ import {
   sendToBackground,
   type YouTubeStatusResult,
   type YouTubeStatusRecord,
+  type YouTubeProgressResult,
+  type YouTubeProgressSnapshot,
 } from "../../shared/messages";
 
 // Resolved YouTube upload status for a batch of Amazon videos, as answered by the
@@ -37,4 +39,23 @@ export async function resolveYouTubeStatus(contentIds: string[]): Promise<YouTub
     if (cid) byId.set(cid, r);
   }
   return { paired, byId };
+}
+
+// Account-wide upload progress (same paired/unknown convention as
+// resolveYouTubeStatus). `snapshot` is null when unpaired or the app did not
+// answer in time.
+export type YouTubeProgressLookup = {
+  paired: boolean;
+  snapshot: YouTubeProgressSnapshot | null;
+};
+
+export async function resolveYouTubeProgress(): Promise<YouTubeProgressLookup> {
+  let res: YouTubeProgressResult;
+  try {
+    res = await sendToBackground<YouTubeProgressResult>({ kind: "LOOKUP_YOUTUBE_PROGRESS" });
+  } catch {
+    return { paired: false, snapshot: null };
+  }
+  const paired = res.paired !== false && res.ok === true;
+  return { paired, snapshot: paired ? res.snapshot ?? null : null };
 }

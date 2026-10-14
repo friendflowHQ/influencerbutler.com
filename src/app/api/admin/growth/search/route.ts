@@ -10,10 +10,20 @@
  * 1-hour TTL; ?refresh=1 bypasses the TTL; stale cache is served over an empty
  * panel on error. Returns { configured: false } until GSC_SITE_URL + the service
  * account exist, so the dashboard can render its "Connect Search Console" card.
+ *
+ * Also returns `strikingDistance`: queries ranking at positions 4 to 20 ranked by
+ * upside. They are annotated against the weekly snapshot written by
+ * /api/cron/striking-distance-snapshot (key 'growth_gsc_striking_weekly') so each
+ * row can show how its position moved since last week.
  */
 import { NextResponse } from "next/server";
 import { requirePermission, createAdminClient } from "@/lib/admin";
 import { isGscConfigured, fetchGscSummary, type GscSummary } from "@/lib/gsc";
+import {
+  applySnapshot,
+  STRIKING_SNAPSHOT_KEY,
+  type StrikingSnapshot,
+} from "@/lib/striking-distance";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -48,6 +58,23 @@ async function readCache(db: CacheClient | null): Promise<CachedSummary | null> 
     if (error || !data) return null;
     const v = data.value as CachedSummary | null;
     if (!v || typeof v.fetched_at !== "string" || !v.data) return null;
+    return v;
+  } catch {
+    return null;
+  }
+}
+
+async function readSnapshot(db: CacheClient | null): Promise<StrikingSnapshot | null> {
+  if (!db) return null;
+  try {
+    const { data, error } = await db
+      .from("app_config")
+      .select("value")
+      .eq("key", STRIKING_SNAPSHOT_KEY)
+      .maybeSingle();
+    if (error || !data) return null;
+    const v = data.value as StrikingSnapshot | null;
+    if (!v || typeof v.takenAt !== "string" || !Array.isArray(v.rows)) return null;
     return v;
   } catch {
     return null;
@@ -111,6 +138,11 @@ export async function GET(request: Request) {
     }
   }
 
+  const snapshot = await readSnapshot(db);
+  const strikingDistance = summary?.strikingDistance
+    ? applySnapshot(summary.strikingDistance, snapshot)
+    : null;
+
   return NextResponse.json({
     admin: { email: actor.email },
     configured: true,
@@ -119,5 +151,7 @@ export async function GET(request: Request) {
     cachedAt,
     topQueries: summary?.topQueries ?? null,
     topPages: summary?.topPages ?? null,
+    strikingDistance,
+    strikingSnapshotAt: snapshot?.takenAt ?? null,
   });
 }

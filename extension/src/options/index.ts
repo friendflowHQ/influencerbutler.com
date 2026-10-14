@@ -8,14 +8,20 @@ import {
 import type { IntegrationAdapter, IntegrationCategory } from "../integrations/types";
 import { OPTIONS_CATALOG, type OptionsDict } from "./strings";
 import { resolveLocale, setLocale, t } from "../i18n";
-import { getSettings, patchSettings } from "../storage/store";
+import { getSettings, patchSettings, getState } from "../storage/store";
 import {
   DEAL_PLACEMENTS,
   EVENT_ALSO_SEND_MODES,
   normalizeAutoAccept,
   type AutoAcceptScope,
   type EventAlsoSend,
+  type YoutubeButlerState,
 } from "../storage/schema";
+import {
+  patchYtbSetting,
+  reconcileYtbSettingsPush,
+  pullYtbSettingsIfAvailable,
+} from "../background/youtube-butler-settings";
 import {
   AUTO_ACCEPT_DAILY_HARD_CAP,
   AUTO_ACCEPT_PER_RUN_HARD_CAP,
@@ -71,6 +77,7 @@ let D: OptionsDict;
 let view: IntegrationsView;
 let settings: Settings;
 let hud: HudStatus | null = null;
+let ytb: YoutubeButlerState;
 
 void init();
 
@@ -83,11 +90,20 @@ async function init(): Promise<void> {
   // closed app must not blank the whole page, so this failure is swallowed and
   // the Deals section falls back to the built-in list.
   hud = await sendToBackground<HudStatus>({ kind: "GET_HUD_STATUS" }).catch(() => null);
+  ytb = (await getState()).youtubeButler;
+  // Best-effort pull so a change made directly in the desktop app already
+  // shows up on open; a closed/unpaired app just leaves ytb as-is.
+  try {
+    if ((await pullYtbSettingsIfAvailable()) === "ok") ytb = (await getState()).youtubeButler;
+  } catch {
+    // ignore: the card still renders from local storage
+  }
   renderChrome();
   renderGeneral();
   renderAffiliateRoutingStrategy();
   renderCategories();
   renderVoiceover();
+  renderYoutubeButler();
   void renderAutoAccept();
   renderDeals();
   renderActivity();
@@ -124,6 +140,7 @@ function renderSideNav(): void {
       ],
     },
     { title: null, items: [{ id: "sec-voiceover", text: D.voHeading }] },
+    { title: null, items: [{ id: "sec-youtube-butler", text: D.ytbHeading }] },
     { title: null, items: [{ id: "sec-auto-accept", text: t().autoCardTitle }] },
     { title: null, items: [{ id: "sec-deals", text: D.dealsHeading }] },
     { title: null, items: [{ id: "sec-activity", text: D.activityNav }] },
@@ -778,6 +795,357 @@ function renderVoiceover(): void {
     settings = await patchSettings({ voiceover });
     // Reflect the clamp back so the field shows what was actually saved.
     customNumber.value = String(settings.voiceover.defaults.lengthSeconds);
+    saveBtn.disabled = false;
+    saveBtn.textContent = D.saved;
+    window.setTimeout(() => (saveBtn.textContent = D.save), 1200);
+  };
+
+  section.append(heading, card);
+  root.append(section);
+}
+
+// YouTube Butler settings: a remote control for the desktop app's own YouTube
+// Butler (templates, upload limits, Shorts handling, schedule, etc.), editable
+// here even when the desktop app is not running or paired. Unlike
+// renderVoiceover's single local object, every changed field here is pushed
+// to the desktop app individually (patchYtbSetting), so the pending-sync
+// banner always reflects exactly what still needs to reach the app.
+function renderYoutubeButler(): void {
+  const root = byId("youtube-butler");
+  root.replaceChildren();
+  const s = ytb.settings;
+
+  const section = document.createElement("section");
+  section.className = "settings-section";
+  section.id = "sec-youtube-butler";
+  const heading = document.createElement("h3");
+  heading.className = "section-title";
+  heading.textContent = D.ytbHeading;
+  const card = document.createElement("section");
+  card.className = "card";
+
+  const intro = document.createElement("p");
+  intro.className = "muted small";
+  intro.textContent = D.ytbIntro;
+  card.append(intro);
+
+  const group = (title: string): HTMLElement => {
+    const block = document.createElement("div");
+    block.className = "provider";
+    const head = document.createElement("div");
+    head.className = "provider-head";
+    const name = document.createElement("span");
+    name.className = "provider-name";
+    name.textContent = title;
+    head.append(name);
+    block.append(head);
+    card.append(block);
+    return block;
+  };
+
+  const textField = (parent: HTMLElement, labelText: string, value: string): HTMLInputElement => {
+    const wrap = document.createElement("label");
+    wrap.className = "field";
+    const span = document.createElement("span");
+    span.textContent = labelText;
+    const input = document.createElement("input");
+    input.type = "text";
+    input.autocomplete = "off";
+    input.value = value;
+    wrap.append(span, input);
+    parent.append(wrap);
+    return input;
+  };
+
+  const numberField = (
+    parent: HTMLElement,
+    labelText: string,
+    value: number,
+    min: number,
+    max: number,
+  ): HTMLInputElement => {
+    const wrap = document.createElement("label");
+    wrap.className = "field";
+    const span = document.createElement("span");
+    span.textContent = labelText;
+    const input = document.createElement("input");
+    input.type = "number";
+    input.min = String(min);
+    input.max = String(max);
+    input.value = String(value);
+    wrap.append(span, input);
+    parent.append(wrap);
+    return input;
+  };
+
+  const selectField = (
+    parent: HTMLElement,
+    labelText: string,
+    options: Array<[string, string]>,
+    value: string,
+  ): HTMLSelectElement => {
+    const wrap = document.createElement("label");
+    wrap.className = "field";
+    const span = document.createElement("span");
+    span.textContent = labelText;
+    const select = document.createElement("select");
+    for (const [optValue, optLabel] of options) {
+      const option = document.createElement("option");
+      option.value = optValue;
+      option.textContent = optLabel;
+      select.append(option);
+    }
+    select.value = value;
+    wrap.append(span, select);
+    parent.append(wrap);
+    return select;
+  };
+
+  const checkboxField = (parent: HTMLElement, labelText: string, checked: boolean): HTMLInputElement => {
+    const wrap = document.createElement("label");
+    wrap.className = "toggle";
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.checked = checked;
+    const span = document.createElement("span");
+    span.textContent = labelText;
+    wrap.append(box, span);
+    parent.append(wrap);
+    return box;
+  };
+
+  // General
+  const general = group(D.ytbGeneralGroup);
+  const visibilitySelect = selectField(
+    general,
+    D.ytbVisibility,
+    [["public", D.ytbVisPublic], ["unlisted", D.ytbVisUnlisted], ["private", D.ytbVisPrivate]],
+    s.uploadVisibility,
+  );
+  const publishModeSelect = selectField(
+    general,
+    D.ytbPublishMode,
+    [["publish", D.ytbPublishPublish], ["draft", D.ytbPublishDraft]],
+    s.publishMode,
+  );
+  const monetizationSelect = selectField(
+    general,
+    D.ytbMonetization,
+    [["leave", D.ytbMonetizeLeave], ["on", D.ytbMonetizeOn]],
+    s.monetization,
+  );
+
+  // Video details
+  const details = group(D.ytbDetailsGroup);
+  const madeForKidsSelect = selectField(
+    details,
+    D.ytbMadeForKids,
+    [["no", D.ytbKidsNo], ["yes", D.ytbKidsYes]],
+    s.madeForKids,
+  );
+  const alteredContentSelect = selectField(
+    details,
+    D.ytbAlteredContent,
+    [["auto", D.ytbAlteredAuto], ["yes", D.ytbAlteredYes], ["no", D.ytbAlteredNo]],
+    s.alteredContent,
+  );
+  const categoryInput = textField(details, D.ytbCategory, s.category);
+  const videoLanguageInput = textField(details, D.ytbVideoLanguage, s.videoLanguage);
+  const licenseSelect = selectField(
+    details,
+    D.ytbLicense,
+    [["standard", D.ytbLicenseStandard], ["creativeCommon", D.ytbLicenseCC]],
+    s.license,
+  );
+  const allowEmbeddingBox = checkboxField(details, D.ytbAllowEmbedding, s.allowEmbedding);
+  const notifySubscribersBox = checkboxField(details, D.ytbNotifySubscribers, s.notifySubscribers);
+  const ageRestrictionBox = checkboxField(details, D.ytbAgeRestriction, s.ageRestriction);
+  const publishDraftsVisibilitySelect = selectField(
+    details,
+    D.ytbPublishDraftsVisibility,
+    [["public", D.ytbVisPublic], ["unlisted", D.ytbVisUnlisted], ["private", D.ytbVisPrivate]],
+    s.publishDraftsVisibility,
+  );
+
+  // Templates
+  const templates = group(D.ytbTemplatesGroup);
+  const titleTemplateInput = textField(templates, D.ytbTitleTemplate, s.titleTemplate);
+  const descriptionTemplateInput = textField(templates, D.ytbDescriptionTemplate, s.descriptionTemplate);
+  const tagsTemplateInput = textField(templates, D.ytbTagsTemplate, s.tagsTemplate);
+  const playlistTemplateInput = textField(templates, D.ytbPlaylistTemplate, s.playlistTemplate);
+  const templateHint = document.createElement("p");
+  templateHint.className = "muted small";
+  templateHint.textContent = D.ytbTemplateHint;
+  templates.append(templateHint);
+
+  // Upload limits
+  const limits = group(D.ytbLimitsGroup);
+  const maxPerDayInput = numberField(limits, D.ytbMaxPerDay, s.uploadCap.maxPerDay, 1, 500);
+  const rampEnabledBox = checkboxField(limits, D.ytbRampEnabled, s.uploadCap.rampEnabled);
+  const delayBetweenUploadsInput = numberField(limits, D.ytbDelayBetweenUploads, s.delayBetweenUploads, 0, 3600);
+  const maxPerSessionInput = numberField(limits, D.ytbMaxPerSession, s.maxPerSession, 1, 500);
+
+  // Shorts
+  const shorts = group(D.ytbShortsGroup);
+  const shortsHashtagBox = checkboxField(shorts, D.ytbShortsHashtag, s.shortsHashtag);
+  const postingModeSelect = selectField(
+    shorts,
+    D.ytbPostingMode,
+    [["both", D.ytbPostingBoth], ["shorts-only", D.ytbPostingShortsOnly], ["regular-only", D.ytbPostingRegularOnly]],
+    s.postingMode,
+  );
+  const antiShortsStrategySelect = selectField(
+    shorts,
+    D.ytbAntiShortsStrategy,
+    [
+      ["off", D.ytbAntiShortsOff],
+      ["convert-landscape", D.ytbAntiShortsConvert],
+      ["extend-duration", D.ytbAntiShortsExtend],
+    ],
+    s.antiShortsStrategy,
+  );
+
+  // Localization & AI
+  const localization = group(D.ytbLocalizationGroup);
+  const aiVoiceoverEnabledBox = checkboxField(localization, D.ytbAiVoiceoverEnabled, s.aiVoiceover.enabled);
+  const aiVoiceoverModeSelect = selectField(
+    localization,
+    D.ytbAiVoiceoverMode,
+    [["dub", D.ytbModeDub], ["captions", D.ytbModeCaptions]],
+    s.aiVoiceover.mode,
+  );
+  const targetLocaleInput = textField(localization, D.ytbTargetLocale, s.aiVoiceover.targetLocale);
+  const sourceLocaleInput = textField(localization, D.ytbSourceLocale, s.aiVoiceover.sourceLocale);
+  const voiceInput = textField(localization, D.ytbVoice, s.aiVoiceover.voice);
+  const translateMetadataBox = checkboxField(localization, D.ytbTranslateMetadata, s.translateMetadata);
+  const aiSeoEnabledBox = checkboxField(localization, D.ytbAiSeoEnabled, s.aiSeo.enabled);
+  const aiSeoLanguageInput = textField(localization, D.ytbAiSeoLanguage, s.aiSeo.language);
+  const aiSeoSpendCapInput = numberField(localization, D.ytbAiSeoSpendCap, s.aiSeo.spendCapUsd, 0, 1000);
+
+  // Schedule
+  const schedule = group(D.ytbScheduleGroup);
+  const scheduleEnabledBox = checkboxField(schedule, D.ytbScheduleEnabled, ytb.schedule.enabled);
+  const scheduleEveryInput = numberField(schedule, D.ytbScheduleEvery, ytb.schedule.every, 1, 365);
+  const scheduleUnitInput = textField(schedule, D.ytbScheduleUnit, ytb.schedule.unit);
+
+  // Connected channel: read-only, no edit/re-auth control (needs a local
+  // OAuth popup, which stays desktop-only).
+  const channelGroup = group(D.ytbChannelGroup);
+  const channelLine = document.createElement("p");
+  channelLine.className = "muted small";
+  channelLine.textContent = ytb.channel?.channelName || D.ytbChannelNotConnected;
+  channelGroup.append(channelLine);
+  if (!ytb.channel?.authenticated) {
+    const hint = document.createElement("p");
+    hint.className = "muted small";
+    hint.textContent = D.ytbChannelConnectHint;
+    channelGroup.append(hint);
+  }
+
+  // Pending-sync banner + Sync now button.
+  const syncGroup = group(D.ytbSyncHeading);
+  const syncStatus = document.createElement("p");
+  syncStatus.className = "muted small";
+  syncGroup.append(syncStatus);
+  const syncBtn = document.createElement("button");
+  syncBtn.type = "button";
+  syncBtn.className = "ghost";
+  syncBtn.textContent = D.ytbSyncNow;
+  syncGroup.append(syncBtn);
+
+  const renderSyncStatus = (): void => {
+    const parts: string[] = [];
+    parts.push(
+      ytb.pendingFields.length > 0
+        ? `${ytb.pendingFields.length} ${D.ytbPendingLabel}`
+        : D.ytbNoPending,
+    );
+    parts.push(
+      ytb.lastPushedAt
+        ? `${D.ytbLastSyncedPrefix}: ${new Date(ytb.lastPushedAt).toLocaleString()}`
+        : D.ytbNeverSynced,
+    );
+    if (ytb.lastPushError === "not-paired") {
+      parts.push(D.ytbNotPairedHint);
+    } else if (ytb.lastPushError) {
+      parts.push(`${D.ytbSyncErrorPrefix}: ${ytb.lastPushError}`);
+    }
+    syncStatus.textContent = parts.join(" - ");
+  };
+  renderSyncStatus();
+
+  syncBtn.onclick = async () => {
+    syncBtn.disabled = true;
+    syncBtn.textContent = D.ytbSyncing;
+    await reconcileYtbSettingsPush();
+    ytb = (await getState()).youtubeButler;
+    renderSyncStatus();
+    syncBtn.disabled = false;
+    syncBtn.textContent = D.ytbSyncNow;
+  };
+
+  const actions = document.createElement("div");
+  actions.className = "actions";
+  const saveBtn = document.createElement("button");
+  saveBtn.className = "primary";
+  saveBtn.textContent = D.save;
+  actions.append(saveBtn);
+  card.append(actions);
+
+  saveBtn.onclick = async () => {
+    saveBtn.disabled = true;
+    saveBtn.textContent = D.saving;
+
+    // Only patch (and mark pending) fields that actually changed, so the
+    // sparse push matches the creator's real edits, not every field.
+    const plain: Array<[string, unknown, unknown]> = [
+      ["uploadVisibility", visibilitySelect.value, s.uploadVisibility],
+      ["publishMode", publishModeSelect.value, s.publishMode],
+      ["monetization", monetizationSelect.value, s.monetization],
+      ["madeForKids", madeForKidsSelect.value, s.madeForKids],
+      ["alteredContent", alteredContentSelect.value, s.alteredContent],
+      ["category", categoryInput.value.trim(), s.category],
+      ["videoLanguage", videoLanguageInput.value.trim(), s.videoLanguage],
+      ["license", licenseSelect.value, s.license],
+      ["allowEmbedding", allowEmbeddingBox.checked, s.allowEmbedding],
+      ["notifySubscribers", notifySubscribersBox.checked, s.notifySubscribers],
+      ["ageRestriction", ageRestrictionBox.checked, s.ageRestriction],
+      ["publishDraftsVisibility", publishDraftsVisibilitySelect.value, s.publishDraftsVisibility],
+      ["titleTemplate", titleTemplateInput.value, s.titleTemplate],
+      ["descriptionTemplate", descriptionTemplateInput.value, s.descriptionTemplate],
+      ["tagsTemplate", tagsTemplateInput.value, s.tagsTemplate],
+      ["playlistTemplate", playlistTemplateInput.value, s.playlistTemplate],
+      ["delayBetweenUploads", Number(delayBetweenUploadsInput.value), s.delayBetweenUploads],
+      ["maxPerSession", Number(maxPerSessionInput.value), s.maxPerSession],
+      ["shortsHashtag", shortsHashtagBox.checked, s.shortsHashtag],
+      ["postingMode", postingModeSelect.value, s.postingMode],
+      ["antiShortsStrategy", antiShortsStrategySelect.value, s.antiShortsStrategy],
+      ["translateMetadata", translateMetadataBox.checked, s.translateMetadata],
+      ["uploadCap.maxPerDay", Number(maxPerDayInput.value), s.uploadCap.maxPerDay],
+      ["uploadCap.rampEnabled", rampEnabledBox.checked, s.uploadCap.rampEnabled],
+      ["aiVoiceover.enabled", aiVoiceoverEnabledBox.checked, s.aiVoiceover.enabled],
+      ["aiVoiceover.mode", aiVoiceoverModeSelect.value, s.aiVoiceover.mode],
+      ["aiVoiceover.targetLocale", targetLocaleInput.value.trim(), s.aiVoiceover.targetLocale],
+      ["aiVoiceover.sourceLocale", sourceLocaleInput.value.trim(), s.aiVoiceover.sourceLocale],
+      ["aiVoiceover.voice", voiceInput.value.trim(), s.aiVoiceover.voice],
+      ["aiSeo.enabled", aiSeoEnabledBox.checked, s.aiSeo.enabled],
+      ["aiSeo.language", aiSeoLanguageInput.value.trim(), s.aiSeo.language],
+      ["aiSeo.spendCapUsd", Number(aiSeoSpendCapInput.value), s.aiSeo.spendCapUsd],
+    ];
+    const scheduleFields: Array<[string, unknown, unknown]> = [
+      ["schedule.enabled", scheduleEnabledBox.checked, ytb.schedule.enabled],
+      ["schedule.every", Number(scheduleEveryInput.value), ytb.schedule.every],
+      ["schedule.unit", scheduleUnitInput.value.trim(), ytb.schedule.unit],
+    ];
+
+    for (const [path, next, prev] of [...plain, ...scheduleFields]) {
+      if (next !== prev) await patchYtbSetting(path, next);
+    }
+
+    await reconcileYtbSettingsPush();
+    ytb = (await getState()).youtubeButler;
+    renderSyncStatus();
+
     saveBtn.disabled = false;
     saveBtn.textContent = D.saved;
     window.setTimeout(() => (saveBtn.textContent = D.save), 1200);

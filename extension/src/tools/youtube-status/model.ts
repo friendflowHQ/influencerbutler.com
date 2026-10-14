@@ -1,5 +1,5 @@
 import type { YouTubeStatusRecord } from "../../shared/messages";
-import type { YouTubeStatusLookup } from "./status";
+import type { YouTubeStatusLookup, YouTubeProgressLookup } from "./status";
 
 // The three chip states for a video's YouTube presence:
 // - "on":      uploaded (or draft) with a YouTube link -> green, links out.
@@ -23,6 +23,26 @@ export function youtubeChipState(contentId: string, lookup: YouTubeStatusLookup)
   const record = lookup.byId.get(cid) || null;
   if (record && record.onYouTube) return { state: "on", record };
   return { state: "off", record };
+}
+
+// Which label the "Uploading" button should show while polling, kept as a
+// discriminated kind (not a localized string) so the selection logic is
+// unit-testable without pulling in i18n; the overlay maps each kind to a
+// t().yt* string. Priority: unpaired/unknown first (we genuinely don't know),
+// then the daily cap (an honest "not stuck, just capped" state), then real
+// running numbers, else a plain "queued" fallback.
+export type YouTubeProgressLabelKind =
+  | { kind: "not-paired" }
+  | { kind: "cap-reached" }
+  | { kind: "running"; usedToday: number; cap: number; queued: number }
+  | { kind: "idle" };
+
+export function youtubeProgressLabelKind(progress: YouTubeProgressLookup): YouTubeProgressLabelKind {
+  const snap = progress.snapshot;
+  if (!progress.paired || !snap) return { kind: "not-paired" };
+  if (snap.capReached) return { kind: "cap-reached" };
+  if (snap.running) return { kind: "running", usedToday: snap.usedToday, cap: snap.cap, queued: snap.queued };
+  return { kind: "idle" };
 }
 
 // The on-Amazon "showing on detail pages" signal, read from the page DOM (no

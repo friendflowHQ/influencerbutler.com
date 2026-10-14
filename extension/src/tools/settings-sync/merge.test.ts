@@ -156,4 +156,28 @@ describe("coerceSyncPayload", () => {
     expect(coerceSyncPayload(null)).toBeNull();
     expect(coerceSyncPayload("x")).toBeNull();
   });
+
+  it("coerces a well-formed youtubeButler block", () => {
+    const out = coerceSyncPayload({
+      storefrontHandle: null,
+      youtubeButler: {
+        settings: { uploadVisibility: "public", uploadCap: { maxPerDay: 25 } },
+        schedule: { enabled: true, schedule: { every: 1, unit: "days" } },
+        channel: { authenticated: true, channelName: "My Channel" },
+      },
+    });
+    expect(out!.youtubeButler).toEqual({
+      settings: { uploadVisibility: "public", uploadCap: { maxPerDay: 25 } },
+      schedule: { enabled: true, schedule: { every: 1, unit: "days" } },
+      channel: { authenticated: true, channelName: "My Channel" },
+    });
+  });
+
+  it("degrades a malformed or missing youtubeButler block without throwing", () => {
+    expect(coerceSyncPayload({ storefrontHandle: null })!.youtubeButler).toBeUndefined();
+    const out = coerceSyncPayload({ storefrontHandle: null, youtubeButler: "garbage" });
+    expect(out!.youtubeButler).toBeUndefined();
+    const out2 = coerceSyncPayload({ storefrontHandle: null, youtubeButler: { settings: "nope" } });
+    expect(out2!.youtubeButler).toEqual({ settings: {}, schedule: null, channel: null });
+  });
 });

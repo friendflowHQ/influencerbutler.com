@@ -93,5 +93,7 @@ export async function lookupCcRates(asins: string[]): Promise<CcRatesResult> {
     return { ok: false, rates };
   }
   if (fetchedAny) await writeCache(cache);
-  return { ok: true, rates };
+  // Every batch failed (server down or rejecting): report it, so a caller can
+  // tell "no active campaign for these ASINs" from "could not check".
+  return { ok: fetchedAny, rates };
 }

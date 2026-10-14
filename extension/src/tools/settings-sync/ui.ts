@@ -22,8 +22,12 @@ export async function autoFillFromDesktop(): Promise<{
 
 // The explicit "Sync now" flow: preview, then (only if a real conflict remains)
 // raise the reconcile confirm and apply the chosen direction. Writes progress to
-// `statusEl`.
-export async function runSyncReconcile(statusEl: HTMLElement): Promise<void> {
+// `statusEl`. `onSynced` fires after each successful round-trip (the quiet fill
+// and, later, a chosen reconcile) so the caller can refresh any last-synced line.
+export async function runSyncReconcile(
+  statusEl: HTMLElement,
+  onSynced?: () => void,
+): Promise<void> {
   statusEl.textContent = t().syncChecking;
   const r = await sendToBackground<SyncPreviewResult>({ kind: "SYNC_SETTINGS_PREVIEW" });
 
@@ -38,9 +42,11 @@ export async function runSyncReconcile(statusEl: HTMLElement): Promise<void> {
 
   if (r.diffs.length === 0) {
     statusEl.textContent = r.filled > 0 ? t().syncFilled(r.filled) : t().syncInSync;
+    onSynced?.();
     return;
   }
 
+  onSynced?.();
   showModal({
     title: t().syncConfirmTitle,
     lines: [t().syncConfirmBody(r.diffs.length), `${t().syncConfirmList} ${r.diffs.join(", ")}`],
@@ -49,12 +55,12 @@ export async function runSyncReconcile(statusEl: HTMLElement): Promise<void> {
       {
         label: t().syncConfirmAppWins,
         variant: "primary",
-        onClick: () => void applyDirection("app-wins", statusEl),
+        onClick: () => void applyDirection("app-wins", statusEl, onSynced),
       },
       {
         label: t().syncConfirmExtWins,
         variant: "secondary",
-        onClick: () => void applyDirection("ext-wins", statusEl),
+        onClick: () => void applyDirection("ext-wins", statusEl, onSynced),
       },
       { label: t().syncCancel, variant: "link", onClick: () => {} },
     ],
@@ -64,10 +70,13 @@ export async function runSyncReconcile(statusEl: HTMLElement): Promise<void> {
 async function applyDirection(
   direction: "app-wins" | "ext-wins",
   statusEl: HTMLElement,
+  onSynced?: () => void,
 ): Promise<void> {
   statusEl.textContent = t().syncChecking;
   const r = await sendToBackground<SyncApplyResult>({ kind: "SYNC_SETTINGS_APPLY", direction });
-  if (r.status === "ok") statusEl.textContent = t().syncDone;
-  else if (r.status === "not-paired") statusEl.textContent = t().syncNotPaired;
+  if (r.status === "ok") {
+    statusEl.textContent = t().syncDone;
+    onSynced?.();
+  } else if (r.status === "not-paired") statusEl.textContent = t().syncNotPaired;
   else statusEl.textContent = t().syncAppOutdated;
 }

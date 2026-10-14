@@ -428,3 +428,19 @@ function buildCompRow(args: {
     })(),
   };
 }
+
+/**
+ * Subscription ids of every comp (free grant), test-address comps included, for
+ * callers that need to tell comped subscribers from paying ones (growth
+ * metrics). Null when the comp list cannot be read, so callers can tell
+ * "no comps" from "unknown".
+ */
+export async function loadCompSubscriptionIds(): Promise<Set<string> | null> {
+  try {
+    const result = await loadComps(Date.now(), { includeTestEmails: true });
+    return result ? new Set(result.rows.map((c) => c.lsSubscriptionId)) : null;
+  } catch (err) {
+    console.error("comps: loadCompSubscriptionIds failed", err);
+    return null;
+  }
+}

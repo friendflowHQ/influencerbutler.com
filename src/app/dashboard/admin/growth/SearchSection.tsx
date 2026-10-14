@@ -13,6 +13,20 @@ export type GscRow = {
   position: number;
 };
 
+export type StrikingRow = {
+  query: string;
+  page: string;
+  pageKind: string;
+  clicks: number;
+  impressions: number;
+  ctr: number;
+  position: number;
+  potentialClicks: number;
+  action: string;
+  prevPosition?: number | null;
+  isNew?: boolean;
+};
+
 export type SearchResponse = {
   configured: boolean;
   error?: boolean;
@@ -20,6 +34,8 @@ export type SearchResponse = {
   cachedAt?: string | null;
   topQueries?: GscRow[] | null;
   topPages?: GscRow[] | null;
+  strikingDistance?: StrikingRow[] | null;
+  strikingSnapshotAt?: string | null;
 };
 
 const SETUP_STEPS = [
@@ -161,6 +177,11 @@ export default function SearchSection({
             </div>
           )}
 
+          <StrikingDistancePanel
+            rows={data.strikingDistance ?? null}
+            snapshotAt={data.strikingSnapshotAt ?? null}
+          />
+
           {data.cachedAt ? (
             <p className="mt-2 text-xs text-slate-400">
               Updated {new Date(data.cachedAt).toLocaleString("en-US")} (cached up to an hour).
@@ -170,6 +191,106 @@ export default function SearchSection({
         </>
       )}
     </section>
+  );
+}
+
+// Queries already ranking on the edge of page 1 or on page 2, ranked by how many
+// extra clicks reaching position 3 would add. The weekly snapshot (Mondays) lets
+// each row show how its position moved since last week.
+function StrikingDistancePanel({
+  rows,
+  snapshotAt,
+}: {
+  rows: StrikingRow[] | null;
+  snapshotAt: string | null;
+}) {
+  return (
+    <div className="mt-3 rounded-xl border border-slate-200 bg-white p-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          Striking distance: this week&apos;s easiest wins
+        </p>
+        <p className="text-xs text-slate-500">
+          Queries at position 4 to 20, ranked by clicks gained if they reached position 3.
+        </p>
+      </div>
+
+      {rows === null ? (
+        <p className="mt-3 text-sm text-slate-600">
+          Not loaded yet. Press Refresh to pull this list from Search Console.
+        </p>
+      ) : rows.length === 0 ? (
+        <p className="mt-3 text-sm text-slate-600">
+          No non-brand queries are sitting between position 4 and 20 with enough impressions yet.
+          That is normal for a young site; check back as impressions build.
+        </p>
+      ) : (
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full min-w-[720px] text-sm">
+            <thead>
+              <tr className="text-left text-xs font-medium text-slate-500">
+                <th className="pb-1 pr-2 font-medium">Query and page</th>
+                <th className="pb-1 px-2 text-right font-medium">Pos.</th>
+                <th className="pb-1 px-2 text-right font-medium">Impr.</th>
+                <th className="pb-1 px-2 text-right font-medium">Clicks</th>
+                <th className="pb-1 px-2 text-right font-medium">Upside</th>
+                <th className="pb-1 pl-2 font-medium">Next step</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.query} className="border-t border-slate-100 align-top">
+                  <td className="py-2 pr-2">
+                    <p className="font-medium text-slate-800">{r.query}</p>
+                    <p className="text-xs text-slate-500" title={r.page}>
+                      {r.page}
+                    </p>
+                  </td>
+                  <td className="py-2 px-2 text-right text-slate-700">
+                    <span className="block">{r.position.toFixed(1)}</span>
+                    <Movement row={r} hasSnapshot={snapshotAt !== null} />
+                  </td>
+                  <td className="py-2 px-2 text-right text-slate-600">
+                    {r.impressions.toLocaleString("en-US")}
+                  </td>
+                  <td className="py-2 px-2 text-right text-slate-600">
+                    {r.clicks.toLocaleString("en-US")}
+                  </td>
+                  <td className="py-2 px-2 text-right font-medium text-emerald-700">
+                    +{Math.max(1, Math.round(r.potentialClicks)).toLocaleString("en-US")}
+                  </td>
+                  <td className="py-2 pl-2 text-xs text-slate-600">{r.action}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <p className="mt-3 text-xs text-slate-500">
+        {snapshotAt
+          ? `Movement compares to the weekly snapshot from ${new Date(snapshotAt).toLocaleDateString("en-US")}. A lower position number is better.`
+          : "Week-over-week movement appears after the first Monday snapshot runs."}
+      </p>
+    </div>
+  );
+}
+
+// Position moved vs the weekly snapshot. Lower is better, so a drop in the
+// number is an improvement. Colors keep AA contrast on white; the word carries
+// the meaning too.
+function Movement({ row, hasSnapshot }: { row: StrikingRow; hasSnapshot: boolean }) {
+  if (!hasSnapshot) return null;
+  if (row.isNew) {
+    return <span className="text-xs font-medium text-indigo-700">New</span>;
+  }
+  if (row.prevPosition === null || row.prevPosition === undefined) return null;
+  const delta = row.prevPosition - row.position;
+  if (Math.abs(delta) < 0.2) return <span className="text-xs text-slate-500">Steady</span>;
+  return delta > 0 ? (
+    <span className="text-xs font-medium text-emerald-700">Up {delta.toFixed(1)}</span>
+  ) : (
+    <span className="text-xs font-medium text-rose-700">Down {Math.abs(delta).toFixed(1)}</span>
   );
 }
 

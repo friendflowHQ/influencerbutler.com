@@ -96,7 +96,9 @@
       "Bash(git cherry-pick *)",
       "Bash(git -c user.name=FriendFlow -c user.email=elizabethdean30@gmail.com commit -m '@ *)",
       "mcp__claude-in-chrome__javascript_tool",
-      "Bash(ls -la \"C:/Users/eliza/OneDrive/Documents/GitHub/InfluencerButler\" 2>&1 | head -60)"
+      "Bash(ls -la \"C:/Users/eliza/OneDrive/Documents/GitHub/InfluencerButler\" 2>&1 | head -60)",
+      "mcp__claude-in-chrome__get_page_text",
+      "mcp__claude-in-chrome__tabs_create_mcp"
     ]
   }
 }

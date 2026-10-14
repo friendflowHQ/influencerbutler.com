@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type BannerSurface = "web" | "extension" | "desktop";
 
@@ -26,6 +26,8 @@ type AdminEvent = {
   recordEnabled: boolean;
   recordingStatus: string;
   recordingUrl: string | null;
+  recallBotId: string | null;
+  recallDashboardUrl: string | null;
   bannerEnabled: boolean;
   bannerText: string | null;
   bannerCtaLabel: string | null;
@@ -193,6 +195,9 @@ export default function AdminEventsPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [imagingId, setImagingId] = useState<string | null>(null);
+  const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
+  const uploadTargetId = useRef<string | null>(null);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
   const [rearmingId, setRearmingId] = useState<string | null>(null);
   const [youtubingId, setYoutubingId] = useState<string | null>(null);
   const [drafting, setDrafting] = useState(false);
@@ -471,6 +476,35 @@ export default function AdminEventsPage() {
       await refetch();
     } finally {
       setImagingId(null);
+    }
+  };
+
+  // Opens the file picker for a specific event's banner. The actual upload
+  // happens in handleImageFileSelected once the browser fires onChange.
+  const pickImageFile = (id: string) => {
+    uploadTargetId.current = id;
+    uploadInputRef.current?.click();
+  };
+
+  const handleImageFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const id = uploadTargetId.current;
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-selecting the same file later
+    if (!id || !file) return;
+
+    setUploadingImageId(id);
+    setMessage("Uploading image...");
+    try {
+      const body = new FormData();
+      body.set("id", id);
+      body.set("file", file);
+      const res = await fetch("/api/admin/events/upload-image", { method: "POST", body });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      setMessage(res.ok ? "Event image uploaded." : data.error || "Could not upload the image.");
+      await refetch();
+    } finally {
+      setUploadingImageId(null);
+      uploadTargetId.current = null;
     }
   };
 
@@ -1117,6 +1151,16 @@ export default function AdminEventsPage() {
         </div>
       </div>
 
+      {/* Shared file picker for "Upload image" across all event rows; the
+          target event id is set by pickImageFile right before it is clicked. */}
+      <input
+        ref={uploadInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/gif"
+        className="hidden"
+        onChange={handleImageFileSelected}
+      />
+
       {/* Event list */}
       <h2 className="mt-8 text-lg font-semibold text-slate-900">Scheduled events</h2>
       {loading ? (
@@ -1161,6 +1205,23 @@ export default function AdminEventsPage() {
                     {new Date(e.startsAt).toLocaleString()} · {e.registrations} registered ·{" "}
                     {e.meetingProvider === "google_meet" ? "Meet" : e.joinUrl ? "manual link" : "no link"} ·
                     recording: {e.recordingStatus}
+                    {e.recallBotId ? (
+                      <>
+                        {" · "}
+                        recall bot: {e.recallDashboardUrl ? (
+                          <a
+                            href={e.recallDashboardUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-indigo-600 underline"
+                          >
+                            {e.recallBotId}
+                          </a>
+                        ) : (
+                          e.recallBotId
+                        )}
+                      </>
+                    ) : null}
                   </p>
                   <p className="mt-0.5 text-xs text-slate-500">
                     Invite: {e.inviteCampaignId ? "scheduled" : "none"}
@@ -1219,6 +1280,14 @@ export default function AdminEventsPage() {
                     className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-indigo-400 hover:text-indigo-700 disabled:opacity-60"
                   >
                     {imagingId === e.id ? "Generating..." : e.imageUrl ? "Regenerate image" : "Generate image"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => pickImageFile(e.id)}
+                    disabled={uploadingImageId === e.id}
+                    className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-indigo-400 hover:text-indigo-700 disabled:opacity-60"
+                  >
+                    {uploadingImageId === e.id ? "Uploading..." : "Upload image"}
                   </button>
                   <button
                     type="button"

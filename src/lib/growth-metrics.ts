@@ -28,6 +28,7 @@ import {
 } from "@/lib/pricing-constants";
 import { DEFAULT_TIMEZONE, localDateStr, zonedTimeToUtc, currentMonthKey } from "@/lib/timezone";
 import { upcomingPayoutDatesMs } from "@/lib/finance-ls-payouts";
+import { loadCompSubscriptionIds } from "@/lib/comps-data";
 
 export { currentMonthKey } from "@/lib/timezone";
 
@@ -545,8 +546,11 @@ export async function computeGrowthSnapshot(
   supabase: SnapshotClient,
   month: string,
   payoutSettings?: PayoutSettings,
-  /** Live comp subscription ids (see loadComps); null/omitted = unknown, shown as no comps. */
-  compSubscriptionIds?: ReadonlySet<string> | null,
+  /**
+   * Live comp subscription ids. Omit to load them here (every caller then agrees
+   * on who is paying); pass null to say "unknown", which counts no one as a comp.
+   */
+  compSubscriptionIdsArg?: ReadonlySet<string> | null,
 ): Promise<GrowthSnapshot | null> {
   const bounds = monthBounds(month);
   if (!bounds) return null;
@@ -601,6 +605,13 @@ export async function computeGrowthSnapshot(
       return null;
     }
   }
+
+  // Comps are free grants that never charge: they stay in the plan table but are
+  // left out of the active-subscriber metric and the renewal projections.
+  const compSubscriptionIds =
+    compSubscriptionIdsArg === undefined ? await loadCompSubscriptionIds() : compSubscriptionIdsArg;
+  const isComp = (row: Record<string, unknown>) =>
+    compSubscriptionIds != null && compSubscriptionIds.has(String(row.ls_subscription_id ?? ""));
 
   const addonVariant = process.env.LEMONSQUEEZY_VARIANT_DAILY_DEALS_ADDON ?? "";
   const isAddon = (row: Record<string, unknown>) =>
@@ -744,7 +755,9 @@ export async function computeGrowthSnapshot(
   if (activeRows) {
     const live = activeRows.filter((r) => !isAddon(r));
     onTrialLive = live.filter((r) => r.status === "on_trial");
-    activeLive = live.filter((r) => r.status === "active");
+    const activeAll = live.filter((r) => r.status === "active");
+    // Paying subscribers only: this feeds the tile, goals, digests and projections.
+    activeLive = activeAll.filter((r) => !isComp(r));
     metrics.active_subscriptions = {
       current: activeLive.length,
       previous: null,
@@ -755,7 +768,7 @@ export async function computeGrowthSnapshot(
       previous: null,
       series: null,
     };
-    planBreakdown = planBreakdownFor(activeLive, onTrialLive, compSubscriptionIds ?? undefined);
+    planBreakdown = planBreakdownFor(activeAll, onTrialLive, compSubscriptionIds ?? undefined);
   }
   metrics.revenue_cents = bucket(orderRows, "created_at", (row) =>
     typeof row.total === "number" && Number.isFinite(row.total) ? row.total : 0,

@@ -11,7 +11,6 @@ import { NextResponse } from "next/server";
 import { requirePermission, createAdminClient } from "@/lib/admin";
 import { createAdminClient as createFinanceAdminClient } from "@/lib/supabase/admin";
 import { loadFinanceSettings } from "@/lib/finance-settings";
-import { loadComps } from "@/lib/comps-data";
 import {
   computeGrowthSnapshot,
   currentMonthKey,
@@ -42,14 +41,7 @@ export async function GET(request: Request) {
     .then((s) => ({ daysOfMonth: s.lsPayoutDaysOfMonth, netDelayDays: s.lsPayoutNetDelayDays }))
     .catch(() => undefined);
 
-  // Comps (free grants) are active subscriptions that never pay; the plan table
-  // splits them out. Best-effort: null leaves them uncounted rather than failing.
-  // Test-address comps are included here (they are still not paying customers).
-  const compIds = await loadComps(Date.now(), { includeTestEmails: true })
-    .then((r) => (r ? new Set(r.rows.map((c) => c.lsSubscriptionId)) : null))
-    .catch(() => null);
-
-  const snapshot = await computeGrowthSnapshot(supabase, month, payoutSettings, compIds);
+  const snapshot = await computeGrowthSnapshot(supabase, month, payoutSettings);
   if (!snapshot) {
     return NextResponse.json({ error: "Invalid month" }, { status: 400 });
   }

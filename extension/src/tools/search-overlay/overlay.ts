@@ -415,10 +415,9 @@ export async function initSearchOverlay(
       (res) => {
         if (epoch !== initEpoch || !res.ok) return;
         // The catalogue Bloom filter has ~1% false positives, and a campaign may
-        // have ended. When the rate table is serving data and has no row for a
-        // CC-flagged tile, drop the flag so it stops reading "Campaign" (and
-        // stops adding campaign points to its score).
-        const tableServing = Object.keys(res.rates).length > 0;
+        // have ended or filled up. When the rate table answered and has no open
+        // campaign for a CC-flagged tile, drop the flag so it stops reading
+        // "Campaign" (and stops adding campaign points to its score).
         for (const row of rows) {
           const rate = res.rates[row.tile.asin];
           if (rate) {
@@ -427,7 +426,7 @@ export async function initSearchOverlay(
             recompute(row, settings);
             resolveConvo(row);
             renderBadge(row, settings);
-          } else if (tableServing && row.flags.cc && campaignAsins.includes(row.tile.asin)) {
+          } else if (row.flags.cc && campaignAsins.includes(row.tile.asin)) {
             row.flags.cc = false;
             recompute(row, settings);
             renderBadge(row, settings);

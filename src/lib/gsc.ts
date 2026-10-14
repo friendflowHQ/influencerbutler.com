@@ -25,6 +25,7 @@
 
 import { createSign } from "node:crypto";
 import { readServiceAccount } from "@/lib/ga4";
+import { buildStrikingDistance, type QueryPageRow, type StrikingRow } from "@/lib/striking-distance";
 
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const SCOPE = "https://www.googleapis.com/auth/webmasters.readonly";
@@ -114,6 +115,9 @@ export type GscRow = {
 export type GscSummary = {
   topQueries: GscRow[];
   topPages: GscRow[];
+  // Queries ranking at positions 4 to 20, ranked by upside. Optional because
+  // cache rows written before this field existed do not carry it.
+  strikingDistance?: StrikingRow[];
 };
 
 type ApiRow = {
@@ -210,6 +214,72 @@ async function queryDimension(dimension: "query" | "page", rowLimit: number): Pr
   }
 }
 
+// Query + page pairs (up to 1,000, most impressions first). Feeds the "striking
+// distance" list: it needs the page a query lands on, which the single-dimension
+// calls above cannot give.
+async function queryPairs(): Promise<{ rows: QueryPageRow[] | null; error: string | null }> {
+  const token = await getAccessToken();
+  const site = gscSiteUrl();
+  if (!site) return { rows: null, error: "GSC_SITE_URL is not set." };
+  if (!token) {
+    return {
+      rows: null,
+      error: "Could not obtain a Google access token; check GA_SERVICE_ACCOUNT_JSON.",
+    };
+  }
+
+  const { startDate, endDate } = windowDates();
+  try {
+    const res = await fetch(
+      `${SEARCH_API}/sites/${encodeURIComponent(site)}/searchAnalytics/query`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          startDate,
+          endDate,
+          dimensions: ["query", "page"],
+          rowLimit: 1000,
+        }),
+      },
+    );
+    if (!res.ok) {
+      const body = await res.text();
+      console.error("gsc: query+page request failed", res.status, body);
+      return { rows: null, error: describeGscError(res.status, body) };
+    }
+    const json = (await res.json()) as { rows?: ApiRow[] };
+    const rows: QueryPageRow[] = (json.rows ?? []).map((r) => ({
+      query: r.keys?.[0] ?? "",
+      page: r.keys?.[1] ?? "",
+      clicks: r.clicks ?? 0,
+      impressions: r.impressions ?? 0,
+      position: r.position ?? 0,
+    }));
+    return { rows, error: null };
+  } catch (err) {
+    console.error("gsc: query+page request threw", err);
+    const reason = err instanceof Error ? err.message : String(err);
+    return { rows: null, error: `Request to Search Console failed: ${reason}.` };
+  }
+}
+
+/**
+ * Striking-distance keywords for the last 28 days. Returns rows only (null on
+ * failure) so the weekly snapshot cron can reuse it without the dashboard summary.
+ */
+export async function fetchStrikingDistance(): Promise<{
+  rows: StrikingRow[] | null;
+  error: string | null;
+}> {
+  const pairs = await queryPairs();
+  if (pairs.rows === null) return { rows: null, error: pairs.error };
+  return { rows: buildStrikingDistance(pairs.rows), error: null };
+}
+
 // A null summary carries the reason both dimension calls failed so the caller
 // can show it; a present summary may still carry an error if one dimension
 // failed while the other succeeded (partial outage).
@@ -221,9 +291,10 @@ export type GscFetchResult = { summary: GscSummary | null; error: string | null 
  * calls fail, so a partial outage still shows what it can.
  */
 export async function fetchGscSummary(): Promise<GscFetchResult> {
-  const [queries, pages] = await Promise.all([
+  const [queries, pages, striking] = await Promise.all([
     queryDimension("query", 15),
     queryDimension("page", 10),
+    fetchStrikingDistance(),
   ]);
   if (queries.rows === null && pages.rows === null) {
     return {
@@ -235,7 +306,10 @@ export async function fetchGscSummary(): Promise<GscFetchResult> {
     summary: {
       topQueries: queries.rows ?? [],
       topPages: pages.rows ?? [],
+      // Left undefined (not []) on failure so the route does not cache an empty
+      // list as if Google had said there were no opportunities.
+      strikingDistance: striking.rows ?? undefined,
     },
-    error: queries.error ?? pages.error,
+    error: queries.error ?? pages.error ?? striking.error,
   };
 }

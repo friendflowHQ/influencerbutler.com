@@ -23,6 +23,7 @@ import {
   type WatchlistResult,
 } from "../../shared/messages";
 import { formatMoney } from "../earnings-overlay/model";
+import { describeAcceptResult, requestAccept } from "../campaigns/accept";
 import { enrichStoreTiles } from "../store-overlay/enrich";
 import { renderIdeaListToolbar, type IdeaListToolbar } from "./toolbar";
 import { budgetLevel, campaignEnd, formatEndDay, perSaleCents } from "./campaign-detail";
@@ -69,6 +70,10 @@ type Row = {
   showWatch: boolean;
   watched: boolean;
   provenEarner: boolean;
+  // One-click accept of the campaign the chip shows (tools.standaloneAccept).
+  acceptEnabled: boolean;
+  accept: "idle" | "working" | "done" | "failed";
+  acceptNote: string | null;
 };
 
 // One live run per page view: `run` lives for the page view, `scan` only for
@@ -139,6 +144,9 @@ export async function initIdeaListOverlay(settings: Settings): Promise<void> {
       showWatch: settings.tools.watchlist,
       watched: false,
       provenEarner: false,
+      acceptEnabled: settings.tools.standaloneAccept,
+      accept: "idle",
+      acceptNote: null,
     };
     row.score = scoreFor(row, settings);
     resolveConvo(row);
@@ -221,9 +229,9 @@ export async function initIdeaListOverlay(settings: Settings): Promise<void> {
       .then((res) => {
         if (run.signal.aborted || !res.ok) return;
         // The Bloom filter has ~1% false positives and a campaign may have
-        // ended: when the rate table is serving data and has no row for a
-        // CC-flagged tile, drop the flag so it stops reading "Campaign".
-        const tableServing = Object.keys(res.rates).length > 0;
+        // ended or filled up: when the rate table answered and has no open
+        // campaign for a CC-flagged tile, drop the flag so it stops reading
+        // "Campaign". (res.ok means the server answered, even with no rates.)
         for (const row of rows) {
           const rate = res.rates[row.tile.asin];
           if (rate) {
@@ -232,7 +240,7 @@ export async function initIdeaListOverlay(settings: Settings): Promise<void> {
             row.ratePct = rate.ratePct;
             row.commissionCents = perSaleCents(row.tile.priceCents, rate.ratePct);
             resolveConvo(row);
-          } else if (tableServing && row.flags.cc && campaignAsins.includes(row.tile.asin)) {
+          } else if (row.flags.cc && campaignAsins.includes(row.tile.asin)) {
             row.flags.cc = false;
           } else {
             continue;
@@ -446,6 +454,9 @@ function appendCampaignChips(row: Row, body: HTMLElement): void {
     body.append(btn);
   }
 
+  const accept = acceptChip(row);
+  if (accept) body.append(accept);
+
   const ccRate = row.flags.cc ? row.ccRate : null;
   const spccRate = row.flags.spcc ? row.spccRate : null;
   if (!ccRate && !spccRate) return;
@@ -492,6 +503,57 @@ function appendCampaignChips(row: Row, body: HTMLElement): void {
   card.append(el("div", "camp-note", t().campCardOnlyBest));
   body.append(card);
   wireCampaignCard(triggers, card);
+}
+
+// The campaign the chip shows, as an accept request: the Creator Connections one
+// when its campaign id is known, else the SPCC offer (keyed by ASIN). null when
+// there is nothing acceptable yet (the rate lookup has not landed).
+function acceptTarget(row: Row): { kind: "cc" | "spcc"; campaignId: string | null } | null {
+  if (row.flags.cc && row.ccRate?.campaignId) return { kind: "cc", campaignId: row.ccRate.campaignId };
+  if (row.flags.spcc && row.spccRate) return { kind: "spcc", campaignId: null };
+  return null;
+}
+
+// "Accept campaign" next to the campaign chip: one click runs the same accept the
+// search page uses (desktop app when paired, else our background-tab driver). The
+// chip only exists while the rate lookup says the campaign has open slots, so a
+// full campaign never offers it.
+function acceptChip(row: Row): HTMLElement | null {
+  if (!row.acceptEnabled) return null;
+  if (row.accept === "done") return el("span", "tile-chip good", t().tileAccepted);
+  const target = acceptTarget(row);
+  if (!target) return null;
+  const btn = el("button", "tile-chip tile-accept") as HTMLButtonElement;
+  btn.type = "button";
+  btn.textContent = row.accept === "working" ? t().acceptWorking : t().tileAccept;
+  btn.disabled = row.accept === "working";
+  if (row.accept === "failed" && row.acceptNote) btn.title = row.acceptNote;
+  btn.addEventListener("click", (event) => {
+    // The badge sits over the product tile's link: never navigate.
+    event.preventDefault();
+    event.stopPropagation();
+    void acceptRow(row, target);
+  });
+  return btn;
+}
+
+async function acceptRow(
+  row: Row,
+  target: { kind: "cc" | "spcc"; campaignId: string | null },
+): Promise<void> {
+  row.accept = "working";
+  row.acceptNote = null;
+  renderBadge(row);
+  const result = await requestAccept({
+    asin: row.tile.asin,
+    marketplace: row.marketplace,
+    kind: target.kind,
+    campaignId: target.campaignId,
+    brand: row.ccRate?.brand ?? row.spccRate?.brand ?? null,
+  });
+  row.accept = result.ok ? "done" : "failed";
+  row.acceptNote = describeAcceptResult(result);
+  renderBadge(row);
 }
 
 // Open on hover/focus/click, close on leave/blur/Escape. A short close delay lets

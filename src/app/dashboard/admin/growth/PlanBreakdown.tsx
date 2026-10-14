@@ -48,10 +48,11 @@ export default function PlanBreakdown({
         Subscribers by plan
       </h2>
       <p className="mt-1 text-xs text-slate-600">
-        Live right now, whatever month is selected. Add-on subscriptions are not counted. Paid plus
-        Comps equals the Active subscribers tile. Comps are free grants that never charge, so MRR
-        (list price, yearly plans divided by 12) and Avg / sub (MRR per paid subscriber, per month)
-        count paid subscribers only. Other discounts are not reflected.
+        Live right now, whatever month is selected. Add-on subscriptions are not counted. Comps are
+        free grants that never charge, so they are left out of the Active subscribers tile (which
+        equals Paid here), the goals and the projections. MRR (list price, yearly plans divided by
+        12) and Avg / sub (MRR per paid subscriber, per month) count paid subscribers only. Other
+        discounts are not reflected.
       </p>
       {!compsKnown ? (
         <p className="mt-1 text-xs font-medium text-amber-700">

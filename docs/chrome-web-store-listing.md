@@ -205,13 +205,13 @@ Radar, Global Maximizer, and price history. Same constraints as every prior
 submission: no competitor names, no provider brand-name lists, no automation
 claims (insights while you browse; the extension never accepts or declines a
 campaign on its own), and no badges or promotional text in images. Tool names
-match `src/lib/extension-features.ts` (12 tools in seven groups). Review
+match `src/lib/extension-features.ts` (15 tools in seven groups). Review
 against the live build before pasting; the blocks below replace the
 "WHAT YOU GET" list and slot in after the 2026-08-16 additions, and the rest
 of the approved copy stays unchanged.
 
 ```
-Influencer Butler puts free, no-nonsense tools right on the Amazon pages you already browse: 12 tools in seven groups, so you can research a product, read a campaign, get your link, and check your storefront without leaving the page.
+Influencer Butler puts free, no-nonsense tools right on the Amazon pages you already browse: 15 tools in seven groups, so you can research a product, read a campaign, get your link, and check your storefront without leaving the page.
 
 WHAT YOU GET (all free):
 
@@ -278,7 +278,7 @@ Two framing calls worth a human review before submitting:
    stay on the safe side of the no-automation framing.
 
 ```
-Influencer Butler puts free, no-nonsense tools right on the Amazon pages you already browse: 12 tools in seven groups, so you can research a product, read a campaign, get your link, and check your storefront without leaving the page.
+Influencer Butler puts free, no-nonsense tools right on the Amazon pages you already browse: 15 tools in seven groups, so you can research a product, read a campaign, get your link, and check your storefront without leaving the page.
 
 WHAT YOU GET (all free):
 

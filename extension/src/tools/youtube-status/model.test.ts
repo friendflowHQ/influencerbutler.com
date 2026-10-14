@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { YouTubeStatusRecord } from "../../shared/messages";
 import type { YouTubeStatusLookup } from "./status";
-import { amazonShowingState, parseReachBanner, youtubeChipState } from "./model";
+import { amazonShowingState, parseReachBanner, youtubeChipState, youtubeProgressLabelKind } from "./model";
+import type { YouTubeProgressLookup } from "./status";
+import type { YouTubeProgressSnapshot } from "../../shared/messages";
 
 const rec = (over: Partial<YouTubeStatusRecord>): YouTubeStatusRecord => ({
   contentId: "abc123def456aaaa",
@@ -46,6 +48,54 @@ describe("youtubeChipState", () => {
 
   it("is 'unknown' for an empty contentId", () => {
     expect(youtubeChipState("", lookup(true, [rec({})])).state).toBe("unknown");
+  });
+});
+
+const snapshot = (over: Partial<YouTubeProgressSnapshot>): YouTubeProgressSnapshot => ({
+  running: true,
+  state: "running",
+  total: 10,
+  uploaded: 4,
+  queued: 3,
+  failed: 1,
+  cap: 25,
+  usedToday: 4,
+  remainingToday: 21,
+  capReached: false,
+  label: null,
+  error: null,
+  ...over,
+});
+
+const progress = (paired: boolean, snap: YouTubeProgressSnapshot | null): YouTubeProgressLookup => ({
+  paired,
+  snapshot: snap,
+});
+
+describe("youtubeProgressLabelKind", () => {
+  it("is 'not-paired' when the app has never been connected", () => {
+    expect(youtubeProgressLabelKind(progress(false, null))).toEqual({ kind: "not-paired" });
+  });
+
+  it("is 'not-paired' when paired but the app did not answer (no snapshot)", () => {
+    expect(youtubeProgressLabelKind(progress(true, null))).toEqual({ kind: "not-paired" });
+  });
+
+  it("is 'cap-reached' even while a run is technically still 'running'", () => {
+    const out = youtubeProgressLabelKind(progress(true, snapshot({ capReached: true, running: true })));
+    expect(out).toEqual({ kind: "cap-reached" });
+  });
+
+  it("is 'running' with the real numbers when a batch is in progress", () => {
+    const out = youtubeProgressLabelKind(
+      progress(true, snapshot({ running: true, usedToday: 4, cap: 25, queued: 3, capReached: false })),
+    );
+    expect(out).toEqual({ kind: "running", usedToday: 4, cap: 25, queued: 3 });
+  });
+
+  it("is 'idle' when paired, not capped, and not currently running", () => {
+    const out = youtubeProgressLabelKind(progress(true, snapshot({ running: false, capReached: false })));
+    expect(out).toEqual({ kind: "idle" });
   });
 });
 

@@ -17,7 +17,8 @@ import { authSnapshot, signIn, signOut } from "./auth";
 import { getPlanOptions, upgradePlan } from "./plan";
 import { normalizePlanLevel } from "../shared/plan-level";
 import { captureAffiliateReferral } from "./affiliate";
-import { getHudStatus, lookupEarnings, fetchDesktopHistory, fetchOutreachKeywords, fetchMessengerStatus, fetchMessageTemplates, fetchBrandEnrichment, fetchOwnership, fetchCampaignStatus, fetchYouTubeStatus, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
+import { getHudStatus, lookupEarnings, fetchDesktopHistory, fetchOutreachKeywords, fetchMessengerStatus, fetchMessageTemplates, fetchBrandEnrichment, fetchOwnership, fetchCampaignStatus, fetchYouTubeStatus, fetchYouTubeProgress, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
+import { reconcileYtbSettingsPush } from "./youtube-butler-settings";
 import { relayClaimLink, relayListTargets, relaySend, sendCommandPreferLocal } from "./relay";
 import { clearActivity, getActivity, recordActivity } from "./desktop-activity";
 import type { RelayClaimResult } from "./relay";
@@ -361,6 +362,9 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     // a local flag unless a prior push failed), so a transient push failure
     // heals within a sync cycle rather than waiting for the next restart.
     void reconcileCreatorApiVault();
+    // Same self-healing idea for YouTube Butler settings: a no-op unless the
+    // creator edited a setting while the desktop app was closed/unpaired.
+    void reconcileYtbSettingsPush();
   }
   if (alarm.name === CATALOGUE_ALARM) {
     void refreshCatalogues();
@@ -527,6 +531,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
     case "LOOKUP_YOUTUBE_STATUS":
       void fetchYouTubeStatus(message.contentIds).then(sendResponse);
       return true;
+    case "LOOKUP_YOUTUBE_PROGRESS":
+      void fetchYouTubeProgress().then(sendResponse);
+      return true;
     case "GET_MARKET":
       void getMarket(message.asin, message.marketplace, message.retailer, {
         seasonality: message.seasonality === true,
@@ -545,7 +552,12 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       void requestPairing().then(sendResponse);
       return true;
     case "SUBMIT_PAIRING_CODE":
-      void submitPairingCode(message.code).then(sendResponse);
+      void submitPairingCode(message.code).then((res) => {
+        // Pending YouTube Butler edits made while the app was unreachable land
+        // as soon as pairing succeeds, rather than waiting for the next sync tick.
+        if (res?.ok) void reconcileYtbSettingsPush();
+        sendResponse(res);
+      });
       return true;
     case "UNPAIR_APP":
       void unpair().then(() => sendResponse(undefined));

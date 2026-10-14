@@ -1,5 +1,5 @@
 import { DEALS_CATALOG, type DealsDict } from "./strings";
-import { resolveLocale } from "../i18n";
+import { resolveLocale, setLocale } from "../i18n";
 import { isMobileUserAgent } from "../shared/platform";
 import { getSettings, patchSettings } from "../storage/store";
 import { DEAL_PUSH_CHUNK, DEAL_WORKSPACES } from "../shared/constants";
@@ -8,6 +8,10 @@ import {
   sendToBackground,
   type BrandedMintInput,
   type BulkMintResult,
+  type CcRate,
+  type CcRatesResult,
+  type SpccRate,
+  type SpccRatesResult,
   type DealSource,
   type EnrichResult,
   type HarvestResult,
@@ -19,6 +23,18 @@ import {
 import type { HarvestedDeal } from "../tools/deal-harvester/extract";
 import type { DealPlacement, ProductRef } from "../transport/hud-commands";
 import type { DealFinding, Finding } from "../transport/types";
+import { openAiPostModal, type AiPostProduct } from "../tools/ai-post/panel";
+import {
+  NO_FILTERS,
+  buildCatalogView,
+  loadCatalog,
+  saveCatalog,
+  tabCounts,
+  type CatalogFilters,
+  type CatalogItem,
+  type CatalogSort,
+  type CatalogTab,
+} from "./catalog";
 
 // The Deal Sites Harvester page. Opened from the extension popup in its own tab.
 // It gathers aggregator URLs (curated + saved + pasted), asks the background to
@@ -36,10 +52,42 @@ type Row = {
   imageUrl: string | null;
   discountPct: number | null;
   commissionRatePct: number | null;
+  brand: string | null;
+  // Best active Creator Connections campaign for the ASIN, and Amazon's SPCC
+  // ("Earn on Clicks") forecast, filled by enrichCampaigns().
+  cc: CcRate | null;
+  epc: SpccRate | null;
   selected: boolean;
 };
 
 let rows: Row[] = [];
+// Deals Catalog view state: which type tab, filters and sort are active.
+let tab: CatalogTab = "all";
+let filters: CatalogFilters = { ...NO_FILTERS };
+let sort: CatalogSort = "newest";
+
+const itemOf = (r: Row): CatalogItem => ({
+  discountPct: r.discountPct,
+  priceCents: r.priceCents,
+  ccRatePct: r.cc?.ratePct ?? null,
+  epc: r.epc?.epc ?? null,
+  hasPromo: !!r.deal.promoCode,
+  order: rows.indexOf(r),
+});
+
+// The rows the creator currently sees (tab + filters + sort). Send / mint act on
+// the selected rows among THESE, so a filtered-out row is never sent by accident.
+function visibleRows(): Row[] {
+  return buildCatalogView(rows, itemOf, tab, filters, sort);
+}
+
+type StoredDeal = Omit<Row, "selected">;
+const MAX_ROWS = 300;
+const rowKey = (r: { deal: HarvestedDeal }): string => `${r.deal.marketplace}:${r.deal.asin}`;
+
+async function persistCatalog(): Promise<void> {
+  await saveCatalog<StoredDeal>(rows.map(({ selected: _selected, ...rest }) => rest));
+}
 let curatedSources: DealSource[] = [];
 let autoHarvest = false;
 // Set when arriving from a per-deal "Review" button (deal-badge/index.ts,
@@ -55,6 +103,7 @@ void init();
 async function init(): Promise<void> {
   const settings = await getSettings();
   D = DEALS_CATALOG[resolveLocale(settings.locale)];
+  setLocale(settings.locale);
   document.title = `Influencer Butler: ${D.pageTitle}`;
   (document.getElementById("page-title") as HTMLElement).textContent = D.pageTitle;
   curatedSources = await sendToBackground<DealSource[]>({ kind: "GET_DEAL_SOURCES" });
@@ -79,7 +128,24 @@ async function init(): Promise<void> {
     history.replaceState(null, "", location.pathname);
   }
 
+  // The catalog persists: bring back what was harvested on earlier visits, then
+  // refresh its Creator Connections / EPC columns in the background.
+  rows = (await loadCatalog<StoredDeal>()).map((r) => ({
+    ...r,
+    cc: r.cc ?? null,
+    epc: r.epc ?? null,
+    brand: r.brand ?? null,
+    selected: false,
+  }));
+
   await render();
+
+  if (rows.length > 0) {
+    void enrichCampaigns().then(() => {
+      renderResultsInto();
+      void persistCatalog();
+    });
+  }
 
   if (addUrl && /^https?:\/\//i.test(addUrl)) {
     const btn = document.getElementById("harvest-btn") as HTMLButtonElement | null;
@@ -291,23 +357,32 @@ async function runHarvest(
       urls: unique,
       render: deepScan,
     });
-    rows = result.deals.map((deal) => ({
+    // Fresh finds go first and win over an older copy of the same product;
+    // earlier finds stay in the catalog (not selected for sending).
+    const fresh: Row[] = result.deals.map((deal) => ({
       deal,
       title: null,
       priceCents: null,
       currency: null,
       imageUrl: null,
-      discountPct: null,
+      discountPct: deal.promoPercentOff ?? null,
       commissionRatePct: null,
+      brand: null,
+      cc: null,
+      epc: null,
       selected: true,
     }));
+    const freshKeys = new Set(fresh.map(rowKey));
+    rows = [...fresh, ...rows.filter((r) => !freshKeys.has(rowKey(r)))].slice(0, MAX_ROWS);
     renderResultsInto();
 
     if (rows.length > 0) {
       status.textContent = D.enriching;
       await enrich();
+      await enrichCampaigns();
       await recordFindings();
     }
+    await persistCatalog();
     renderResultsInto();
     status.textContent = harvestSummary(result);
     renderPerSite(btn.closest(".card") as HTMLElement | null, unique, result);
@@ -376,6 +451,26 @@ function harvestSummary(result: HarvestResult): string {
 }
 
 // Enrich the harvested ASINs through the Creator API for title, price, image.
+// Add Creator Connections commission and Earn on Clicks (EPC) forecasts to every
+// Amazon row, through the same cached background lookups the search overlay uses.
+// A failed lookup leaves the row's previous values alone.
+async function enrichCampaigns(): Promise<void> {
+  const asins = [
+    ...new Set(rows.filter((r) => !/walmart/.test(r.deal.marketplace)).map((r) => r.deal.asin)),
+  ];
+  if (asins.length === 0) return;
+  const [cc, spcc] = await Promise.all([
+    sendToBackground<CcRatesResult>({ kind: "LOOKUP_CC_RATES", asins }).catch(() => null),
+    sendToBackground<SpccRatesResult>({ kind: "LOOKUP_SPCC_RATES", asins }).catch(() => null),
+  ]);
+  for (const row of rows) {
+    if (cc?.ok) row.cc = cc.rates[row.deal.asin] ?? null;
+    if (spcc?.ok) row.epc = spcc.rates[row.deal.asin] ?? null;
+    if (row.cc) row.commissionRatePct = row.cc.ratePct;
+    if (!row.brand) row.brand = row.cc?.brand ?? row.epc?.brand ?? null;
+  }
+}
+
 async function enrich(): Promise<void> {
   const asins = [...new Set(rows.map((r) => r.deal.asin))];
   const marketplaces = [...new Set(rows.map((r) => r.deal.marketplace))];
@@ -395,6 +490,7 @@ async function enrich(): Promise<void> {
     row.priceCents = p.priceCents;
     row.currency = p.currency;
     row.imageUrl = p.imageUrl;
+    row.brand = p.brand ?? row.brand;
   }
 }
 
@@ -425,8 +521,11 @@ async function recordFindings(): Promise<void> {
 }
 
 function renderResults(): HTMLElement {
-  const card = section(D.resultsHeading);
+  const card = section(D.catalogHeading);
   card.id = "results-card";
+  const note = el("p", "muted small");
+  note.textContent = D.catalogNote;
+  card.append(note);
   const holder = el("div");
   holder.id = "results-holder";
   card.append(holder);
@@ -445,27 +544,158 @@ function renderResultsInto(): void {
     return;
   }
 
-  // Select-all row.
+  const tableHost = el("div");
+  const tabBar = renderTabs(tableHost);
+  holder.append(tabBar, renderFilters(tableHost), tableHost);
+  renderTable(tableHost);
+  holder.append(renderSend());
+}
+
+// Type tabs: All | Creator Connections | EPC deals | Promo codes, each with a count.
+function renderTabs(tableHost: HTMLElement): HTMLElement {
+  const bar = el("div", "deal-tabs");
+  bar.setAttribute("role", "tablist");
+  bar.setAttribute("aria-label", D.tabLabel);
+  const counts = tabCounts(rows, itemOf);
+  const defs: Array<[CatalogTab, string]> = [
+    ["all", D.tabAll],
+    ["cc", D.tabCc],
+    ["epc", D.tabEpc],
+    ["promo", D.tabPromo],
+  ];
+  const buttons: Array<[CatalogTab, HTMLButtonElement]> = [];
+  const sync = (): void => {
+    for (const [id, btn] of buttons) {
+      const on = id === tab;
+      btn.setAttribute("aria-selected", String(on));
+      btn.tabIndex = on ? 0 : -1;
+      btn.classList.toggle("active", on);
+    }
+  };
+  for (const [id, label] of defs) {
+    const btn = el("button", "deal-tab") as HTMLButtonElement;
+    btn.type = "button";
+    btn.setAttribute("role", "tab");
+    btn.textContent = `${label} (${counts[id]})`;
+    btn.onclick = () => {
+      tab = id;
+      sync();
+      renderTable(tableHost);
+    };
+    buttons.push([id, btn]);
+    bar.append(btn);
+  }
+  bar.onkeydown = (e) => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    e.preventDefault();
+    const at = buttons.findIndex(([id]) => id === tab);
+    const next = buttons[(at + (e.key === "ArrowRight" ? 1 : buttons.length - 1)) % buttons.length];
+    if (!next) return;
+    tab = next[0];
+    sync();
+    next[1].focus();
+    renderTable(tableHost);
+  };
+  sync();
+  return bar;
+}
+
+// Filters + sort. Changing one re-renders only the table, so typing never loses focus.
+function renderFilters(tableHost: HTMLElement): HTMLElement {
+  const wrap = el("div", "deal-filters");
+  const field = (label: string, control: HTMLElement): HTMLElement => {
+    const f = el("label", "deal-filter");
+    const span = el("span");
+    span.textContent = label;
+    f.append(span, control);
+    return f;
+  };
+  const num = (get: () => number, set: (n: number) => void, step: string): HTMLInputElement => {
+    const input = el("input") as HTMLInputElement;
+    input.type = "number";
+    input.min = "0";
+    input.step = step;
+    input.inputMode = "decimal";
+    input.value = get() > 0 ? String(get()) : "";
+    input.oninput = () => {
+      const n = Number(input.value);
+      set(Number.isFinite(n) && n > 0 ? n : 0);
+      renderTable(tableHost);
+    };
+    return input;
+  };
+  wrap.append(
+    field(D.filterMinDiscount, num(() => filters.minDiscount, (n) => (filters.minDiscount = n), "1")),
+    field(D.filterMinCommission, num(() => filters.minCommission, (n) => (filters.minCommission = n), "1")),
+    field(D.filterMinEpc, num(() => filters.minEpc, (n) => (filters.minEpc = n), "0.05")),
+    field(D.filterMaxPrice, num(() => filters.maxPrice, (n) => (filters.maxPrice = n), "1")),
+  );
+
+  const promoBox = el("input") as HTMLInputElement;
+  promoBox.type = "checkbox";
+  promoBox.checked = filters.onlyPromo;
+  promoBox.onchange = () => {
+    filters.onlyPromo = promoBox.checked;
+    renderTable(tableHost);
+  };
+  const promoField = el("label", "deal-filter deal-filter-check");
+  const promoSpan = el("span");
+  promoSpan.textContent = D.filterOnlyPromo;
+  promoField.append(promoBox, promoSpan);
+
+  const sortSel = el("select") as HTMLSelectElement;
+  const sorts: Array<[CatalogSort, string]> = [
+    ["newest", D.sortNewest],
+    ["discount", D.sortDiscount],
+    ["commission", D.sortCommission],
+    ["epc", D.sortEpc],
+  ];
+  for (const [value, label] of sorts) {
+    const opt = el("option") as HTMLOptionElement;
+    opt.value = value;
+    opt.textContent = label;
+    sortSel.append(opt);
+  }
+  sortSel.value = sort;
+  sortSel.onchange = () => {
+    sort = sortSel.value as CatalogSort;
+    renderTable(tableHost);
+  };
+  wrap.append(promoField, field(D.sortLabel, sortSel));
+  return wrap;
+}
+
+function renderTable(host: HTMLElement): void {
+  host.replaceChildren();
+  const view = visibleRows();
+  if (view.length === 0) {
+    const p = el("p", "muted small");
+    p.textContent = D.noMatches;
+    host.append(p);
+    return;
+  }
+
+  // Select-all row (acts on the rows currently shown).
   const controls = el("div", "row");
   const allBox = el("input") as HTMLInputElement;
   allBox.type = "checkbox";
-  allBox.checked = rows.every((r) => r.selected);
+  allBox.checked = view.every((r) => r.selected);
   allBox.onchange = () => {
-    for (const r of rows) r.selected = allBox.checked;
-    renderResultsInto();
+    for (const r of view) r.selected = allBox.checked;
+    renderTable(host);
   };
   const allLabel = el("label", "toggle");
   const allSpan = el("span");
   allSpan.textContent = D.selectAll;
   allLabel.append(allBox, allSpan);
   controls.append(allLabel);
-  holder.append(controls);
+  host.append(controls);
 
   const scroll = el("div", "deals-scroll");
   const table = el("table", "deals-table");
   const thead = el("thead");
   const htr = el("tr");
-  for (const label of ["", D.colProduct, D.colPrice, D.colDiscount, D.colCommission, D.colSource]) {
+  for (const label of ["", D.colProduct, D.colPrice, D.colDiscount, D.colCc, D.colEpc, D.colSource, D.colAction]) {
     const th = el("th");
     th.textContent = label;
     htr.append(th);
@@ -474,12 +704,10 @@ function renderResultsInto(): void {
   table.append(thead);
 
   const tbody = el("tbody");
-  for (const row of rows) tbody.append(renderRow(row));
+  for (const row of view) tbody.append(renderRow(row));
   table.append(tbody);
   scroll.append(table);
-  holder.append(scroll);
-
-  holder.append(renderSend());
+  host.append(scroll);
 }
 
 function renderRow(row: Row): HTMLElement {
@@ -509,12 +737,81 @@ function renderRow(row: Row): HTMLElement {
 
   tr.append(numCell(formatPrice(row.priceCents, row.currency)));
   tr.append(numCell(row.discountPct == null ? "-" : `${row.discountPct}%`));
-  tr.append(numCell(row.commissionRatePct == null ? "-" : `${row.commissionRatePct}%`));
+  tr.append(ccCell(row));
+  tr.append(epcCell(row));
 
   const src = el("td");
   src.textContent = hostOf(row.deal.sourceUrl);
   tr.append(src);
+
+  const act = el("td");
+  const post = el("button", "secondary") as HTMLButtonElement;
+  post.type = "button";
+  post.textContent = D.aiPostButton;
+  post.onclick = () => openAiPostModal(toAiProduct(row));
+  act.append(post);
+  tr.append(act);
   return tr;
+}
+
+// Creator Connections cell: the commission, and when the campaign ends.
+function ccCell(row: Row): HTMLElement {
+  const td = el("td", "num");
+  if (!row.cc) {
+    td.textContent = "-";
+    return td;
+  }
+  td.textContent = `${row.cc.ratePct}%`;
+  const ends = row.cc.endsAt ? new Date(row.cc.endsAt) : null;
+  if (ends && Number.isFinite(ends.getTime())) {
+    const small = el("div", "muted small");
+    small.textContent = D.endsOn(ends.toLocaleDateString());
+    td.append(small);
+  }
+  return td;
+}
+
+// EPC cell: Amazon's forecast dollars per click, and the campaign budget level.
+function epcCell(row: Row): HTMLElement {
+  const td = el("td", "num");
+  if (!row.epc) {
+    td.textContent = "-";
+    return td;
+  }
+  td.textContent = D.perClick(`$${row.epc.epc.toFixed(2)}`);
+  if (row.epc.budgetAvailability) {
+    const small = el("div", "muted small");
+    small.textContent = D.budget(row.epc.budgetAvailability);
+    td.append(small);
+  }
+  return td;
+}
+
+// The AI Post popup's view of a catalog row. Percent-only, no prices: the facts
+// carry the percent off the deal site printed and the promo code, nothing else.
+function toAiProduct(row: Row): AiPostProduct {
+  const walmart = /walmart/.test(row.deal.marketplace);
+  return {
+    asin: row.deal.asin,
+    marketplace: row.deal.marketplace,
+    retailer: walmart ? "walmart" : "amazon",
+    title: row.title,
+    imageUrl: row.imageUrl,
+    facts: {
+      title: row.title,
+      store: walmart ? "Walmart" : "Amazon",
+      brand: row.brand,
+      percentOff: row.discountPct,
+      couponPercentOff: null,
+      promoPercentOff: row.deal.promoPercentOff ?? null,
+      promoCode: row.deal.promoCode,
+      promoText: null,
+      event: null,
+    },
+    promoText: row.deal.promoCode,
+    hasPromo: !!row.deal.promoCode,
+    pageUrl: productUrl(row.deal.asin, row.deal.marketplace),
+  };
 }
 
 function renderSend(): HTMLElement {
@@ -579,7 +876,7 @@ async function mintSelected(
   status: HTMLElement,
   out: HTMLElement,
 ): Promise<void> {
-  const selected = rows.filter((r) => r.selected);
+  const selected = visibleRows().filter((r) => r.selected);
   if (selected.length === 0) {
     status.textContent = D.nothingSelected;
     return;
@@ -633,7 +930,7 @@ async function sendSelected(
   btn: HTMLButtonElement,
   status: HTMLElement,
 ): Promise<void> {
-  const selected = rows.filter((r) => r.selected);
+  const selected = visibleRows().filter((r) => r.selected);
   if (selected.length === 0) {
     status.textContent = D.nothingSelected;
     return;

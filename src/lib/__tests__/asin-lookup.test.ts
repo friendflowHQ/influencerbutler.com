@@ -65,6 +65,25 @@ describe("pickBestCcRate", () => {
     expect(rate).toEqual({ ratePct: 11, brand: "Acme", endsAt: iso(NOW + DAY), campaignId: "only" });
   });
 
+  it("skips fully claimed campaigns (0 open slots) but keeps unknown fill", () => {
+    const rate = pickBestCcRate(
+      {
+        campaignIds: ["full", "open", "unknown"],
+        campaigns: [
+          { r: 20, e: iso(NOW + 6 * DAY), s: 0 },
+          { r: 10, e: iso(NOW + 6 * DAY), s: 2 },
+          { r: 5, e: null, s: null },
+        ],
+      },
+      NOW,
+    );
+    expect(rate?.campaignId).toBe("open");
+    expect(
+      pickBestCcRate({ campaignIds: ["full"], campaigns: [{ r: 20, e: null, s: 0 }] }, NOW),
+    ).toBeNull();
+    expect(pickBestCcRate({ bestRate: 20, maxSlots: 0, campaignIds: ["full"] }, NOW)).toBeNull();
+  });
+
   it("returns a null campaignId when ids and tuples are not parallel", () => {
     const rate = pickBestCcRate({ campaigns: [{ r: 7, e: null, s: null }] }, NOW);
     expect(rate?.campaignId).toBeNull();

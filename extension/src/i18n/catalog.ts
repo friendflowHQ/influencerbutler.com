@@ -727,6 +727,12 @@ export interface Dict {
   ytUploadError: string;
   ytShowingAmazon: string;
   ytNotShowingAmazon: string;
+  // Real upload-progress labels while the "Upload to YouTube" poll is live.
+  ytUploadingProgress: (usedToday: number, cap: number, queued: number) => string;
+  ytCapReached: string;
+  ytQueuedWaitingApp: string;
+  ytUploadQueuedIdle: string;
+  ytStillProcessing: string;
 
   // Improve Reach advisory (expands from the "not on detail pages" chip): the
   // specific reason Amazon gave and a concrete fix checklist per content kind.
@@ -1290,6 +1296,17 @@ export interface Dict {
   syncConfirmExtWins: string;
   syncCancel: string;
   syncDone: string;
+  // Sync state shown on the popup's Desktop-app card: the green "Synced" chip
+  // (local pairing, or the default linked computer for relay users), the
+  // last-synced / connected-since line, and the automatic-sync note. syncBlurb
+  // (what actually syncs) renders as the tooltip on the info dot by Sync now.
+  syncChipLocal: string;
+  syncChipRemote: (label: string) => string;
+  syncLastSynced: (ago: string) => string;
+  syncNeverSynced: string;
+  syncConnectedOn: (date: string) => string;
+  syncRealtime: string;
+  syncInfoLabel: string;
 
   // Standalone campaign accept (no desktop app) + upload-page campaign prompts
   // (tools/campaigns/accept.ts, tools/campaign-radar/accept-runner.ts,
@@ -1987,6 +2004,11 @@ const en: Dict = {
   ytUploadError: "Could not reach the desktop app",
   ytShowingAmazon: "Showing on Amazon",
   ytNotShowingAmazon: "Not on detail pages",
+  ytUploadingProgress: (usedToday, cap, queued) => `Uploading: ${usedToday} of ${cap} uploaded today (${queued} queued)`,
+  ytCapReached: "Daily cap reached. Resumes tomorrow.",
+  ytQueuedWaitingApp: "Queued. Waiting for the desktop app.",
+  ytUploadQueuedIdle: "Queued for the next run.",
+  ytStillProcessing: "Still processing: check the desktop app's Upload Log.",
   reachImprove: "Improve reach",
   reachPanelTitle: "Boost this content's reach",
   reachWhy: "Why it's held back",
@@ -2596,6 +2618,13 @@ const en: Dict = {
   syncConfirmExtWins: "Use the extension's values",
   syncCancel: "Cancel",
   syncDone: "Synced.",
+  syncChipLocal: "Synced: this computer",
+  syncChipRemote: (label) => `Synced: ${label}`,
+  syncLastSynced: (ago) => `Last synced ${ago}.`,
+  syncNeverSynced: "Not synced yet.",
+  syncConnectedOn: (date) => `Connected since ${date}.`,
+  syncRealtime: "Changes sync automatically while the app is connected. Use Sync now to force a full check.",
+  syncInfoLabel: "What syncs?",
 
   // Standalone campaign accept + upload-page campaign prompts
   acceptStandalone: "Accept campaign",
@@ -3295,6 +3324,11 @@ const es: Dict = {
   ytUploadError: "No se pudo contactar con la app de escritorio",
   ytShowingAmazon: "Se muestra en Amazon",
   ytNotShowingAmazon: "No en páginas de producto",
+  ytUploadingProgress: (usedToday, cap, queued) => `Subiendo: ${usedToday} de ${cap} subidos hoy (${queued} en cola)`,
+  ytCapReached: "Límite diario alcanzado. Continúa mañana.",
+  ytQueuedWaitingApp: "En cola. Esperando la app de escritorio.",
+  ytUploadQueuedIdle: "En cola para la próxima ejecución.",
+  ytStillProcessing: "Aún procesando: revisa el registro de subidas en la app de escritorio.",
   reachImprove: "Mejorar alcance",
   reachPanelTitle: "Aumenta el alcance de este contenido",
   reachWhy: "Por qué está limitado",
@@ -3906,6 +3940,14 @@ const es: Dict = {
   syncConfirmExtWins: "Usar los valores de la extensión",
   syncCancel: "Cancelar",
   syncDone: "Sincronizado.",
+  syncChipLocal: "Sincronizado: este ordenador",
+  syncChipRemote: (label) => `Sincronizado: ${label}`,
+  syncLastSynced: (ago) => `Última sincronización: ${ago}.`,
+  syncNeverSynced: "Aún no se ha sincronizado.",
+  syncConnectedOn: (date) => `Conectado desde el ${date}.`,
+  syncRealtime:
+    "Los cambios se sincronizan automáticamente mientras la app está conectada. Usa Sincronizar ahora para forzar una comprobación completa.",
+  syncInfoLabel: "¿Qué se sincroniza?",
 
   // Standalone campaign accept + upload-page campaign prompts
   acceptStandalone: "Aceptar campaña",
@@ -4605,6 +4647,11 @@ const fr: Dict = {
   ytUploadError: "Impossible de joindre l'app de bureau",
   ytShowingAmazon: "Visible sur Amazon",
   ytNotShowingAmazon: "Pas sur les fiches produit",
+  ytUploadingProgress: (usedToday, cap, queued) => `Publication : ${usedToday} sur ${cap} publiées aujourd'hui (${queued} en file)`,
+  ytCapReached: "Limite quotidienne atteinte. Reprend demain.",
+  ytQueuedWaitingApp: "En file. En attente de l'app de bureau.",
+  ytUploadQueuedIdle: "En file pour la prochaine exécution.",
+  ytStillProcessing: "Encore en cours : vérifiez le journal de publication dans l'app de bureau.",
   reachImprove: "Améliorer la portée",
   reachPanelTitle: "Augmentez la portée de ce contenu",
   reachWhy: "Pourquoi elle est limitée",
@@ -5216,6 +5263,14 @@ const fr: Dict = {
   syncConfirmExtWins: "Utiliser les valeurs de l'extension",
   syncCancel: "Annuler",
   syncDone: "Synchronisé.",
+  syncChipLocal: "Synchronisé: cet ordinateur",
+  syncChipRemote: (label) => `Synchronisé: ${label}`,
+  syncLastSynced: (ago) => `Dernière synchronisation: ${ago}.`,
+  syncNeverSynced: "Pas encore synchronisé.",
+  syncConnectedOn: (date) => `Connecté depuis le ${date}.`,
+  syncRealtime:
+    "Les modifications se synchronisent automatiquement tant que l'app est connectée. Utilisez Synchroniser maintenant pour forcer une vérification complète.",
+  syncInfoLabel: "Que synchronise-t-on ?",
 
   // Standalone campaign accept + upload-page campaign prompts
   acceptStandalone: "Accepter la campagne",

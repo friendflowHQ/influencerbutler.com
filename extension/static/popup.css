@@ -389,6 +389,65 @@ button[disabled] { opacity: 0.6; cursor: default; }
 .row-chip.spcc { background: #ede9fe; color: #5b21b6; }
 .row-rate { background: #ffedd5; color: var(--orange-dark); }
 
+/* Card heading with a status chip beside it (Desktop app card). */
+.card-head { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; }
+.card-head h2 { margin-bottom: 0; }
+
+/* "Synced: this computer" / "Synced: <linked computer>" on the Desktop app card. */
+.sync-chip {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 3px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+  background: #dcfce7;
+  color: #166534;
+}
+
+/* Info dot whose tooltip explains what the desktop-app sync copies. */
+.info-tip {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--slate-200);
+  color: var(--slate-600);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: help;
+}
+.info-tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 7px);
+  left: 0;
+  width: 230px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--slate-900);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: left;
+  white-space: normal;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.12s;
+  pointer-events: none;
+  z-index: 20;
+}
+.info-tip:hover::after,
+.info-tip:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+}
+
 button.ghost.small { margin-top: 0; padding: 2px 9px; font-size: 12px; }
 /* Text-only button that opens a product from a saved list. */
 button.linklike {

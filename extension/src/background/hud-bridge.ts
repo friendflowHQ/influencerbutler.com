@@ -26,6 +26,7 @@ import type {
   PairResult,
   TemplatesLookupResult,
   YouTubeStatusResult,
+  YouTubeProgressResult,
 } from "../transport/hud-commands";
 import type { Finding } from "../transport/types";
 import type {
@@ -43,6 +44,10 @@ import { recordActivity } from "./desktop-activity";
 // on the same identity rather than accumulating dead entries in the app.
 const TOKEN_KEY = "ib-bridge-token";
 const CLIENT_ID_KEY = "ib-bridge-client-id";
+// When the current pairing was made / when settings last synced. Kept in sync
+// with BRIDGE_PAIRED_AT_KEY and BRIDGE_LAST_SYNC_KEY in src/shared/bridge-token.ts.
+const PAIRED_AT_KEY = "ib-bridge-paired-at";
+const LAST_SYNC_KEY = "ib-bridge-last-sync";
 
 async function getStored(key: string): Promise<string | null> {
   try {
@@ -389,8 +394,12 @@ function fetchSettingsOnPort(port: number, token: string): Promise<SyncSettingsP
   });
 }
 
+// Partial so a YouTube-Butler-only push (see background/youtube-butler-
+// settings.ts) can send just { youtubeButler: {...} } without constructing a
+// full amazonbutler payload; the desktop's applyPayloadToDesktop already
+// treats every field as optional (a typeof/undefined check per field).
 export async function pushDesktopSettings(
-  payload: SyncSettingsPayload,
+  payload: Partial<SyncSettingsPayload>,
   mode: SyncMode,
 ): Promise<PushSettingsResult> {
   const token = await getToken();
@@ -409,7 +418,7 @@ export async function pushDesktopSettings(
 
 function pushSettingsOnPort(
   port: number,
-  payload: SyncSettingsPayload,
+  payload: Partial<SyncSettingsPayload>,
   mode: SyncMode,
   token: string,
 ): Promise<number | null> {
@@ -1172,6 +1181,82 @@ function fetchYouTubeStatusOnPort(
   });
 }
 
+// Read-only account-wide upload progress: the real counts (uploaded/queued/
+// failed today, daily cap, remaining, run state) behind the "Uploading"
+// button, so the poller can show live numbers instead of guessing when a run
+// will finish. Read-only and authed, same no-fallback convention as
+// fetchYouTubeStatus (paired:false when the app has never been connected).
+export async function fetchYouTubeProgress(): Promise<YouTubeProgressResult> {
+  const token = await getToken();
+  if (!token) return { ok: false, paired: false, snapshot: null };
+  for (const port of BRIDGE_PORTS) {
+    const result = await fetchYouTubeProgressOnPort(port, token);
+    if (result) return result;
+  }
+  return { ok: false, snapshot: null };
+}
+
+function fetchYouTubeProgressOnPort(
+  port: number,
+  token: string,
+): Promise<YouTubeProgressResult | null> {
+  return new Promise((resolve) => {
+    let socket: WebSocket;
+    try {
+      socket = new WebSocket(`ws://127.0.0.1:${port}/butler`);
+    } catch {
+      resolve(null);
+      return;
+    }
+    const done = (value: YouTubeProgressResult | null) => {
+      clearTimeout(timer);
+      try {
+        socket.close();
+      } catch {
+        // ignore
+      }
+      resolve(value);
+    };
+    const timer = setTimeout(() => done(null), BRIDGE_PROBE_TIMEOUT_MS * 3);
+    socket.onopen = () => {
+      try {
+        socket.send(JSON.stringify({ type: "auth", token }));
+      } catch {
+        done(null);
+      }
+    };
+    socket.onmessage = (event) => {
+      try {
+        const frame = JSON.parse(String(event.data)) as {
+          type?: string;
+          ok?: boolean;
+          snapshot?: YouTubeProgressResult["snapshot"];
+        };
+        if (frame.type === "authed") {
+          socket.send(JSON.stringify({ type: "youtube.progress.lookup", payload: {} }));
+          return;
+        }
+        if (frame.type === "auth.error") {
+          done({ ok: false, paired: false, snapshot: null });
+          return;
+        }
+        if (frame.type === "youtube.progress.result") {
+          done({
+            ok: frame.ok === true,
+            snapshot: frame.snapshot || null,
+          });
+          return;
+        }
+      } catch {
+        // fall through
+      }
+      done(null);
+    };
+    socket.onerror = () => done(null);
+    socket.onclose = () => done(null);
+  });
+}
+
 function fetchMessageTemplatesOnPort(
   port: number,
   token: string,
@@ -1567,7 +1652,7 @@ function pairRoundTrip(
       }
       if (frame.type === "paired" && successType === "paired") {
         void chrome.storage.local
-          .set({ [TOKEN_KEY]: String(frame.token || "") })
+          .set({ [TOKEN_KEY]: String(frame.token || ""), [PAIRED_AT_KEY]: Date.now() })
           .then(() => done({ ok: true, stage: "paired" }))
           .catch(() => done({ ok: true, stage: "paired" }));
         return;
@@ -1584,7 +1669,7 @@ function pairRoundTrip(
 
 export async function unpair(): Promise<void> {
   try {
-    await chrome.storage.local.remove(TOKEN_KEY);
+    await chrome.storage.local.remove([TOKEN_KEY, PAIRED_AT_KEY, LAST_SYNC_KEY]);
     recordActivity({ dir: "connection", action: "unpair", outcome: "ok", route: "local" });
   } catch {
     // best effort

@@ -162,7 +162,10 @@
       </section>
 
       <section id="app-bridge" class="card">
-        <h2 data-i18n="appBridgeHeading">Desktop app</h2>
+        <div class="card-head">
+          <h2 data-i18n="appBridgeHeading">Desktop app</h2>
+          <span id="app-sync-chip" class="sync-chip" hidden></span>
+        </div>
         <p id="app-next-step" class="notice" hidden data-i18n="appNextStepHint">
           You're synced to your dashboard. To also accept campaigns and send products to your butlers, connect the desktop app below. This step is optional.
         </p>
@@ -187,10 +190,11 @@
           </div>
         </div>
         <div id="app-bridge-connected" hidden>
-          <p class="muted small" data-i18n="appConnected">Connected to the desktop app.</p>
-          <p class="muted small" data-i18n="syncBlurb">Copy your link providers, affiliate tags, and storefront ID between this extension and the desktop app.</p>
+          <p id="app-sync-meta" class="muted small"></p>
+          <p class="muted small" data-i18n="syncRealtime">Changes sync automatically while the app is connected. Use Sync now to force a full check.</p>
           <div class="row">
             <button id="app-sync-btn" class="ghost" data-i18n="syncNow">Sync now</button>
+            <span id="app-sync-info" class="info-tip" tabindex="0">?</span>
             <span id="app-sync-status" class="muted small"></span>
           </div>
           <button id="app-unpair-btn" class="ghost" data-i18n="appUnpair">Disconnect app</button>
