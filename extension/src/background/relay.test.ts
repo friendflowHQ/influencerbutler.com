@@ -116,12 +116,16 @@ describe("relayListTargets", () => {
     expect(res.targets).toEqual([{ receiverInstanceId: "desk-1", receiverLabel: "Studio PC" }]);
   });
 
-  it("reports not-signed-in without a network call when no key", async () => {
+  it("reports a sign-in prompt without a network call when no key", async () => {
     licenseKey = null;
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
     const res = await relayListTargets();
-    expect(res).toEqual({ ok: false, targets: [], error: "not-signed-in" });
+    expect(res).toEqual({
+      ok: false,
+      targets: [],
+      error: "Sign in with your license key in the extension first.",
+    });
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });
