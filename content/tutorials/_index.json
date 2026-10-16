@@ -982,6 +982,42 @@
       "audience": "power"
     },
     {
+      "id": "collage-butler",
+      "title": "Collage Butler: build multi-product collage images to post",
+      "category": "Collage",
+      "summary": "Pull products from Amazon by keyword, arrange them into one scroll-stopping collage image, and send it straight to Social Posting Butler.",
+      "order": 74,
+      "locales": ["en-US", "es-ES", "fr-FR"],
+      "audience": "power"
+    },
+    {
+      "id": "collage-keywords",
+      "title": "Collage Keywords & Filters: choose the products that fill your collages",
+      "category": "Collage",
+      "summary": "Set the keywords and price filters that decide which Amazon products get pulled in when Collage Butler builds a multi-product image.",
+      "order": 74.1,
+      "locales": ["en-US", "es-ES", "fr-FR"],
+      "audience": "power"
+    },
+    {
+      "id": "collage-gallery",
+      "title": "Collage Gallery: browse and reuse the collages you have made",
+      "category": "Collage",
+      "summary": "See every collage you have generated in one grid, check whether each one was posted, and pick a look worth remaking or reposting.",
+      "order": 74.2,
+      "locales": ["en-US", "es-ES", "fr-FR"],
+      "audience": "power"
+    },
+    {
+      "id": "collage-templates",
+      "title": "Collage Templates: save reusable layouts, colors, and presets for your collages",
+      "category": "Collage",
+      "summary": "Set one reusable look for your product collages, a default layout, font, brand colors, and headline and call-to-action presets, so every collage you generate starts from the same on-brand style.",
+      "order": 74.3,
+      "locales": ["en-US", "es-ES", "fr-FR"],
+      "audience": "power"
+    },
+    {
       "id": "connect-your-domain",
       "title": "Connect your own domain to your Foyer page and Butler Links",
       "category": "Amazon",
