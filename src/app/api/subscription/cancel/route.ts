@@ -12,6 +12,7 @@ type CancelRequestBody = {
   feedback?: string;
   intendedOutcome?: string;
   wouldReturn?: string;
+  offerFeedback?: string;
   offerShown?: boolean;
 };
 
@@ -23,6 +24,7 @@ export async function POST(request: Request) {
     const feedback = body.feedback?.toString() ?? null;
     const intendedOutcome = body.intendedOutcome?.toString().trim() || null;
     const wouldReturn = normalizeWouldReturn(body.wouldReturn);
+    const offerFeedback = body.offerFeedback?.toString().trim() || null;
     const offerShown = Boolean(body.offerShown);
 
     if (!subscriptionId) {
@@ -105,6 +107,7 @@ export async function POST(request: Request) {
         feedback,
         intended_outcome: intendedOutcome,
         would_return: wouldReturn,
+        offer_feedback: offerFeedback,
         source: "in_app",
         completed_at: new Date().toISOString(),
         offer_shown: offerShown,

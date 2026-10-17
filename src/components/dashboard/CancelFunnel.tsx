@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import {
   REASONS,
   WOULD_RETURN_OPTIONS,
+  offersFeatureAsk,
   type Reason,
   type WouldReturn,
 } from "@/lib/cancel-reasons-shared";
@@ -36,6 +37,15 @@ type OfferResponse = {
   nextChargeFormatted: string;
 };
 
+type FeatureOfferResponse = {
+  ok: boolean;
+  applied: boolean;
+  discountCode: string;
+  customerPortalUrl: string | null;
+  freeMonths: number;
+  nextChargeFormatted: string;
+};
+
 type CancelFunnelProps = {
   subscriptionId: string;
   variantId: string | null;
@@ -46,12 +56,17 @@ type CancelFunnelProps = {
 };
 
 type Step = 1 | 2 | 3 | 4 | 5;
-type Terminal = "cancelled" | "offer_accepted";
+type Terminal = "cancelled" | "offer_accepted" | "feature_offer_accepted";
 
-// Step 4 (retention discount offer) is intentionally skipped in the user flow:
-// active paying subscribers should not be shown competing promo discounts. The
-// Step4Offer component and /api/subscription/retention-offer route are kept in
-// place so the offer can be re-wired later without re-implementing it.
+// Step 4 (percent-off retention discount) is intentionally skipped in the user
+// flow: active paying subscribers should not be shown competing promo
+// discounts. The Step4Offer component and /api/subscription/retention-offer
+// route are kept in place so that discount offer can be re-wired later
+// without re-implementing it.
+//
+// Step 4 IS reached for "missing_features"/"technical_issues" reasons, but it
+// renders a different component (Step4FeatureOffer): an ask for what they
+// need + a fixed 2-months-free offer, via /api/subscription/feature-retention-offer.
 const TOTAL_STEPS = 4;
 
 function formatDate(value: string | null): string {
@@ -79,6 +94,7 @@ export default function CancelFunnel({
   const [feedback, setFeedback] = useState("");
   const [intendedOutcome, setIntendedOutcome] = useState("");
   const [wouldReturn, setWouldReturn] = useState<WouldReturn | null>(null);
+  const [featureAsk, setFeatureAsk] = useState("");
 
   const [priceLoading, setPriceLoading] = useState(false);
   const [priceError, setPriceError] = useState<string | null>(null);
@@ -88,6 +104,11 @@ export default function CancelFunnel({
   const [actionError, setActionError] = useState<string | null>(null);
   const [terminal, setTerminal] = useState<Terminal | null>(null);
   const [offerResult, setOfferResult] = useState<OfferResponse | null>(null);
+  const [featureOfferResult, setFeatureOfferResult] = useState<FeatureOfferResponse | null>(
+    null,
+  );
+
+  const showFeatureOffer = offersFeatureAsk(reason);
 
   useEffect(() => {
     setMounted(true);
@@ -101,9 +122,11 @@ export default function CancelFunnel({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose, actionLoading]);
 
-  // Fetch live variant pricing when entering step 4.
+  // Fetch live variant pricing when entering step 4 - but only for the percent-off
+  // discount screen (Step4Offer). The feature-offer screen is a fixed 2-months-free
+  // offer with no pricing lookup, so skip the fetch entirely when it's the one showing.
   useEffect(() => {
-    if (step !== 4 || price || !variantId) return;
+    if (step !== 4 || price || !variantId || showFeatureOffer) return;
 
     let cancelled = false;
     setPriceLoading(true);
@@ -133,7 +156,7 @@ export default function CancelFunnel({
     return () => {
       cancelled = true;
     };
-  }, [step, price, variantId]);
+  }, [step, price, variantId, showFeatureOffer]);
 
   const handleAcceptOffer = async () => {
     if (!variantId) return;
@@ -169,6 +192,37 @@ export default function CancelFunnel({
     }
   };
 
+  const handleAcceptFeatureOffer = async () => {
+    setActionLoading(true);
+    setActionError(null);
+
+    try {
+      const res = await fetch("/api/subscription/feature-retention-offer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subscriptionId,
+          variantId,
+          reason,
+          offerFeedback: featureAsk.trim() || null,
+        }),
+      });
+      const payload = (await res.json()) as FeatureOfferResponse | { error?: string };
+
+      if (!res.ok) {
+        throw new Error(("error" in payload && payload.error) || "Could not apply offer");
+      }
+
+      setFeatureOfferResult(payload as FeatureOfferResponse);
+      setTerminal("feature_offer_accepted");
+      onOfferAccepted();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Could not apply offer");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleConfirmCancel = async () => {
     setActionLoading(true);
     setActionError(null);
@@ -183,7 +237,8 @@ export default function CancelFunnel({
           feedback: feedback.trim() || null,
           intendedOutcome: intendedOutcome.trim() || null,
           wouldReturn: wouldReturn ?? null,
-          offerShown: price?.offerType !== null,
+          offerFeedback: featureAsk.trim() || null,
+          offerShown: showFeatureOffer || price !== null,
         }),
       });
 
@@ -228,6 +283,8 @@ export default function CancelFunnel({
                 ? "Subscription cancelled"
                 : terminal === "offer_accepted"
                 ? "Discount applied"
+                : terminal === "feature_offer_accepted"
+                ? "You're all set"
                 : "Cancel subscription"}
             </h2>
             {!terminal ? (
@@ -274,6 +331,8 @@ export default function CancelFunnel({
             <TerminalCancelled renewsAt={renewsAt} onDone={onClose} />
           ) : terminal === "offer_accepted" ? (
             <TerminalOfferAccepted result={offerResult} onDone={onClose} />
+          ) : terminal === "feature_offer_accepted" ? (
+            <TerminalFeatureOfferAccepted result={featureOfferResult} onDone={onClose} />
           ) : step === 1 ? (
             <Step1Intro onContinue={() => setStep(2)} onKeep={onClose} />
           ) : step === 2 ? (
@@ -293,8 +352,19 @@ export default function CancelFunnel({
             <Step3Address
               reason={reason}
               onBack={() => setStep(2)}
-              onContinue={() => setStep(5)}
+              onContinue={() => setStep(showFeatureOffer ? 4 : 5)}
               onKeep={onClose}
+            />
+          ) : step === 4 && showFeatureOffer ? (
+            <Step4FeatureOffer
+              reason={reason}
+              value={featureAsk}
+              onChange={setFeatureAsk}
+              actionLoading={actionLoading}
+              actionError={actionError}
+              onBack={() => setStep(3)}
+              onAccept={handleAcceptFeatureOffer}
+              onDecline={() => setStep(5)}
             />
           ) : step === 4 ? (
             <Step4Offer
@@ -563,22 +633,11 @@ function reasonResponse(reason: Reason | null): { title: string; body: React.Rea
       return {
         title: "Tell us what's missing",
         body: (
-          <>
-            <p>
-              We ship new tools regularly. The roadmap is partly driven by what paying
-              customers request - so if there&apos;s something you need, let us know.
-            </p>
-            <p>
-              Email{" "}
-              <a
-                href="mailto:support@influencerbutler.com"
-                className="font-medium text-[#f97316] hover:text-[#ea580c]"
-              >
-                support@influencerbutler.com
-              </a>{" "}
-              with your request and we&apos;ll take a serious look.
-            </p>
-          </>
+          <p>
+            We ship new tools regularly, and the roadmap is partly driven by what paying
+            customers request. On the next screen you can tell us exactly what you need -
+            and we have an offer that might be worth sticking around for while we build it.
+          </p>
         ),
       };
     case "found_alternative":
@@ -605,22 +664,11 @@ function reasonResponse(reason: Reason | null): { title: string; body: React.Rea
       return {
         title: "Let us fix it for you",
         body: (
-          <>
-            <p>
-              If something&apos;s broken, we want to know. Most issues can be resolved
-              within a day or two.
-            </p>
-            <p>
-              Email{" "}
-              <a
-                href="mailto:support@influencerbutler.com"
-                className="font-medium text-[#f97316] hover:text-[#ea580c]"
-              >
-                support@influencerbutler.com
-              </a>{" "}
-              with the details and we&apos;ll jump on it.
-            </p>
-          </>
+          <p>
+            If something&apos;s broken, we want to know - most issues can be resolved
+            within a day or two. On the next screen you can tell us what&apos;s wrong,
+            and we have an offer that might be worth sticking around for while we fix it.
+          </p>
         ),
       };
     case "just_testing":
@@ -812,6 +860,117 @@ function Step4Offer({
   );
 }
 
+type Step4FeatureOfferProps = {
+  reason: Reason | null;
+  value: string;
+  onChange: (v: string) => void;
+  actionLoading: boolean;
+  actionError: string | null;
+  onBack: () => void;
+  onAccept: () => void;
+  onDecline: () => void;
+};
+
+function Step4FeatureOffer({
+  reason,
+  value,
+  onChange,
+  actionLoading,
+  actionError,
+  onBack,
+  onAccept,
+  onDecline,
+}: Step4FeatureOfferProps) {
+  const isTechnical = reason === "technical_issues";
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <span className="inline-flex items-center rounded-full bg-[#f97316]/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-[#ea580c]">
+          Exclusive offer
+        </span>
+        <h3 className="mt-3 text-xl font-semibold tracking-tight text-slate-900">
+          {isTechnical ? "Tell us what's broken" : "Tell us what's missing"}
+        </h3>
+        <p className="mt-2 text-sm text-slate-600">
+          {isTechnical
+            ? "A few specifics help us track it down fast - what were you trying to do, and what happened instead?"
+            : "What feature or workflow do you need that we don't have today? We read every one of these."}
+        </p>
+      </div>
+
+      <div>
+        <label
+          htmlFor="feature-offer-ask"
+          className="block text-xs font-semibold uppercase tracking-wide text-slate-500"
+        >
+          {isTechnical ? "What's broken? (optional)" : "What are you missing? (optional)"}
+        </label>
+        <textarea
+          id="feature-offer-ask"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          rows={3}
+          className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#f97316] focus:outline-none focus:ring-1 focus:ring-[#f97316]"
+          placeholder={
+            isTechnical
+              ? "e.g. the Chrome extension stopped syncing after the last update..."
+              : "e.g. scheduling posts to Threads, bulk commission exports..."
+          }
+        />
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+        <div className="flex items-baseline justify-between">
+          <span className="text-sm font-semibold text-slate-900">2 months of Pro, free</span>
+          <span className="text-lg font-bold text-[#f97316]">$0.00</span>
+        </div>
+        <p className="mt-2 text-sm text-slate-600">
+          Stay subscribed and we&apos;ll zero out your next 2 billing cycles -
+          {isTechnical
+            ? " giving us time to get this fixed for you."
+            : " giving us time to build what you need."}
+        </p>
+      </div>
+
+      {actionError ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {actionError}
+        </div>
+      ) : null}
+
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <button
+          type="button"
+          onClick={onBack}
+          disabled={actionLoading}
+          className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+        >
+          Back
+        </button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <button
+            type="button"
+            onClick={onDecline}
+            disabled={actionLoading}
+            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+          >
+            No thanks, cancel
+          </button>
+          <button
+            type="button"
+            onClick={onAccept}
+            disabled={actionLoading}
+            className="rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white hover:bg-[#ea580c] disabled:opacity-60"
+          >
+            {actionLoading ? "Applying…" : "Claim 2 months free"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 type Step5Props = {
   renewsAt: string | null;
   actionLoading: boolean;
@@ -937,6 +1096,62 @@ function TerminalOfferAccepted({
               {result.offerPercent}% off for {result.durationInMonths}{" "}
               {result.durationInMonths === 1 ? "cycle" : "cycles"}
             </span>
+          </div>
+          {!result.applied && result.customerPortalUrl ? (
+            <div className="mt-3 border-t border-slate-200 pt-3 text-xs text-slate-600">
+              One extra step: apply code{" "}
+              <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-900">
+                {result.discountCode}
+              </code>{" "}
+              in{" "}
+              <a
+                href={result.customerPortalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-[#f97316] hover:text-[#ea580c]"
+              >
+                your customer portal
+              </a>
+              .
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={onDone}
+          className="rounded-lg bg-[#f97316] px-4 py-2 text-sm font-medium text-white hover:bg-[#ea580c]"
+        >
+          Done
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function TerminalFeatureOfferAccepted({
+  result,
+  onDone,
+}: {
+  result: FeatureOfferResponse | null;
+  onDone: () => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-slate-600">
+        We&apos;re thrilled you&apos;re staying - and we&apos;ll be following up on what you
+        told us. Your next {result?.freeMonths ?? 2} billing cycles are on us.
+      </p>
+      {result ? (
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-slate-600">Next charge</span>
+            <span className="font-semibold text-slate-900">{result.nextChargeFormatted}</span>
+          </div>
+          <div className="mt-2 flex items-center justify-between">
+            <span className="text-slate-600">Offer</span>
+            <span className="font-semibold text-[#f97316]">{result.freeMonths} months free</span>
           </div>
           {!result.applied && result.customerPortalUrl ? (
             <div className="mt-3 border-t border-slate-200 pt-3 text-xs text-slate-600">

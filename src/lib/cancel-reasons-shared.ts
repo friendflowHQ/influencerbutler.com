@@ -32,6 +32,11 @@ export function reasonLabel(value: string | null): string {
   return found ? found.label : value;
 }
 
+/** Reasons that get the in-funnel "what do you need?" + 2-months-free offer. */
+export function offersFeatureAsk(reason: Reason | null): boolean {
+  return reason === "missing_features" || reason === "technical_issues";
+}
+
 export type WouldReturn = "yes" | "maybe" | "no";
 
 export type WouldReturnOption = { value: WouldReturn; label: string };

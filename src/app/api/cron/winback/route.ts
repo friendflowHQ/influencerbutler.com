@@ -59,6 +59,7 @@ type CancelRow = {
   reason: string | null;
   would_return: string | null;
   created_at: string | null;
+  offer_shown: boolean | null;
   winback_t1_sent_at: string | null;
   winback_t2_sent_at: string | null;
   winback_t3_sent_at: string | null;
@@ -87,6 +88,11 @@ function dueTier(
   for (const t of eff) {
     if (ageMs < t.thresholdMs) continue;
     if (row[t.sentCol as keyof CancelRow]) continue;
+    // t2/t3 carry the same "2 months free" pitch already shown (and declined)
+    // in-funnel for missing_features/technical_issues cancellations - sending
+    // it again by email would repeat a pitch the customer just said no to.
+    // t1 (no offer, "we heard you" copy) still sends on schedule.
+    if (row.offer_shown && t.tier !== "t1") continue;
     return { tier: t.tier, sentCol: t.sentCol };
   }
   return null;
@@ -106,7 +112,7 @@ export async function GET(request: Request) {
   const { data, error } = await supabase
     .from("subscription_cancel_reasons")
     .select(
-      "id,user_id,reason,would_return,created_at,winback_t1_sent_at,winback_t2_sent_at,winback_t3_sent_at,winback_discount_code,winback_comp_claimed_at",
+      "id,user_id,reason,would_return,created_at,offer_shown,winback_t1_sent_at,winback_t2_sent_at,winback_t3_sent_at,winback_discount_code,winback_comp_claimed_at",
     )
     .gte("created_at", oldest)
     .or("would_return.is.null,would_return.neq.no")

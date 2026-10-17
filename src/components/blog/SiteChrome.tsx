@@ -35,7 +35,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
-        <Link href="/" className="flex items-center gap-2.5" aria-label="Influencer Butler home">
+        <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Influencer Butler home">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/assets/influencer-butler-logo.png"
@@ -44,12 +44,18 @@ export function SiteHeader() {
             height={40}
             className="h-10 w-10 object-contain"
           />
-          <span className="text-xl font-bold tracking-tight text-slate-900">
+          <span className="whitespace-nowrap text-xl font-bold tracking-tight text-slate-900">
             Influencer Butler
           </span>
         </Link>
 
-        <ul className="hidden items-center gap-5 lg:flex">
+        {/* The full link row (plus search and the CTA) needs ~1180px to fit
+            without crowding - matching the static site's own collapse point
+            (public/css/styles.css, "Collapse the nav to a hamburger..."). The
+            Tailwind lg breakpoint (1024px) is too narrow for that and used to
+            force this logo to wrap onto two lines; xl (1280px) gives the row
+            enough room. */}
+        <ul className="hidden items-center gap-5 xl:flex">
           {NAV_LINKS.map((item) => (
             <li key={item.href}>
               <Link
@@ -68,13 +74,13 @@ export function SiteHeader() {
 
         {/* The link row is tight, so search is a magnifier that expands into a
             field on click rather than a permanent inline box. */}
-        <div className="ml-3 hidden lg:block">
+        <div className="ml-3 hidden xl:block">
           <SiteSearch variant="header" />
         </div>
 
         <a
           href="/go/trial?src=blog-nav"
-          className="ml-3 hidden whitespace-nowrap rounded-[14px] bg-orange-700 px-5 py-2.5 text-[0.9rem] font-semibold text-white shadow-[0_2px_8px_rgba(249,115,22,0.3)] transition hover:bg-orange-800 lg:inline-flex"
+          className="ml-3 hidden whitespace-nowrap rounded-[14px] bg-orange-700 px-5 py-2.5 text-[0.9rem] font-semibold text-white shadow-[0_2px_8px_rgba(249,115,22,0.3)] transition hover:bg-orange-800 xl:inline-flex"
         >
           Start Free Trial
         </a>
@@ -84,7 +90,7 @@ export function SiteHeader() {
           onClick={() => setOpen((v) => !v)}
           aria-label="Toggle navigation menu"
           aria-expanded={open}
-          className="flex flex-col gap-1.5 lg:hidden"
+          className="flex flex-col gap-1.5 xl:hidden"
         >
           <span className="h-0.5 w-6 bg-slate-900" />
           <span className="h-0.5 w-6 bg-slate-900" />
@@ -93,7 +99,7 @@ export function SiteHeader() {
       </nav>
 
       {open ? (
-        <div className="border-t border-slate-200 bg-white lg:hidden">
+        <div className="border-t border-slate-200 bg-white xl:hidden">
           <ul className="mx-auto flex max-w-6xl flex-col gap-1 px-6 py-4">
             <li className="mb-2">
               <SiteSearch variant="inline" onNavigate={() => setOpen(false)} />

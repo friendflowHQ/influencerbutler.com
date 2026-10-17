@@ -19,6 +19,7 @@ export {
   reasonLabel,
   normalizeReason,
   normalizeWouldReturn,
+  offersFeatureAsk,
   type Reason,
   type ReasonOption,
   type WouldReturn,
@@ -54,6 +55,14 @@ export type CancellationRow = {
   emailMasked: string | null;
   completed: boolean;
   winback: WinbackStatus | null;
+  /** Free-text answer to "what are you missing / what's broken" (in-funnel offer screen). */
+  offerFeedback: string | null;
+  /** The in-funnel 2-months-free offer was shown to this customer. */
+  offerShown: boolean;
+  /** They accepted the in-funnel offer and stayed subscribed. */
+  offerAccepted: boolean;
+  /** Last time an admin used "reach out now" to manually send this offer by email. */
+  manualOfferSentAt: string | null;
 };
 
 function str(v: unknown): string | null {
@@ -71,7 +80,7 @@ export async function listCancellations(limit = 200): Promise<CancellationRow[]>
   const { data: rows } = await supabase
     .from("subscription_cancel_reasons")
     .select(
-      "id,user_id,subscription_id,reason,feedback,intended_outcome,would_return,source,emailed_at,completed_at,created_at",
+      "id,user_id,subscription_id,reason,feedback,intended_outcome,would_return,source,emailed_at,completed_at,created_at,offer_feedback,offer_shown,offer_accepted,manual_offer_sent_at",
     )
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -167,6 +176,10 @@ export async function listCancellations(limit = 200): Promise<CancellationRow[]>
       emailMasked: userId ? maskEmail(emailByUser.get(userId) ?? null) : null,
       completed,
       winback: winbackByRow.get(str(r.id) ?? "") ?? null,
+      offerFeedback: str(r.offer_feedback),
+      offerShown: Boolean(r.offer_shown),
+      offerAccepted: Boolean(r.offer_accepted),
+      manualOfferSentAt: str(r.manual_offer_sent_at),
     };
   });
 }

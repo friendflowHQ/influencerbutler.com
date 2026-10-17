@@ -22,7 +22,13 @@ type Row = {
   emailMasked: string | null;
   completed: boolean;
   winback: WinbackStatus | null;
+  offerFeedback: string | null;
+  offerShown: boolean;
+  offerAccepted: boolean;
+  manualOfferSentAt: string | null;
 };
+
+const FEATURE_REQUEST_REASONS = new Set(["missing_features", "technical_issues"]);
 
 type LabelOption = { value: string; label: string };
 
@@ -148,6 +154,28 @@ function WinbackBadge({ winback }: { winback: WinbackStatus | null }) {
   return null;
 }
 
+function OfferStatusBadge({ row }: { row: Row }) {
+  if (row.offerAccepted) {
+    return (
+      <span className="rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+        offer accepted - stayed subscribed
+      </span>
+    );
+  }
+  if (row.offerShown) {
+    return (
+      <span className="rounded border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+        offer shown - declined, cancelled anyway
+      </span>
+    );
+  }
+  return (
+    <span className="rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-500">
+      cancelled before this launched - no offer shown
+    </span>
+  );
+}
+
 const STATE_STYLE: Record<CompState, { label: string; cls: string }> = {
   active: { label: "active", cls: "border-emerald-200 bg-emerald-50 text-emerald-700" },
   "expiring-7": { label: "expires <7d", cls: "border-amber-200 bg-amber-50 text-amber-700" },
@@ -266,6 +294,12 @@ export default function AdminCancellationsPage() {
     reasons: [],
     wouldReturn: [],
   });
+  const [featureFilter, setFeatureFilter] = useState<"all" | "missing_features" | "technical_issues">(
+    "all",
+  );
+  const [reachOutBusyId, setReachOutBusyId] = useState<string | null>(null);
+  const [reachOutConfirmId, setReachOutConfirmId] = useState<string | null>(null);
+  const [reachOutError, setReachOutError] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -297,6 +331,41 @@ export default function AdminCancellationsPage() {
     void load();
   }, [load]);
 
+  const handleReachOut = useCallback(
+    async (row: Row) => {
+      if (row.manualOfferSentAt && reachOutConfirmId !== row.id) {
+        setReachOutConfirmId(row.id);
+        return;
+      }
+      setReachOutConfirmId(null);
+      setReachOutBusyId(row.id);
+      setReachOutError((prev) => ({ ...prev, [row.id]: "" }));
+      try {
+        const res = await fetch("/api/admin/cancellations/reach-out", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: row.id }),
+        });
+        const json = (await res.json()) as { ok?: boolean; error?: string };
+        if (!res.ok) {
+          setReachOutError((prev) => ({ ...prev, [row.id]: json.error || `Failed (${res.status})` }));
+          return;
+        }
+        setRows((prev) =>
+          prev.map((r) =>
+            r.id === row.id ? { ...r, manualOfferSentAt: new Date().toISOString() } : r,
+          ),
+        );
+      } catch (err) {
+        console.error(err);
+        setReachOutError((prev) => ({ ...prev, [row.id]: "Network error" }));
+      } finally {
+        setReachOutBusyId(null);
+      }
+    },
+    [reachOutConfirmId],
+  );
+
   if (forbidden) {
     return (
       <div className="mx-auto max-w-3xl px-6 py-16 text-center">
@@ -308,6 +377,9 @@ export default function AdminCancellationsPage() {
 
   const m = dashboard?.metrics ?? null;
   const custRows = dashboard?.rows ?? [];
+  const allFeatureRows = rows.filter((r) => FEATURE_REQUEST_REASONS.has(r.reason));
+  const featureRows =
+    featureFilter === "all" ? allFeatureRows : allFeatureRows.filter((r) => r.reason === featureFilter);
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
@@ -458,6 +530,117 @@ export default function AdminCancellationsPage() {
                     })}
                   </tbody>
                 </table>
+              </div>
+            )}
+          </section>
+
+          {/* Feature & issue requests - what customers say they're missing / what's
+              broken, surfaced on its own so it's actionable for product planning
+              instead of buried in the generic survey-answers list below. */}
+          <section className="mt-8">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-700">
+                Feature &amp; issue requests{allFeatureRows.length ? ` (${allFeatureRows.length})` : ""}
+              </h2>
+              <div className="flex gap-1">
+                {(
+                  [
+                    { value: "all", label: "All" },
+                    { value: "missing_features", label: "Missing features" },
+                    { value: "technical_issues", label: "Technical issues" },
+                  ] as const
+                ).map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setFeatureFilter(opt.value)}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                      featureFilter === opt.value
+                        ? "border-[#f97316] bg-[#f97316]/10 text-[#c2410c]"
+                        : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {allFeatureRows.length === 0 ? (
+              <p className="mt-4 text-sm text-slate-500">
+                No missing-feature or technical-issue cancellations yet.
+              </p>
+            ) : featureRows.length === 0 ? (
+              <p className="mt-4 text-sm text-slate-500">No rows match this filter.</p>
+            ) : (
+              <div className="mt-4 space-y-3">
+                {featureRows.map((r) => {
+                  const askText = r.offerFeedback || r.feedback || r.intendedOutcome;
+                  const busy = reachOutBusyId === r.id;
+                  const confirming = reachOutConfirmId === r.id;
+                  const err = reachOutError[r.id];
+                  return (
+                    <div
+                      key={r.id}
+                      className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <strong className="text-sm text-slate-900">{r.reasonLabel}</strong>
+                          <span className="rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-500">
+                            {r.source === "email" ? "emailed" : "in-app"}
+                          </span>
+                          <OfferStatusBadge row={r} />
+                        </div>
+                        <span className="text-xs text-slate-400">{formatDate(r.createdAt)}</span>
+                      </div>
+
+                      {askText ? (
+                        <p className="mt-3 text-sm font-medium text-slate-800">
+                          &ldquo;{askText}&rdquo;
+                        </p>
+                      ) : (
+                        <p className="mt-3 text-sm italic text-slate-400">
+                          No written answer on file.
+                        </p>
+                      )}
+
+                      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-xs text-slate-400">
+                          {[r.emailMasked, r.planName].filter(Boolean).join(" · ") ||
+                            "no account details"}
+                          {r.manualOfferSentAt
+                            ? ` · last reached out: ${formatDate(r.manualOfferSentAt)}`
+                            : ""}
+                        </p>
+                        {!r.offerAccepted ? (
+                          <div className="flex items-center gap-2">
+                            {err ? <span className="text-xs text-rose-600">{err}</span> : null}
+                            {confirming ? (
+                              <span className="text-xs text-amber-700">Send again?</span>
+                            ) : null}
+                            <button
+                              type="button"
+                              onClick={() => handleReachOut(r)}
+                              disabled={busy}
+                              className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
+                                confirming
+                                  ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                                  : "border-[#f97316]/40 bg-[#f97316]/10 text-[#c2410c] hover:bg-[#f97316]/20"
+                              }`}
+                            >
+                              {busy
+                                ? "Sending…"
+                                : confirming
+                                  ? "Yes, send again"
+                                  : "Reach out now"}
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </section>

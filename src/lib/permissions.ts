@@ -82,6 +82,7 @@ export const PERMISSIONS: readonly PermissionDef[] = [
   // the human take-over surface in the admin dashboard.)
   { key: "support.view", label: "View support tickets", description: "See the support ticket queue (bugs, questions, feature requests) and each ticket's reply thread.", domain: "Support", risk: "normal", built: true },
   { key: "support.respond", label: "Respond to & triage tickets", description: "Reply to a customer, change a ticket's status/priority/tags, take over from the bot, mark spam, or resolve.", domain: "Support", risk: "normal", built: true },
+  { key: "cancellations.respond", label: "Reach out to cancelled customers", description: "Manually email a cancelled customer the feature/issue ask + 2-months-free offer on demand, from the admin Cancellations page.", domain: "Support", risk: "normal", built: true },
 
   // Scheduling (1:1 support + demo call bookings)
   { key: "scheduling.view", label: "View call bookings", description: "See upcoming and past 1:1 calls with each customer's prep sheet (subscription + support history).", domain: "Scheduling", risk: "normal", built: true },
