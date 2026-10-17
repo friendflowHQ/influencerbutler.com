@@ -145,7 +145,7 @@ const IDEAS: Idea[] = [
     cat: "Earnings & Growth",
     hook: "Why creators fire the extensions and hire the butler.",
     caption:
-      "The browser extensions and research tools each do a piece of the job. Influencer Butler does the whole job: messaging brands, tracking every deal from shipped to filmed to paid, reviving old content, and posting to 5 platforms while you sleep. Stop renting tools:",
+      "The browser extensions and research tools each do a piece of the job. Influencer Butler does the whole job: messaging brands, tracking every deal from shipped to filmed to paid, reviving old content, and posting to 5 platforms while you sleep, from your own computer, not a shared server. Stop renting tools:",
     visual: "/assets/affiliate-competitor-butler-vs-extensions.png",
   },
 ];

@@ -79,7 +79,7 @@ export const BUTLERS: ButlerGroup[] = [
         "title": "Runs While You Sleep",
         "type": "Relatable",
         "screenshot": "The Amazon Butler panel actively working through the Creator Connections brand list.",
-        "caption": "🌙 My favorite kind of work is the kind I'm not awake for.\n\nI set my pitch, hit go, and Amazon Butler works its way through the brand list in the background. I'm not babysitting a screen, I'm filming, editing, or straight up sleeping while outreach keeps happening.\n\nThe grind does not stop just because I clocked out. 😴\n\nAre you a night-owl creator or an early bird? Comment 🦉 or 🐦 and let's see who we've got in here."
+        "caption": "🌙 My favorite kind of work is the kind I'm not awake for.\n\nI set my pitch, hit go, and Amazon Butler works its way through the brand list in the background. I'm not babysitting a screen, I'm filming, editing, or straight up sleeping while outreach keeps happening. This runs on my own computer, there's no mystery server doing it for me.\n\nThe grind does not stop just because I clocked out. 😴\n\nAre you a night-owl creator or an early bird? Comment 🦉 or 🐦 and let's see who we've got in here."
       },
       {
         "title": "The Slow-And-Safe Flex",
@@ -156,16 +156,16 @@ export const BUTLERS: ButlerGroup[] = [
         "caption": "😩 Nothing stings like logging in and seeing a great campaign that closed while you were asleep.\n\nI did that to myself too many times. The best rates have the shortest windows, and I was never fast enough by hand.\n\nSo I stopped relying on being fast. The butler just accepts them the second they appear on products I already sell. No timing, no luck. 💛\n\nWhat's the worst offer you've ever watched expire? Vent below 👇"
       },
       {
-        "title": "Set It And Forget It",
+        "title": "Set It, Not Babysit It",
         "type": "Interactive",
         "screenshot": "The Daily Commission Butler toggle switched on with its status showing it is actively watching.",
-        "caption": "Flip one switch and it just works. ✅\n\nMy Daily Commission Butler sits there watching my storefront for new campaign offers on products I've already sold, and auto-accepts them the moment they show up. I don't touch it. I don't babysit it. It just quietly catches paid campaigns while I make content.\n\nComment SET below and I'll walk you through turning it on for your own storefront 👇"
+        "caption": "Flip one switch and it just works. ✅\n\nMy Daily Commission Butler sits there watching my storefront for new campaign offers on products I've already sold, and auto-accepts them the moment they show up. I don't touch it. I don't babysit it. It just quietly catches paid campaigns while I make content, running on my own setup the whole time.\n\nComment SET below and I'll walk you through turning it on for your own storefront 👇"
       },
       {
         "title": "While You Sleep",
         "type": "Reveal / Relatable",
         "screenshot": "A Daily Commission Butler overnight log showing offers accepted between midnight and morning.",
-        "caption": "🌙 My storefront makes decisions while I sleep now.\n\nAmazon doesn't post new offers on a schedule that's convenient for you. They show up at random, and the strong ones vanish quick. My butler runs overnight, catches the campaigns on products I've already sold, and accepts them before anyone's awake to compete.\n\nI wake up to a list of yes, got it. 💛\n\nWho else does their best Amazon work at 2am by accident? 🙋‍♀️ Comment below."
+        "caption": "🌙 My storefront makes decisions while I sleep now.\n\nAmazon doesn't post new offers on a schedule that's convenient for you. They show up at random, and the strong ones vanish quick. My butler runs overnight on my own computer, catches the campaigns on products I've already sold, and accepts them before anyone's awake to compete.\n\nI wake up to a list of yes, got it. 💛\n\nWho else does their best Amazon work at 2am by accident? 🙋‍♀️ Comment below."
       },
       {
         "title": "The Money I Was Leaving",

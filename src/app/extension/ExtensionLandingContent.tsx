@@ -87,7 +87,7 @@ const APP_VS_EXTENSION: Array<{ feature: string; ext: boolean | string; app: boo
   { feature: "Like Butler (auto-like storefronts)", ext: false, app: true },
   { feature: "Auto video uploads", ext: false, app: true },
   { feature: "Commission tracking dashboard", ext: "Reads your desktop earnings when paired", app: true },
-  { feature: "Runs 24/7 unattended", ext: false, app: true },
+  { feature: "Runs 24/7 on your own PC", ext: false, app: true },
   { feature: "Price", ext: "Free", app: "From $39/mo" },
 ];
 

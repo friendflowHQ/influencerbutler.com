@@ -101,7 +101,7 @@ export const ONBOARDING_COPY: Record<OnboardingTier, TierCopy> = {
       ].join("\n"),
   },
   day5: {
-    subject: "The part of Butler that runs while you sleep",
+    subject: "The part of Butler that works while you're logged off",
     build: (v) =>
       [
         `Hi ${v.firstName},`,
@@ -111,6 +111,8 @@ export const ONBOARDING_COPY: Record<OnboardingTier, TierCopy> = {
         `  1. Daily Commission Butler: auto-accepts the right Creator Connections campaigns based on what you sold yesterday.`,
         `  2. Deals Butler: finds deals in your niche and posts them across your platforms automatically.`,
         `  3. Messenger Butler: keeps your DMs answered so warm followers do not go cold.`,
+        ``,
+        `No mystery server doing this somewhere: it runs on your own computer, or a cloud PC you set up yourself, using your own connection the whole time.`,
         ``,
         `You can try all of them free for 14 days - every Pro butler unlocked. Start here: ${v.pricingUrl}`,
         ``,

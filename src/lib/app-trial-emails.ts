@@ -129,14 +129,14 @@ export const APP_TRIAL_COPY: Record<AppTrialTier, TierCopy> = {
       ].join("\n"),
   },
   day5: {
-    subject: "The butler that pitches brands while you sleep",
+    subject: "The butler that pitches brands while you're logged off",
     build: (v) =>
       [
         `Hey ${v.firstName},`,
         ``,
         `Landing brand deals used to be my least favorite job. Find the brand, find the contact, write the pitch, follow up, track who replied, do it again a hundred times. It's the kind of work an agent takes a cut for and still does slowly.`,
         ``,
-        `Amazon Butler does it for you. It works your Amazon Creator Connections outreach automatically: reaching out to brands, sending your pitch, and keeping track of it all so you're not living in a spreadsheet of did I follow up with them yet.`,
+        `Amazon Butler does it for you. It works your Amazon Creator Connections outreach automatically: reaching out to brands, sending your pitch, and keeping track of it all so you're not living in a spreadsheet of did I follow up with them yet. It runs on your own computer, no shared server, no stranger's IP touching your account.`,
         ``,
         `If you've ever felt like you're leaving brand money on the table just because outreach is exhausting, this is the one to try today. Open the app, go to Amazon Butler, and let it run.`,
         ``,

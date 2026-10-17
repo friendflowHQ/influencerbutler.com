@@ -387,7 +387,7 @@ const COMPETITORS: Competitor[] = [
       "As of our last check, Viral Vue tells you what to promote and cross-posts your videos, then leaves the rest of the doing to you. Influencer Butler runs the whole workflow: it accepts CC and SPCC, tracks each brand deal end to end, keeps a unified Amazon inbox, reloads videos AND photos to international storefronts, and auto-posts your deals across five social platforms. Research is one step; Butler automates the other twenty.",
     points: [
       "Viral Vue is a research assistant. Butler is the whole staff that acts on the research.",
-      "Great, you found a winning product. Butler is what tracks the deal, films the coverage list, and posts it everywhere while you sleep.",
+      "Great, you found a winning product. Butler is what tracks the deal, films the coverage list, and posts it everywhere while you sleep, from your own computer, not a shared server.",
       "Butler handles photos and videos, your Amazon inbox, Instagram, and deal posting, not just product picks and thumbnails.",
     ],
     oneliner: "\u{1F440} Viral Vue hands you a clipboard. \u{1F933} Butler does the shift.",
@@ -480,7 +480,7 @@ const COMPETITORS: Competitor[] = [
 const CAPTIONS: { label: string; text: string }[] = [
   {
     label: "Short",
-    text: "The paid browser extensions and research tools each do a piece of the job. Influencer Butler does the whole job: messaging brands, tracking every deal from shipped to filmed to paid, reviving old content, and auto-posting your deals to 5 platforms while you sleep. Stop renting tools. Hire the butler.",
+    text: "The paid browser extensions and research tools each do a piece of the job. Influencer Butler does the whole job: messaging brands, tracking every deal from shipped to filmed to paid, reviving old content, and auto-posting your deals to 5 platforms while you sleep, from your own computer, not a shared server. Stop renting tools. Hire the butler.",
   },
   {
     label: "Free tool",
