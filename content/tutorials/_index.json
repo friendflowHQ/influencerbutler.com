@@ -1059,6 +1059,15 @@
       "order": 710,
       "locales": ["en-US", "es-ES", "fr-FR"],
       "audience": "power"
+    },
+    {
+      "id": "creator-watch-butler",
+      "title": "Creator Watch Butler: let top creators find your next product",
+      "category": "Amazon",
+      "summary": "Watch other creators' Amazon storefronts and get alerted the moment one of them adds a new product, ranked by whether you can earn on it too.",
+      "order": 711,
+      "locales": ["en-US", "es-ES", "fr-FR"],
+      "audience": "power"
     }
   ]
 }
