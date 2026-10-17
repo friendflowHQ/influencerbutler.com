@@ -161,7 +161,7 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
 // resolves the current version live from the release feed's latest-mac.yml,
 // so this pin is only used when that feed is unreachable. Still worth bumping
 // on each desktop release.
-export const DESKTOP_APP_VERSION = "2.1.0";
+export const DESKTOP_APP_VERSION = "2.1.1";
 
 // Windows installer host. NOTE: this host redirects *everything* to the Windows
 // .exe, so never point a Mac button at it.
