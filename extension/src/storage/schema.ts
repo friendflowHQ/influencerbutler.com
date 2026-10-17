@@ -299,6 +299,12 @@ export type Settings = {
     // The kill-flag key is "dealSignals" in disabledTools. On by default;
     // backfilled to true by the tools shallow-merge in migrate().
     dealSignals: boolean;
+    // Who buys this: the likely shopper generation for a product (from its
+    // breadcrumb, title, price and reviews) plus the content format that
+    // audience responds to, in the product panel. Onsite-only, no network call.
+    // The kill-flag key is "shopperGeneration" in disabledTools. On by default;
+    // backfilled to true by the tools shallow-merge in migrate().
+    shopperGeneration: boolean;
     // AI Post: the "Your AI Post is ready!" popup on a product page, which writes a
     // ready-to-post caption from the creator's own formulas and the listing's
     // facts via the free Influencer Butler AI. The kill-flag key is "aiPost" in
@@ -1099,6 +1105,7 @@ export const DEFAULTS: StorageShape = {
       socialSchedule: true,
       benableBadge: true,
       dealSignals: true,
+      shopperGeneration: true,
       aiPost: true,
       target: true,
       crossRetailer: true,

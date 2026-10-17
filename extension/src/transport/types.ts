@@ -45,6 +45,10 @@ export type ProductScanFinding = {
   category?: string | null;
   bestsellerRank?: { rank: number; category: string } | null;
   imageUrl?: string | null;
+  // Shopper-generation inputs for the desktop's Product Research store.
+  categoryPath?: string | null;
+  reviewCount?: number | null;
+  rating?: number | null;
   counts: VideoCounts;
   // Per-video carousel placements observed at scan time. Only sent to the pool
   // when the user has opted in to catalogue contribution; ignored otherwise.

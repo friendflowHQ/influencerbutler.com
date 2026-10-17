@@ -39,6 +39,7 @@ import { startInboxSync, stopInboxSync } from "../tools/cc-messages/inbox-store"
 import { handleOpenHash } from "../tools/cc-messages/open-conversation";
 import { renderPriceHistory } from "../tools/price-history/panel";
 import { renderDealSignals } from "../tools/deal-signals/panel";
+import { renderShopperGeneration } from "../tools/shopper/panel";
 import { renderAiPost } from "../tools/ai-post/panel";
 import { renderInlineCard } from "../tools/inline-card/panel";
 import { renderGlobalMaximizer } from "../tools/global-maximizer/panel";
@@ -683,6 +684,15 @@ async function runForPage(): Promise<void> {
       if (settings.tools.dealSignals) {
         guard("deal-signals", () => {
           renderDealSignals(signals);
+        });
+      }
+
+      // Who buys this: likely shopper generation + the format to make for them
+      // (long demo video for older shoppers, short vertical for younger). Local
+      // estimate, no network call; nothing renders on a rough guess.
+      if (settings.tools.shopperGeneration) {
+        guard("shopper-generation", () => {
+          renderShopperGeneration(signals);
         });
       }
 
@@ -1348,6 +1358,9 @@ function emitProductScan(
     category: signals.category,
     bestsellerRank: signals.bestsellerRank,
     imageUrl: signals.imageUrl,
+    categoryPath: signals.categoryPath,
+    reviewCount: signals.reviewCount ?? null,
+    rating: signals.rating ?? null,
     counts: carousel.counts,
     videos: videos.length > 0 ? videos : undefined,
     approved,

@@ -1,0 +1,457 @@
+{
+  "rulesVersion": 1,
+  "cases": [
+    {
+      "name": "neutral",
+      "product": {},
+      "profile": null,
+      "expected": {
+        "mix": {
+          "boomer": 0.2,
+          "genx": 0.25,
+          "millennial": 0.32,
+          "genz": 0.23
+        },
+        "primary": "millennial",
+        "confidence": "low",
+        "categoryId": "",
+        "matchedOn": "none",
+        "reasons": [],
+        "formats": [
+          {
+            "id": "idea-list",
+            "score": 0.611
+          },
+          {
+            "id": "short-vertical-video",
+            "score": 0.61
+          },
+          {
+            "id": "long-demo-video",
+            "score": 0.576
+          },
+          {
+            "id": "aesthetic-photo",
+            "score": 0.558
+          },
+          {
+            "id": "facebook-post",
+            "score": 0.462
+          }
+        ]
+      }
+    },
+    {
+      "name": "walker-category",
+      "product": {
+        "categoryPath": "Health & Household/Mobility & Daily Living Aids/Walkers"
+      },
+      "profile": null,
+      "expected": {
+        "mix": {
+          "boomer": 0.55,
+          "genx": 0.3,
+          "millennial": 0.1,
+          "genz": 0.05
+        },
+        "primary": "boomer",
+        "confidence": "high",
+        "categoryId": "mobility",
+        "matchedOn": "category",
+        "reasons": [
+          "categoryLean"
+        ],
+        "formats": [
+          {
+            "id": "long-demo-video",
+            "score": 0.865
+          },
+          {
+            "id": "facebook-post",
+            "score": 0.738
+          },
+          {
+            "id": "idea-list",
+            "score": 0.435
+          },
+          {
+            "id": "aesthetic-photo",
+            "score": 0.368
+          },
+          {
+            "id": "short-vertical-video",
+            "score": 0.355
+          }
+        ]
+      }
+    },
+    {
+      "name": "led-strip",
+      "product": {
+        "categoryPath": "Tools & Home Improvement/Lighting/LED Strip Lights",
+        "priceCents": 1299
+      },
+      "profile": null,
+      "expected": {
+        "mix": {
+          "boomer": 0.027,
+          "genx": 0.053,
+          "millennial": 0.314,
+          "genz": 0.606
+        },
+        "primary": "genz",
+        "confidence": "high",
+        "categoryId": "aesthetic-decor",
+        "matchedOn": "category",
+        "reasons": [
+          "categoryLean",
+          "impulsePrice"
+        ],
+        "formats": [
+          {
+            "id": "short-vertical-video",
+            "score": 0.868
+          },
+          {
+            "id": "aesthetic-photo",
+            "score": 0.733
+          },
+          {
+            "id": "idea-list",
+            "score": 0.681
+          },
+          {
+            "id": "long-demo-video",
+            "score": 0.261
+          },
+          {
+            "id": "facebook-post",
+            "score": 0.186
+          }
+        ]
+      }
+    },
+    {
+      "name": "anti-aging-narrowest",
+      "product": {
+        "categoryPath": "Beauty & Personal Care/Skin Care/Anti-Aging Serums"
+      },
+      "profile": null,
+      "expected": {
+        "mix": {
+          "boomer": 0.22,
+          "genx": 0.38,
+          "millennial": 0.3,
+          "genz": 0.1
+        },
+        "primary": "genx",
+        "confidence": "medium",
+        "categoryId": "anti-aging",
+        "matchedOn": "category",
+        "reasons": [
+          "categoryLean"
+        ],
+        "formats": [
+          {
+            "id": "long-demo-video",
+            "score": 0.692
+          },
+          {
+            "id": "idea-list",
+            "score": 0.586
+          },
+          {
+            "id": "facebook-post",
+            "score": 0.559
+          },
+          {
+            "id": "short-vertical-video",
+            "score": 0.521
+          },
+          {
+            "id": "aesthetic-photo",
+            "score": 0.497
+          }
+        ]
+      }
+    },
+    {
+      "name": "stanley-title",
+      "product": {
+        "title": "40oz Stanley Tumbler with Handle"
+      },
+      "profile": null,
+      "expected": {
+        "mix": {
+          "boomer": 0.116,
+          "genx": 0.184,
+          "millennial": 0.356,
+          "genz": 0.344
+        },
+        "primary": "millennial",
+        "confidence": "medium",
+        "categoryId": "drinkware-trend",
+        "matchedOn": "title",
+        "reasons": [
+          "titleLean"
+        ],
+        "formats": [
+          {
+            "id": "short-vertical-video",
+            "score": 0.708
+          },
+          {
+            "id": "idea-list",
+            "score": 0.654
+          },
+          {
+            "id": "aesthetic-photo",
+            "score": 0.627
+          },
+          {
+            "id": "long-demo-video",
+            "score": 0.458
+          },
+          {
+            "id": "facebook-post",
+            "score": 0.357
+          }
+        ]
+      }
+    },
+    {
+      "name": "pricey-reviewed-fitness",
+      "product": {
+        "categoryPath": "Sports & Outdoors/Exercise & Fitness",
+        "priceCents": 25000,
+        "reviewCount": 30000
+      },
+      "profile": null,
+      "expected": {
+        "mix": {
+          "boomer": 0.16,
+          "genx": 0.32,
+          "millennial": 0.309,
+          "genz": 0.211
+        },
+        "primary": "genx",
+        "confidence": "medium",
+        "categoryId": "fitness",
+        "matchedOn": "category",
+        "reasons": [
+          "categoryLean",
+          "highPrice",
+          "deepReviews"
+        ],
+        "formats": [
+          {
+            "id": "idea-list",
+            "score": 0.613
+          },
+          {
+            "id": "short-vertical-video",
+            "score": 0.603
+          },
+          {
+            "id": "long-demo-video",
+            "score": 0.593
+          },
+          {
+            "id": "aesthetic-photo",
+            "score": 0.553
+          },
+          {
+            "id": "facebook-post",
+            "score": 0.471
+          }
+        ]
+      }
+    },
+    {
+      "name": "dollar-price",
+      "product": {
+        "price": "$9.99"
+      },
+      "profile": null,
+      "expected": {
+        "mix": {
+          "boomer": 0.182,
+          "genx": 0.228,
+          "millennial": 0.343,
+          "genz": 0.247
+        },
+        "primary": "millennial",
+        "confidence": "low",
+        "categoryId": "",
+        "matchedOn": "none",
+        "reasons": [
+          "impulsePrice"
+        ],
+        "formats": [
+          {
+            "id": "short-vertical-video",
+            "score": 0.632
+          },
+          {
+            "id": "idea-list",
+            "score": 0.626
+          },
+          {
+            "id": "aesthetic-photo",
+            "score": 0.574
+          },
+          {
+            "id": "long-demo-video",
+            "score": 0.549
+          },
+          {
+            "id": "facebook-post",
+            "score": 0.439
+          }
+        ]
+      }
+    },
+    {
+      "name": "makeup-boomer-creator",
+      "product": {
+        "categoryPath": "Beauty & Personal Care/Makeup"
+      },
+      "profile": {
+        "boomer": 70,
+        "genx": 30,
+        "millennial": 0,
+        "genz": 0
+      },
+      "expected": {
+        "mix": {
+          "boomer": 0.297,
+          "genx": 0.216,
+          "millennial": 0.227,
+          "genz": 0.26
+        },
+        "primary": "boomer",
+        "confidence": "medium",
+        "categoryId": "beauty-skincare",
+        "matchedOn": "category",
+        "reasons": [
+          "categoryLean",
+          "creatorAudience"
+        ],
+        "formats": [
+          {
+            "id": "long-demo-video",
+            "score": 0.608
+          },
+          {
+            "id": "short-vertical-video",
+            "score": 0.576
+          },
+          {
+            "id": "idea-list",
+            "score": 0.557
+          },
+          {
+            "id": "aesthetic-photo",
+            "score": 0.528
+          },
+          {
+            "id": "facebook-post",
+            "score": 0.5
+          }
+        ]
+      }
+    },
+    {
+      "name": "baby",
+      "product": {
+        "category": "Baby",
+        "title": "Baby Monitor"
+      },
+      "profile": null,
+      "expected": {
+        "mix": {
+          "boomer": 0.08,
+          "genx": 0.12,
+          "millennial": 0.6,
+          "genz": 0.2
+        },
+        "primary": "millennial",
+        "confidence": "high",
+        "categoryId": "baby-parenting",
+        "matchedOn": "category",
+        "reasons": [
+          "categoryLean"
+        ],
+        "formats": [
+          {
+            "id": "idea-list",
+            "score": 0.744
+          },
+          {
+            "id": "short-vertical-video",
+            "score": 0.714
+          },
+          {
+            "id": "aesthetic-photo",
+            "score": 0.648
+          },
+          {
+            "id": "long-demo-video",
+            "score": 0.448
+          },
+          {
+            "id": "facebook-post",
+            "score": 0.346
+          }
+        ]
+      }
+    },
+    {
+      "name": "garden-hose",
+      "product": {
+        "title": "Expandable Garden Hose 100ft",
+        "priceCents": 4599,
+        "reviewCount": 6000
+      },
+      "profile": null,
+      "expected": {
+        "mix": {
+          "boomer": 0.323,
+          "genx": 0.319,
+          "millennial": 0.229,
+          "genz": 0.129
+        },
+        "primary": "boomer",
+        "confidence": "medium",
+        "categoryId": "garden",
+        "matchedOn": "title",
+        "reasons": [
+          "titleLean",
+          "deepReviews"
+        ],
+        "formats": [
+          {
+            "id": "long-demo-video",
+            "score": 0.715
+          },
+          {
+            "id": "facebook-post",
+            "score": 0.589
+          },
+          {
+            "id": "idea-list",
+            "score": 0.54
+          },
+          {
+            "id": "short-vertical-video",
+            "score": 0.493
+          },
+          {
+            "id": "aesthetic-photo",
+            "score": 0.472
+          }
+        ]
+      }
+    }
+  ]
+}

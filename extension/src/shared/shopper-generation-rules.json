@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "notes": "Data for src/shared/shopper-generation.js. The browser extension carries a byte-identical copy (npm run sync:shopper-rules). Leans are estimates from category conventions, not Amazon buyer data. Each lean is a share per generation and is renormalised, so rows need not sum to 1.",
+  "generations": ["boomer", "genx", "millennial", "genz"],
+  "neutral": { "boomer": 0.2, "genx": 0.25, "millennial": 0.32, "genz": 0.23 },
+  "profileBlendWeight": 0.35,
+  "titleMatchWeight": 0.6,
+  "categories": [
+    { "id": "mobility", "keywords": ["mobility", "walker", "rollator", "cane", "wheelchair", "grab bar", "shower chair", "lift chair", "incontinence", "hearing aid", "hearing amplifier", "pill organizer", "blood pressure", "compression sock", "orthopedic"], "lean": { "boomer": 0.55, "genx": 0.3, "millennial": 0.1, "genz": 0.05 } },
+    { "id": "reading", "keywords": ["reading glasses", "magnifier", "large print", "jigsaw puzzle", "crossword"], "lean": { "boomer": 0.5, "genx": 0.3, "millennial": 0.12, "genz": 0.08 } },
+    { "id": "garden", "keywords": ["patio, lawn & garden", "lawn & garden", "gardening", "garden tool", "bird feeder", "hummingbird", "pressure washer", "lawn mower", "hose"], "lean": { "boomer": 0.38, "genx": 0.34, "millennial": 0.2, "genz": 0.08 } },
+    { "id": "kitchen-appliance", "keywords": ["pressure cooker", "slow cooker", "air fryer", "small appliances", "stand mixer", "food dehydrator", "canning", "cast iron"], "lean": { "boomer": 0.3, "genx": 0.33, "millennial": 0.27, "genz": 0.1 } },
+    { "id": "tools-home-improvement", "keywords": ["tools & home improvement", "power tools", "hand tools", "automotive", "car care", "rv parts", "generator", "space heater"], "lean": { "boomer": 0.3, "genx": 0.38, "millennial": 0.24, "genz": 0.08 } },
+    { "id": "health-household", "keywords": ["health & household", "vitamins", "supplements", "first aid", "massager", "heating pad", "sleep aid"], "lean": { "boomer": 0.3, "genx": 0.32, "millennial": 0.26, "genz": 0.12 } },
+    { "id": "grandkids", "keywords": ["grandparent", "grandma", "grandpa"], "lean": { "boomer": 0.6, "genx": 0.25, "millennial": 0.1, "genz": 0.05 } },
+    { "id": "baby-parenting", "keywords": ["baby", "nursery", "stroller", "car seat", "diaper", "toddler", "breast pump", "maternity", "pregnancy"], "lean": { "boomer": 0.08, "genx": 0.12, "millennial": 0.6, "genz": 0.2 } },
+    { "id": "kids-toys", "keywords": ["toys & games", "kids' ", "kids ", "lunch box", "backpack"], "lean": { "boomer": 0.12, "genx": 0.25, "millennial": 0.48, "genz": 0.15 } },
+    { "id": "home-organization", "keywords": ["storage & organization", "organizer", "pantry", "closet", "laundry"], "lean": { "boomer": 0.15, "genx": 0.27, "millennial": 0.4, "genz": 0.18 } },
+    { "id": "pets", "keywords": ["pet supplies", "dog ", "cat ", "dogs", "cats", "pet "], "lean": { "boomer": 0.2, "genx": 0.26, "millennial": 0.36, "genz": 0.18 } },
+    { "id": "beauty-skincare", "keywords": ["beauty & personal care", "skin care", "skincare", "makeup", "lip ", "lip gloss", "serum", "nail", "hair care", "eyelash"], "lean": { "boomer": 0.08, "genx": 0.17, "millennial": 0.35, "genz": 0.4 } },
+    { "id": "anti-aging", "keywords": ["anti-aging", "anti aging", "wrinkle", "retinol", "collagen"], "lean": { "boomer": 0.22, "genx": 0.38, "millennial": 0.3, "genz": 0.1 } },
+    { "id": "aesthetic-decor", "keywords": ["led strip", "led lights", "neon sign", "string lights", "dorm", "aesthetic", "room decor", "posters", "tapestry", "sunset lamp", "galaxy projector"], "lean": { "boomer": 0.04, "genx": 0.08, "millennial": 0.3, "genz": 0.58 } },
+    { "id": "drinkware-trend", "keywords": ["tumbler", "stanley", "owala", "water bottle", "iced coffee", "cold brew"], "lean": { "boomer": 0.06, "genx": 0.14, "millennial": 0.38, "genz": 0.42 } },
+    { "id": "fashion-trend", "keywords": ["clothing, shoes & jewelry", "women's fashion", "crop top", "cargo", "claw clip", "tote bag", "sneakers", "y2k"], "lean": { "boomer": 0.07, "genx": 0.16, "millennial": 0.37, "genz": 0.4 } },
+    { "id": "gaming-tech", "keywords": ["video games", "gaming", "headset", "controller", "streaming", "ring light", "phone case", "magsafe", "earbuds", "airpods"], "lean": { "boomer": 0.05, "genx": 0.15, "millennial": 0.36, "genz": 0.44 } },
+    { "id": "fitness", "keywords": ["sports & outdoors", "exercise & fitness", "yoga", "resistance band", "dumbbell", "pilates", "protein"], "lean": { "boomer": 0.12, "genx": 0.24, "millennial": 0.38, "genz": 0.26 } },
+    { "id": "stationery-craft", "keywords": ["arts, crafts & sewing", "journal", "planner", "stickers", "highlighter", "scrapbook"], "lean": { "boomer": 0.14, "genx": 0.16, "millennial": 0.34, "genz": 0.36 } }
+  ],
+  "modifiers": {
+    "priceCents": [
+      { "min": 20000, "olderShift": 0.07, "reason": "highPrice" },
+      { "min": 10000, "olderShift": 0.04, "reason": "highPrice" },
+      { "max": 1500, "olderShift": -0.04, "reason": "impulsePrice" }
+    ],
+    "reviewCount": [
+      { "min": 20000, "olderShift": 0.05, "reason": "deepReviews" },
+      { "min": 5000, "olderShift": 0.03, "reason": "deepReviews" }
+    ]
+  },
+  "confidence": {
+    "highPrimaryShare": 0.4
+  },
+  "longVideoMinSeconds": 45,
+  "formats": [
+    { "id": "long-demo-video", "coverage": "longVideo", "length": "60-120s", "platforms": ["youtube", "facebook", "amazon"], "weights": { "boomer": 1.0, "genx": 0.9, "millennial": 0.4, "genz": 0.1 } },
+    { "id": "short-vertical-video", "coverage": "shortVideo", "length": "7-20s", "platforms": ["tiktok", "instagram", "amazon"], "weights": { "boomer": 0.2, "genx": 0.4, "millennial": 0.75, "genz": 1.0 } },
+    { "id": "aesthetic-photo", "coverage": "photo", "length": "", "platforms": ["instagram", "pinterest", "amazon"], "weights": { "boomer": 0.25, "genx": 0.4, "millennial": 0.7, "genz": 0.8 } },
+    { "id": "idea-list", "coverage": "idealist", "length": "", "platforms": ["amazon"], "weights": { "boomer": 0.3, "genx": 0.5, "millennial": 0.9, "genz": 0.6 } },
+    { "id": "facebook-post", "coverage": "", "length": "", "platforms": ["facebook"], "weights": { "boomer": 0.9, "genx": 0.7, "millennial": 0.3, "genz": 0.05 } }
+  ]
+}

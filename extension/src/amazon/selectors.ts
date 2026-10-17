@@ -12,6 +12,8 @@ export type SelectorId =
   | "videoHeaderCount"
   | "productTitle"
   | "productByline"
+  | "productReviewCount"
+  | "productRating"
   | "price"
   | "productListPrice"
   | "productDealBadge"
@@ -138,6 +140,11 @@ const REGISTRY: Record<SelectorId, string[]> = {
   ],
   productTitle: ["#productTitle", "#title"],
   productByline: ["#bylineInfo"],
+  // The buybox social proof: "12,345 ratings" next to the stars, and the star
+  // icon's hidden text ("4.6 out of 5 stars"). Feeds the likely-shopper
+  // estimate (deep reviews = proof-seeking, older-leaning shoppers).
+  productReviewCount: ["#acrCustomerReviewText", "#acrCustomerReviewLink span"],
+  productRating: ["#acrPopover .a-icon-alt", "#acrPopover", "i.a-icon-star .a-icon-alt"],
   // :not(.a-text-price) skips the struck-through list price; queryMatchingText
   // then skips empty decoy containers. Together they land on the current
   // "price to pay" across buybox layouts.

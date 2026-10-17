@@ -1,8 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, test } from "vitest";
 import {
   matchParentAsin,
   parseBestsellerRank,
   parseDateFirstAvailable,
+  parseProductRating,
+  parseProductReviewCount,
   parseSellerCount,
   parseVariationAsins,
 } from "./product-signals";
@@ -114,5 +116,23 @@ describe("parseSellerCount", () => {
   it("returns null when there is no count or it is out of range", () => {
     expect(parseSellerCount("See All Buying Options")).toBeNull();
     expect(parseSellerCount("(0)")).toBeNull();
+  });
+});
+
+describe("parseProductReviewCount / parseProductRating", () => {
+  test("reads ratings counts in every marketplace format", () => {
+    expect(parseProductReviewCount("12,345 ratings")).toBe(12345);
+    expect(parseProductReviewCount("12.345 valoraciones")).toBe(12345);
+    expect(parseProductReviewCount("12\u202f345 évaluations")).toBe(12345);
+    expect(parseProductReviewCount("")).toBeNull();
+    expect(parseProductReviewCount(null)).toBeNull();
+  });
+
+  test("reads the star rating in English, Spanish and French", () => {
+    expect(parseProductRating("4.6 out of 5 stars")).toBe(4.6);
+    expect(parseProductRating("4,6 de 5 estrellas")).toBe(4.6);
+    expect(parseProductRating("4,6 sur 5 étoiles")).toBe(4.6);
+    expect(parseProductRating("9 out of 10")).toBeNull();
+    expect(parseProductRating(undefined)).toBeNull();
   });
 });

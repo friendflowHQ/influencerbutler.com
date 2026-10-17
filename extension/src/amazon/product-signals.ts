@@ -55,6 +55,10 @@ export type ProductSignals = {
   // The coupon / promo code the buybox offers, or null when none. Optional so a
   // builder that has no page to read (fetched pages, other retailers) can omit it.
   promo?: ProductPromo | null;
+  // Customer ratings count and star rating off the buybox, when shown. Optional
+  // for the same reason as promo.
+  reviewCount?: number | null;
+  rating?: number | null;
 };
 
 // A product ASIN out of a /dp/, /gp/product/, or mobile-web /gp/aw/d/ url.
@@ -86,7 +90,36 @@ export function extractSignals(doc: Document, url: string): ProductSignals {
     sellerCount: extractSellerCount(doc),
     imageUrl: extractImage(doc),
     promo: extractPromo(doc),
+    reviewCount: extractProductReviewCount(doc),
+    rating: extractProductRating(doc),
   };
+}
+
+// Pure parsers (exported for tests). "12,345 ratings" / "12.345 valoraciones"
+// / "12 345 evaluations" -> 12345; "4.6 out of 5 stars" / "4,6 sur 5" -> 4.6.
+export function parseProductReviewCount(text: string | null | undefined): number | null {
+  const match = (text ?? "").match(/\d[\d,.\s\u00a0\u202f]*/);
+  if (!match) return null;
+  const digits = match[0].replace(/[^\d]/g, "");
+  if (!digits) return null;
+  const n = parseInt(digits, 10);
+  return Number.isFinite(n) ? n : null;
+}
+
+export function parseProductRating(text: string | null | undefined): number | null {
+  const match = (text ?? "").trim().match(/^(\d(?:[.,]\d)?)/);
+  if (!match || !match[1]) return null;
+  const value = parseFloat(match[1].replace(",", "."));
+  return Number.isFinite(value) && value >= 0 && value <= 5 ? value : null;
+}
+
+function extractProductReviewCount(doc: Document): number | null {
+  return parseProductReviewCount(query(doc, "productReviewCount")?.textContent);
+}
+
+function extractProductRating(doc: Document): number | null {
+  const node = query(doc, "productRating");
+  return parseProductRating(node?.getAttribute("title") || node?.textContent);
 }
 
 const PARENT_ASIN_RE = /"parentAsin"\s*:\s*"([A-Z0-9]{10})"/;
