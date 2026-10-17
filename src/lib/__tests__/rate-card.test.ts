@@ -21,6 +21,14 @@ const snapshot: RawSnapshot = {
             ["All Other Categories", "4.00%"],
           ],
         },
+        {
+          title: "(a) Bounty Events",
+          headers: ["Bounty Eligible Program", "Home Page", "Bounty Action", "Eligible Customer", "Bounty Rate"],
+          rows: [
+            ["Audible Premium Plus Annual Membership", "https://...", "...", "...", "$25.00"],
+            ["Subscribe & Save – Beauty & Grooming", "https://...", "...", "...", "$0.30"],
+          ],
+        },
       ],
     },
   },
@@ -54,6 +62,34 @@ describe("parseRateCard", () => {
     expect(parseRateCard(snapshot, "www.amazon.com")!.marketplace).toBe("amazon.com");
     // Unknown marketplace falls back to the US entry rather than returning null.
     expect(parseRateCard(snapshot, "amazon.somewhere")!.defaultRatePct).toBe(4);
+  });
+
+  it("resolves five snsBounty groups, using the scraped rate when the Bounty Events table has a matching row", () => {
+    const card = parseRateCard(snapshot)!;
+    expect(card.snsBounty).toHaveLength(5);
+    const beauty = card.snsBounty.find((r) => r.tokens.includes("beauty & grooming"))!;
+    expect(beauty.amountCents).toBe(30); // scraped $0.30, not the $0.25 fallback
+    const grocery = card.snsBounty.find((r) => r.tokens.includes("grocery"))!;
+    expect(grocery.amountCents).toBe(25); // no scraped GROCERY row -> fallback
+  });
+
+  it("snsBounty token list covers both the program name and the department name", () => {
+    const card = parseRateCard(snapshot)!;
+    const beauty = card.snsBounty.find((r) => r.tokens.includes("beauty & grooming"))!;
+    expect(beauty.tokens).toContain("beauty & personal care");
+    expect(beauty.tokens).not.toContain("beauty");
+  });
+
+  it("snsBounty falls back to the published rate for every group when the snapshot has no Bounty Events table", () => {
+    const card = parseRateCard({
+      byMarketplace: {
+        "amazon.com": {
+          tables: [{ title: "Fixed Standard Commission Income Rates", rows: [["All Other Categories", "4.00%"]] }],
+        },
+      },
+    })!;
+    expect(card.snsBounty).toHaveLength(5);
+    expect(card.snsBounty.every((r) => r.amountCents === 25)).toBe(true);
   });
 
   it("skips rows without a parseable percentage", () => {

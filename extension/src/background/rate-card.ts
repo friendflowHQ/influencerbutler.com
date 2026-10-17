@@ -10,6 +10,7 @@ import {
   getWalmartRateCard,
   setWalmartRateCard,
   type RateCardRow,
+  type SnsBountyRow,
   type StoredRateCard,
 } from "../rate-card/cache";
 import { log, warn } from "../shared/log";
@@ -39,6 +40,7 @@ export async function refreshRateCard(): Promise<void> {
       version?: string;
       defaultRatePct?: number | null;
       rows?: RateCardRow[];
+      snsBounty?: SnsBountyRow[];
       notBuilt?: boolean;
       migrationPending?: boolean;
     };
@@ -61,6 +63,7 @@ export async function refreshRateCard(): Promise<void> {
       version: data.version,
       defaultRatePct: data.defaultRatePct ?? null,
       rows: data.rows,
+      snsBounty: data.snsBounty ?? [],
       fetchedAt: Date.now(),
     });
     log("rate-card", `refreshed -> ${data.version}`);

@@ -327,6 +327,9 @@
 .chip.bad { background: #fef2f2; border-color: #fecaca; color: #b91c1c; }
 .chip.warn { background: #fffbeb; border-color: #fde68a; color: #b45309; }
 .chip.muted { background: #f1f5f9; border-color: #e2e8f0; color: #64748b; }
+/* Possible flat Subscribe & Save activation bounty, additive to the
+   commission rate above it. Violet so it never reads as a confirmed rate. */
+.chip.bounty { background: #f5f3ff; border-color: #ddd6fe; color: #6d28d9; }
 
 .seal {
   display: flex;

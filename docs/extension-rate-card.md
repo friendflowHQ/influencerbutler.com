@@ -4,7 +4,11 @@ The extension shows a break-even estimate on every product page. When the user
 is a signed-in creator, it reads the real onsite commission off the SiteStripe
 bar. When SiteStripe is not present (most shoppers, and creators who are not
 signed in), it now falls back to the **Amazon Associates fixed commission-rate
-schedule** ("rate card"), matched on the product's category.
+schedule** ("rate card"), matched on the product's category. The same feed
+also carries the flat **Subscribe & Save activation bounty** -- a possible
+extra $ Amazon pays once a customer subscribes and takes their first S&S
+delivery of an eligible product -- shown as its own chip next to the
+commission text.
 
 The rate card is the same for everyone in a marketplace, so it is harvested
 once, centrally, and served to every extension, exactly like the CC / SPCC
@@ -59,13 +63,36 @@ to an Associates sign-in, so there is no server-side public URL to fetch.
    already needs), pulls the "fixed standard commission" table, splits the
    catch-all "All Other Categories" row out as `defaultRatePct`, and returns a
    compact `{ marketplace, version, defaultRatePct, rows: [{ label, tokens,
-   ratePct }] }`. Edge-cached for a day, keyed by version via ETag.
+   ratePct }], snsBounty: [{ tokens, amountCents }] }`. Edge-cached for a day,
+   keyed by version via ETag.
+
+   `snsBounty` is the flat Amazon Subscribe & Save activation bounty (paid
+   once per customer on their first S&S delivery of an eligible product), read
+   from the SAME snapshot's `"(a) Bounty Events"` table (the desktop harvester
+   already scrapes this table; nothing extra to publish). It is pre-resolved
+   into exactly five rows, one per eligible category, each carrying BOTH the
+   Bounty Events table's own program-name tokens ("beauty & grooming") and the
+   standard Associates department-name tokens ("beauty & personal care") --
+   the two vocabularies rarely share a literal substring, so a product's own
+   category text might carry either one. `amountCents` is the real scraped
+   rate when that category's Bounty Events row is present, else the published
+   fallback ($0.25 as of 2026-10-17, see `SNS_FALLBACK_CENTS` in
+   `src/lib/rate-card.ts`). Walmart's static rate card (`walmart-rate-card.ts`)
+   always serves `snsBounty: []` -- there is no Walmart S&S program.
 
 4. **Consume (extension).** The background worker downloads it once a day
    (`src/background/rate-card.ts` -> `chrome.storage.local` via
    `src/rate-card/cache.ts`) and the break-even panel looks the product's
    breadcrumb category up locally (`rateForCategory`), falling back to
-   `defaultRatePct`. Zero per-pageview server cost.
+   `defaultRatePct`. The same panel also checks `snsBountyForCategory` and, if
+   it matches, shows a violet "+$0.25 S&S" chip (with an info tooltip) next to
+   the commission text -- see `src/tools/product-snapshot/panel.ts`. Unlike
+   `rateForCategory`, the bounty lookup is matched against the product's FULL
+   breadcrumb path (`ProductSignals.categoryPath`, every segment from
+   `extractCategoryPath`), not just the narrowest leaf category: a real
+   product's own leaf category frequently carries no trace of the word
+   "Beauty" at all (e.g. "Hair Shampoo"), so every breadcrumb segment gets a
+   chance to match. Zero per-pageview server cost either way.
 
 ## To turn it on
 

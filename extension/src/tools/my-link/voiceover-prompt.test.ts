@@ -28,6 +28,7 @@ function signals(overrides: Partial<ProductSignals> = {}): ProductSignals {
     brand: "Visit the BlendCo Store",
     commissionRatePct: null,
     category: "Kitchen & Dining",
+    categoryPath: null,
     parentAsin: null,
     variationAsins: [],
     bestsellerRank: null,

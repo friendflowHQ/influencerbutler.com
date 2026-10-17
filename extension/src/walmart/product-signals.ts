@@ -103,6 +103,8 @@ function toSignals(prod: WalmartProduct | null, url: string): ProductSignals {
     brand: prod?.brand ?? null,
     commissionRatePct: null,
     category: prod?.category ?? null,
+    // No Amazon Subscribe & Save program on Walmart.
+    categoryPath: null,
     parentAsin: null,
     variationAsins: [],
     bestsellerRank: null,

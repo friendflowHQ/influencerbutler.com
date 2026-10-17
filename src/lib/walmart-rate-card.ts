@@ -58,5 +58,7 @@ export function buildWalmartRateCard(): RateCard {
     checkedAt: null,
     defaultRatePct: DEFAULT_RATE_PCT,
     rows: ROWS,
+    // No Walmart Subscribe & Save bounty program exists.
+    snsBounty: [],
   };
 }

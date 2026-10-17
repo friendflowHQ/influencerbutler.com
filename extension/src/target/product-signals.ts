@@ -151,6 +151,8 @@ export function targetToSignals(prod: TargetProduct | null, url: string): Produc
     brand: prod?.brand ?? null,
     commissionRatePct: null,
     category: null,
+    // No Amazon Subscribe & Save program on Target.
+    categoryPath: null,
     parentAsin: null,
     variationAsins: [],
     bestsellerRank: null,

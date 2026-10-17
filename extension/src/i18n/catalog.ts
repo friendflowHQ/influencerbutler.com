@@ -39,6 +39,8 @@ export interface Dict {
   snapshotCommissionCategory: (pct: number, category: string) => string;
   snapshotCommissionDefault: (pct: number) => string;
   snapshotCommissionNotSet: string;
+  snapshotSnsBounty: (amount: string) => string;
+  snapshotSnsBountyTip: string;
   earningsTitle: string;
   earningsAmount: (amount: string, count: number) => string;
   earningsNote: string;
@@ -1347,6 +1349,9 @@ const en: Dict = {
     `Commission about ${pct}% (${category}, rate card)`,
   snapshotCommissionDefault: (pct) => `Commission about ${pct}% (all-other-categories rate)`,
   snapshotCommissionNotSet: "No commission rate set",
+  snapshotSnsBounty: (amount) => `+${amount} S&S`,
+  snapshotSnsBountyTip:
+    "Possible flat Amazon Subscribe & Save activation bounty, paid once a customer subscribes and gets their first delivery. Separate from the commission rate above it.",
   earningsTitle: "Your earnings",
   earningsAmount: (amount, count) => `${amount} earned from ${count} order${count === 1 ? "" : "s"}`,
   earningsNote: "You have already earned here. Find more products like the ones already paying you.",
@@ -2665,6 +2670,9 @@ const es: Dict = {
     `Comisión aprox. ${pct}% (${category}, tarifario)`,
   snapshotCommissionDefault: (pct) => `Comisión aprox. ${pct}% (tarifa general)`,
   snapshotCommissionNotSet: "Sin tarifa de comisión",
+  snapshotSnsBounty: (amount) => `+${amount} S&S`,
+  snapshotSnsBountyTip:
+    "Posible bono fijo de Amazon por activación de Suscríbete y Ahorra, pagado una vez que el cliente se suscribe y recibe su primer envío. Independiente de la tarifa de comisión de arriba.",
   earningsTitle: "Tus ganancias",
   earningsAmount: (amount, count) => `${amount} ganados de ${count} pedido${count === 1 ? "" : "s"}`,
   earningsNote: "Ya has ganado aquí. Busca más productos como los que ya te pagan.",
@@ -3988,6 +3996,9 @@ const fr: Dict = {
     `Commission environ ${pct}% (${category}, grille)`,
   snapshotCommissionDefault: (pct) => `Commission environ ${pct}% (taux general)`,
   snapshotCommissionNotSet: "Aucun taux de commission défini",
+  snapshotSnsBounty: (amount) => `+${amount} S&S`,
+  snapshotSnsBountyTip:
+    "Prime fixe possible d'Amazon pour l'activation de Souscrire et économiser, versée une fois que le client s'abonne et reçoit sa première livraison. Indépendante du taux de commission ci-dessus.",
   earningsTitle: "Vos gains",
   earningsAmount: (amount, count) => `${amount} gagnés sur ${count} commande${count === 1 ? "" : "s"}`,
   earningsNote: "Vous avez déjà gagné ici. Trouvez plus de produits comme ceux qui vous rapportent déjà.",

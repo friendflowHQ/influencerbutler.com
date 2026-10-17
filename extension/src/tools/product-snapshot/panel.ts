@@ -1,6 +1,6 @@
-import { addSection, chip, copyButton, el } from "../../ui/components";
+import { addSection, chip, copyButton, el, infoTip } from "../../ui/components";
 import { t } from "../../i18n";
-import { getRateCard, rateForCategory } from "../../rate-card/cache";
+import { getRateCard, rateForCategory, snsBountyForCategory } from "../../rate-card/cache";
 import type { ProductSignals } from "../../amazon/product-signals";
 
 // At or above this many sellers on the listing, the seller chip turns amber to
@@ -70,21 +70,37 @@ function idRow(label: string, value: string): HTMLElement {
 }
 
 // SiteStripe live rate first, then the Associates rate card by category, then
-// an explicit "not set" so it never looks like a silent zero.
+// an explicit "not set" so it never looks like a silent zero. A possible flat
+// Amazon Subscribe & Save activation bounty is additive to either source, so
+// it is appended as its own chip regardless of which commission text won.
 async function fillCommission(target: HTMLElement, signals: ProductSignals): Promise<void> {
-  if (signals.commissionRatePct !== null) {
-    target.textContent = t().snapshotCommissionLive(signals.commissionRatePct);
-    return;
-  }
   const card = await getRateCard();
-  if (card) {
-    const match = rateForCategory(card, signals.category);
-    if (match) {
-      target.textContent = match.isDefault
+
+  let commissionText: string;
+  if (signals.commissionRatePct !== null) {
+    commissionText = t().snapshotCommissionLive(signals.commissionRatePct);
+  } else {
+    const match = card ? rateForCategory(card, signals.category) : null;
+    commissionText = match
+      ? match.isDefault
         ? t().snapshotCommissionDefault(match.ratePct)
-        : t().snapshotCommissionCategory(match.ratePct, match.label);
-      return;
-    }
+        : t().snapshotCommissionCategory(match.ratePct, match.label)
+      : t().snapshotCommissionNotSet;
   }
-  target.textContent = t().snapshotCommissionNotSet;
+  target.append(document.createTextNode(commissionText));
+
+  const bounty = card ? snsBountyForCategory(card, signals.categoryPath) : null;
+  if (bounty) {
+    target.append(document.createTextNode(" "));
+    const bountyChip = chip("bounty", t().snapshotSnsBounty(formatBountyAmount(bounty.amountCents)));
+    bountyChip.append(infoTip(t().snapshotSnsBountyTip));
+    target.append(bountyChip);
+  }
+}
+
+// Whole-cents integer -> "$0.25". The published rate card is USD-only today
+// (the extension requests the US card -- see docs/extension-rate-card.md),
+// so no currency-symbol branching is needed yet.
+function formatBountyAmount(cents: number): string {
+  return `$${(cents / 100).toFixed(2)}`;
 }

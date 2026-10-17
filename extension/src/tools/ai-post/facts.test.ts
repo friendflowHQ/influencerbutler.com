@@ -16,6 +16,7 @@ function signals(over: Partial<ProductSignals>): ProductSignals {
     brand: "Visit the Cetaphil Store",
     commissionRatePct: null,
     category: null,
+    categoryPath: null,
     parentAsin: null,
     variationAsins: [],
     bestsellerRank: null,

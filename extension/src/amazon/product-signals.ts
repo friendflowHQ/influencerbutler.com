@@ -29,6 +29,12 @@ export type ProductSignals = {
   // Narrowest breadcrumb category, used to look up the Associates rate card
   // when SiteStripe is not present. Null when there are no breadcrumbs.
   category: string | null;
+  // Every breadcrumb segment, broadest first, "/"-joined (e.g. "Beauty &
+  // Personal Care/Hair Care/Shampoos"). Used only for the Subscribe & Save
+  // bounty lookup: the narrowest segment alone (`category` above) often
+  // carries no trace of the word "Beauty" at all. Null when there are no
+  // breadcrumbs.
+  categoryPath: string | null;
   // The variation parent ASIN (from the twister JSON), when this listing is a
   // child variation; null for standalone products.
   parentAsin: string | null;
@@ -72,6 +78,7 @@ export function extractSignals(doc: Document, url: string): ProductSignals {
     brand: cleanText(query(doc, "productByline")?.textContent) ?? null,
     commissionRatePct: extractCommissionRate(doc),
     category: extractCategory(doc),
+    categoryPath: extractCategoryPath(doc),
     parentAsin: extractParentAsin(doc),
     variationAsins: extractVariationAsins(doc),
     bestsellerRank: extractBestsellerRank(doc),
@@ -251,6 +258,18 @@ export function extractCategory(doc: Document): string | null {
   const links = Array.from(crumbs.querySelectorAll("a"));
   const last = links[links.length - 1]?.textContent;
   return cleanText(last) ?? null;
+}
+
+// Every breadcrumb segment, broadest first -- see ProductSignals.categoryPath
+// for why this is kept separate from extractCategory (narrowest-only) above.
+export function extractCategoryPath(doc: Document): string | null {
+  const crumbs = query(doc, "breadcrumbs");
+  if (!crumbs) return null;
+  const links = Array.from(crumbs.querySelectorAll("a"));
+  const texts = links
+    .map((a) => cleanText(a.textContent))
+    .filter((text): text is string => Boolean(text));
+  return texts.length ? texts.join("/") : null;
 }
 
 export function extractCommissionRate(doc: Document): number | null {
