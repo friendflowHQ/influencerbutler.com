@@ -22,12 +22,14 @@ That combination catches both the deals that ran their full window and the ones 
 ## Delete or edit
 
 - **No campaign attached**: the post is deleted.
-- **Campaign attached**: the post is edited, not deleted. You choose what the edit does:
-  - Add an EXPIRED banner to the top of the caption.
+- **Campaign attached**: the post is edited, not deleted. You choose what the edit does, in Settings:
+  - Add an EXPIRED banner to the caption.
   - Remove the promo code and the dates from the caption.
   - Both (the default).
 
-You can change the banner wording in Settings.
+**Where the banner goes** is your choice too: add it to the post itself, or to a new comment so your original caption stays untouched. You can change the banner wording in Settings as well.
+
+**Per-platform overrides.** If you want different handling on different platforms, open **Per-platform settings** and turn on an override for Facebook Groups, Facebook Pages, Telegram, or Reddit. A platform left off uses the main Settings above.
 
 ## Before you start
 
@@ -39,7 +41,6 @@ You can change the banner wording in Settings.
 1. Pick your Facebook profile and click **Scan for expired**. Expired Butler lists every expired post it found.
 2. Review the list in card or table view. Filter by platform, by delete vs edit, or by whether a campaign is attached, and search by title or ASIN.
 3. Tick the posts you want to handle (everything supported is selected by default), then click **Clean up selected**.
-4. Watch it work, or turn off **Watch it run** in the top right of the app to let it work in the background.
 
 Nothing is removed until you approve it, and every run stays within your per-run cap.
 
@@ -49,7 +50,11 @@ The **History** section keeps a permanent log of everything Expired Butler delet
 
 ## Running it automatically
 
-Turn on the daily schedule to have Expired Butler sweep for expired posts once a day. By default a scheduled run only reports what it would do; switch on **Auto-act** in Settings when you want it to clean up on its own.
+Open **Schedule** and turn on **Clean up expired posts for me** to have Expired Butler scan and clean up on a repeating cadence. By default a scheduled run only reports what it would do; switch on **Auto-act** in Settings when you want it to clean up on its own.
+
+- **How often**: pick a preset (6 hours, 12 hours, 1, 3, or 7 days) or set a custom interval, then click **Apply Schedule**.
+- **Warm-up ramp** (optional): ease a new schedule in by capping how many posts a scheduled run acts on each day, raising that cap a little every day up to a limit you choose, instead of jumping straight to a full day's worth.
+- **Sleep (quiet hours)**: scheduled cleanups pause overnight, on the same quiet hours shared with Deals Butler and every other Facebook-posting Butler on that account.
 
 ## Platform coverage
 

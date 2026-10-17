@@ -22,12 +22,14 @@ Cette combinaison attrape à la fois les offres qui ont épuisé toute leur fen�
 ## Supprimer ou modifier
 
 - **Sans campagne associée** : la publication est supprimée.
-- **Avec campagne associée** : la publication est modifiée, pas supprimée. Vous choisissez ce que fait la modification :
-  - Ajouter une mention EXPIRÉ en haut du texte.
+- **Avec campagne associée** : la publication est modifiée, pas supprimée. Vous choisissez ce que fait la modification, dans les Paramètres :
+  - Ajouter une mention EXPIRÉ au texte.
   - Retirer le code promo et les dates du texte.
   - Les deux (l'option par défaut).
 
-Vous pouvez changer le texte de la mention dans les Paramètres.
+**L'emplacement de la mention** est aussi votre choix : ajoutez-la à la publication elle-même, ou à un nouveau commentaire pour que votre texte d'origine reste intact. Vous pouvez aussi changer le texte de la mention dans les Paramètres.
+
+**Réglages par plateforme.** Pour un traitement différent selon la plateforme, ouvrez **Réglages par plateforme** et activez la dérogation pour les groupes Facebook, les pages Facebook, Telegram ou Reddit. Une plateforme non activée utilise les Paramètres principaux ci-dessus.
 
 ## Avant de commencer
 
@@ -39,7 +41,6 @@ Vous pouvez changer le texte de la mention dans les Paramètres.
 1. Choisissez votre profil Facebook et cliquez sur **Chercher les expirées**. Expired Butler liste chaque publication expirée qu'il a trouvée.
 2. Passez la liste en revue en vue cartes ou tableau. Filtrez par plateforme, par supprimer ou modifier, ou selon qu'une campagne est associée, et recherchez par titre ou ASIN.
 3. Cochez les publications à traiter (tout ce qui est pris en charge est sélectionné par défaut), puis cliquez sur **Nettoyer la sélection**.
-4. Regardez-le travailler, ou désactivez **Regardez-le travailler** pour qu'il travaille en arrière-plan.
 
 Rien n'est retiré tant que vous ne l'avez pas approuvé, et chaque exécution reste dans la limite de votre maximum par exécution.
 
@@ -49,7 +50,11 @@ La section **Historique** conserve un journal permanent de tout ce qu'Expired Bu
 
 ## L'exécuter automatiquement
 
-Activez la planification quotidienne pour qu'Expired Butler balaie les publications expirées une fois par jour. Par défaut, une exécution planifiée indique seulement ce qu'elle ferait ; activez **Auto-act** dans les Paramètres quand vous voulez qu'elle nettoie d'elle-même.
+Ouvrez **Planification** et activez **Nettoyer les publications expirées pour moi** pour qu'Expired Butler recherche et nettoie selon un rythme répété. Par défaut, une exécution planifiée indique seulement ce qu'elle ferait ; activez **Auto-act** dans les Paramètres quand vous voulez qu'elle nettoie d'elle-même.
+
+- **Fréquence** : choisissez un préréglage (6 heures, 12 heures, 1, 3 ou 7 jours) ou définissez un intervalle personnalisé, puis cliquez sur **Appliquer la planification**.
+- **Montée en charge progressive** (facultatif) : introduisez une nouvelle planification en douceur, en limitant le nombre de publications qu'une exécution planifiée peut traiter chaque jour et en augmentant un peu cette limite chaque jour jusqu'au maximum choisi, plutôt que de passer directement à une journée complète.
+- **Repos (heures de silence)** : les nettoyages planifiés sont mis en pause la nuit, selon les mêmes heures de silence partagées avec Deals Butler et tout autre Butler publiant sur Facebook sur ce compte.
 
 ## Couverture des plateformes
 

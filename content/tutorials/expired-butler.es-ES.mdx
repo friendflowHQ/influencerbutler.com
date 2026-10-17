@@ -22,12 +22,14 @@ Esa combinación detecta tanto las ofertas que agotaron su ventana completa como
 ## Eliminar o editar
 
 - **Sin campaña vinculada**: la publicación se elimina.
-- **Con campaña vinculada**: la publicación se edita, no se elimina. Tú eliges qué hace la edición:
-  - Agregar un aviso de CADUCADO al inicio del texto.
+- **Con campaña vinculada**: la publicación se edita, no se elimina. Tú eliges qué hace la edición, en Ajustes:
+  - Agregar un aviso de CADUCADO al texto.
   - Quitar el código de promoción y las fechas del texto.
   - Ambos (la opción predeterminada).
 
-Puedes cambiar el texto del aviso en Ajustes.
+**Dónde va el aviso** también es tu elección: agrégalo a la propia publicación, o a un comentario nuevo para que tu texto original no cambie. También puedes cambiar el texto del aviso en Ajustes.
+
+**Ajustes por plataforma.** Si quieres un trato distinto en cada plataforma, abre **Ajustes por plataforma** y activa la anulación para Grupos de Facebook, Páginas de Facebook, Telegram o Reddit. Una plataforma sin activar usa los Ajustes principales de arriba.
 
 ## Antes de empezar
 
@@ -39,7 +41,6 @@ Puedes cambiar el texto del aviso en Ajustes.
 1. Elige tu perfil de Facebook y haz clic en **Buscar caducadas**. Expired Butler lista cada publicación caducada que encontró.
 2. Revisa la lista en vista de tarjetas o tabla. Filtra por plataforma, por eliminar frente a editar, o por si hay una campaña vinculada, y busca por título o ASIN.
 3. Marca las publicaciones que quieras tratar (todo lo compatible viene seleccionado de forma predeterminada) y haz clic en **Limpiar seleccionadas**.
-4. Míralo trabajar o desactiva **Míralo trabajar** para que trabaje en segundo plano.
 
 No se elimina nada hasta que lo apruebas, y cada ejecución se mantiene dentro de tu máximo por ejecución.
 
@@ -49,7 +50,11 @@ La sección de **Historial** guarda un registro permanente de todo lo que Expire
 
 ## Ejecutarlo automáticamente
 
-Activa la programación diaria para que Expired Butler barra las publicaciones caducadas una vez al día. De forma predeterminada, una ejecución programada solo informa lo que haría; activa **Auto-act** en Ajustes cuando quieras que limpie por su cuenta.
+Abre **Programación** y activa **Limpiar publicaciones caducadas por mí** para que Expired Butler busque y limpie en un ciclo repetido. De forma predeterminada, una ejecución programada solo informa lo que haría; activa **Auto-act** en Ajustes cuando quieras que limpie por su cuenta.
+
+- **Con qué frecuencia**: elige un preajuste (6 horas, 12 horas, 1, 3 o 7 días) o define un intervalo personalizado, luego haz clic en **Aplicar programación**.
+- **Rampa de calentamiento** (opcional): introduce una programación nueva poco a poco, limitando cuántas publicaciones puede tratar una ejecución programada cada día y subiendo ese límite un poco cada día hasta el máximo que elijas, en lugar de empezar de una vez a un día completo.
+- **Descanso (horas de silencio)**: las limpiezas programadas se pausan por la noche, en las mismas horas de silencio compartidas con Deals Butler y cualquier otro Butler que publique en Facebook en esa cuenta.
 
 ## Cobertura de plataformas
 
