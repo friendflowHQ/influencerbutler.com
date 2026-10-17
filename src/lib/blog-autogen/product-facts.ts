@@ -51,7 +51,7 @@ Desktop butlers (accurate one-liners; never claim capabilities beyond these):
 - Benable Comment Butler (Pro): AI-written, product-specific comments on Benable collections.
 - Collab Butler (Pro): Kanban board tracking every brand collaboration from pitched to paid.
 - Content Butler (Pro): drag-and-drop calendar for planning what to film next, fed from Orders Butler.
-- Product Research (Pro): price and sales-rank history for products you browse, built from your own browsing with the extension.
+- Product Research (Pro): price and sales-rank history for products you browse, built from your own browsing with the extension. Also estimates the likely shopper generation for each product (older shoppers watch longer demo videos, younger ones scroll short vertical video) and the best content format to make, tuned to the creator's own audience.
 - Group Invite Butler (Pro): invites harvested creator emails into your Facebook group at a human pace with caps.
 - Facebook Group Builder (Pro): AI-plans a niche Facebook group, generates its assets, and hands it to Deals Butler.
 - Facebook Inviter (Pro): invites people who reacted to group posts to follow your Facebook Page.
