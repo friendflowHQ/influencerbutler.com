@@ -443,7 +443,15 @@ export function setChatBubbleAvoid(rect: DOMRect | null): void {
     return;
   }
   const right = Math.max(0, window.innerWidth - rect.left + AVOID_GAP_PX);
-  if (window.innerWidth - right < AVOID_MIN_ROOM_PX) {
+  // How much width is actually needed to show whatever is currently rendered
+  // (the 54px launcher when closed, the 360px panel when open) without
+  // clipping it. AVOID_MIN_ROOM_PX alone is sized for the closed launcher -
+  // using it unconditionally let an OPEN chat panel pass this check with only
+  // a thin sliver of room, pushing most of the panel off the left edge of the
+  // screen with no way to get it back (fb-74f387be). Fall back to the flat
+  // constant only if the wrap isn't laid out yet (offsetWidth 0).
+  const neededRoom = Math.max(AVOID_MIN_ROOM_PX, wrap.offsetWidth || 0);
+  if (window.innerWidth - right < neededRoom) {
     wrap.style.display = "none";
     return;
   }
