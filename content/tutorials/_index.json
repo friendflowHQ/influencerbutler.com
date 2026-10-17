@@ -1032,6 +1032,33 @@
       "summary": "Switching to a new laptop, Mac or Windows PC? Save your setup to one file on your old computer, open it on the new one, and finish with a short checklist. Your settings, templates, images and saved connections come along. Your browser logins do not, so you sign in to those again. Steps for Mac and for Windows.",
       "order": 126,
       "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
+      "id": "ai-clone-butler",
+      "title": "AI Clone Butler: put yourself in product photos with AI",
+      "category": "Other",
+      "summary": "Train a personal AI clone from your own photos, then generate new lifestyle photos of yourself holding or using a real product, with the actual product photo composited in for accuracy.",
+      "order": 708,
+      "locales": ["en-US", "es-ES", "fr-FR"],
+      "audience": "power"
+    },
+    {
+      "id": "support-circle",
+      "title": "Support Circle: trade engagement with other creators",
+      "category": "Other",
+      "summary": "Share your storefront and social links with other Support Circle members, opt in to having your own Like and Follow butlers support theirs, and get engagement back once you've proven you're an active member.",
+      "order": 709,
+      "locales": ["en-US", "es-ES", "fr-FR"],
+      "audience": "power"
+    },
+    {
+      "id": "reach-booster",
+      "title": "Reach Booster: see which content Amazon is holding back",
+      "category": "Amazon",
+      "summary": "Find every published Amazon video or photo that Amazon has flagged \"Improve reach,\" meaning it's held back from the highest-traffic placement on product detail pages, and understand why.",
+      "order": 710,
+      "locales": ["en-US", "es-ES", "fr-FR"],
+      "audience": "power"
     }
   ]
 }
