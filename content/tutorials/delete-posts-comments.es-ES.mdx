@@ -14,8 +14,8 @@ Eliminar en Facebook es permanente, así que la herramienta está pensada para p
 
 ## Antes de empezar
 
-- Una sesión de Facebook en Influencer Butler (los mismos perfiles con los que publica Deals Butler).
-- Nada más. La lista de destinos se copia directamente de tus grupos y páginas de Deals Butler.
+- Una sesión de Facebook en Influencer Butler (las mismas cuentas con las que publica Deals Butler, incluidas las que pertenecen a un clon de Deals).
+- Nada más. La lista de destinos se copia directamente de tus grupos y páginas de Deals Butler, agrupada por la cuenta que publica en cada uno.
 - **Opcional: una clave de API de OpenAI** en API Integrations, solo para la opción que también escanea imágenes. Todo lo demás funciona sin ella. [Cómo conseguir una clave](/help/tutorials/openai-api-setup).
 
 ## Elegir qué limpiar
@@ -32,6 +32,19 @@ Cuando **De quién es el contenido** es **Cualquiera, por palabra clave**, apare
 - **Buscar por palabra clave** usa la búsqueda dentro del grupo de Facebook. Es rápida, pero la búsqueda de Facebook no siempre devuelve todas las coincidencias.
 - **Desplazarse por el muro** lee todo el muro del grupo y conserva las publicaciones que coinciden con tus palabras clave. Es más lento, pero encuentra publicaciones que la búsqueda pasa por alto.
 - **Ambos** busca primero y luego se desplaza por el muro, para la limpieza más completa. Una publicación encontrada por ambos pasos nunca se elimina dos veces.
+
+## Qué cuenta ejecuta la limpieza
+
+Si publicas desde más de una cuenta de Facebook, no tienes que recordar cuál publicó dónde. El selector **Perfil de Facebook** usa por defecto **Todas las cuentas que publican ahí**: la ejecución se divide en una pasada por cada cuenta que publica en los grupos y páginas que marcaste (o, con **Solo publicaciones de Influencer Butler**, por cada cuenta que publicó cada entrada; con **Mi biografía**, la biografía de cada cuenta). La lista de destinos muestra cada grupo o página bajo la cuenta que publica en él, y la línea de vista previa indica qué cuentas usará la ejecución.
+
+Elige una sola cuenta cuando quieras limpiar únicamente con esa sesión.
+
+En cada pasada ocurren dos cosas automáticamente:
+
+- Una publicación que Deals Butler creó como página de Facebook (un destino de página, o un grupo configurado para publicar como tu página) se elimina actuando como esa página, que es la única forma que Facebook permite.
+- Una cuenta que Facebook está limitando en ese momento, o que está fuera del horario de publicación que fijaste en Deals Butler, se omite en esa ejecución, con el motivo en el registro. Eliminar con una cuenta limitada conlleva el mismo riesgo que publicar con ella.
+
+Tras una limpieza, cada publicación de Influencer Butler eliminada se marca como **Eliminada** en el Archivo de Deals Butler, para que nada siga tratándola como activa.
 
 ## Filtros
 

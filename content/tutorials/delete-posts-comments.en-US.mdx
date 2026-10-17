@@ -14,8 +14,8 @@ Deleting on Facebook is permanent, so the tool is built preview-first: it always
 
 ## Before you start
 
-- A Facebook login in Influencer Butler (the same profiles Deals Butler posts with).
-- Nothing else. The destinations list is copied straight from your Deals Butler groups and pages.
+- A Facebook login in Influencer Butler (the same accounts Deals Butler posts with, including the ones that belong to a Deals clone).
+- Nothing else. The destinations list is copied straight from your Deals Butler groups and pages, grouped under the account that posts to each one.
 - **Optional: an OpenAI API key** in API Integrations, only for the option that also scans images. Everything else works without it. [How to get a key](/help/tutorials/openai-api-setup).
 
 ## Choosing what to clean
@@ -32,6 +32,19 @@ When **Whose content** is **Anyone, by keyword**, a **How to find posts** choice
 - **Search by keyword** uses Facebook's in-group search. It is fast, but Facebook's search does not always return every match.
 - **Scroll back through the feed** reads the whole group feed and keeps the posts matching your keywords. It is slower, but it catches posts search misses.
 - **Both** searches first, then scrolls the feed, for the most complete cleanup. A post found by both passes is never removed twice.
+
+## Which account runs the cleanup
+
+If you post from more than one Facebook account, you do not have to remember which one posted where. The **Facebook profile** picker defaults to **Every account that posts there**: the run becomes one pass per account that posts to the groups and pages you ticked (or, for **Only posts Influencer Butler published**, per account that published each post; for **My timeline**, each account's own timeline). The destinations list shows each group or page under the account that posts to it, and the preview line tells you which accounts a run will use.
+
+Pick a single account instead when you want to clean up under just that login.
+
+Two things happen automatically in every pass:
+
+- A post that Deals Butler published as a Facebook Page (a Page destination, or a group set to post as your Page) is deleted while acting as that Page, which is the only way Facebook allows it.
+- An account that Facebook is currently limiting, or that is outside the posting hours you set for it in Deals Butler, is skipped for that run, with the reason in the log. Deleting on a limited account carries the same risk as posting on it.
+
+After a cleanup, every Influencer Butler post it removed is marked **Removed** in the Deals Butler Archive, so nothing else keeps treating it as live.
 
 ## Filters
 
@@ -82,7 +95,8 @@ Set a start time and a repeat interval (6, 12, 24 hours, 7 days, or custom) and 
 
 - **I cannot find Delete Posts & Comments under Facebook Butler.** It is hidden from the sidebar until you turn it on. Open **Settings**, go to **Show / Hide Butlers**, switch on **Delete Posts & Comments** in the Facebook group, and it appears under **Facebook Butler**.
 - **Preview shows my personal posts, not my deal posts.** Your scope is set to My timeline. Deal posts go to groups and pages, so switch the scope and tick your destinations.
-- **A post was skipped with "No Delete option".** Facebook does not offer a delete action on that post for your account (for example a post cross-posted by a Page you do not manage). The runner skips it and moves on.
+- **A post was skipped with "No Delete option".** Facebook does not offer a delete action on that post for your account (for example a post cross-posted by a Page you do not manage). The runner skips it and moves on. If the post was published by one of your other accounts, leave the picker on **Every account that posts there** so the right login handles it.
+- **A pass was skipped for one of my accounts.** That account is either paused by Facebook right now or outside the posting hours you set for it in Deals Butler. The other accounts still run; that one is picked up next time.
 - **"A specific person" could not find the member.** Paste their profile link instead of typing the name. A name is matched against the group member list, which is less reliable.
 - **Removing other members' posts needs admin.** The person and anyone filters only work in groups where you are an admin or moderator.
 - **Keyword cleanup missed some posts.** Facebook's in-group search is not always complete. Switch **How to find posts** to **Scroll back through the feed**, or **Both**, so the run reads the whole feed instead of relying on search.
