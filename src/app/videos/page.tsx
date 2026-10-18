@@ -185,7 +185,7 @@ export default async function VideosHubPage() {
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <a
               href="/download"
-              className="rounded-lg bg-[#f97316] px-5 py-3 text-sm font-semibold text-white shadow hover:bg-[#ea580c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c2410c]"
+              className="rounded-lg bg-[#c2410c] px-5 py-3 text-sm font-semibold text-white shadow hover:bg-[#9a3412] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c2410c]"
             >
               Download the app
             </a>

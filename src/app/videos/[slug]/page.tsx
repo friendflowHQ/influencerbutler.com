@@ -123,7 +123,7 @@ export default async function VideoWatchPage({ params }: { params: Params }) {
           {video.featureSlug ? (
             <a
               href={`/features/${video.featureSlug}`}
-              className="rounded-lg bg-[#f97316] px-4 py-2 font-semibold text-white hover:bg-[#ea580c] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c2410c]"
+              className="rounded-lg bg-[#c2410c] px-4 py-2 font-semibold text-white hover:bg-[#9a3412] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#c2410c]"
             >
               Read about this feature
             </a>
