@@ -19,6 +19,7 @@ import { normalizePlanLevel } from "../shared/plan-level";
 import { captureAffiliateReferral } from "./affiliate";
 import { getHudStatus, lookupEarnings, fetchDesktopHistory, fetchOutreachKeywords, fetchMessengerStatus, fetchMessageTemplates, fetchBrandEnrichment, fetchOwnership, fetchCampaignStatus, fetchYouTubeStatus, fetchYouTubeProgress, requestPairing, submitPairingCode, unpair } from "./hud-bridge";
 import { reconcileYtbSettingsPush } from "./youtube-butler-settings";
+import { refreshAudienceProfile } from "./audience-sync";
 import { relayClaimLink, relayListTargets, relaySend, sendCommandPreferLocal } from "./relay";
 import { clearActivity, getActivity, recordActivity } from "./desktop-activity";
 import type { RelayClaimResult } from "./relay";
@@ -365,6 +366,9 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     // Same self-healing idea for YouTube Butler settings: a no-op unless the
     // creator edited a setting while the desktop app was closed/unpaired.
     void reconcileYtbSettingsPush();
+    // Keep the "Who buys this" audience profile current (self-throttled, a
+    // no-op when not paired).
+    void refreshAudienceProfile();
   }
   if (alarm.name === CATALOGUE_ALARM) {
     void refreshCatalogues();

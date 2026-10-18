@@ -11,6 +11,7 @@ export type ShopperStrings = {
   format: Record<FormatId, string>;
   makeThis: (format: string, length: string, platforms: string) => string;
   why: Record<Generation, string>;
+  tuned: string;
   platform: Record<string, string>;
 };
 
@@ -36,6 +37,7 @@ export const SHOPPER_STRINGS: Record<"en" | "es" | "fr", ShopperStrings> = {
       millennial: "Show it in a real routine and lead with the value and time saved.",
       genz: "Hook them in the first second. Visual payoff first, keep it fast and authentic.",
     },
+    tuned: "Tuned to your audience, from the profile you set in the Influencer Butler app.",
     platform: PLATFORMS_EN,
   },
   es: {
@@ -57,6 +59,7 @@ export const SHOPPER_STRINGS: Record<"en" | "es" | "fr", ShopperStrings> = {
       millennial: "Muéstralo en una rutina real y destaca el valor y el tiempo que ahorra.",
       genz: "Engánchalos en el primer segundo. Primero el resultado visual, rápido y auténtico.",
     },
+    tuned: "Ajustado a tu audiencia, según el perfil que configuraste en la app Influencer Butler.",
     platform: PLATFORMS_EN,
   },
   fr: {
@@ -78,6 +81,7 @@ export const SHOPPER_STRINGS: Record<"en" | "es" | "fr", ShopperStrings> = {
       millennial: "Montrez-le dans une vraie routine et mettez en avant la valeur et le temps gagné.",
       genz: "Captez-les dès la première seconde. Le résultat visuel d'abord, rapide et authentique.",
     },
+    tuned: "Adapté à votre audience, d'après le profil défini dans l'application Influencer Butler.",
     platform: PLATFORMS_EN,
   },
 };

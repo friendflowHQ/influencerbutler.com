@@ -56,6 +56,11 @@ export type SyncSettingsPayload = {
   // extension never sends it and never folds it into its own settings (it is
   // stored per provider instead, see applyDesktopConnections).
   sessionConnections?: Record<string, SessionConnection>;
+  // The creator's audience profile from the app's Product Research (generation
+  // percents). Read-only, app to extension, like sessionConnections: cached for
+  // the "Who buys this" card, never merged or pushed back. Undefined = an older
+  // app that does not send it; null = the creator has no profile set.
+  audienceProfile?: Record<"boomer" | "genx" | "millennial" | "genz", number> | null;
 };
 
 // The extension's answer from asking the desktop app to mint a link with its own

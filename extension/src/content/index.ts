@@ -40,6 +40,7 @@ import { handleOpenHash } from "../tools/cc-messages/open-conversation";
 import { renderPriceHistory } from "../tools/price-history/panel";
 import { renderDealSignals } from "../tools/deal-signals/panel";
 import { renderShopperGeneration } from "../tools/shopper/panel";
+import { loadAudienceProfile } from "../shared/audience-profile";
 import { renderAiPost } from "../tools/ai-post/panel";
 import { renderInlineCard } from "../tools/inline-card/panel";
 import { renderGlobalMaximizer } from "../tools/global-maximizer/panel";
@@ -618,6 +619,9 @@ async function runForPage(): Promise<void> {
     const myVideoOn =
       showOnsite && settings.tools.videoCounts && settings.tools.myVideoPlacement;
     ownVideoIndex = myVideoOn ? await loadOwnVideoIndex(settings.storefrontHandle) : null;
+    // The creator's audience profile (cached from the paired app) tunes the
+    // "Who buys this" estimate; null when unpaired or unset.
+    const audienceProfile = settings.tools.shopperGeneration ? await loadAudienceProfile() : null;
 
     guard("product-tools", () => {
       const carousel = extractCarousel(document, capturedVideoData);
@@ -692,7 +696,7 @@ async function runForPage(): Promise<void> {
       // estimate, no network call; nothing renders on a rough guess.
       if (settings.tools.shopperGeneration) {
         guard("shopper-generation", () => {
-          renderShopperGeneration(signals);
+          renderShopperGeneration(signals, audienceProfile);
         });
       }
 

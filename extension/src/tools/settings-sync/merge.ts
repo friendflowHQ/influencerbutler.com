@@ -4,6 +4,7 @@ import type {
   SyncSettingsPayload,
   YtbSyncPayload,
 } from "../../transport/sync-settings";
+import { coerceAudienceProfile } from "../../shared/audience-profile";
 
 // Session-based integrations the desktop app can vouch for (no portable secret).
 export const SESSION_PROVIDER_IDS = ["mavely", "walmartCreator"] as const;
@@ -95,6 +96,9 @@ export function coerceSyncPayload(raw: unknown): SyncSettingsPayload | null {
     providers,
     sessionConnections,
     youtubeButler: coerceYtbPayload(o.youtubeButler),
+    // Undefined stays undefined (older app: keep any cached profile); anything
+    // else is sanitized, and a malformed value reads as "no profile".
+    ...(o.audienceProfile === undefined ? {} : { audienceProfile: coerceAudienceProfile(o.audienceProfile) }),
   };
 }
 

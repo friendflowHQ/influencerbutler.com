@@ -37,6 +37,7 @@ import type {
   SyncSettingsPayload,
 } from "../transport/sync-settings";
 import { coerceSyncPayload } from "../tools/settings-sync/merge";
+import { saveAudienceProfile } from "../shared/audience-profile";
 import { recordActivity } from "./desktop-activity";
 
 // Where the pairing token + this extension install's stable client id live.
@@ -335,6 +336,9 @@ export async function fetchDesktopSettings(): Promise<DesktopSettingsResult> {
     const payload = await fetchSettingsOnPort(port, token);
     if (payload) {
       recordActivity({ dir: "from-app", action: "settings.pull", outcome: "ok", route: "local" });
+      // Every pull refreshes the cached audience profile for the "Who buys
+      // this" card. An older app that does not send it leaves the cache alone.
+      if (payload.audienceProfile !== undefined) await saveAudienceProfile(payload.audienceProfile);
       return { status: "ok", payload };
     }
   }
