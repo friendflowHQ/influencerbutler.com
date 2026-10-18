@@ -982,6 +982,24 @@
       "audience": "power"
     },
     {
+      "id": "ai-influencer-setup",
+      "title": "AI Influencer Setup: answer a few questions and get your AI influencer ready to post",
+      "category": "Other",
+      "summary": "A short questionnaire sets up your AI model, products, posting and schedule. Pick Fast track or Guide me, then add your photos and sign-ins. Your first looks always wait for your approval.",
+      "order": 72,
+      "locales": ["en-US", "es-ES", "fr-FR"],
+      "audience": "power"
+    },
+    {
+      "id": "ai-influencer-milestone",
+      "title": "Milestone Video: celebrate a follower or member milestone with an AI video of you",
+      "category": "Other",
+      "summary": "Make a short vertical celebration video of you, like a champagne pop with a big \"1k Members\" at the end. Check the key pictures first, then make the video.",
+      "order": 74,
+      "locales": ["en-US", "es-ES", "fr-FR"],
+      "audience": "power"
+    },
+    {
       "id": "collage-butler",
       "title": "Collage Butler: build multi-product collage images to post",
       "category": "Collage",
