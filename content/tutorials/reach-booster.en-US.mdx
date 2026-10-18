@@ -1,23 +1,46 @@
 ---
-title: "Reach Booster: see which content Amazon is holding back"
-summary: Find every published Amazon video or photo that Amazon has flagged "Improve reach," meaning it's held back from the highest-traffic placement on product detail pages, and understand why.
-category: Other
+title: "Reach Booster: find and fix the content Amazon is holding back"
+summary: Scan your Amazon Creator Hub for every published video or photo flagged "Improve reach," see why it is held back from product detail pages, and fix it with Download, Diagnose and Re-upload. A daily scan keeps the list current and confirms your fixes.
+category: Amazon
 ---
 
 ## What Reach Booster does
 
-When Amazon flags one of your published videos or photos "Improve reach," that content is held back from appearing on product detail pages, which is the highest-traffic placement for Amazon content. The content still shows on your Storefront, but it misses out on the reach a detail-page placement would bring, and earns far less as a result.
+When Amazon flags one of your published videos or photos "Improve reach," that content is held back from product detail pages, the highest-traffic placement for creator content. It still shows on your Storefront, but it misses the reach a detail-page placement brings and earns far less.
 
-Reach Booster collects every flagged item in one place so you can see what's held back and understand why, instead of hunting through Amazon's Creator Hub one item at a time.
+Reach Booster finds every flagged item, shows the reason Amazon gave, ranks them by how much reach you are losing, and walks each one through a fix. When a later scan sees the item showing again, it moves to the Fixed tab on its own.
 
 ## Before you start
 
-Reach Booster works passively: install the Influencer Butler browser extension, then open your Amazon Creator Hub or **My content** list while signed in. Every flagged item you browse past gets recorded here automatically. There's nothing to configure.
+Reach Booster is a Power User feature under Amazon Butler. Sign in to Amazon in the shared browser once (any Amazon butler's sign-in works). The top-bar **Watch it run** switch decides whether you see the browser during a scan; with it off, a signed-out session stops the scan and shows the usual sign-in alert instead of waiting on a hidden login page.
 
-## Using it
+The Influencer Butler browser extension still adds anything it sees while you browse your Creator Hub, so the list fills from both sides.
 
-Click **Refresh** to pull in the current flagged list. The table shows each flagged item and the reason Amazon gave for holding it back.
+## Scan now
 
-## Fixing a flagged item
+Click **Scan now**. The butler opens your Creator Hub, reads every page of your video list and your **My content** list (its Needs attention and Published tabs), records each item marked Improve reach with its views, upload date and average percentage viewed, and opens new items' edit pages to capture their tagged products and Amazon's exact reason.
 
-Editing a flagged item in place does not retrigger Amazon's review. To fix reach on a flagged item, reshoot or re-edit it to meet Amazon's quality bar and upload it as new content. Amazon rechecks new uploads within 48 hours.
+**Scan settings** lets you choose the marketplace (United States or United Kingdom), how many pages of the video list to read, how many item edit pages one scan may visit, and which lists to look at. Everything saves as you change it.
+
+## The list
+
+The summary tiles show how many items are held back, split by videos and photos, how many are waiting on Amazon's recheck, how many were fixed in the last 30 days, and the combined views held back.
+
+The table has two tabs. **Open** holds everything that still needs a fix, sorted by priority (views times days held back, so the costliest items come first). **Fixed** holds what a scan confirmed is showing again, plus anything you marked fixed or dismissed.
+
+Search by title, reason or ASIN, filter by type, marketplace, status or whether Amazon gave a reason, and click any column heading to sort. Tick rows to queue, mark fixed, dismiss or remove them together, or export the list to CSV.
+
+## Fixing an item
+
+Editing a flagged item in place does not retrigger Amazon's review. The fix is always a fresh upload of an improved version, and Reach Booster does the mechanics for you:
+
+1. **Download** saves the original to your computer and captures the products tagged on it.
+2. **Diagnose** measures the file (orientation, resolution, length, audio, frame rate, bitrate, aspect ratio) and lists the likely reasons it missed Amazon's quality bar, together with a short checklist. These checks are guidance, not Amazon's published rule; watermarks, promo text, blur and shaky footage can only be judged by eye.
+3. **Fix: blur-fill to horizontal** (vertical videos) produces a 1920x1080 copy with the frame letterboxed over a blurred backdrop. You can also improve the file yourself in any editor; use **Open folder** to find it.
+4. **Re-upload** deletes the live item and uploads the improved file with the same product tags. You type DELETE to confirm, since the deletion cannot be undone. Photos are downloaded and diagnosed here; re-upload the improved photo yourself with **Open to re-upload**, then click **I re-uploaded it**.
+
+A re-uploaded item shows **Awaiting recheck**. Amazon re-checks new uploads within 48 hours; the next scan after that marks it **Fixed** or **Still held back**.
+
+## Daily scan
+
+Turn on **Scan every day** and pick an hour. The butler scans with your saved settings, adds new held-back items, and verifies your re-uploads without you clicking anything. If the app was closed at the scheduled hour, the scan runs once it is back up.

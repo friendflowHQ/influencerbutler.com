@@ -1,23 +1,46 @@
 ---
-title: "Reach Booster : voyez quel contenu Amazon retient"
-summary: Trouvez chaque vidéo ou photo publiée sur Amazon qu'Amazon a signalée « Améliorer la portée », c'est-à-dire retenue de l'emplacement à fort trafic sur les pages de détail produit, et comprenez pourquoi.
-category: Other
+title: "Reach Booster : trouvez et corrigez le contenu qu'Amazon retient"
+summary: Scannez votre Creator Hub Amazon pour chaque vidéo ou photo publiée marquée « Améliorer la portée », voyez pourquoi elle est retenue hors des pages produit et corrigez-la avec Télécharger, Diagnostiquer et Renvoyer. Un scan quotidien garde la liste à jour et confirme vos corrections.
+category: Amazon
 ---
 
 ## Ce que fait Reach Booster
 
-Quand Amazon signale une de vos vidéos ou photos publiées « Améliorer la portée », ce contenu est retenu de l'affichage sur les pages de détail produit, qui sont l'emplacement à plus fort trafic pour le contenu Amazon. Le contenu continue de s'afficher sur votre Boutique, mais il perd la portée qu'apporterait cet emplacement, et rapporte donc beaucoup moins.
+Quand Amazon marque une de vos vidéos ou photos publiées « Améliorer la portée », ce contenu est retenu hors des pages produit, l'emplacement le plus fréquenté pour le contenu des créateurs. Il reste visible sur votre Storefront, mais il manque la portée qu'apporte une page produit et rapporte bien moins.
 
-Reach Booster regroupe chaque élément signalé en un seul endroit pour que vous voyiez ce qui est retenu et compreniez pourquoi, au lieu de chercher dans le Creator Hub d'Amazon élément par élément.
+Reach Booster trouve chaque élément marqué, affiche la raison donnée par Amazon, les classe selon la portée que vous perdez et accompagne chacun jusqu'à sa correction. Quand un scan ultérieur voit l'élément de nouveau affiché, il passe de lui-même dans l'onglet Corrigés.
 
 ## Avant de commencer
 
-Reach Booster fonctionne de façon passive : installez l'extension de navigateur Influencer Butler, puis ouvrez votre Creator Hub Amazon ou votre liste **Mon contenu** en étant connecté. Chaque élément signalé que vous parcourez est enregistré ici automatiquement. Il n'y a rien à configurer.
+Reach Booster est une fonction Power User d'Amazon Butler. Connectez-vous à Amazon une fois dans le navigateur partagé (la connexion de n'importe quel butler Amazon convient). L'interrupteur **Watch it run** de la barre du haut décide si vous voyez le navigateur pendant un scan ; s'il est désactivé, une session déconnectée arrête le scan et affiche l'alerte de connexion habituelle au lieu d'attendre sur une page de connexion cachée.
 
-## Comment l'utiliser
+L'extension de navigateur Influencer Butler ajoute toujours ce qu'elle voit pendant que vous parcourez votre Creator Hub, la liste se remplit donc des deux côtés.
 
-Cliquez sur **Actualiser** pour récupérer la liste actuelle des éléments signalés. Le tableau affiche chaque élément signalé et la raison donnée par Amazon pour le retenir.
+## Scanner maintenant
 
-## Corriger un élément signalé
+Cliquez sur **Scanner maintenant**. Le butler ouvre votre Creator Hub, lit chaque page de votre liste de vidéos et de votre liste **Mon contenu** (ses onglets Attention requise et Publié), enregistre chaque élément marqué Améliorer la portée avec ses vues, sa date d'envoi et son pourcentage moyen visionné, et ouvre les pages de modification des nouveaux éléments pour capturer leurs produits tagués et la raison exacte d'Amazon.
 
-Modifier un élément signalé sur place ne redéclenche pas la vérification d'Amazon. Pour corriger la portée d'un élément signalé, refaites la prise de vue ou modifiez-le pour respecter le niveau de qualité d'Amazon, puis chargez-le comme nouveau contenu. Amazon revérifie les nouveaux chargements dans les 48 heures.
+Dans **Réglages du scan**, vous choisissez la marketplace (États-Unis ou Royaume-Uni), combien de pages de la liste de vidéos lire, combien de pages de modification un scan peut visiter et quelles listes consulter. Tout est enregistré dès que vous le modifiez.
+
+## La liste
+
+Les tuiles de résumé indiquent combien d'éléments sont retenus, répartis en vidéos et photos, combien attendent le réexamen d'Amazon, combien ont été corrigés sur les 30 derniers jours et le total des vues retenues.
+
+Le tableau a deux onglets. **Ouverts** contient tout ce qui a encore besoin d'une correction, trié par priorité (vues fois jours retenus, les éléments les plus coûteux viennent donc en premier). **Corrigés** contient ce qu'un scan a confirmé comme de nouveau affiché, plus ce que vous avez marqué comme corrigé ou écarté.
+
+Recherchez par titre, raison ou ASIN, filtrez par type, marketplace, statut ou présence d'une raison d'Amazon, et cliquez sur un en-tête de colonne pour trier. Cochez des lignes pour les mettre en file, les marquer corrigées, les écarter ou les retirer ensemble, ou exportez la liste en CSV.
+
+## Corriger un élément
+
+Modifier un élément marqué sur place ne relance pas l'examen d'Amazon. La correction est toujours un nouvel envoi d'une version améliorée, et Reach Booster s'occupe de la mécanique :
+
+1. **Télécharger** enregistre l'original sur votre ordinateur et capture les produits tagués.
+2. **Diagnostiquer** mesure le fichier (orientation, résolution, durée, audio, fréquence d'images, débit, format) et liste les raisons probables pour lesquelles il n'a pas atteint le niveau de qualité d'Amazon, avec une courte liste de vérifications. Ces vérifications sont indicatives, pas la règle publiée d'Amazon ; filigranes, texte promotionnel, flou et image tremblée ne se jugent qu'à l'œil.
+3. **Correction : fond flou en horizontal** (vidéos verticales) produit une copie 1920x1080 avec l'image encadrée sur un fond flouté. Vous pouvez aussi améliorer le fichier vous-même dans n'importe quel éditeur ; utilisez **Ouvrir le dossier** pour le retrouver.
+4. **Renvoyer** supprime l'élément en ligne et envoie le fichier amélioré avec les mêmes tags produit. Vous tapez DELETE pour confirmer, car la suppression est irréversible. Les photos sont téléchargées et diagnostiquées ici ; renvoyez vous-même la photo améliorée avec **Ouvrir pour renvoyer**, puis cliquez sur **Je l'ai renvoyé**.
+
+Un élément renvoyé affiche **En attente de réexamen**. Amazon réexamine les nouveaux envois sous 48 heures ; le scan suivant le marque **Corrigé** ou **Toujours retenu**.
+
+## Scan quotidien
+
+Activez **Scanner chaque jour** et choisissez une heure. Le butler scanne avec vos réglages enregistrés, ajoute les nouveaux éléments retenus et vérifie vos renvois sans que vous cliquiez sur quoi que ce soit. Si l'application était fermée à l'heure prévue, le scan se lance dès qu'elle est rouverte.

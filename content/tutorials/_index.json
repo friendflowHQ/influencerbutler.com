@@ -1053,9 +1053,9 @@
     },
     {
       "id": "reach-booster",
-      "title": "Reach Booster: see which content Amazon is holding back",
+      "title": "Reach Booster: find and fix the content Amazon is holding back",
       "category": "Amazon",
-      "summary": "Find every published Amazon video or photo that Amazon has flagged \"Improve reach,\" meaning it's held back from the highest-traffic placement on product detail pages, and understand why.",
+      "summary": "Scan your Amazon Creator Hub for every published video or photo flagged \"Improve reach,\" see why it is held back from product detail pages, and fix it with Download, Diagnose and Re-upload. A daily scan keeps the list current and confirms your fixes.",
       "order": 710,
       "locales": ["en-US", "es-ES", "fr-FR"],
       "audience": "power"

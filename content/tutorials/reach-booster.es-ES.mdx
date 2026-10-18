@@ -1,23 +1,46 @@
 ---
-title: "Reach Booster: mira qué contenido está reteniendo Amazon"
-summary: Encuentra cada video o foto publicado en Amazon que Amazon marcó como "Mejorar alcance", lo que significa que se retiene de la ubicación de mayor tráfico en las páginas de detalle de producto, y entiende por qué.
-category: Other
+title: "Reach Booster: encuentra y arregla el contenido que Amazon retiene"
+summary: Escanea tu Creator Hub de Amazon en busca de cada vídeo o foto publicado marcado como "Mejorar alcance", mira por qué se retiene fuera de las páginas de producto y arréglalo con Descargar, Diagnosticar y Resubir. Un escaneo diario mantiene la lista al día y confirma tus arreglos.
+category: Amazon
 ---
 
 ## Qué hace Reach Booster
 
-Cuando Amazon marca uno de tus videos o fotos publicados como "Mejorar alcance", ese contenido se retiene de aparecer en las páginas de detalle de producto, que son la ubicación de mayor tráfico para contenido en Amazon. El contenido sigue mostrándose en tu Tienda, pero pierde el alcance que traería esa ubicación, y por eso gana mucho menos.
+Cuando Amazon marca uno de tus vídeos o fotos publicados como "Mejorar alcance", ese contenido se retiene fuera de las páginas de producto, la ubicación con más tráfico para el contenido de creadores. Sigue mostrándose en tu Storefront, pero pierde el alcance que da una página de producto y gana mucho menos.
 
-Reach Booster junta cada artículo marcado en un solo lugar para que veas qué se está reteniendo y entiendas por qué, en lugar de buscar en el Creator Hub de Amazon artículo por artículo.
+Reach Booster encuentra cada elemento marcado, muestra el motivo que dio Amazon, los ordena según cuánto alcance pierdes y guía cada uno hasta su arreglo. Cuando un escaneo posterior ve que el elemento vuelve a mostrarse, pasa solo a la pestaña Arreglados.
 
 ## Antes de empezar
 
-Reach Booster funciona de forma pasiva: instala la extensión de navegador de Influencer Butler y luego abre tu Creator Hub de Amazon o tu lista **Mi contenido** mientras tienes la sesión iniciada. Cada artículo marcado que veas se registra aquí automáticamente. No hay nada que configurar.
+Reach Booster es una función Power User dentro de Amazon Butler. Inicia sesión en Amazon una vez en el navegador compartido (vale el inicio de sesión de cualquier butler de Amazon). El interruptor **Watch it run** de la barra superior decide si ves el navegador durante un escaneo; con él apagado, una sesión cerrada detiene el escaneo y muestra el aviso habitual de inicio de sesión en lugar de esperar en una página de login oculta.
 
-## Cómo usarlo
+La extensión de navegador de Influencer Butler sigue añadiendo lo que vea mientras navegas por tu Creator Hub, así que la lista se llena por los dos lados.
 
-Haz clic en **Actualizar** para traer la lista de marcados actual. La tabla muestra cada artículo marcado y el motivo que dio Amazon para retenerlo.
+## Escanear ahora
 
-## Corregir un artículo marcado
+Pulsa **Escanear ahora**. El butler abre tu Creator Hub, lee todas las páginas de tu lista de vídeos y de tu lista **Mi contenido** (sus pestañas Necesita atención y Publicado), registra cada elemento marcado como Mejorar alcance con sus vistas, fecha de subida y porcentaje medio visto, y abre las páginas de edición de los elementos nuevos para capturar sus productos etiquetados y el motivo exacto de Amazon.
 
-Editar un artículo marcado en el lugar no vuelve a activar la revisión de Amazon. Para corregir el alcance de un artículo marcado, vuelve a grabarlo o edítalo para cumplir con el estándar de calidad de Amazon y súbelo como contenido nuevo. Amazon revisa las subidas nuevas dentro de 48 horas.
+En **Ajustes del escaneo** eliges el mercado (Estados Unidos o Reino Unido), cuántas páginas de la lista de vídeos leer, cuántas páginas de edición puede visitar un escaneo y qué listas revisar. Todo se guarda al cambiarlo.
+
+## La lista
+
+Las tarjetas de resumen muestran cuántos elementos están retenidos, divididos en vídeos y fotos, cuántos esperan la nueva revisión de Amazon, cuántos se arreglaron en los últimos 30 días y las vistas retenidas en total.
+
+La tabla tiene dos pestañas. **Abiertos** contiene todo lo que aún necesita arreglo, ordenado por prioridad (vistas por días retenido, así que los elementos más costosos van primero). **Arreglados** contiene lo que un escaneo confirmó que vuelve a mostrarse, más lo que marcaste como arreglado o descartaste.
+
+Busca por título, motivo o ASIN, filtra por tipo, mercado, estado o si Amazon dio un motivo, y pulsa cualquier encabezado de columna para ordenar. Marca filas para ponerlas en cola, marcarlas como arregladas, descartarlas o quitarlas juntas, o exporta la lista a CSV.
+
+## Arreglar un elemento
+
+Editar un elemento marcado en el sitio no vuelve a activar la revisión de Amazon. El arreglo siempre es una subida nueva de una versión mejorada, y Reach Booster hace la parte mecánica por ti:
+
+1. **Descargar** guarda el original en tu ordenador y captura los productos etiquetados.
+2. **Diagnosticar** mide el archivo (orientación, resolución, duración, audio, tasa de fotogramas, tasa de bits, relación de aspecto) y enumera los motivos probables por los que no pasó el listón de calidad de Amazon, junto con una lista breve de comprobaciones. Estas comprobaciones son orientativas, no la regla publicada de Amazon; marcas de agua, texto promocional, desenfoque e imagen movida solo se juzgan a ojo.
+3. **Arreglo: relleno difuminado a horizontal** (vídeos verticales) crea una copia de 1920x1080 con el encuadre sobre un fondo difuminado. También puedes mejorar el archivo en cualquier editor; usa **Abrir carpeta** para encontrarlo.
+4. **Resubir** elimina el elemento activo y sube el archivo mejorado con las mismas etiquetas de producto. Escribes DELETE para confirmar, porque la eliminación no se puede deshacer. Las fotos se descargan y diagnostican aquí; resube tú la foto mejorada con **Abrir para resubir** y luego pulsa **Ya lo resubí**.
+
+Un elemento resubido muestra **Esperando revisión**. Amazon vuelve a revisar las subidas nuevas en 48 horas; el siguiente escaneo después de eso lo marca como **Arreglado** o **Sigue retenido**.
+
+## Escaneo diario
+
+Activa **Escanear cada día** y elige una hora. El butler escanea con tus ajustes guardados, añade los nuevos elementos retenidos y verifica tus resubidas sin que hagas clic en nada. Si la app estaba cerrada a la hora programada, el escaneo se ejecuta cuando vuelve a abrirse.
