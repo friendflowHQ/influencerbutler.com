@@ -7,6 +7,7 @@ import { type SearchTile } from "../../amazon/search-results";
 import type { DpStaticSignals } from "../../amazon/dp-static";
 import { getCache, loadFilters, membership } from "../../catalogue/cache";
 import { retailerModule, type RetailerModule } from "../../retailers/module";
+import type { Retailer } from "../../shared/retailer";
 import { getSettings, getState } from "../../storage/store";
 import { resolveRatePct } from "../score/rate";
 import { computeButlerScore, type ButlerScore } from "../score/model";
@@ -56,7 +57,7 @@ type Row = {
   tile: SearchTile;
   order: number;
   marketplace: string;
-  retailer: "amazon" | "walmart";
+  retailer: Retailer;
   // Base rate: rate card by category once enrichment supplies one, else the
   // page-wide default. A known CC campaign rate overrides it (see rateFor).
   ratePct: number;
@@ -136,7 +137,7 @@ let gridWatch: { observer: MutationObserver; timer: ReturnType<typeof setTimeout
   null;
 
 function watchGridRerenders(settings: Settings, module: RetailerModule): void {
-  if (gridWatch || module.retailer !== "walmart") return;
+  if (gridWatch || !module.capabilities.rerenderWatcher) return;
   const state = { observer: null as unknown as MutationObserver, timer: null as ReturnType<typeof setTimeout> | null, reruns: 0 };
   const check = (): void => {
     state.timer = null;
@@ -221,7 +222,7 @@ export async function initSearchOverlay(
       tile,
       order: i,
       marketplace,
-      retailer: module.retailer === "walmart" ? "walmart" : "amazon",
+      retailer: module.retailer,
       ratePct: defaultRate,
       ccRate: null,
       spccRate: null,
@@ -375,7 +376,7 @@ export async function initSearchOverlay(
     kind: "GET_MARKET_BATCH",
     asins: rows.map((r) => r.tile.asin),
     marketplace,
-    retailer: module.retailer === "walmart" ? "walmart" : "amazon",
+    retailer: module.retailer,
   }).then((res) => {
     if (epoch !== initEpoch || !res.ok) return;
     const byAsin = new Map(res.products.map((p) => [p.asin.toUpperCase(), p]));
@@ -677,7 +678,7 @@ export async function initSearchOverlay(
     showCampaignFilter: caps.campaignFilter,
     // Walmart search / rollback / deals grids can hand-picked-batch to the
     // desktop; the deal.push.batch receiver is retailer-aware.
-    showSendDeals: module.retailer === "walmart",
+    showSendDeals: caps.sendDeals,
     onSendDeals: sendDealsToApp,
     onAcceptAll:
       module.retailer === "amazon" && settings.tools.standaloneAccept ? acceptAllOnPage : undefined,
@@ -686,9 +687,9 @@ export async function initSearchOverlay(
   refreshAcceptAll();
 
   mountToolbar(module.toolbarSlot(first.tile.el), toolbar.host);
-  // Lead with the best opportunities. Not on Walmart: reordering a
+  // Lead with the best opportunities. Not on Walmart or Target: reordering a
   // React-managed grid at load fights its re-renders; the toolbar sort still works.
-  if (module.retailer !== "walmart") applySort("score");
+  if (caps.autoSortByScore) applySort("score");
 
   // Automatic tier-1 enrichment: shared 24h cache first, then viewport-first
   // static /dp/ fetches through the serialized chain. Each arrival upgrades

@@ -549,10 +549,11 @@ async function runForPage(): Promise<void> {
     return;
   }
 
-  // Target.com: product pages only (price / rating chips + the cross-retailer
-  // card). Reads the remote flags itself, like the Benable branch, so the kill
-  // switch ("target" / "crossRetailer" in disabledTools) works here too. None of
-  // the Amazon extractors ever run against a Target page.
+  // Target.com: the product panel (price / commission / score / copy link + the
+  // cross-retailer card) and the shared search overlay on search + category
+  // grids. Reads the remote flags itself, like the Benable branch, so the kill
+  // switch ("target" / "crossRetailer" / "searchOverlay" in disabledTools) works
+  // here too. None of the Amazon extractors ever run against a Target page.
   if (retailer === "target") {
     const flags = await getFlags();
     if (flags?.disableAll) {
@@ -571,6 +572,13 @@ async function runForPage(): Promise<void> {
         const signals = targetToSignals(product ?? extractTargetProductSync(document, currentUrl), currentUrl);
         initTargetProduct(signals, product, { crossRetailer });
       });
+    } else if (pageType === "search" || pageType === "discovery") {
+      // Target grids reuse the exact Amazon search overlay (Butler Score badge,
+      // sort/filter toolbar, per-tile menu) via the Target RetailerModule; the
+      // Amazon-only data sources are skipped by the module's capability flags.
+      if (settings.tools.searchOverlay && !killed("searchOverlay")) {
+        guard("target-search", () => initSearchOverlay(settings, retailerModule("target")));
+      }
     }
     return;
   }

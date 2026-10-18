@@ -3,6 +3,7 @@ import {
   CATEGORY_ORDER,
   DEEPLINK_PROVIDER_IDS,
   WALMART_LINK_PROVIDER_IDS,
+  TARGET_LINK_PROVIDER_IDS,
   getAdapter,
 } from "../integrations/registry";
 import type { IntegrationAdapter, IntegrationCategory } from "../integrations/types";
@@ -473,6 +474,34 @@ function renderAffiliateRoutingStrategy(): void {
   wmHint.style.margin = "6px 0 0";
   wmHint.textContent = D.walmartLinkHint;
   selects.append(wmHint);
+
+  const tgField = document.createElement("label");
+  tgField.className = "field";
+  const tgLabel = document.createElement("span");
+  tgLabel.textContent = D.targetLink;
+  const tgSelect = document.createElement("select");
+  const tgNone = document.createElement("option");
+  tgNone.value = "";
+  tgNone.textContent = D.targetLinkNone;
+  tgSelect.append(tgNone);
+  for (const id of TARGET_LINK_PROVIDER_IDS) {
+    const adapter = getAdapter(id);
+    if (!adapter) continue;
+    const opt = document.createElement("option");
+    opt.value = id;
+    opt.textContent = label(adapter.labelKey);
+    tgSelect.append(opt);
+  }
+  tgSelect.value = view.global.targetLinkProvider ?? "";
+  tgSelect.onchange = () => void setGlobal({ targetLinkProvider: tgSelect.value || null });
+  tgField.append(tgLabel, tgSelect);
+  selects.append(tgField);
+
+  const tgHint = document.createElement("p");
+  tgHint.className = "muted small";
+  tgHint.style.margin = "6px 0 0";
+  tgHint.textContent = D.targetLinkHint;
+  selects.append(tgHint);
 
   root.append(card);
 }

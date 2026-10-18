@@ -219,3 +219,55 @@ describe("buildAffiliateLink (Walmart)", () => {
     });
   });
 });
+
+describe("Target links", () => {
+  const config: RoutingConfig = {
+    enabled: true,
+    primaryDeeplinkProvider: null,
+    affiliateNetworks: [],
+    walmartLinkProvider: "walmartCreator",
+    targetLinkProvider: "mavely",
+    perCountryTags: {},
+    storefrontHandle: null,
+  };
+  const creds = async () => ({});
+  const targetInput = { asin: "79344798", marketplace: "target.com", retailer: "target" as const };
+
+  it("builds a /p/ canonical url for Target", () => {
+    expect(canonicalProductUrl("79344798", "target.com", "", "target")).toBe(
+      "https://www.target.com/p/-/A-79344798",
+    );
+  });
+
+  it("mints through the Target provider, not the Walmart one", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        jsonResponse(200, { data: { createAffiliateLink: { link: "https://mave.ly/tgt1" } } }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const result = await buildAffiliateLink(targetInput, config, creds);
+    expect(result.url).toBe("https://mave.ly/tgt1");
+    // The url handed to Mavely is the plain Target product url.
+    const sent = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body)) as {
+      variables: { url: string };
+    };
+    expect(sent.variables.url).toBe("https://www.target.com/p/-/A-79344798");
+  });
+
+  it("returns the plain /p/ url when no Target provider is chosen", async () => {
+    const result = await buildAffiliateLink(
+      targetInput,
+      { ...config, targetLinkProvider: null },
+      creds,
+    );
+    expect(result.url).toBe("https://www.target.com/p/-/A-79344798");
+  });
+
+  it("falls back to the plain /p/ url with a notice when Mavely is signed out", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(401, {})));
+    const result = await buildAffiliateLink(targetInput, config, creds);
+    expect(result.url).toBe("https://www.target.com/p/-/A-79344798");
+    expect(result.notice).toBe("signInRequired");
+  });
+});

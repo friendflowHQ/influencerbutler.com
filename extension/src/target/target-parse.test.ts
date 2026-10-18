@@ -146,3 +146,45 @@ describe("mergeTargetProducts / readApiKeyFromText", () => {
     expect(readApiKeyFromText("nothing here")).toBeNull();
   });
 });
+
+// Trimmed from a live pdp_client_v1 response (2026-10-18): a variant tcin comes
+// back as its PARENT (price range, no barcode) with the variant under children.
+import pdpVariant from "./__fixtures__/pdp-variant.json";
+
+describe("parsePdpResponse (live variant shape)", () => {
+  it("merges the requested child's price and barcode over the parent", () => {
+    const p = parsePdpResponse(pdpVariant, "81875472");
+    expect(p?.tcin).toBe("81875472");
+    expect(p?.priceCents).toBe(529);
+    expect(p?.upc).toBe("016000171138");
+    expect(p?.title).toContain("18.8oz");
+    // Ratings and category only exist on the parent.
+    expect(p?.averageRating).toBe(4.79);
+    expect(p?.numReviews).toBe(7680);
+    expect(p?.category).toBe("Cold Cereal");
+    expect(p?.listPriceCents).toBeNull();
+  });
+
+  it("carries a markdown's regular price as the list price", () => {
+    const p = parsePdpResponse(pdpVariant, "14767378");
+    expect(p?.priceCents).toBe(329);
+    expect(p?.listPriceCents).toBe(349);
+  });
+
+  it("falls back to the parent (low end of the range) when no child matches", () => {
+    const p = parsePdpResponse(pdpVariant, "99999999");
+    expect(p?.priceCents).toBe(329);
+    expect(p?.upc).toBeNull();
+  });
+});
+
+describe("readApiKeyFromText (escaped inline config)", () => {
+  const key = "9f36aeafbe60771e321a7cc95a78140772ab3e96";
+  it("reads the key from an escaped JSON string", () => {
+    const text = String.raw`{\"x\":1,\"defaultServicesApiKey\":\"${key}\",\"y\":2}`;
+    expect(readApiKeyFromText(text)).toBe(key);
+  });
+  it("still reads an unescaped key", () => {
+    expect(readApiKeyFromText(`{"defaultServicesApiKey":"${key}"}`)).toBe(key);
+  });
+});

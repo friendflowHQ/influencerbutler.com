@@ -110,3 +110,27 @@ describe("shortener detection", () => {
     expect(shortenerOriginPattern("https://www.amazon.com/dp/B01JGG5CH4")).toBe(null);
   });
 });
+
+describe("cleanLink: Target", () => {
+  it("rebuilds a canonical /p/ url, dropping slug and tracking", () => {
+    const r = cleanLink(
+      "https://www.target.com/p/cheerios-cereal/-/A-79344798?afid=rival&lnm=x&preselect=12345",
+    );
+    expect(r.matched).toBe(true);
+    expect(r.retailer).toBe("target");
+    expect(r.productId).toBe("79344798");
+    expect(r.marketplace).toBe("target.com");
+    expect(r.cleanUrl).toBe("https://www.target.com/p/-/A-79344798");
+  });
+
+  it("strips Target trackers from a non-product page", () => {
+    const r = cleanLink("https://www.target.com/s?searchTerm=cereal&afid=rival&clkid=z");
+    expect(r.matched).toBe(false);
+    expect(r.retailer).toBe("target");
+    expect(r.cleanUrl).toBe("https://www.target.com/s?searchTerm=cereal");
+  });
+
+  it("expands goto.target.com as a shortener", () => {
+    expect(isShortenerUrl("https://goto.target.com/c/123/456?u=x")).toBe(true);
+  });
+});

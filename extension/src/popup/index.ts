@@ -558,10 +558,10 @@ async function wireLinkButler(locale: Settings["locale"]): Promise<void> {
 
 // Clean Link: paste a product link carrying someone else's tracking, get back a
 // clean link plus one re-tagged with the user's own attribution. Strings are
-// Quick Link: a top-of-box card, shown only when the active tab is an Amazon or
-// Walmart product page, that generates and copies the affiliate link (or branded
+// Quick Link: a top-of-box card, shown only when the active tab is an Amazon,
+// Walmart or Target product page, that generates and copies the affiliate link (or branded
 // deeplink) for that product. It reuses the same GENERATE_AFFILIATE_LINK message
-// as the on-page overlays; Walmart routes through the headless Walmart Creator /
+// as the on-page overlays; Walmart and Target route through the headless Walmart Creator /
 // Mavely mint (per the user's provider setting), so we name the provider in a
 // "Generating..." status while the background works. Strings localized inline,
 // no em dashes (repo convention).
@@ -580,9 +580,9 @@ async function wireQuickLink(locale: Settings["locale"]): Promise<void> {
       copied: "Copied!",
       copiedPlain: "Copied (plain link).",
       copiedSignIn:
-        "Copied a plain link. Sign in to your Walmart link provider to get tracked links.",
+        "Copied a plain link. Sign in to your link provider to get tracked links.",
       notTracked: "Links are not commission-tracked yet.",
-      setup: "Set up Walmart affiliate links",
+      setup: "Set up affiliate links",
     },
     es: {
       nav: "Obtener mi enlace",
@@ -597,9 +597,9 @@ async function wireQuickLink(locale: Settings["locale"]): Promise<void> {
       copied: "Copiado!",
       copiedPlain: "Copiado (enlace simple).",
       copiedSignIn:
-        "Copiamos un enlace simple. Inicia sesion en tu proveedor de enlaces de Walmart para obtener enlaces con seguimiento.",
+        "Copiamos un enlace simple. Inicia sesion en tu proveedor de enlaces para obtener enlaces con seguimiento.",
       notTracked: "Los enlaces aun no tienen seguimiento de comision.",
-      setup: "Configurar enlaces de afiliado de Walmart",
+      setup: "Configurar enlaces de afiliado",
     },
     fr: {
       nav: "Obtenir mon lien",
@@ -614,9 +614,9 @@ async function wireQuickLink(locale: Settings["locale"]): Promise<void> {
       copied: "Copie !",
       copiedPlain: "Copie (lien simple).",
       copiedSignIn:
-        "Lien simple copie. Connectez-vous a votre fournisseur de liens Walmart pour obtenir des liens suivis.",
+        "Lien simple copie. Connectez-vous a votre fournisseur de liens pour obtenir des liens suivis.",
       notTracked: "Les liens ne sont pas encore suivis pour la commission.",
-      setup: "Configurer les liens d'affiliation Walmart",
+      setup: "Configurer les liens d'affiliation",
     },
   }[resolveLocale(locale)];
 
@@ -659,8 +659,8 @@ async function wireQuickLink(locale: Settings["locale"]): Promise<void> {
   const tab = await activePageTab();
   const url = tab?.url ?? "";
   const retailer = url ? detectRetailerForUrl(url) : null;
-  // Not Amazon/Walmart (Target has no link routing): card stays hidden.
-  if (!retailer || retailer === "target") return;
+  // Not a retailer we build links for: card stays hidden.
+  if (!retailer) return;
   const mod = retailerModule(retailer);
   const productId = mod.extractProductId(url);
   if (!productId || !mod.productIdValid(productId)) return; // not a product page
@@ -671,14 +671,15 @@ async function wireQuickLink(locale: Settings["locale"]): Promise<void> {
   card.hidden = false;
   syncNavVisibility();
 
-  // For Walmart, learn the configured provider so we can name it in the status
-  // and, when none is set, warn that links are not commission-tracked yet (same
-  // path the on-page Walmart overlay offers).
+  // For Walmart and Target, learn the configured provider so we can name it in
+  // the status and, when none is set, warn that links are not commission-tracked
+  // yet (same path the on-page overlays offer).
   let providerName: string | null = null;
-  if (retailer === "walmart") {
+  if (retailer !== "amazon") {
     try {
       const view = await sendToBackground<IntegrationsView>({ kind: "GET_INTEGRATIONS" });
-      const providerId = view.global.walmartLinkProvider;
+      const providerId =
+        retailer === "target" ? view.global.targetLinkProvider : view.global.walmartLinkProvider;
       const configured = Boolean(
         providerId && view.providers.find((p) => p.id === providerId)?.configured,
       );
@@ -701,7 +702,7 @@ async function wireQuickLink(locale: Settings["locale"]): Promise<void> {
   }
 
   const generatingText =
-    retailer === "walmart" && providerName ? dict.generatingProvider(providerName) : dict.generating;
+    retailer !== "amazon" && providerName ? dict.generatingProvider(providerName) : dict.generating;
 
   const run = async (): Promise<void> => {
     btn.disabled = true;
@@ -1215,10 +1216,12 @@ async function renderPageStatus(): Promise<void> {
   }
   try {
     const tab = await activePageTab();
-    // Amazon and Walmart are both supported; the content script answers
+    // Amazon, Walmart and Target are supported; the content script answers
     // GET_PAGE_STATUS on either. Any other host has no tools to report.
     const onSupportedSite =
-      tab?.url?.includes("amazon.com") || tab?.url?.includes("walmart.com");
+      tab?.url?.includes("amazon.com") ||
+      tab?.url?.includes("walmart.com") ||
+      tab?.url?.includes("target.com");
     if (!tab?.id || !onSupportedSite) {
       text.textContent = t().openAmazonToStart;
       return;

@@ -99,10 +99,17 @@ describe("detectPageType (Target)", () => {
     );
   });
 
+  it("treats search as a search grid and category / brand pages as discovery grids", () => {
+    expect(detectPageType("https://www.target.com/s?searchTerm=cereal")).toBe("search");
+    expect(detectPageType("https://www.target.com/s/cereal")).toBe("search");
+    expect(detectPageType("https://www.target.com/c/cereal/-/N-5xt1d")).toBe("discovery");
+    expect(detectPageType("https://www.target.com/b/general-mills/-/N-q643l")).toBe("discovery");
+  });
+
   it("treats every other Target page as other", () => {
     expect(detectPageType("https://www.target.com/")).toBe("other");
-    expect(detectPageType("https://www.target.com/s?searchTerm=cereal")).toBe("other");
-    expect(detectPageType("https://www.target.com/c/cereal/-/N-5xt1d")).toBe("other");
+    expect(detectPageType("https://www.target.com/s")).toBe("other");
+    expect(detectPageType("https://www.target.com/cart")).toBe("other");
     expect(detectPageType("https://www.target.com/p/some-slug/-/A-12")).toBe("other");
   });
 });

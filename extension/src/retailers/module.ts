@@ -3,7 +3,7 @@ import { productIdValid } from "../shared/retailer";
 import type { ProductSignals } from "../amazon/product-signals";
 import type { SearchTile } from "../amazon/search-results";
 import type { Settings } from "../storage/schema";
-import { getRateCard, getWalmartRateCard, type StoredRateCard } from "../rate-card/cache";
+import { getRateCard, getTargetRateCard, getWalmartRateCard, type StoredRateCard } from "../rate-card/cache";
 import { canonicalProductUrl } from "../integrations/url";
 import { queryQuiet } from "../amazon/selectors";
 
@@ -19,6 +19,7 @@ import {
 } from "../walmart/product-signals";
 import { IP_HREF_ID_RE, parseSearchTiles as parseWalmartTiles } from "../walmart/search-results";
 import { extractSignals as extractTargetSignals } from "../target/product-signals";
+import { parseSearchTiles as parseTargetTiles } from "../target/search-results";
 import { TARGET_MARKETPLACE, extractTcin, targetProductUrl } from "../target/redsky";
 
 // The retailer abstraction the shared money layer resolves once per page. Both
@@ -42,6 +43,15 @@ export type RetailerCapabilities = {
   // sibling grid packed above an anchor; "grouped" = Walmart's nested multi-grid
   // layout, sorted within each grid so tiles are never reparented across grids.
   sortStrategy: "anchor" | "grouped";
+  // The grid is client-rendered and re-renders after our first pass (Walmart,
+  // Target), so the overlay watches it and re-decorates new tiles.
+  rerenderWatcher: boolean;
+  // The toolbar offers "Send deals to app" (the desktop deal.push.batch
+  // receiver must accept this retailer's ids).
+  sendDeals: boolean;
+  // Sort by Butler Score once at load. Off where reordering a React-managed
+  // grid at load fights its re-renders (the toolbar sort still works).
+  autoSortByScore: boolean;
 };
 
 export interface RetailerModule {
@@ -93,6 +103,9 @@ const amazonModule: RetailerModule = {
     hideStrayDupes: true,
     campaignFilter: true,
     sortStrategy: "anchor",
+    rerenderWatcher: false,
+    sendDeals: false,
+    autoSortByScore: true,
   },
   toolbarSlot: (tileEl) => tileEl.closest(".s-main-slot") ?? tileEl.parentElement,
   badgeSlot: (tileEl) => queryQuiet(tileEl, "searchTileCard") ?? tileEl,
@@ -122,6 +135,9 @@ const walmartModule: RetailerModule = {
     hideStrayDupes: false,
     campaignFilter: false,
     sortStrategy: "grouped",
+    rerenderWatcher: true,
+    sendDeals: true,
+    autoSortByScore: false,
   },
   // tileEl is already the grid cell (see the Walmart parser's reorderCell), so
   // the toolbar mounts above that cell's grid.
@@ -129,20 +145,22 @@ const walmartModule: RetailerModule = {
   badgeSlot: (tileEl) => tileEl,
 };
 
-// Target is a product-page-only retailer: the cross-retailer card and price
-// chips. There is no search grid parser, rate card, pooled market data or
-// affiliate routing for it, so every capability is off and the grid hooks are
-// inert (the search overlay is never mounted on a Target page).
+// Target mirrors Walmart: price/commission/score signals on the product page,
+// the shared search overlay on search + category grids, an estimated rate card,
+// pooled market data, and Mavely link routing. Every Amazon-only data source is
+// off. The grid parser reads unverified selectors (Target sits behind a bot wall
+// that blocked live capture); when it finds no tiles the overlay stays unmounted.
 const targetModule: RetailerModule = {
   retailer: "target",
   marketplaceFor: () => TARGET_MARKETPLACE,
   extractSignals: (doc, url) => extractTargetSignals(doc, url),
-  parseSearchTiles: () => [],
+  parseSearchTiles: (root) => parseTargetTiles(root),
   canonicalProductUrl: (id) => targetProductUrl(id),
   extractProductId: (url) => extractTcin(url),
   productIdValid: (id) => productIdValid("target", id),
-  getRateCard: () => Promise.resolve(null),
-  defaultRatePct: () => 0,
+  getRateCard: () => getTargetRateCard(),
+  // The estimated rate card carries its own catch-all; this is the last-resort floor.
+  defaultRatePct: () => 1,
   capabilities: {
     ccRates: false,
     catalogueBloom: false,
@@ -152,6 +170,10 @@ const targetModule: RetailerModule = {
     hideStrayDupes: false,
     campaignFilter: false,
     sortStrategy: "grouped",
+    rerenderWatcher: true,
+    // Off until the desktop deal.push.batch receiver accepts Target TCINs.
+    sendDeals: false,
+    autoSortByScore: false,
   },
   toolbarSlot: (tileEl) => tileEl.parentElement,
   badgeSlot: (tileEl) => tileEl,

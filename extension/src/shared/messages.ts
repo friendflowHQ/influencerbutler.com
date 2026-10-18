@@ -1,3 +1,4 @@
+import type { Retailer } from "./retailer";
 import type { Finding, VideoCounts } from "../transport/types";
 import type {
   SocialCaptionInput,
@@ -190,7 +191,7 @@ export type RuntimeMessage =
       kind: "GET_MARKET";
       asin: string;
       marketplace: string;
-      retailer?: "amazon" | "walmart";
+      retailer?: Retailer;
       seasonality?: boolean;
     }
   // Batched sibling of GET_MARKET: one round trip for a whole page of ASINs (the
@@ -201,7 +202,7 @@ export type RuntimeMessage =
       kind: "GET_MARKET_BATCH";
       asins: string[];
       marketplace: string;
-      retailer?: "amazon" | "walmart";
+      retailer?: Retailer;
     }
   // "Also on Walmart / Also on Target": is the product on this page also sold by
   // the other retailer, and where? Target pages are resolved by our server (Walmart
@@ -279,7 +280,7 @@ export type RuntimeMessage =
       asin: string;
       marketplace: string;
       url?: string;
-      retailer?: "amazon" | "walmart";
+      retailer?: Retailer;
       // Optional hints for highest-commission routing. `category` lets the
       // background resolve an Amazon rate from the rate card; `ratePctHint` is a
       // known commission percentage for this product (for example a Creator
@@ -1135,7 +1136,7 @@ export type MarketProduct = {
   // raw review count rides along for the demand chip.
   estimateConfidence?: "low" | "medium";
   numReviews?: number | null;
-  retailer?: "amazon" | "walmart";
+  retailer?: Retailer;
   // Track 1.4 seasonality: pooled per-calendar-month rank buckets over the last
   // 24 months (oldest-first). Present only when GET_MARKET asked for
   // seasonality and the market_monthly_rank RPC is applied.
@@ -1253,7 +1254,7 @@ export type OpenAiResult = { ok: boolean; text?: string; error?: string };
 export type CleanLinkResult = {
   ok: boolean;
   error?: string;
-  retailer?: "amazon" | "walmart" | null;
+  retailer?: Retailer | null;
   productId?: string | null;
   cleanUrl?: string;
   matched?: boolean;

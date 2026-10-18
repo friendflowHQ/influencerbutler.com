@@ -15,7 +15,7 @@ import { buildAffiliateLink } from "../integrations/routing";
 import { fetchDesktopSettings, mintViaDesktop } from "./hud-bridge";
 import { SESSION_PROVIDER_IDS } from "../tools/settings-sync/merge";
 import { getRateCard, rateForCategory } from "../rate-card/cache";
-import { retailerFromHost } from "../shared/retailer";
+import { retailerFromHost, type Retailer } from "../shared/retailer";
 import { maybePublishGeneratedLink } from "./links";
 import { getIntegration, getIntegrations, getSettings, getState, patchIntegration, patchIntegrationsGlobal, patchSettings } from "../storage/store";
 import type { IntegrationState, IntegrationsState, IntegrationTestResult } from "../storage/schema";
@@ -424,15 +424,14 @@ export async function generateAffiliateLink(
   asin: string,
   marketplace: string,
   url?: string,
-  retailer?: "amazon" | "walmart",
+  retailer?: Retailer,
   category?: string,
   ratePctHint?: number,
 ): Promise<GenerateLinkResult> {
   try {
     const [integrations, settings] = await Promise.all([getIntegrations(), getSettings()]);
     // Retailer is explicit when the caller knows it, else derived from the host.
-    const resolvedRetailer: "amazon" | "walmart" =
-      retailer ?? (retailerFromHost(marketplace) === "walmart" ? "walmart" : "amazon");
+    const resolvedRetailer: Retailer = retailer ?? retailerFromHost(marketplace);
     const roster = integrations.global.routingProviders ?? {};
     // Affiliate networks that are enabled, take part in routing, have saved
     // credentials, and can mint their own link. Tried before the deeplink
@@ -472,6 +471,7 @@ export async function generateAffiliateLink(
         primaryDeeplinkProvider: integrations.global.primaryDeeplinkProvider,
         affiliateNetworks,
         walmartLinkProvider: integrations.global.walmartLinkProvider,
+        targetLinkProvider: integrations.global.targetLinkProvider,
         perCountryTags: integrations.global.perCountryTags,
         storefrontHandle: settings.storefrontHandle,
         useHighestCommission: integrations.global.useHighestCommission,

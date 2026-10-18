@@ -208,6 +208,26 @@ export const WALMART_COMMISSION_DEFAULTS: ReadonlyArray<{ key: string; label: st
   { key: "grocery", label: "Grocery", ratePct: 1 },
 ];
 
+// Target's affiliate commission schedule. Target Partners publishes no public
+// rate feed, so this is a static, conservative ESTIMATE table in the same shape
+// as the Walmart card. Refreshed on the same daily alarm.
+export const TARGET_RATE_CARD_BASE = `${API_BASE}/api/extension/target-rate-card`;
+export const TARGET_RATE_CARD_STALE_MS = 20 * 60 * 60 * 1000;
+
+// Target onsite commission defaults by category, the offline fallback for the
+// calculator. Estimates, not a promise of what Target Partners pays.
+export const TARGET_COMMISSION_DEFAULTS: ReadonlyArray<{ key: string; label: string; ratePct: number }> = [
+  { key: "default", label: "Most categories", ratePct: 1 },
+  { key: "home", label: "Home and garden", ratePct: 3 },
+  { key: "baby", label: "Baby", ratePct: 3 },
+  { key: "fashion", label: "Clothing and accessories", ratePct: 3 },
+  { key: "sports", label: "Sports and outdoors", ratePct: 3 },
+  { key: "beauty", label: "Health and beauty", ratePct: 2 },
+  { key: "electronics", label: "Electronics", ratePct: 1 },
+  { key: "toys", label: "Toys", ratePct: 1 },
+  { key: "grocery", label: "Grocery", ratePct: 1 },
+];
+
 // Remote operational flags (kill switch + selector overrides). Polled far more
 // often than the daily feeds so a tool misbehaving in the wild can be disabled
 // site-wide within the half hour, without a Chrome Web Store review. Checked on

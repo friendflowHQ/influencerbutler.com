@@ -9,6 +9,7 @@ import {
   fetchTargetPdp,
   type TargetProduct,
 } from "./redsky";
+import { parseTargetPriceCents } from "./search-results";
 
 // Target's product-page equivalent of walmart/product-signals. The page is read
 // two ways and merged: JSON-LD in the document (instant, no network) and the
@@ -64,6 +65,8 @@ export function parseJsonLdProduct(texts: string[]): TargetProduct | null {
       averageRating: Number.isFinite(Number(rating?.ratingValue)) ? Number(rating?.ratingValue) : null,
       numReviews: Number.isFinite(Number(rating?.reviewCount)) ? Number(rating?.reviewCount) : null,
       imageUrl: typeof image === "string" ? image : null,
+      listPriceCents: null,
+      category: typeof node.category === "string" && node.category.trim() ? node.category.trim() : null,
     };
   }
   return null;
@@ -78,7 +81,9 @@ function jsonLdTexts(doc: Document): string[] {
 // The public web key from the page's inline config, when present. The content
 // script cannot read window globals (isolated world), so it scans script text.
 export function readApiKeyFromText(text: string): string | null {
-  return text.match(/"defaultServicesApiKey"\s*:\s*"([a-f0-9]{30,50})"/)?.[1] ?? null;
+  // The key sits in an inline script as an escaped JSON string
+  // (\"defaultServicesApiKey\":\"...\"), so tolerate backslashes around the quotes.
+  return text.match(/defaultServicesApiKey\\*"\s*:\s*\\*"([a-f0-9]{30,50})/)?.[1] ?? null;
 }
 
 function readApiKey(doc: Document): string {
@@ -106,6 +111,8 @@ export function mergeTargetProducts(a: TargetProduct | null, b: TargetProduct | 
     averageRating: x.averageRating ?? y.averageRating,
     numReviews: x.numReviews ?? y.numReviews,
     imageUrl: x.imageUrl ?? y.imageUrl,
+    listPriceCents: x.listPriceCents ?? y.listPriceCents,
+    category: x.category ?? y.category,
   };
 }
 
@@ -122,17 +129,42 @@ export function extractTargetProductSync(doc: Document, url: string): TargetProd
   return { ...(ld ?? EMPTY_TARGET_PRODUCT), tcin: tcin ?? ld?.tcin ?? null };
 }
 
+// What the rendered product page itself shows (verified live 2026-10-18: Target
+// ships NO JSON-LD on a product page). Price and title are read from the DOM;
+// the category is the last breadcrumb. It can lag a client-side navigation, so
+// it is only ever the last-resort tier behind JSON-LD and the redsky record.
+export function extractTargetProductDom(doc: Document, url: string): TargetProduct | null {
+  const tcin = extractTcin(url);
+  if (!tcin) return null;
+  const title = doc.querySelector("h1")?.textContent?.replace(/\s+/g, " ").trim() || null;
+  const priceText = doc.querySelector('[data-test="product-price"]')?.textContent ?? "";
+  const crumbs = Array.from(doc.querySelectorAll('nav[aria-label*="readcrumb" i] a'))
+    .map((a) => (a.textContent ?? "").trim())
+    .filter(Boolean);
+  const category = crumbs.length > 1 ? (crumbs[crumbs.length - 1] ?? null) : null;
+  const priceCents = parseTargetPriceCents(priceText);
+  if (!title && priceCents == null && !category) return null;
+  return {
+    ...EMPTY_TARGET_PRODUCT,
+    tcin,
+    title: title ? decodeEntities(title) : null,
+    priceCents,
+    category,
+  };
+}
+
 // The full read: JSON-LD, then the redsky product record fills what JSON-LD lacks
-// (the barcode above all). A blocked or failed redsky call just leaves the
-// JSON-LD read as is.
+// (the barcode above all), then the rendered page is the last resort. A blocked
+// or failed redsky call just leaves the other tiers as they are.
 export async function readTargetProduct(doc: Document, url: string): Promise<TargetProduct | null> {
   const sync = extractTargetProductSync(doc, url);
   const tcin = sync?.tcin ?? extractTcin(url);
   if (!tcin) return sync;
-  if (sync?.upc && sync.title && sync.priceCents != null) return sync;
+  const dom = extractTargetProductDom(doc, url);
+  if (sync?.upc && sync.title && sync.priceCents != null) return mergeTargetProducts(sync, dom);
   const pdp = await fetchTargetPdp(tcin, readApiKey(doc));
   const remote = pdp.status === "ok" ? pdp.value : null;
-  return mergeTargetProducts(sync, remote ? { ...remote, tcin } : null);
+  return mergeTargetProducts(mergeTargetProducts(sync, remote ? { ...remote, tcin } : null), dom);
 }
 
 // Adapt a TargetProduct into the neutral ProductSignals shape (tcin carried in
@@ -144,13 +176,13 @@ export function targetToSignals(prod: TargetProduct | null, url: string): Produc
     title: prod?.title ?? null,
     priceCents: prod?.priceCents ?? null,
     currency: "USD",
-    listPriceCents: null,
+    listPriceCents: prod?.listPriceCents ?? null,
     dealKind: null,
     inStock: prod?.inStock ?? true,
     boughtPastMonth: null,
     brand: prod?.brand ?? null,
     commissionRatePct: null,
-    category: null,
+    category: prod?.category ?? null,
     // No Amazon Subscribe & Save program on Target.
     categoryPath: null,
     parentAsin: null,
@@ -163,5 +195,8 @@ export function targetToSignals(prod: TargetProduct | null, url: string): Produc
 }
 
 export function extractSignals(doc: Document, url: string): ProductSignals {
-  return targetToSignals(extractTargetProductSync(doc, url), url);
+  return targetToSignals(
+    mergeTargetProducts(extractTargetProductSync(doc, url), extractTargetProductDom(doc, url)),
+    url,
+  );
 }

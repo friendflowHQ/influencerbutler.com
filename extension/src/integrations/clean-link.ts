@@ -68,6 +68,13 @@ export const TRACKING_PARAMS: ReadonlySet<string> = new Set([
   "wmlspartner",
   "affiliates_ad_id",
   "campaign_id",
+  // Target
+  "afid",
+  "lnm",
+  "cpng",
+  "clkid",
+  "adgroupid",
+  "tgtafid",
   // Generic ad-network click ids
   "gclid",
   "gbraid",
@@ -103,6 +110,7 @@ const SHORTENER_HOSTS = [
   "s.walmart.com",
   "goto.walmart.com",
   "r.walmart.com",
+  "goto.target.com",
 ];
 
 function hostOf(url: string): string | null {
@@ -120,6 +128,7 @@ function detectRetailer(url: string): AffiliateRetailer | null {
   const host = hostOf(url);
   if (!host) return null;
   if (host === "walmart.com" || host.endsWith(".walmart.com")) return "walmart";
+  if (host === "target.com" || host.endsWith(".target.com")) return "target";
   if (host === "amazon.com" || /(^|\.)amazon\.[a-z.]+$/.test(host)) return "amazon";
   return null;
 }
@@ -158,8 +167,8 @@ function stripTrackingParams(u: URL): void {
 }
 
 /**
- * Clean a pasted product url. For a recognized Amazon/Walmart product url this
- * returns a canonical `/dp/` or `/ip/` url (all foreign tracking dropped); for
+ * Clean a pasted product url. For a recognized Amazon/Walmart/Target product url
+ * this returns a canonical `/dp/`, `/ip/` or `/p/-/A-` url (all foreign tracking dropped); for
  * any other url it returns the input with known tracking params removed.
  */
 export function cleanLink(input: string): CleanResult {

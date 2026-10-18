@@ -8,14 +8,14 @@ import type { MarketBatchResult, MarketProduct, MarketResult } from "../shared/m
 const MARKET_BATCH_CAP = 50;
 
 // Build the market query for a retailer. Amazon reads by ?asins=; the retailer-
-// aware server also accepts ?retailer=&ids= for Walmart. marketplace is passed
-// through unchanged ("amazon.com" / "walmart.com").
+// aware server also accepts ?retailer=&ids= for Walmart and Target. marketplace is passed
+// through unchanged ("amazon.com" / "walmart.com" / "target.com").
 function marketQuery(ids: string[], marketplace: string, retailer: Retailer): string {
   const joined = encodeURIComponent(ids.join(","));
   const mp = encodeURIComponent(marketplace);
-  return retailer === "walmart"
-    ? `retailer=walmart&ids=${joined}&marketplace=${mp}`
-    : `asins=${joined}&marketplace=${mp}`;
+  return retailer === "amazon"
+    ? `asins=${joined}&marketplace=${mp}`
+    : `retailer=${retailer}&ids=${joined}&marketplace=${mp}`;
 }
 
 // Shared product catalogue ("internal Keepa") read. The content script cannot
@@ -68,8 +68,9 @@ export async function getMarketBatch(
   const key = state.auth.licenseKey;
   if (!key) return EMPTY_BATCH;
 
-  // Amazon ids are uppercased ASINs; Walmart ids are numeric and case-neutral.
-  const normalized = retailer === "walmart" ? asins : asins.map((a) => a.toUpperCase());
+  // Amazon ids are uppercased ASINs; Walmart and Target ids are numeric and
+  // case-neutral.
+  const normalized = retailer === "amazon" ? asins.map((a) => a.toUpperCase()) : asins;
   const unique = [...new Set(normalized)]
     .filter((id) => productIdValid(retailer, id))
     .slice(0, MARKET_BATCH_CAP);

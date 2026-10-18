@@ -35,7 +35,7 @@ import {
   markFeedbackThreadRead,
 } from "./feedback";
 import { refreshCatalogues } from "./catalogue";
-import { refreshRateCard, refreshWalmartRateCard } from "./rate-card";
+import { refreshRateCard, refreshTargetRateCard, refreshWalmartRateCard } from "./rate-card";
 import { refreshFlags } from "./flags";
 import { fetchMarketAvailability } from "./market-availability";
 import { fetchVideoCount } from "./video-count";
@@ -244,6 +244,7 @@ chrome.runtime.onInstalled.addListener((details) => {
   void refreshCatalogues();
   void refreshRateCard();
   void refreshWalmartRateCard();
+  void refreshTargetRateCard();
   void refreshFlags();
   void syncDealBadgeContentScripts();
   // Heal a Creator API vault push that never landed (checks the server for a
@@ -269,6 +270,7 @@ chrome.runtime.onStartup.addListener(() => {
   void refreshCatalogues();
   void refreshRateCard();
   void refreshWalmartRateCard();
+  void refreshTargetRateCard();
   void refreshFlags();
   void syncDealBadgeContentScripts();
   void maybeTestAllOnStartup();
@@ -374,6 +376,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     void refreshCatalogues();
     void refreshRateCard();
     void refreshWalmartRateCard();
+    void refreshTargetRateCard();
     // Nudge Chrome's updater on the same cadence; it staging a new version
     // fires onUpdateAvailable above. No-op on unpacked installs.
     void checkForUpdate();

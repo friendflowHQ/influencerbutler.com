@@ -8,9 +8,9 @@
 export type Retailer = "amazon" | "walmart" | "target";
 
 // The retailers that take part in affiliate links, market data and the search
-// overlays. Target is deliberately outside it: no link routing, rate card or
-// pooled market data exists for Target, so those flows never see it.
-export type AffiliateRetailer = Exclude<Retailer, "target">;
+// overlays. Every retailer does now; the alias stays so link-flow code reads
+// as what it is.
+export type AffiliateRetailer = Retailer;
 
 // Product-id validators, centralized so the shape check lives in one place
 // instead of being inlined as a bare regex across the extractors/overlays.

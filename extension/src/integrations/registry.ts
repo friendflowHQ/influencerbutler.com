@@ -47,6 +47,11 @@ export const WALMART_LINK_PROVIDER_IDS: IntegrationId[] = ADAPTERS.filter(
   (a) => a.category === "walmartLink",
 ).map((a) => a.id);
 
+// Target link providers. Mavely is the only session-based option today (the
+// same adapter that serves Walmart); Target's own Impact program has no portal
+// session to mint from. routing.ts uses the chosen one for Target products.
+export const TARGET_LINK_PROVIDER_IDS: IntegrationId[] = ["mavely"];
+
 // Every host pattern any adapter may request, deduplicated. Mirrored in
 // static/manifest.json optional_host_permissions so runtime requests succeed.
 export const ALL_INTEGRATION_HOSTS: string[] = [

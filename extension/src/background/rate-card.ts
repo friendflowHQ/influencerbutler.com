@@ -3,12 +3,16 @@ import {
   RATE_CARD_STALE_MS,
   WALMART_RATE_CARD_BASE,
   WALMART_RATE_CARD_STALE_MS,
+  TARGET_RATE_CARD_BASE,
+  TARGET_RATE_CARD_STALE_MS,
 } from "../shared/constants";
 import {
   getRateCard,
   setRateCard,
   getWalmartRateCard,
   setWalmartRateCard,
+  getTargetRateCard,
+  setTargetRateCard,
   type RateCardRow,
   type SnsBountyRow,
   type StoredRateCard,
@@ -103,5 +107,38 @@ export async function refreshWalmartRateCard(): Promise<void> {
     log("rate-card", `walmart refreshed -> ${data.version}`);
   } catch (error) {
     log("rate-card", "walmart refresh failed", error);
+  }
+}
+
+// Target's commission schedule: a static in-code ESTIMATE table (Target Partners
+// publishes no rate feed), fetched with the same daily + ETag flow as Walmart's.
+export async function refreshTargetRateCard(): Promise<void> {
+  const existing = await getTargetRateCard();
+  if (existing && Date.now() - existing.fetchedAt < TARGET_RATE_CARD_STALE_MS) return;
+
+  try {
+    const headers: Record<string, string> = {};
+    if (existing) headers["If-None-Match"] = `"rate-${existing.marketplace}-${existing.version}"`;
+
+    const res = await fetch(TARGET_RATE_CARD_BASE, { headers });
+    if (res.status === 304) {
+      if (existing) await setTargetRateCard({ ...existing, fetchedAt: Date.now() });
+      return;
+    }
+    if (!res.ok) return;
+
+    const data = (await res.json()) as Partial<StoredRateCard>;
+    if (!data.version || !Array.isArray(data.rows)) return;
+
+    await setTargetRateCard({
+      marketplace: data.marketplace ?? "target.com",
+      version: data.version,
+      defaultRatePct: data.defaultRatePct ?? null,
+      rows: data.rows,
+      fetchedAt: Date.now(),
+    });
+    log("rate-card", `target refreshed -> ${data.version}`);
+  } catch (error) {
+    log("rate-card", "target refresh failed", error);
   }
 }

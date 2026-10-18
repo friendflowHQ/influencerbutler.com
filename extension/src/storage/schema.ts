@@ -458,6 +458,10 @@ export type IntegrationsState = {
     // ("walmartCreator" | "mavely"), or null when the creator has not chosen
     // one yet.
     walmartLinkProvider: string | null;
+    // Which provider mints Target affiliate links (today only "mavely"), or null
+    // when the creator has not chosen one yet. Backfilled by the global
+    // shallow-merge in migrate(), so no schema bump is needed.
+    targetLinkProvider: string | null;
     // Amazon Associates tag per marketplace country code, for example
     // { US: "mytag-20", UK: "mytag-21" }. US defaults to the storefront handle.
     perCountryTags: Record<string, string>;
@@ -1145,6 +1149,8 @@ export const DEFAULTS: StorageShape = {
       // No Walmart provider until the creator connects one (fresh installs and
       // existing users alike start null; the global shallow-merge backfills it).
       walmartLinkProvider: null,
+      // Same for Target: plain /p/ links until the creator picks Mavely.
+      targetLinkProvider: null,
       perCountryTags: {},
       // App-opening Amazon links on by default (fresh installs and, via the
       // global shallow-merge in migrate(), pre-v26 installs alike).

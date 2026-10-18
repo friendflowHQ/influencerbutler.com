@@ -4,12 +4,18 @@
 // 2026-10-07). The parsers here are pure so they unit-test without a DOM; the
 // two fetchers are thin and report a bot wall as `blocked` rather than throwing.
 //
-// UNVERIFIED against live payloads: Target put a "Press & hold" bot challenge in
-// front of the automated browser used to build this, so the field paths below
-// come from the long-standing public shape of pdp_client_v1 / plp_search_v2 and
-// are read defensively (every access is optional, a missing field is null, a
-// moved field degrades to "couldn't check", never a wrong claim). Verify on a
-// real Chrome session before relying on them.
+// Verified against live responses on 2026-10-18 (real Chrome session, no bot
+// wall): pdp_client_v1 answers 200 JSON from the product page with
+// credentials: "include". Facts that shaped the parsers:
+//   - A variant tcin returns the PARENT product (a different tcin, a price
+//     RANGE with only current_retail_min, no barcode). The requested variant is
+//     in `children[]` with its own price.current_retail and
+//     item.primary_barcode, so parsePdpResponse picks the matching child.
+//   - Ratings live on the parent: ratings_and_reviews.statistics.rating.
+//   - plp_search_v2 requires a visitor_id (a 400 "coerced Null" without one);
+//     any 32-char hex string works. A UPC as the keyword returns the product.
+//   - The public key ships in an inline script as an ESCAPED JSON string
+//     (\"defaultServicesApiKey\":\"...\"), and in window.__CONFIG__.
 
 import { TARGET_TCIN_RE } from "../shared/retailer";
 
@@ -32,6 +38,11 @@ export type TargetProduct = {
   averageRating: number | null;
   numReviews: number | null;
   imageUrl: string | null;
+  // The regular ("was") price when the current price is a markdown, else null.
+  listPriceCents: number | null;
+  // The product category (breadcrumb text), used to match the rate card. Null
+  // when the page / payload did not carry one.
+  category: string | null;
 };
 
 export const EMPTY_TARGET_PRODUCT: TargetProduct = {
@@ -44,6 +55,8 @@ export const EMPTY_TARGET_PRODUCT: TargetProduct = {
   averageRating: null,
   numReviews: null,
   imageUrl: null,
+  listPriceCents: null,
+  category: null,
 };
 
 export function targetProductUrl(tcin: string): string {
@@ -110,21 +123,49 @@ export function parseTargetProductNode(node: unknown): TargetProduct | null {
   const enrichment = obj(item?.enrichment);
   const images = obj(enrichment?.images);
   const title = str(desc?.title);
+  const currentCents = dollarsToCents(price?.current_retail ?? price?.current_retail_min ?? price?.reg_retail);
+  const regCents = dollarsToCents(price?.reg_retail);
   return {
     tcin: str(p.tcin) ?? (num(p.tcin) != null ? String(num(p.tcin)) : null),
     title: title ? decodeEntities(title) : null,
     brand: str(obj(item?.primary_brand)?.name),
-    priceCents: dollarsToCents(price?.current_retail ?? price?.current_retail_min ?? price?.reg_retail),
+    priceCents: currentCents,
     upc: cleanBarcode(item?.primary_barcode),
     inStock: null,
     averageRating: num(rating?.average),
     numReviews: num(rating?.count) ?? num(stats?.review_count),
     imageUrl: str(images?.primary_image_url),
+    listPriceCents: regCents != null && currentCents != null && regCents > currentCents ? regCents : null,
+    category: str(obj(p.category)?.name),
   };
 }
 
-export function parsePdpResponse(json: unknown): TargetProduct | null {
-  return parseTargetProductNode(obj(obj(json)?.data)?.product);
+// The product for `requestedTcin`. A variant tcin comes back as its parent with
+// the variant under children[]; merge the matching child (price, barcode, title)
+// over the parent (ratings, category), keeping the requested tcin.
+export function parsePdpResponse(json: unknown, requestedTcin?: string): TargetProduct | null {
+  const node = obj(obj(json)?.data)?.product;
+  const parent = parseTargetProductNode(node);
+  if (!parent) return null;
+  const children = Array.isArray(obj(node)?.children) ? (obj(node)?.children as unknown[]) : [];
+  const childNode = requestedTcin
+    ? children.find((c) => String(obj(c)?.tcin ?? "") === requestedTcin)
+    : null;
+  const child = parseTargetProductNode(childNode);
+  if (!child) return parent;
+  return {
+    tcin: child.tcin ?? parent.tcin,
+    title: child.title ?? parent.title,
+    brand: child.brand ?? parent.brand,
+    priceCents: child.priceCents ?? parent.priceCents,
+    upc: child.upc ?? parent.upc,
+    inStock: child.inStock ?? parent.inStock,
+    averageRating: child.averageRating ?? parent.averageRating,
+    numReviews: child.numReviews ?? parent.numReviews,
+    imageUrl: child.imageUrl ?? parent.imageUrl,
+    listPriceCents: child.priceCents != null ? child.listPriceCents : parent.listPriceCents,
+    category: child.category ?? parent.category,
+  };
 }
 
 export function parseSearchResponse(json: unknown): TargetProduct[] {
@@ -159,6 +200,10 @@ async function getJson(url: string, credentials: RequestCredentials): Promise<Re
   }
 }
 
+function visitorId(): string {
+  return crypto.randomUUID().replace(/-/g, "").toUpperCase();
+}
+
 function qs(params: Record<string, string>): string {
   return Object.entries(params)
     .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
@@ -182,7 +227,7 @@ export async function fetchTargetPdp(
     page: `/p/A-${tcin}`,
   })}`;
   const res = await getJson(url, "include");
-  return res.status === "ok" ? { status: "ok", value: parsePdpResponse(res.value) } : res;
+  return res.status === "ok" ? { status: "ok", value: parsePdpResponse(res.value, tcin) } : res;
 }
 
 // Top results for a keyword (a UPC works as a keyword on Target).
@@ -199,7 +244,8 @@ export async function searchTarget(
     page: `/s/${keyword}`,
     platform: "desktop",
     pricing_store_id: DEFAULT_STORE_ID,
-    default_purchasability_filter: "false",
+    // Required: the API 400s without one, and any 32-char hex value is accepted.
+    visitor_id: visitorId(),
   })}`;
   const res = await getJson(url, "include");
   return res.status === "ok" ? { status: "ok", value: parseSearchResponse(res.value) } : res;

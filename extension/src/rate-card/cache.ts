@@ -27,6 +27,7 @@ const KEY = "ib-rate-card";
 // cards never overwrite each other. Same StoredRateCard shape, same daily
 // refresh, same rateForCategory matcher.
 const WALMART_KEY = "ib-walmart-rate-card";
+const TARGET_KEY = "ib-target-rate-card";
 
 export async function getRateCard(): Promise<StoredRateCard | null> {
   const raw = await chrome.storage.local.get(KEY);
@@ -44,6 +45,15 @@ export async function getWalmartRateCard(): Promise<StoredRateCard | null> {
 
 export async function setWalmartRateCard(card: StoredRateCard): Promise<void> {
   await chrome.storage.local.set({ [WALMART_KEY]: card });
+}
+
+export async function getTargetRateCard(): Promise<StoredRateCard | null> {
+  const raw = await chrome.storage.local.get(TARGET_KEY);
+  return (raw[TARGET_KEY] as StoredRateCard) ?? null;
+}
+
+export async function setTargetRateCard(card: StoredRateCard): Promise<void> {
+  await chrome.storage.local.set({ [TARGET_KEY]: card });
 }
 
 export type RateMatch = { ratePct: number; label: string; isDefault: boolean };

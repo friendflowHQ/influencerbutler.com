@@ -115,6 +115,9 @@ export interface OptionsDict {
   walmartLink: string;
   walmartLinkNone: string;
   walmartLinkHint: string;
+  targetLink: string;
+  targetLinkNone: string;
+  targetLinkHint: string;
   // Voiceover Butler section
   voHeading: string;
   voIntro: string;
@@ -393,6 +396,10 @@ const en: OptionsDict = {
   walmartLinkNone: "None (plain Walmart links)",
   walmartLinkHint:
     "Which provider mints your Walmart links when you Copy my link on a Walmart product. Both work from a signed-in browser session: join Walmart Creator at creator.walmart.com (no follower minimum) or Mavely at creators.joinmavely.com, sign in there, then pick it here.",
+  targetLink: "Target affiliate links",
+  targetLinkNone: "None (plain Target links)",
+  targetLinkHint:
+    "Which provider mints your Target links when you Copy my link on a Target product. Mavely works from a signed-in browser session: join at creators.joinmavely.com, sign in there, then pick it here. Without one, Copy my link gives a plain Target link.",
   fieldApiKey: "API key",
   fieldApiSecret: "API secret",
   fieldGroupId: "Group id",
@@ -709,6 +716,10 @@ const es: OptionsDict = {
   walmartLinkNone: "Ninguno (enlaces de Walmart sin seguimiento)",
   walmartLinkHint:
     "Qué proveedor crea tus enlaces de Walmart cuando usas Copiar mi enlace en un producto de Walmart. Ambos funcionan con una sesión iniciada en el navegador: únete a Walmart Creator en creator.walmart.com (sin mínimo de seguidores) o a Mavely en creators.joinmavely.com, inicia sesión allí y elígelo aquí.",
+  targetLink: "Enlaces de afiliado de Target",
+  targetLinkNone: "Ninguno (enlaces de Target sin seguimiento)",
+  targetLinkHint:
+    "Qué proveedor crea tus enlaces de Target cuando usas Copiar mi enlace en un producto de Target. Mavely funciona con una sesión iniciada en el navegador: únete en creators.joinmavely.com, inicia sesión allí y elígelo aquí. Sin uno, Copiar mi enlace da un enlace simple de Target.",
   fieldApiKey: "Clave de API",
   fieldApiSecret: "Secreto de API",
   fieldGroupId: "Id de grupo",
@@ -1025,6 +1036,10 @@ const fr: OptionsDict = {
   walmartLinkNone: "Aucun (liens Walmart simples)",
   walmartLinkHint:
     "Quel fournisseur crée vos liens Walmart quand vous utilisez Copier mon lien sur un produit Walmart. Les deux fonctionnent avec une session connectée dans le navigateur : rejoignez Walmart Creator sur creator.walmart.com (sans minimum d'abonnés) ou Mavely sur creators.joinmavely.com, connectez-vous, puis choisissez-le ici.",
+  targetLink: "Liens d'affiliation Target",
+  targetLinkNone: "Aucun (liens Target simples)",
+  targetLinkHint:
+    "Quel fournisseur crée vos liens Target quand vous utilisez Copier mon lien sur un produit Target. Mavely fonctionne avec une session connectée dans le navigateur : rejoignez-le sur creators.joinmavely.com, connectez-vous, puis choisissez-le ici. Sans fournisseur, Copier mon lien donne un lien Target simple.",
   fieldApiKey: "Clé API",
   fieldApiSecret: "Secret API",
   fieldGroupId: "Id de groupe",

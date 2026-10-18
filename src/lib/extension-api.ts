@@ -19,13 +19,20 @@ export const EXT_MAX_BATCH = 50;
 export const ASIN_RE = /^[A-Z0-9]{10}$/;
 // A Walmart item id is a variable-length numeric string (from /ip/<slug>/<id>).
 export const WALMART_ITEM_ID_RE = /^\d{3,15}$/;
+// A Target TCIN is 7-10 digits (from /p/<slug>/-/A-<tcin>).
+export const TARGET_TCIN_RE = /^\d{7,10}$/;
 export const MARKETPLACE_RE = /^[a-z0-9.-]{2,40}$/;
 
 // The retailer discriminator carried on retailer-aware extension routes.
-export type Retailer = "amazon" | "walmart";
+export type Retailer = "amazon" | "walmart" | "target";
 
 export function parseRetailer(value: unknown): Retailer {
-  return value === "walmart" ? "walmart" : "amazon";
+  return value === "walmart" || value === "target" ? value : "amazon";
+}
+
+/** The product-id shape for a non-Amazon retailer. */
+export function retailerIdRe(retailer: Exclude<Retailer, "amazon">): RegExp {
+  return retailer === "target" ? TARGET_TCIN_RE : WALMART_ITEM_ID_RE;
 }
 export const EXT_TITLE_MAX = 300;
 export const EXT_DETAIL_MAX = 500;

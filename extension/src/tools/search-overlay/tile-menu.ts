@@ -3,6 +3,8 @@ import { el } from "../../ui/components";
 import { noteSent, showSentBadge, wasSent } from "../../ui/sent-state";
 import { t } from "../../i18n";
 import { APP_TRIAL_URL } from "../../shared/constants";
+import type { Retailer } from "../../shared/retailer";
+import { canonicalProductUrl } from "../../integrations/url";
 import {
   sendToBackground,
   type GenerateLinkResult,
@@ -29,7 +31,7 @@ export type TileMenuTarget = {
   // tile that printed none leaves it unset and the desktop backfills it.
   priceCents?: number | null;
   href: string | null;
-  retailer?: "amazon" | "walmart";
+  retailer?: Retailer;
 };
 
 // Read live at open time so the menu reflects the latest bridge/auth state even
@@ -222,8 +224,9 @@ function buildFreeSection(target: TileMenuTarget, setStatus: (t: string) => void
   // Open the product page (where every analytics panel renders).
   section.append(
     menuItem(t().tileMenuOpenPage, () => {
-      const path = target.retailer === "walmart" ? "ip" : "dp";
-      const url = target.href ?? `https://www.${target.marketplace}/${path}/${target.asin}`;
+      const url =
+        target.href ??
+        canonicalProductUrl(target.asin, target.marketplace, "", target.retailer ?? "amazon");
       void sendToBackground<void>({ kind: "OPEN_URL", url });
       closeMenu();
     }),

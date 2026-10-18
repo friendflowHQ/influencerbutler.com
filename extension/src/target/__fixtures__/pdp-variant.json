@@ -1,0 +1,48 @@
+{
+  "data": {
+    "product": {
+      "__typename": "ProductSummary",
+      "tcin": "89089937",
+      "category": {
+        "name": "Cold Cereal",
+        "parent_category_id": "5xt0g",
+        "breadcrumbs": [
+          { "category_id": "root", "name": "target" },
+          { "category_id": "5xt1a", "name": "Grocery" },
+          { "category_id": "q6ug6", "name": "Cold Cereal" }
+        ]
+      },
+      "ratings_and_reviews": {
+        "statistics": { "rating": { "average": 4.79, "count": 7680 } }
+      },
+      "item": {
+        "primary_brand": { "name": "Cinnamon Toast Crunch" },
+        "product_description": { "title": "Cinnamon Toast Crunch Breakfast Cereal" }
+      },
+      "price": {
+        "current_retail_min": 3.29,
+        "reg_retail_max": 7.39,
+        "formatted_current_price": "$3.29 - $7.39"
+      },
+      "children": [
+        {
+          "tcin": "81875472",
+          "item": {
+            "primary_barcode": "016000171138",
+            "primary_brand": { "name": "Cinnamon Toast Crunch" },
+            "product_description": {
+              "title": "General Mills Size Cinnamon Toast Crunch Cereal - 18.8oz"
+            },
+            "enrichment": { "images": { "primary_image_url": "https://target.scene7.com/is/image/Target/GUEST_x" } }
+          },
+          "price": { "current_retail": 5.29, "reg_retail": 5.29, "formatted_current_price": "$5.29" }
+        },
+        {
+          "tcin": "14767378",
+          "item": { "primary_barcode": "016000171145", "product_description": { "title": "Honey Nut" } },
+          "price": { "current_retail": 3.29, "reg_retail": 3.49, "formatted_current_price": "$3.29" }
+        }
+      ]
+    }
+  }
+}

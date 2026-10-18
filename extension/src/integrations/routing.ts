@@ -3,6 +3,7 @@ import { canonicalProductUrl, withAffiliateTag } from "./url";
 import { withAppOpenParams } from "./app-link";
 import { noticeOf, type LinkNotice } from "./link-notice";
 import type { LinkTarget } from "./types";
+import type { Retailer } from "../shared/retailer";
 
 // Turns a product into the user's affiliate link. Routing applies the correct
 // per-country affiliate tag to the product url, then resolves the final link in
@@ -74,6 +75,9 @@ export type RoutingConfig = {
   // The chosen Walmart link provider ("walmartCreator" | "mavely"), used for
   // Walmart products. Amazon products ignore it.
   walmartLinkProvider?: string | null;
+  // The chosen Target link provider (today only "mavely"), used for Target
+  // products.
+  targetLinkProvider?: string | null;
   perCountryTags: Record<string, string>;
   storefrontHandle: string | null;
   // When true, compare providers by commission rate and pick the highest for
@@ -120,7 +124,7 @@ export type BuildLinkInput = {
   asin: string;
   marketplace: string;
   url?: string;
-  retailer?: "amazon" | "walmart";
+  retailer?: Retailer;
 };
 
 // The resolved link, plus (when there is one) the reason it is not the link the
@@ -148,13 +152,18 @@ export async function buildAffiliateLink(
 ): Promise<BuildLinkResult> {
   const retailer = input.retailer ?? "amazon";
 
-  // Walmart runs entirely through its own link provider (Walmart Creator /
-  // Mavely): no per-country Associates tag, no deeplink wrapper. Mint via the
-  // chosen provider, falling back to the plain /ip/ url on any failure.
-  if (retailer === "walmart") {
+  // Walmart and Target run entirely through their own link provider (Walmart
+  // Creator / Mavely; Mavely for Target): no per-country Associates tag, no
+  // deeplink wrapper. Mint via the chosen provider, falling back to the plain
+  // /ip/ or /p/ url on any failure.
+  if (retailer === "walmart" || retailer === "target") {
     const wmUrl =
-      input.url || canonicalProductUrl(input.asin, input.marketplace, input.url ?? "", "walmart");
-    const providerId = config.enabled ? config.walmartLinkProvider : null;
+      input.url || canonicalProductUrl(input.asin, input.marketplace, input.url ?? "", retailer);
+    const providerId = config.enabled
+      ? retailer === "target"
+        ? config.targetLinkProvider
+        : config.walmartLinkProvider
+      : null;
     if (!providerId) return { url: wmUrl };
     const adapter = getAdapter(providerId);
     if (!adapter?.generateLink) return { url: wmUrl };
@@ -162,7 +171,7 @@ export async function buildAffiliateLink(
       asin: input.asin,
       marketplace: input.marketplace,
       url: wmUrl,
-      retailer: "walmart",
+      retailer,
     };
     try {
       const minted = await adapter.generateLink(target, await getProviderCreds(providerId));

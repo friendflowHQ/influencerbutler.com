@@ -4,6 +4,7 @@ import type { HudCommandResult } from "../../shared/messages";
 import type { ProductRef, HudCommand } from "../../transport/hud-commands";
 import type { ProductSignals } from "../../amazon/product-signals";
 import { canonicalProductUrl } from "../../integrations/url";
+import { retailerFromHost } from "../../shared/retailer";
 import { showToast } from "../../ui/toast";
 import { flashSent, resetSent } from "../../ui/sent-state";
 
@@ -12,17 +13,17 @@ import { flashSent, resetSent } from "../../ui/sent-state";
 
 export function toProductRef(signals: ProductSignals): ProductRef {
   // Send the canonical product url so the desktop persists the correct link per
-  // retailer (Walmart /ip/, Amazon /dp/) instead of synthesizing an Amazon /dp/
+  // retailer (Walmart /ip/, Target /p/, Amazon /dp/) instead of synthesizing an Amazon /dp/
   // url from the id, which is wrong for Walmart.
-  const retailer = signals.marketplace.includes("walmart") ? "walmart" : "amazon";
+  const retailer = retailerFromHost(signals.marketplace);
   const url = signals.asin
     ? canonicalProductUrl(signals.asin, signals.marketplace, "", retailer)
     : undefined;
-  // A Walmart rollback's was price, so the desktop can fill the "was $X" and
+  // A Walmart/Target sale's was price, so the desktop can fill the "was $X" and
   // "N% off" caption lines (it only back-fills them from a live offer lookup
-  // for Amazon). Walmart only: Amazon pushes keep their desktop-side enrichment.
+  // for Amazon). Non-Amazon only: Amazon pushes keep their desktop-side enrichment.
   const originalPrice =
-    retailer === "walmart" &&
+    retailer !== "amazon" &&
     signals.listPriceCents != null &&
     signals.priceCents != null &&
     signals.listPriceCents > signals.priceCents

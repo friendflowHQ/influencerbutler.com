@@ -92,11 +92,19 @@ export function detectPageType(url: string): PageType {
   return detectAmazonPageType(parsed);
 }
 
-// Target has only product pages: /p/<slug>/-/A-<tcin> (the slug is optional, and
-// Target also serves the bare /p/-/A-<tcin>). Everything else is "other", since
-// no search, store or deals overlay exists for Target.
+// Target URL shapes mapped onto the neutral page classes so the shared overlays
+// can be reused. Product: /p/<slug>/-/A-<tcin> (the slug is optional, and Target
+// also serves the bare /p/-/A-<tcin>). Search: /s with a searchTerm (Target also
+// serves /s/<term>). Category and brand grids: /c/<slug>/-/N-<id> and
+// /b/<brand>/-/N-<id>. Everything else (home, cart, store finder, account) is
+// "other".
 function detectTargetPageType(parsed: URL): PageType {
-  return /^\/p\/(?:[^/]+\/)?-\/A-\d{7,10}(?:[/?]|$)/.test(parsed.pathname) ? "product" : "other";
+  const path = parsed.pathname;
+  if (/^\/p\/(?:[^/]+\/)?-\/A-\d{7,10}(?:[/?]|$)/.test(path)) return "product";
+  if (path === "/s" && parsed.searchParams.has("searchTerm")) return "search";
+  if (/^\/s\/[^/]+/.test(path)) return "search";
+  if (path.startsWith("/c/") || path.startsWith("/b/")) return "discovery";
+  return "other";
 }
 
 function detectAmazonPageType(parsed: URL): PageType {

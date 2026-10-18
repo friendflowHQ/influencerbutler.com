@@ -19,7 +19,8 @@ import { resolveAuth, resolveLicenseOnly } from "@/lib/license-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   ASIN_RE,
-  WALMART_ITEM_ID_RE,
+  retailerIdRe,
+  type Retailer,
   EXT_MAX_BATCH,
   EXT_TITLE_MAX,
   MARKETPLACE_RE,
@@ -40,6 +41,7 @@ import {
   type SalesCurve,
 } from "@/lib/market-estimate";
 import { WALMART_MARKETPLACE } from "@/lib/walmart-api";
+import { TARGET_MARKETPLACE } from "@/lib/target-rate-card";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -77,14 +79,15 @@ type HistoryRow = {
   contributor_user_id: string;
 };
 
-// Walmart observations carry no BSR/bought-past-month; instead they log review
-// count and Walmart's own rank (when present) plus the generic retailer/item_id
-// columns the migration adds. The item id is ALSO written to `asin` (the table's
-// PK column, NOT NULL): marketplace 'walmart.com' namespaces it away from real
-// ASINs, so the existing (asin, marketplace) key and its upsert conflict target
-// serve both retailers with no primary-key surgery on the lagging prod schema.
+// Walmart and Target observations carry no BSR/bought-past-month; instead they
+// log review count and the retailer's own rank (when present) plus the generic
+// retailer/item_id columns the migration adds. The item id is ALSO written to
+// `asin` (the table's PK column, NOT NULL): marketplace 'walmart.com' /
+// 'target.com' namespaces it away from real ASINs, so the existing
+// (asin, marketplace) key and its upsert conflict target serve every retailer
+// with no primary-key surgery on the lagging prod schema.
 type WalmartHistoryRow = {
-  retailer: "walmart";
+  retailer: Exclude<Retailer, "amazon">;
   item_id: string;
   asin: string;
   marketplace: string;
@@ -124,11 +127,15 @@ export async function POST(request: Request) {
     const source =
       typeof item.source === "string" && SOURCES.has(item.source) ? item.source : "browse";
 
-    if (parseRetailer(item.retailer) === "walmart") {
+    const itemRetailer = parseRetailer(item.retailer);
+    if (itemRetailer !== "amazon") {
       const itemId = typeof item.item_id === "string" ? item.item_id : String(item.asin ?? "");
-      if (!WALMART_ITEM_ID_RE.test(itemId)) continue;
+      if (!retailerIdRe(itemRetailer).test(itemId)) continue;
+      // A Target id is a bare number that could collide with a numeric ASIN, so
+      // its rows are only accepted under their own marketplace namespace.
+      if (itemRetailer === "target" && marketplace !== TARGET_MARKETPLACE) continue;
       wmRows.push({
-        retailer: "walmart",
+        retailer: itemRetailer,
         item_id: itemId,
         asin: itemId,
         marketplace,
@@ -218,7 +225,7 @@ export async function POST(request: Request) {
       if (isMissingTableError(wmHistError) || isMissingColumnError(wmHistError)) {
         return migrationPendingResponse();
       }
-      console.error("extension/market: walmart history insert failed", wmHistError);
+      console.error("extension/market: retailer history insert failed", wmHistError);
       return jsonWithCors({ error: "Could not save observations" }, 500);
     }
     const wmLatestByKey = new Map<string, WalmartHistoryRow>();
@@ -245,7 +252,7 @@ export async function POST(request: Request) {
       .from("product_market_latest")
       .upsert(wmSnapshots, { onConflict: "asin,marketplace" });
     if (wmLatestError) {
-      console.error("extension/market: walmart latest upsert failed", wmLatestError);
+      console.error("extension/market: retailer latest upsert failed", wmLatestError);
     }
   }
 
@@ -258,7 +265,7 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const retailer = parseRetailer(url.searchParams.get("retailer"));
-  if (retailer === "walmart") return getWalmartMarket(url);
+  if (retailer !== "amazon") return getRetailerMarket(url, retailer);
 
   const marketplace = (url.searchParams.get("marketplace") ?? "amazon.com").toLowerCase();
   if (!MARKETPLACE_RE.test(marketplace)) {
@@ -382,13 +389,16 @@ export async function GET(request: Request) {
 }
 
 /**
- * Walmart read path. Walmart has no BSR, so the monthly-sales estimate comes
+ * Walmart / Target read path. Neither has a BSR, so the monthly-sales estimate comes
  * from review-count velocity across the pooled history (see market-estimate).
  * Reads the generic retailer/item_id columns the migration adds; soft-fails as
  * migrationPending until it is applied.
  */
-async function getWalmartMarket(url: URL) {
-  const marketplace = (url.searchParams.get("marketplace") ?? WALMART_MARKETPLACE).toLowerCase();
+async function getRetailerMarket(url: URL, retailer: Exclude<Retailer, "amazon">) {
+  const defaultMarketplace = retailer === "target" ? TARGET_MARKETPLACE : WALMART_MARKETPLACE;
+  const marketplace = (url.searchParams.get("marketplace") ?? defaultMarketplace).toLowerCase();
+  const idRe = retailerIdRe(retailer);
+  const label = retailer === "target" ? "Target TCINs" : "Walmart item ids";
   if (!MARKETPLACE_RE.test(marketplace)) {
     return jsonWithCors({ error: "Invalid marketplace" }, 400);
   }
@@ -396,10 +406,10 @@ async function getWalmartMarket(url: URL) {
   const ids = (url.searchParams.get("ids") ?? url.searchParams.get("asins") ?? "")
     .split(",")
     .map((a) => a.trim())
-    .filter((a) => WALMART_ITEM_ID_RE.test(a));
+    .filter((a) => idRe.test(a));
   const uniqueIds = Array.from(new Set(ids)).slice(0, EXT_MAX_BATCH);
   if (uniqueIds.length === 0) {
-    return jsonWithCors({ error: "ids must be a comma-separated list of 1-50 Walmart item ids" }, 400);
+    return jsonWithCors({ error: `ids must be a comma-separated list of 1-50 ${label}` }, 400);
   }
 
   const admin = createAdminClient();
@@ -407,27 +417,27 @@ async function getWalmartMarket(url: URL) {
   const { data: latestRows, error: latestError } = await admin
     .from("product_market_latest")
     .select("item_id, marketplace, price_cents, currency, num_reviews, retailer_rank, category_label, brand, captured_at")
-    .eq("retailer", "walmart")
+    .eq("retailer", retailer)
     .eq("marketplace", marketplace)
     .in("item_id", uniqueIds);
   if (latestError) {
     if (isMissingTableError(latestError) || isMissingColumnError(latestError)) {
       return migrationPendingResponse();
     }
-    console.error("extension/market: walmart latest read failed", latestError);
+    console.error(`extension/market: ${retailer} latest read failed`, latestError);
     return jsonWithCors({ error: "Could not load market data" }, 500);
   }
 
   const { data: historyRows, error: historyError } = await admin
     .from("product_market_history")
     .select("item_id, captured_at, price_cents, num_reviews")
-    .eq("retailer", "walmart")
+    .eq("retailer", retailer)
     .eq("marketplace", marketplace)
     .in("item_id", uniqueIds)
     .order("captured_at", { ascending: false })
     .limit(uniqueIds.length * TREND_POINTS);
   if (historyError) {
-    console.error("extension/market: walmart history read failed", historyError);
+    console.error(`extension/market: ${retailer} history read failed`, historyError);
   }
 
   type WmTrendPoint = { capturedAt: string; priceCents: number | null; numReviews: number | null };
@@ -457,14 +467,14 @@ async function getWalmartMarket(url: URL) {
       spanDays,
     );
     return {
-      retailer: "walmart" as const,
+      retailer,
       // `asin` aliases the item id so the extension's shared reader stays blind.
       asin: row.item_id,
       itemId: row.item_id,
       marketplace: row.marketplace,
       priceCents: row.price_cents,
       currency: row.currency,
-      // Amazon-only fields, null for Walmart so the shared MarketProduct shape
+      // Amazon-only fields, null for Walmart/Target so the shared MarketProduct shape
       // is honestly satisfied.
       bsrRank: null,
       bsrCategory: null,
@@ -475,7 +485,7 @@ async function getWalmartMarket(url: URL) {
       brand: row.brand,
       capturedAt: row.captured_at,
       estMonthlySales: estimate.est,
-      // Walmart estimates are never curve-calibrated; confidence is explicit so
+      // Walmart/Target estimates are never curve-calibrated; confidence is explicit so
       // the overlay can label it a rough estimate.
       estimateCalibrated: false,
       estimateConfidence: estimate.confidence,

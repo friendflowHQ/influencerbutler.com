@@ -3,7 +3,7 @@
 import type { Retailer } from "../shared/retailer";
 
 // Canonical short product url for a product id on a marketplace. Amazon:
-// https://www.amazon.com/dp/B012345678. Walmart: https://www.walmart.com/ip/123.
+// https://www.amazon.com/dp/B012345678. Walmart: https://www.walmart.com/ip/123. Target: https://www.target.com/p/-/A-123.
 // Falls back to the given url when there is no id.
 export function canonicalProductUrl(
   id: string,
@@ -13,6 +13,8 @@ export function canonicalProductUrl(
 ): string {
   if (!id) return fallback;
   const domain = marketplace.startsWith("www.") ? marketplace : `www.${marketplace}`;
+  // Target's canonical form is /p/-/A-<tcin> (the slug is optional).
+  if (retailer === "target") return `https://${domain}/p/-/A-${id}`;
   const path = retailer === "walmart" ? "ip" : "dp";
   return `https://${domain}/${path}/${id}`;
 }

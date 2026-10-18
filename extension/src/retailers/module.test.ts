@@ -32,4 +32,23 @@ describe("retailerModule", () => {
     expect(m.productIdValid("B01JGG5CH4")).toBe(false);
     expect(m.defaultRatePct({ commissionRatePct: 3.5 } as never)).toBe(1);
   });
+
+  it("exposes a Target module that builds /p/ urls, validates TCINs and has real capabilities", () => {
+    const m = retailerModule("target");
+    expect(m.retailer).toBe("target");
+    expect(m.marketplaceFor("https://www.target.com/p/x/-/A-79344798")).toBe("target.com");
+    expect(m.canonicalProductUrl("79344798", "target.com")).toBe(
+      "https://www.target.com/p/-/A-79344798",
+    );
+    expect(m.extractProductId("https://www.target.com/p/cereal/-/A-79344798?x=1")).toBe("79344798");
+    expect(m.productIdValid("79344798")).toBe(true);
+    expect(m.productIdValid("B01JGG5CH4")).toBe(false);
+    expect(m.defaultRatePct({ commissionRatePct: 3.5 } as never)).toBe(1);
+    // Amazon-only data sources stay off; the grid hooks are on (deal push waits
+    // for the desktop receiver).
+    expect(m.capabilities.ccRates).toBe(false);
+    expect(m.capabilities.rerenderWatcher).toBe(true);
+    expect(m.capabilities.sendDeals).toBe(false);
+    expect(m.capabilities.autoSortByScore).toBe(false);
+  });
 });
