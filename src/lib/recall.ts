@@ -375,6 +375,30 @@ export async function stopBot(botId: string): Promise<void> {
   try { await recallFetch(`/bot/${encodeURIComponent(botId)}/`, { method: "DELETE" }); } catch { /* best-effort */ }
 }
 
+/**
+ * Permanently delete the audio/video/transcript media Recall stores for a bot
+ * (POST /bot/{id}/delete_media/, irreversible). Used by the 12 month retention
+ * purge. Never throws.
+ *   done    : Recall removed it (200), a deletion is already running (409), or
+ *             the bot is unknown/already gone (404). Safe to clear our own copy.
+ *   pending : Recall says the bot is still in progress (400); retry later.
+ *   error   : anything else (network, auth, 5xx); retry later.
+ */
+export async function deleteBotMedia(botId: string): Promise<{ result: "done" | "pending" | "error"; status: number | null }> {
+  if (!botId) return { result: "done", status: null };
+  if (!isRecallConfigured()) return { result: "error", status: null };
+  try {
+    const res = await recallFetch(`/bot/${encodeURIComponent(botId)}/delete_media/`, { method: "POST" });
+    if (res.ok || res.status === 409 || res.status === 404) return { result: "done", status: res.status };
+    if (res.status === 400) return { result: "pending", status: res.status };
+    console.error("[recall] deleteBotMedia", res.status);
+    return { result: "error", status: res.status };
+  } catch (err) {
+    console.error("[recall] deleteBotMedia threw", err);
+    return { result: "error", status: null };
+  }
+}
+
 /** Pull the terminal bot status from status_changes (e.g. "done", "fatal", "call_ended"). */
 export function botStatusOf(bot: Record<string, unknown> | null): string {
   if (!bot) return "";
