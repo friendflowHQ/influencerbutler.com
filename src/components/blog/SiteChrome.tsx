@@ -201,6 +201,9 @@ export function SiteFooter() {
               <Link href="/tools" className="block text-slate-500 hover:text-orange-700">
                 Free Tools
               </Link>
+              <Link href="/videos" className="block text-slate-500 hover:text-orange-700">
+                Walkthrough Videos
+              </Link>
               <Link href="/affiliates" className="block text-slate-500 hover:text-orange-700">
                 Affiliates: Earn 30%
               </Link>

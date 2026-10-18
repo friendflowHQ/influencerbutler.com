@@ -1,0 +1,217 @@
+{
+  "_note": "Hand-maintained. Maps a desktop help-videos.json key (buckets videos / general / promo) to where it surfaces on the site. tutorial: slug | [slugs] | null (null = explicitly no help page). feature: public/features/<slug>.html | null. pages: extra static pages that embed it (index.html, download.html, pricing). primary:false = embedded inline with an @youtube marker, never written to _videos.json. group overrides the catalog group. skip = hold back with a reason. needsDecision = hold back and warn until a home exists. sameAs = duplicate upload of another key. Keys absent here fall back to an exact or dashless slug match against content/tutorials/*.en-US.mdx; unresolved public keys make scripts/generate-transcripts.mjs warn (and fail with --strict). featureRank orders several videos on one feature page (lower first, default 100).",
+  "groups": [
+    "Getting started",
+    "Amazon",
+    "Deals",
+    "Creator Connections",
+    "Instagram",
+    "Facebook",
+    "Benable",
+    "Walmart",
+    "Levanta",
+    "Links and data",
+    "More tools"
+  ],
+  "keys": {
+    "getting-started": {
+      "tutorial": "getting-started-influencer-butler",
+      "feature": null,
+      "pages": [
+        "index.html",
+        "download.html"
+      ],
+      "group": "Getting started"
+    },
+    "dashboard-tour": {
+      "tutorial": "getting-started-influencer-butler",
+      "feature": "dashboard",
+      "group": "Getting started",
+      "primary": false
+    },
+    "dashboard": {
+      "sameAs": "dashboard-tour"
+    },
+    "settings-and-help": {
+      "tutorial": "getting-started-influencer-butler",
+      "feature": null,
+      "group": "Getting started",
+      "primary": false
+    },
+    "plans-beginner-vs-power": {
+      "tutorial": [
+        "beginner-start-here",
+        "power-user-start-here",
+        "upgrade-to-power-user"
+      ],
+      "feature": null,
+      "pages": [
+        "pricing"
+      ],
+      "group": "Getting started"
+    },
+    "amazon-butler-dashboard": {
+      "tutorial": null,
+      "feature": "amazon-butler",
+      "group": "Amazon",
+      "featureRank": 200
+    },
+    "harvest": {
+      "tutorial": "dailycommissionbutler",
+      "feature": "daily-commission-butler",
+      "group": "Creator Connections"
+    },
+    "amazon-deals": {
+      "tutorial": "deals",
+      "feature": "deals-butler",
+      "group": "Deals"
+    },
+    "outreach": {
+      "tutorial": "amazonbutler",
+      "feature": "amazon-butler",
+      "group": "Amazon"
+    },
+    "collab": {
+      "tutorial": "collab-butler",
+      "feature": "collab-butler",
+      "group": "More tools"
+    },
+    "product-research": {
+      "tutorial": "product-research-butler",
+      "group": "Amazon"
+    },
+    "orders-butler": {
+      "tutorial": "ordersbutler",
+      "group": "Amazon"
+    },
+    "action-queue": {
+      "tutorial": "actionqueue",
+      "group": "More tools"
+    },
+    "goldmine-butler": {
+      "tutorial": "goldminebutler",
+      "group": "Amazon"
+    },
+    "like-butler": {
+      "tutorial": "likebutler",
+      "group": "Amazon"
+    },
+    "pricecrash-butler": {
+      "tutorial": "pricecrashbutler",
+      "group": "Deals"
+    },
+    "closefriends-butler": {
+      "tutorial": "close-friends-butler",
+      "group": "Instagram"
+    },
+    "cc-check": {
+      "group": "Creator Connections"
+    },
+    "cc-deals": {
+      "group": "Creator Connections"
+    },
+    "campaign-alert-butler": {
+      "feature": null,
+      "group": "Creator Connections"
+    },
+    "black-friday": {
+      "feature": "black-friday-butler",
+      "group": "Deals"
+    },
+    "prime-day-butler": {
+      "group": "Deals"
+    },
+    "storefrontbutler": {
+      "feature": "storefront-butler",
+      "group": "Amazon"
+    },
+    "pitchbutler": {
+      "feature": "pitch-butler",
+      "group": "More tools"
+    },
+    "link-butler": {
+      "feature": "influencer-butler-deeplinks",
+      "group": "Links and data"
+    },
+    "google-sheets-export": {
+      "group": "Links and data"
+    },
+    "earnings-intelligence": {
+      "group": "Links and data"
+    },
+    "instagram-email": {
+      "feature": "instagram-email-collection",
+      "group": "Instagram"
+    },
+    "expired-butler": {
+      "feature": null,
+      "group": "Deals"
+    },
+    "shopping-butler": {
+      "group": "Amazon"
+    },
+    "walmartbutler": {
+      "tutorial": "walmart-repost",
+      "feature": "walmart-butler",
+      "group": "Walmart"
+    },
+    "walmart-photo-butler": {
+      "tutorial": "walmart-repost",
+      "feature": "walmart-butler",
+      "group": "Walmart",
+      "primary": false,
+      "featureRank": 150
+    },
+    "walmart-deals": {
+      "tutorial": "deals",
+      "feature": "walmart-butler",
+      "group": "Walmart",
+      "primary": false,
+      "featureRank": 160
+    },
+    "walmart-butler-dashboard": {
+      "tutorial": null,
+      "feature": "walmart-butler",
+      "group": "Walmart",
+      "featureRank": 200
+    },
+    "walmart-butler-settings": {
+      "skip": "no help page covers Walmart settings yet"
+    },
+    "walmart-research": {
+      "group": "Walmart"
+    },
+    "walmart-collection-builder": {
+      "group": "Walmart"
+    },
+    "levanta-message-brands": {
+      "tutorial": "levanta",
+      "feature": "levanta-butler",
+      "group": "Levanta",
+      "primary": false
+    },
+    "levanta-email-extractor": {
+      "tutorial": "levanta",
+      "feature": "levanta-butler",
+      "group": "Levanta",
+      "primary": false,
+      "featureRank": 150
+    },
+    "benable-deals": {
+      "tutorial": "benable-butler",
+      "feature": "benable-butler",
+      "group": "Benable",
+      "primary": false,
+      "featureRank": 150
+    },
+    "instagram-outreach": {
+      "needsDecision": "video is 'message every new follower'; site tutorial instagram is brand-collab DMs"
+    },
+    "messenger": {
+      "needsDecision": "site tutorial messengerbutler is Instagram DMs; the Amazon Messages inbox has no help page yet"
+    },
+    "messenger-templates": {
+      "needsDecision": "see messenger"
+    }
+  }
+}

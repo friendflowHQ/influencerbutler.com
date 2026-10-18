@@ -18,6 +18,7 @@ import PricingFaq from "./PricingFaq";
 import PricingFeatures from "./PricingFeatures";
 import FacebookGroupIconLink from "@/components/FacebookGroupIconLink";
 import AiKeyNote from "@/components/AiKeyNote";
+import PlansVideo from "./PlansVideo";
 
 export const dynamic = "force-dynamic";
 
@@ -187,6 +188,8 @@ export default async function PricingPage({
       </section>
 
       <Guarantee />
+
+      <PlansVideo />
 
       <section id="addons" className="scroll-mt-24 mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-16">
         <div className="text-center">

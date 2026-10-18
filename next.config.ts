@@ -41,6 +41,8 @@ const imgSrc = [
   "https://assets.lemonsqueezy.com",
   "https://www.google-analytics.com",
   "https://www.googletagmanager.com",
+  // /videos cards show YouTube thumbnails.
+  "https://i.ytimg.com",
 ];
 
 const contentSecurityPolicy = [

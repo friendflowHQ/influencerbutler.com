@@ -1,0 +1,63 @@
+{
+  "_note": "Hand-written transcripts for videos the tutorial factory never produced (no narration script in the desktop repo). Same shape as _transcripts.json. scripts/generate-transcripts.mjs merges these in; generated transcripts win on conflict. Text is the spoken narration, lightly cleaned (filler words removed).",
+  "transcripts": {
+    "plZS_nXX-BE": {
+      "tool": "creator-api-setup",
+      "title": "Influencer Butler Creator Api Integration Setup Tutorial",
+      "language": "en",
+      "paragraphs": [
+        {
+          "heading": "Why you need Creator API credentials",
+          "text": "Hey guys, in order for Influencer Butler to run correctly across the workspaces and make everything so much easier for you and your butler, you are going to create an application in the Creators API section of your Amazon Influencer account. Simply go to the Tools section and click on Creators API."
+        },
+        {
+          "heading": "Create the app",
+          "text": "Here you can create an app. You can name it whatever you want. Then you click Create. Then you want to add a new credential."
+        },
+        {
+          "heading": "Download and copy the credential",
+          "text": "The first thing you should do is download it and save it to your computer. Then you are going to copy this credential ID. Bring up your Influencer Butler API Integrations and put the ID here."
+        },
+        {
+          "heading": "The secret key and version",
+          "text": "Then go back, grab the secret key, and take note of the version shown. It will probably be version 2.1 for a long time. Go back to your Influencer Butler, paste the secret key, then select the version we were just talking about, 2.1."
+        },
+        {
+          "heading": "Marketplace and storefront ID",
+          "text": "Currently we have the ability to integrate into the APIs for all marketplaces. I am going to select US. Here your tag should be pre-populated. If not, you can enter it. This is the storefront ID you want to use, the one that gives you access to your storefront for your Amazon Influencer account. It is not your onsite ID, which starts with O N A M Z."
+        },
+        {
+          "heading": "Test the connection",
+          "text": "Then you want to test the connection and make sure it is connected. Then you are all set. If it is not connected, double check that you copied and pasted these keys correctly. If it still fails, email us at hello@influencerbutler.com for additional support. Now you can move on to the next step."
+        }
+      ]
+    },
+    "54wdnHuUZY8": {
+      "tool": "instagram-channel-link",
+      "title": "Find Your Instagram Channel ID To Post Deals or Collages With Your Influencer Butler",
+      "language": "en",
+      "paragraphs": [
+        {
+          "heading": "Find the channel link",
+          "text": "First things first, we are going to have to find the Instagram channel link. Go to your Instagram account and click on the channel that you want to be posting in. Then click on the share icon and copy the link. Send it to yourself in an email."
+        },
+        {
+          "heading": "Open the browser console",
+          "text": "Open the link on your computer, then right-click and select Inspect in the menu. Then go to the Console tab, which you can find here, and click it."
+        },
+        {
+          "heading": "Paste the formula",
+          "text": "Copy and paste the formula provided. Sometimes there may be text in the console already; you can clear that out first by selecting the clear button. The browser may also tell you to type allow pasting before it lets you paste. Type that in, press Enter, and paste the formula again. This prints the channel ID, which is what we want."
+        },
+        {
+          "heading": "Verify the channel",
+          "text": "Then go over and verify that it is the right channel you are looking for, in the account you are logged in with that can message in the channel. Here is the finished link."
+        },
+        {
+          "heading": "Add it to Influencer Butler",
+          "text": "Take that link, copy it, go to Influencer Butler, open Amazon Deals Butler, then Social Destinations, and paste the link in there. Then you are good to go and you can start sharing your deals to your Instagram channel."
+        }
+      ]
+    }
+  }
+}

@@ -1760,3 +1760,97 @@ a.feature-card:hover h3 { color: var(--brand-600); }
   transition: top 0.2s ease;
 }
 .skip-link:focus { top: 0; }
+
+/* Walkthrough video block (feature pages, homepage, download). Markup comes from
+   scripts/inject-feature-videos.mjs. */
+.feature-video {
+  padding: 3rem 0;
+  border-top: 1px solid var(--border);
+}
+.feature-video h2 { margin-bottom: 0.75rem; }
+.feature-video-lead {
+  color: var(--text-secondary);
+  max-width: 62ch;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+.feature-video-frame {
+  background: #0f172a;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+}
+.feature-video-frame iframe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+}
+.feature-video-transcript {
+  margin: 1rem 0 0;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: #f8fafc;
+}
+.feature-video-transcript summary {
+  padding: 0.6rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+}
+.feature-video-transcript summary:focus-visible {
+  outline: 2px solid var(--brand-700);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+.feature-video-transcript-body {
+  padding: 0 1rem 1rem;
+  font-size: 0.875rem;
+  color: #475569;
+}
+.feature-video-transcript-body p {
+  margin: 0.5rem 0 0;
+  line-height: 1.6;
+}
+.feature-video-more { margin-top: 1.25rem; }
+.feature-video-more h3 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+.feature-video-more ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+.feature-video-more a,
+.feature-video-links a {
+  color: var(--brand-700);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.feature-video-duration {
+  color: var(--text-secondary);
+  font-size: 0.9em;
+}
+.feature-video-links {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+.home-video {
+  border-top: 0;
+  padding: 4.5rem 0;
+  text-align: center;
+}
+.home-video .feature-video-lead { margin-left: auto; margin-right: auto; }
+.home-video .feature-video-frame,
+.home-video .feature-video-transcript {
+  max-width: 960px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.home-video .feature-video-transcript { margin-top: 1rem; text-align: left; }
