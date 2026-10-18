@@ -233,3 +233,5 @@ Publishing the retention periods makes them commitments. Today none is enforced 
 
 1. Self-serve account deletion, which also deletes AI sessions, call transcripts, tickets, and stored Creator API credentials.
 2. Scheduled cleanup: AI chats and call recordings at 12 months, support tickets and R2 attachments at 3 years, email events at 24 months.
+
+Status update (2026-10-18): items built and committed, NOT yet deployed or run against production. AI chats: `/api/cron/purge-ai-sessions` (daily, this repo) plus the desktop chat history prune. Call recordings: `/api/cron/purge-call-recordings` (daily; deletes the Recall.ai media, then clears the booking's recording fields). Support tickets and R2 attachments: hourly purge in the feedback Worker (`workers/feedback/src/retention.js`, 3 years from last activity). Still open: email events at 24 months, group-event recordings, and self-serve deletion of tickets/R2/Recall data. Before the first live run, call each cron with `?dry=1` (feedback Worker: `RETENTION_DRY_RUN=1`) and check the counts.
