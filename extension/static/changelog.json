@@ -1,6 +1,34 @@
 {
-  "lastUpdated": "2026-10-12",
+  "lastUpdated": "2026-10-18",
   "releases": [
+    {
+      "version": "0.1.34",
+      "date": "October 18, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "Target now works like Walmart: product pages show price, rating, estimated commission, a monthly revenue estimate, Butler Score, the Butler Approved seal and the break-even calculator",
+            "Target search results get the same Butler Score badges, sort and filter toolbar, and tile menu you use on Amazon and Walmart",
+            "Copy Target link on a Target product page, tracked through Mavely once you pick it under Target affiliate links in Settings, or a clean plain link until then",
+            "The Get my link card in the popup now works on Target product pages too"
+          ]
+        },
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "Target price, barcode and rating now follow the exact size or variant you are viewing, so the Also on Walmart card matches the right product"
+          ]
+        },
+        {
+          "heading": "Other Notable Changes",
+          "items": [
+            "Target commission figures are estimates (Target does not publish a rate schedule) and are marked with a tilde",
+            "Sending Target deals to the desktop app is not available yet"
+          ]
+        }
+      ]
+    },
     {
       "version": "0.1.33",
       "date": "October 12, 2026",
