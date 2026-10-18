@@ -79,7 +79,9 @@
         "Open your downloads at the top-right of the browser, then double-click the .dmg file.",
         "Drag Influencer Butler into your Applications folder.",
         "If macOS blocks it, right-click the app and choose <strong>Open</strong>, or go to System Settings, Privacy and Security, then <strong>Open anyway</strong>.",
+        "If the app icon shows a prohibited sign, you downloaded the wrong version for your Mac. Download the other one (Apple Silicon or Intel).",
       ];
+      note = "Requires macOS 11 Big Sur or newer. Not sure which version you need? Apple menu > About This Mac: Chip says Apple M1/M2/M3/M4 = Apple Silicon, Processor says Intel = Intel.";
     } else {
       // Windows (and any other desktop that gets the .exe): browser prompt first,
       // then the Windows SmartScreen prompt.

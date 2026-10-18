@@ -35,13 +35,20 @@ export default function MacInstallGuide() {
             <strong>Open</strong>. Still blocked? Go to System Settings, Privacy
             &amp; Security, then click <strong>Open Anyway</strong>.
           </MacStep>
+          <MacStep number={4}>
+            If the app icon shows a prohibited sign, you downloaded the wrong
+            version for your Mac. Download the other one (Apple Silicon or Intel).
+          </MacStep>
         </ol>
 
         <div className="rounded-lg bg-slate-50 p-4">
           <p className="text-slate-600">
             The Mac app is signed and notarized by Apple, so it normally opens
-            without any prompt. Apple Silicon (M1 and newer) and Intel Macs use
-            different builds - the download buttons above cover both.
+            without any prompt. It needs macOS 11 Big Sur or newer. Apple
+            Silicon (M1 and newer) and Intel Macs use different builds, and the
+            download buttons above cover both. Not sure which you have? Apple
+            menu &gt; About This Mac: Chip says Apple M1/M2/M3/M4 = Apple
+            Silicon, Processor says Intel = Intel.
           </p>
         </div>
       </div>

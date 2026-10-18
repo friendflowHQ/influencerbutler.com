@@ -1,10 +1,10 @@
 /**
- * Windows + Mac download buttons shown side by side, with a small "Older Intel
- * Mac?" secondary link underneath. Every link routes through /go/download?os=...
- * so the trial-click tracker fires and each button lands on the exact installer
- * (Windows .exe, Mac Apple Silicon arm64, or Mac Intel x64). The browser can't
- * reliably tell arm64 from x64, so we default Mac to Apple Silicon and expose
- * the Intel build as the alternate link.
+ * Windows + Mac download buttons shown side by side. Mac gets two equally
+ * prominent buttons (Apple Silicon and Intel) plus a "how to tell" hint, because
+ * the browser can't reliably tell arm64 from x64 and an Intel Mac given the arm64
+ * .dmg shows a prohibited-sign icon and will not open. Every link routes through
+ * /go/download?os=... so the trial-click tracker fires and each button lands on
+ * the exact installer (Windows .exe, Mac arm64, or Mac Intel x64).
  *
  * No client state - plain links - so it imports cleanly into both server
  * components (WelcomeTierContent) and client components (WelcomeGuestClient,
@@ -37,15 +37,17 @@ export default function DownloadButtons({ source, size = "lg", className }: Prop
         </a>
         <a href={href("mac-arm", source)} className={buttonClass}>
           <DownloadIcon />
-          Download for Mac
+          Download for Mac (Apple Silicon, M1 or newer)
+        </a>
+        <a href={href("mac-intel", source)} className={buttonClass}>
+          <DownloadIcon />
+          Download for Mac (Intel)
         </a>
       </div>
-      <a
-        href={href("mac-intel", source)}
-        className="mt-2 inline-block text-xs font-semibold text-slate-500 hover:text-[#f97316]"
-      >
-        Older Intel Mac? Download here
-      </a>
+      <p className="mt-2 text-xs text-slate-600">
+        Not sure? Apple menu &gt; About This Mac: Chip says Apple M1/M2/M3/M4 = Apple Silicon,
+        Processor says Intel = Intel. Requires macOS 11 Big Sur or newer.
+      </p>
       <p className="mt-3 text-xs text-slate-500">
         Also free:{" "}
         <a href="/extension" className="font-semibold text-slate-600 underline hover:text-[#f97316]">
