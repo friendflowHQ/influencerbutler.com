@@ -5,6 +5,7 @@ import AffiliateUpsellBanner from "@/components/dashboard/AffiliateUpsellBanner"
 import SwitchToAnnualBanner from "@/components/dashboard/SwitchToAnnualBanner";
 import TestimonialAskBanner from "@/components/dashboard/TestimonialAskBanner";
 import EventBanner from "@/components/dashboard/EventBanner";
+import ConciergeBubble from "@/components/dashboard/ConciergeBubble";
 import AdminBadge from "@/components/dashboard/AdminBadge";
 import DashboardUserEmail from "@/components/dashboard/DashboardUserEmail";
 import OpenAppButton from "@/components/dashboard/OpenAppButton";
@@ -49,6 +50,7 @@ export default async function DashboardLayout({
           {children}
         </main>
         <ShortcutHelpOverlay />
+        <ConciergeBubble />
       </KeyboardShortcutsProvider>
     </div>
   );

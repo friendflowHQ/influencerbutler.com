@@ -40,6 +40,7 @@ export async function POST(request: Request) {
   const summary = transcript ? await summarizeTranscript(transcript, { callType: `ai-${mode}` }) : null;
   const endedAt = new Date().toISOString();
 
+  let insertedId: string | null = null;
   try {
     if (body.sessionId) {
       const { error } = await admin
@@ -50,20 +51,26 @@ export async function POST(request: Request) {
       if (error) console.error("[ai-concierge/transcript] update", error.message);
     } else {
       const startedAt = body.startedAt ? new Date(body.startedAt).toISOString() : endedAt;
-      const { error } = await admin.from("ai_concierge_sessions").insert({
-        user_id: user.id,
-        user_email: user.email ?? null,
-        mode,
-        started_at: startedAt,
-        ended_at: endedAt,
-        transcript,
-        summary,
-      });
+      const { data, error } = await admin
+        .from("ai_concierge_sessions")
+        .insert({
+          user_id: user.id,
+          user_email: user.email ?? null,
+          mode,
+          started_at: startedAt,
+          ended_at: endedAt,
+          transcript,
+          summary,
+        })
+        .select("id")
+        .maybeSingle();
       if (error) console.error("[ai-concierge/transcript] insert", error.message);
+      // Returned so a long-lived text widget can update the same row on later saves.
+      insertedId = (data as { id?: string } | null)?.id ?? null;
     }
   } catch (err) {
     console.error("[ai-concierge/transcript] threw", err);
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, ...(insertedId ? { id: insertedId } : {}) });
 }

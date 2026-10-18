@@ -13,6 +13,7 @@
  */
 import { NextResponse } from "next/server";
 import { resolveAuth } from "@/lib/license-auth";
+import { rateLimit } from "@/lib/rate-limit";
 import { buildInstructions, toChatTools, executeAgentTool, extractReplyImages, sanitizeWalkthroughArgs, sanitizeTourCatalog } from "@/lib/ai-concierge/agent";
 import type { ClientMeta, WalkthroughPayload, TourCatalogEntry } from "@/lib/ai-concierge/agent";
 import { resolveTextProvider, openAiFallbackProvider } from "@/lib/ai-concierge/llm";
@@ -28,6 +29,8 @@ type Choice = { message: { content: string | null; tool_calls?: ToolCall[] } };
 
 const MAX_TOOL_ROUNDS = 4;
 const MAX_HISTORY = 24;
+const CHAT_LIMIT = 30;
+const CHAT_WINDOW_SEC = 600;
 
 function sanitizeClient(raw: unknown): ClientMeta | undefined {
   if (!raw || typeof raw !== "object") return undefined;
@@ -54,6 +57,16 @@ export async function POST(request: Request) {
 
   const authed = await resolveAuth(request);
   if (!authed.ok) return NextResponse.json({ error: authed.error }, { status: authed.status });
+
+  // Text chat is cheap but unmetered otherwise (only voice has a daily cap), and
+  // the dashboard bubble makes it one click away. Per-user, generous for humans.
+  const limited = await rateLimit(`ai-concierge-chat:user:${authed.auth.userId}`, CHAT_LIMIT, CHAT_WINDOW_SEC);
+  if (!limited.allowed) {
+    return NextResponse.json(
+      { error: "You're sending messages quickly. Try again in a few minutes." },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec ?? CHAT_WINDOW_SEC) } },
+    );
+  }
 
   let body: { messages?: ChatMsg[]; client?: unknown; tours?: unknown };
   try {
