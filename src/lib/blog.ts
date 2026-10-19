@@ -19,6 +19,11 @@ export type BlogManifestEntry = {
   id: string;
   title: string;
   category: string;
+  // Optional comma-separated list of extra topic tags shown alongside the
+  // primary category (e.g. "Instagram, Facebook, Proxy"), for posts that
+  // genuinely span more than one platform/topic. Purely cosmetic: it does
+  // not affect the category-based "More in X" related rail or filtering.
+  tags?: string;
   summary: string;
   date: string; // ISO yyyy-mm-dd
   // Optional ISO yyyy-mm-dd of the last substantive edit. Drives dateModified in
@@ -76,6 +81,7 @@ export type LoadedBlogPost = {
     title?: string;
     summary?: string;
     category?: string;
+    tags?: string;
     date?: string;
     updated?: string;
     author?: string;

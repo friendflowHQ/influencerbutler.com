@@ -217,6 +217,10 @@ export default async function BlogPostPage({
   if (!isPublished(publishDate)) notFound();
 
   const category = (post.frontmatter.category as string) || entry?.category || "Blog";
+  const tags = ((post.frontmatter.tags as string) || entry?.tags || "")
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
   const title = (post.frontmatter.title as string) || entry?.title || slug;
   const summary = (post.frontmatter.summary as string) || entry?.summary || "";
   const author = (post.frontmatter.author as string) || entry?.author || "Influencer Butler Team";
@@ -313,9 +317,19 @@ export default async function BlogPostPage({
               </nav>
             ) : null}
           </div>
-          <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-orange-700">
-            {category}
-          </p>
+          <div className="mt-6 flex flex-wrap items-center gap-2">
+            <p className="text-xs font-semibold uppercase tracking-widest text-orange-700">
+              {category}
+            </p>
+            {tags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
           <h1 className="help-article-title">{title}</h1>
           {summary ? <p className="help-article-lead">{summary}</p> : null}
           <p className="mt-4 text-sm text-slate-500">
