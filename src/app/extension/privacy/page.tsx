@@ -7,7 +7,7 @@ export const metadata = {
     "Privacy policy for the Influencer Butler Chrome extension: most work stays local in your browser, data is sent to us only if you sign in or use a hosted feature, no tracking, no sale of data.",
 };
 
-const EFFECTIVE_DATE = "October 7, 2026";
+const EFFECTIVE_DATE = "October 19, 2026";
 
 const SECTIONS: Array<{ heading: string; paragraphs: string[]; bullets?: string[] }> = [
   {
@@ -22,7 +22,7 @@ const SECTIONS: Array<{ heading: string; paragraphs: string[]; bullets?: string[
     paragraphs: [
       "Influencer Butler is an affiliate-marketing tool. When you click \"Copy my link\" on a product page, the extension builds an Amazon affiliate link so that qualifying purchases can earn a commission. That commission is yours: the link is tagged with the Amazon Associates tag or storefront handle that you entered in the extension's settings. The extension does not use its own or the developer's tag, does not substitute a different tag, and does not redirect your commissions. If you have not entered a tag, the extension returns a plain, untagged link.",
       "Affiliate links are built only when you ask for one (the \"Copy my link\" button). The extension does not silently rewrite the links already on a page while you browse. You are responsible for adding the affiliate disclosures your own audience and the FTC require (for example, #ad or #CommissionsEarned) to any content where you share these links.",
-      "If you connect optional third-party link providers in Settings (Amazon Associates, Levanta, Archer, Logie, Geniuslink, URLGenius, Linktw.in, or Influencer Butler branded links), those providers may also be used to create or shorten your affiliate links. Each provider is described under \"Optional integrations you turn on\" below.",
+      "If you connect optional third-party link providers in Settings (Amazon Associates, Levanta, Archer, Geniuslink, URLGenius, Linktw.in, or Influencer Butler branded links), those providers may also be used to create or shorten your affiliate links. Each provider is described under \"Optional integrations you turn on\" below.",
     ],
   },
   {
@@ -87,8 +87,8 @@ const SECTIONS: Array<{ heading: string; paragraphs: string[]; bullets?: string[
   {
     heading: "Saved Amazon Creator API credentials",
     paragraphs: [
-      "If you enter Amazon Creator API credentials in the extension's Settings and are signed in, the extension also saves them to your Influencer Butler account so that product lookups can run on our servers. We store, per marketplace, your Credential ID, version, Associates tag, and Credential Secret. The Credential Secret is encrypted with AES-256-GCM before it reaches our database, is write-only (we never send it back to you or to any browser), and is decrypted only on our servers to request product data from Amazon on your behalf. You can remove the saved credentials at any time from Settings, or by emailing privacy@influencerbutler.com, and they are deleted when you delete your account.",
-      "If Amazon has not yet unlocked the Creator API for your own account, you can optionally use a short, expiring lease of our own credentials in the meantime. To do that, the extension sends your license key to licensing.influencerbutler.com, which returns a temporary credential.",
+      "If you enter Amazon Creator API credentials in the extension's Settings and are signed in, the extension also saves them to your Influencer Butler account so that product lookups can run on our servers. We store, per marketplace, your Credential ID, version, Associates tag, and Credential Secret. The Credential Secret is encrypted with AES-256-GCM before it reaches our database, is write-only (we never send it back to you or to any browser), and is decrypted only on our servers to request product data from Amazon on your behalf. You can remove the saved credentials at any time from Settings, or by emailing privacy@influencerbutler.com, and they are deleted when you delete your account. This includes credentials the extension receives from the Influencer Butler desktop app through the local settings sync (that link stays on your own computer, but once the extension holds the credentials it saves them to your account). If you do not sign in to the extension, your credentials stay on your device.",
+      "If Amazon has not yet unlocked the Creator API for your own account, you can optionally use a short, expiring lease of our own credentials in the meantime. To do that, the extension sends your license key to licensing.influencerbutler.com, which returns a temporary credential. We keep that temporary credential, encrypted, with your account until you switch it off or delete your account, and it stops working when the lease expires.",
     ],
   },
   {
@@ -119,7 +119,7 @@ const SECTIONS: Array<{ heading: string; paragraphs: string[]; bullets?: string[
     bullets: [
       "OpenAI (api.openai.com): if you connect an OpenAI key, product details are sent to OpenAI to draft a caption when you click the caption button.",
       "Amazon Creator API: if you connect Creator API credentials, the extension (and, once you are signed in and the credentials are saved to your account, our servers on your behalf) can query Amazon's product API using your credentials to enrich product data. See \"Saved Amazon Creator API credentials\" above.",
-      "Affiliate networks and link shorteners (Levanta, Archer, Logie, Geniuslink, URLGenius, Linktw.in): if you connect one, your affiliate link is created or shortened through that provider.",
+      "Affiliate networks and link shorteners (Levanta, Archer, Geniuslink, URLGenius, Linktw.in): if you connect one, your affiliate link is created or shortened through that provider.",
       "Influencer Butler branded links (links.influencerbutler.com): if enabled, your affiliate link is shortened into a links.influencerbutler.com link with click analytics, authenticated with your signed-in license key.",
       "Deal-site harvester: if you use it, the extension fetches the deal-aggregator web pages whose URLs you provide (without sending your cookies) to extract product ASINs.",
       "Influencer Butler desktop app: if you have the desktop app running and paired, findings can be sent to it over a local connection on your own machine (they do not leave your device).",
