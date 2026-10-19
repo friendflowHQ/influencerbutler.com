@@ -112,6 +112,12 @@ Follow the instructions included with your UPS to sit it between the wall outlet
 **9. Confirm it.**
 Back in Settings, the **Current connection** row should now show a home-style address instead of a data center one. Use the **Re-check** button any time you want to confirm it again.
 
+## One more safety net, in case it drops anyway
+
+A UPS covers power blips, but it cannot cover everything, your home internet itself going down, your router rebooting, or Tailscale briefly losing its connection. If the Pi ever does drop off mid-run, the risk is not just a pause, it is your cloud PC quietly falling back to posting from its own data center IP without anyone noticing, which is the one outcome this whole setup exists to avoid.
+
+Influencer Butler now watches for exactly that. In **Settings**, under the same **Residential Proxy** card, **Stop everything and email me if this proxy disconnects** is on by default. If the connection to your Pi is lost, or your posts would otherwise leave from this machine's own IP instead of your home one, Influencer Butler stops every running butler immediately, opens no browser, and emails you. Nothing restarts on its own, you come back, confirm the Pi is reachable again, and click Run when you are ready.
+
 ## Our pick
 
 **Raspberry Pi 5 kit:** [CanaKit Raspberry Pi 5 Starter Kit PRO, 8GB RAM (128GB Edition)](https://www.amazon.com/dp/B0CRSNCJ6Y?tag=littleprettyl-20) from Amazon, $259.99. It is Amazon's top-rated pick in this category (4.7 stars, 1,400+ ratings) and includes the Pi 5 board, a 128GB microSD card pre-loaded with the OS, a case, cooling fan, heatsink, and official power supply. You will not need the included HDMI cables, keyboard, or mouse for this headless setup, but it is genuinely handy to have them on the shelf in case you ever need to plug in a monitor to troubleshoot.
