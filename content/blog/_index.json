@@ -2,6 +2,21 @@
   "version": 1,
   "posts": [
     {
+      "id": "raspberry-pi-residential-proxy-always-on-home-gateway",
+      "title": "Skip the Proxy Subscription: Build Your Own Always-On Raspberry Pi Home Gateway",
+      "category": "Amazon",
+      "tags": "Instagram, Facebook, Proxy",
+      "summary": "A residential proxy you rent from a stranger is only as trustworthy as that stranger. Here is how a small always-on computer you own, a Raspberry Pi with a battery backup, can give your cloud PC a home IP address without a monthly bill or a provider to vet.",
+      "date": "2026-10-19",
+      "author": "The Influencer Butler Team",
+      "readingTime": "9 min read",
+      "keywords": "raspberry pi residential proxy, always-on computer home server, raspberry pi vs cloud pc, build your own residential proxy, raspberry pi ups battery backup, self hosted proxy amazon influencer, tailscale exit node proxy, tinyproxy raspberry pi setup",
+      "image": "/assets/blog/raspberry-pi-residential-proxy-always-on-home-gateway.png",
+      "imageAlt": "Illustration of a small Raspberry Pi computer with a battery backup sitting at home, connected to a cloud computer, replacing a third-party proxy subscription",
+      "imagePrompt": "Editorial flat illustration of a tiny single-board computer with a small battery pack beside it, sitting on a cozy home shelf with a warm glowing connection line reaching out to a distant cloud-shaped server icon, a sense of quiet independence and ownership, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
+      "order": 1
+    },
+    {
       "id": "is-your-private-proxy-really-private",
       "title": "Your 'Private' Proxy Might Not Be Private: What Proxy Providers Don't Tell You",
       "category": "Amazon",
