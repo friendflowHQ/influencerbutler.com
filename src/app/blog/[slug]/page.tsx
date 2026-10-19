@@ -318,16 +318,20 @@ export default async function BlogPostPage({
             ) : null}
           </div>
           <div className="mt-6 flex flex-wrap items-center gap-2">
-            <p className="text-xs font-semibold uppercase tracking-widest text-orange-700">
+            <Link
+              href={`/blog?tag=${encodeURIComponent(category)}`}
+              className="text-xs font-semibold uppercase tracking-widest text-orange-700 hover:underline"
+            >
               {category}
-            </p>
+            </Link>
             {tags.map((tag) => (
-              <span
+              <Link
                 key={tag}
-                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600"
+                href={`/blog?tag=${encodeURIComponent(tag)}`}
+                className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600 hover:border-orange-300 hover:text-orange-700"
               >
                 {tag}
-              </span>
+              </Link>
             ))}
           </div>
           <h1 className="help-article-title">{title}</h1>

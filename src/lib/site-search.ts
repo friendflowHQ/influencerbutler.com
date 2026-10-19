@@ -235,7 +235,7 @@ async function loadIndex(requestedLocale?: string): Promise<SiteSearchDoc[]> {
           category: p.category || "Blog",
           url: `/blog/${p.id}`,
           image: p.image || null,
-          extra: p.keywords || "",
+          extra: `${p.keywords || ""} ${p.tags || ""}`,
         }),
       );
     }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { loadPublishedPosts, formatBlogDate } from "@/lib/blog";
+import { loadPublishedPosts, formatBlogDate, postTopics } from "@/lib/blog";
 import { SiteHeader, SiteFooter } from "@/components/blog/SiteChrome";
 
 export const revalidate = 300;
@@ -30,9 +30,30 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function BlogIndexPage() {
+export default async function BlogIndexPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tag?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const rawTag = Array.isArray(params.tag) ? params.tag[0] : params.tag;
+  const tag = (rawTag || "").trim();
+
   const posts = await loadPublishedPosts();
-  const [featured, ...rest] = posts;
+
+  // All distinct topics (category + extra tags) across every post, for the
+  // "Browse by topic" chip row. Sorted for a stable, scannable order.
+  const allTopics = Array.from(new Set(posts.flatMap((p) => postTopics(p)))).sort((a, b) =>
+    a.localeCompare(b),
+  );
+
+  const filtered = tag
+    ? posts.filter((p) => postTopics(p).some((t) => t.toLowerCase() === tag.toLowerCase()))
+    : posts;
+
+  // The big featured hero card only makes sense for the unfiltered, full feed.
+  // A tag filter shows every match in one plain grid instead.
+  const [featured, rest] = tag ? [undefined, filtered] : [filtered[0], filtered.slice(1)];
 
   return (
     <main id="main-content" className="min-h-screen bg-white text-slate-900">
@@ -50,6 +71,47 @@ export default async function BlogIndexPage() {
           Instagram creators. No fluff, no recycled advice, just the things that
           actually move your commissions.
         </p>
+
+        <div className="mt-6 flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+            Browse by topic
+          </span>
+          {allTopics.map((t) => {
+            const active = t.toLowerCase() === tag.toLowerCase();
+            return (
+              <Link
+                key={t}
+                href={active ? "/blog" : `/blog?tag=${encodeURIComponent(t)}`}
+                className={
+                  active
+                    ? "rounded-full bg-orange-700 px-3 py-1 text-xs font-semibold text-white"
+                    : "rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600 hover:border-orange-300 hover:text-orange-700"
+                }
+              >
+                {t}
+              </Link>
+            );
+          })}
+        </div>
+
+        {tag ? (
+          <p className="mt-6 text-sm text-slate-500">
+            Showing {filtered.length} {filtered.length === 1 ? "post" : "posts"} tagged{" "}
+            &ldquo;{tag}&rdquo;.{" "}
+            <Link href="/blog" className="font-medium text-orange-600 underline">
+              Clear filter
+            </Link>
+          </p>
+        ) : null}
+
+        {filtered.length === 0 ? (
+          <p className="mt-12 rounded-xl border border-dashed border-slate-300 p-8 text-center text-slate-500">
+            No posts tagged &ldquo;{tag}&rdquo; yet.{" "}
+            <Link href="/blog" className="font-medium text-orange-600 underline">
+              Back to all posts
+            </Link>
+          </p>
+        ) : null}
 
         {featured ? (
           <Link

@@ -161,6 +161,16 @@ export async function loadPublishedPosts(): Promise<BlogManifestEntry[]> {
   return manifest.posts.filter((p) => isListed(p));
 }
 
+// A post's primary category plus its optional extra tags, as one flat list of
+// clickable "topics" (used for the /blog?tag= filter and its chip links).
+export function postTopics(post: Pick<BlogManifestEntry, "category" | "tags">): string[] {
+  const extra = (post.tags || "")
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
+  return [post.category, ...extra].filter(Boolean);
+}
+
 async function readBlogFile(id: string, locale: BlogLocale): Promise<string | null> {
   try {
     return await readFile(path.join(CONTENT_ROOT, `${id}.${locale}.mdx`), "utf8");
