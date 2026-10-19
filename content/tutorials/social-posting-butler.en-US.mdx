@@ -1,10 +1,10 @@
 ---
 title: "Social Posting Butler: schedule your own evergreen posts"
-summary: Load your own posts once (your photo or an AI-generated one, your caption, your link or a link in the first comment) and let them publish on a schedule. See everything in a calendar, card, or table view.
+summary: Load your own posts once (your photo or an AI-generated one, your caption, your link or a link in the first comment) and let them publish on a schedule. AI caption and hashtag help, real delivery reporting, content recycling, and team approvals included.
 category: Other
 ---
 
-> **Heads up:** The AI features in this butler (AI-generated images) use your own OpenAI API key (you pay OpenAI directly, usually pennies; a ChatGPT subscription does not work). The rest works without it. [Set it up in 5 minutes](/help/tutorials/openai-api-setup).
+> **Heads up:** The AI features in this butler (AI-generated images and AI caption help) use your own OpenAI API key (you pay OpenAI directly, usually pennies; a ChatGPT subscription does not work), unless you are on the Beginner plan, where a limited hosted allowance covers you. The rest works without it. [Set it up in 5 minutes](/help/tutorials/openai-api-setup).
 
 ## What Social Posting Butler does
 
@@ -16,7 +16,7 @@ It is also the hub other butlers hand their posts to, so everything you have sch
 
 Every post you compose is one of two kinds:
 
-- **Schedule once**: publishes a single time at a date and time you pick, then it is done.
+- **Schedule once**: publishes a single time at a date and time you pick, then it is done. Turn on **Repost this automatically** and pick how many days, and once it posts it quietly becomes an evergreen post on that cadence instead of retiring, so a post worth repeating does not have to be rebuilt by hand.
 - **Evergreen**: re-posts on its own cadence forever, until you turn it off. Pick a simple interval (every few hours or days) or specific days of the week at a set time. This is the "set it and forget it" option for content that stays fresh, like a recurring reminder, a signature tip, or a always-relevant recommendation.
 
 You can also **Post now** to publish immediately without saving it to your library.
@@ -24,16 +24,18 @@ You can also **Post now** to publish immediately without saving it to your libra
 ## Composing a post
 
 1. Open **Social Posting Butler** and go to the **Compose** tab.
-2. Write your **caption**.
-3. Choose a **photo**:
+2. Write your **caption**, or click **AI Caption** for help: give it a topic and tone (or leave both blank for general ideas), or turn on **Write in my voice** once you have sent a couple of posts to get captions styled like your own past writing. Pick one of the variants to drop it straight into the caption box.
+3. Click **Suggest hashtags** to add a ready-made set (your own saved defaults plus a few seasonal and topic-relevant tags) to the end of your caption. It never repeats a hashtag already in your text.
+4. If your caption runs long, watch for the length warning under the caption box: it flags when you are over Instagram's, Threads', or Telegram's caption limit for whichever destinations you have picked.
+5. Choose a **photo**:
    - **Upload your own**: pick one or more images from your computer (up to 10). They are copied into the app so they stay available even if you move the originals.
-   - **Generate with AI**: describe the image you want and Butler creates one for you. This uses your OpenAI key, the same one the rest of the app uses for AI images.
+   - **Generate with AI**: describe the image you want and Butler creates one for you.
    - **No photo**: a text-only post.
-4. Add your **link**, if any. Turn on **Post the link in the first comment** if you would rather the link land as the first comment than sit in the caption. This is a common trick to keep the caption clean and avoid a platform down-ranking a post with an outbound link.
-5. Pick your **destinations**, or leave them all unchecked to use every destination you have enabled.
-6. Choose **when to post**: Post now, Schedule once, or Evergreen.
-7. Turn on **Watch it run** in the top right of the app if you want to see the browser window while it posts. Turn it off there to run in the background.
-8. Click **Save to library** (for scheduled or evergreen posts) or **Publish now**.
+6. Add your **link**, if any. Turn on **Post the link in the first comment** if you would rather the link land as the first comment than sit in the caption. This is a common trick to keep the caption clean and avoid a platform down-ranking a post with an outbound link.
+7. Pick your **destinations**, or leave them all unchecked to use every destination you have enabled.
+8. Choose **when to post**: Post now, Schedule once, or Evergreen.
+9. Turn on **Watch it run** in the top right of the app if you want to see the browser window while it posts. Turn it off there to run in the background.
+10. Click **Save to library** (for scheduled or evergreen posts) or **Publish now**. If your seat cannot approve content (see **Team approvals** below), this button reads **Submit for approval** instead, and the post waits for an owner or manager to approve it before it ever goes out.
 
 ## Seeing what is coming up
 
@@ -44,6 +46,27 @@ The **Upcoming** tab shows every post that is scheduled or evergreen, in whichev
 - **Table**: a sortable list. Click a column heading to sort by time, post, or type.
 
 From any view you can **Edit** a post (it opens back in Compose), **Publish now**, or **Delete** it. An evergreen post shows every upcoming time it will fire over the next several weeks.
+
+### Importing a content calendar
+
+Click **Import CSV** on the Upcoming tab for two ways to bulk-load posts:
+
+- **Content calendar**: bring any spreadsheet with a date column plus a caption, link, or image path. Column names are matched automatically, so Date, Caption, Link, Image, Destinations, and Title all work in any order, under almost any header wording. Each row becomes a one-time scheduled post; re-importing the same file updates matching rows instead of duplicating them, and a row you have since hand-edited is left alone.
+- **Butler Challenge queue**: the fixed-format queue used for Butler's own posting challenges, targeting a single Facebook group.
+
+## Reporting: see what actually landed
+
+The **History** tab shows a chip for every destination each post was sent to: a green check for delivered, a red mark for failed (hover it for the reason). If anything failed, a **Retry failed destinations** button re-sends only the ones that did not go through, leaving the successful ones alone.
+
+A post that keeps failing (for example, a dead login or a broken link) stops retrying silently forever: after several failed attempts in a row, Butler disables it automatically so it is not hammering a destination that will not accept it. Re-enable it from the Upcoming tab once you have fixed the underlying problem.
+
+## Quiet hours
+
+Social Posting Butler's scheduler honors the same quiet hours (or active-hours window) you set for Deals Butler, so an evergreen post never fires in the middle of the night just because this workspace did not know about your schedule. The **Settings** tab shows a read-only summary of your current quiet hours, with a link to manage them in Deals Butler.
+
+## Team approvals
+
+If you run this app on a Team or Agency seat with per-seat permissions turned on, an owner or manager can require that a VA's posts be approved before they go out. A seat without the **Approve posts before they go out** permission has its saves land in the new **Approvals** tab instead of posting directly; an owner or manager reviews each one there and approves or rejects it. Solo installs, and any install that has not turned on seat permissions, are unaffected: everything you save posts normally, the same as always.
 
 ## Destinations
 
@@ -56,11 +79,12 @@ Your post library and its schedule live on your computer, alongside the app's ot
 ## Common gotchas
 
 - **"No destinations enabled yet"**: enable at least one destination in Deals Butler first, then come back.
-- **AI image fails**: set your OpenAI key in API Integrations. The same key powers every AI image in the app.
-- **A scheduled post did not fire**: check that the post is enabled and that automation is not globally paused. Evergreen posts skip a missed time (for example if the computer was asleep) rather than posting it late.
+- **AI help fails**: set your OpenAI key in API Integrations (or confirm you are on a plan with hosted AI allowance remaining). The same key powers every AI feature in the app.
+- **A scheduled post did not fire**: check that the post is enabled, has not been auto-disabled after repeated failures, and is not sitting in Approvals waiting on a decision. Also confirm automation is not globally paused and you are not inside your quiet hours. Evergreen posts skip a missed time (for example if the computer was asleep) rather than posting it late.
 - **The link is not in the caption**: if you turned on "Post the link in the first comment," the link is posted as the first comment instead, by design.
+- **My post says "Submit for approval" instead of "Save to library"**: your seat does not have permission to approve content. An owner or manager needs to approve it from the Approvals tab.
 
 ## Related
 
-- [Deals Butler tutorial](/help/tutorials/deals) - where you enable and configure your Social Destinations.
-- [API Integrations tutorial](/help/tutorials/api-integrations) - where you set the OpenAI key used for AI images.
+- [Deals Butler tutorial](/help/tutorials/deals) - where you enable and configure your Social Destinations and quiet hours.
+- [API Integrations tutorial](/help/tutorials/api-integrations) - where you set the OpenAI key used for AI images and AI captions.

@@ -1,10 +1,10 @@
 ---
 title: "Social Posting Butler : planifiez vos propres posts permanents"
-summary: Chargez vos propres posts une fois (votre photo ou une photo générée par IA, votre texte, votre lien ou un lien dans le premier commentaire) et laissez-les se publier selon une planification. Voyez tout dans une vue calendrier, cartes ou tableau.
+summary: Chargez vos propres posts une fois (votre photo ou une photo générée par IA, votre texte, votre lien ou un lien dans le premier commentaire) et laissez-les se publier selon une planification. Inclut l'aide IA pour le texte et les hashtags, de vrais rapports de livraison, le recyclage de contenu et les approbations d'équipe.
 category: Other
 ---
 
-> **À savoir :** Les fonctions IA de ce butler (les images générées par IA) utilisent votre propre clé API OpenAI (vous payez OpenAI directement, généralement quelques centimes ; un abonnement ChatGPT ne fonctionne pas). Le reste fonctionne sans elle. [Configurez-la en 5 minutes](/help/tutorials/openai-api-setup).
+> **À savoir :** Les fonctions IA de ce butler (les images générées par IA et l'aide IA pour le texte) utilisent votre propre clé API OpenAI (vous payez OpenAI directement, généralement quelques centimes ; un abonnement ChatGPT ne fonctionne pas), sauf si vous êtes sur le plan Beginner, où un quota hébergé limité vous couvre. Le reste fonctionne sans elle. [Configurez-la en 5 minutes](/help/tutorials/openai-api-setup).
 
 ## Ce que fait Social Posting Butler
 
@@ -16,7 +16,7 @@ C'est aussi le hub auquel les autres butlers confient leurs posts, donc tout ce 
 
 Chaque post que vous composez est de l'un des deux types :
 
-- **Planifier une fois** : se publie une seule fois à la date et l'heure que vous choisissez, puis c'est terminé.
+- **Planifier une fois** : se publie une seule fois à la date et l'heure que vous choisissez, puis c'est terminé. Activez **Republier ceci automatiquement** et choisissez tous les combien de jours, et dès qu'il se publie, il devient discrètement un post permanent selon cette cadence au lieu de s'arrêter, donc un post qui vaut la peine d'être répété n'a pas besoin d'être recréé à la main.
 - **Permanent** : se republie selon sa propre cadence pour toujours, jusqu'à ce que vous le désactiviez. Choisissez un intervalle simple (toutes les quelques heures ou jours) ou des jours précis de la semaine à une heure fixe. C'est l'option "réglez-le et oubliez-le" pour du contenu qui reste pertinent, comme un rappel récurrent, un conseil signature ou une recommandation toujours d'actualité.
 
 Vous pouvez aussi utiliser **Publier maintenant** pour publier immédiatement sans l'enregistrer dans votre bibliothèque.
@@ -24,16 +24,18 @@ Vous pouvez aussi utiliser **Publier maintenant** pour publier immédiatement sa
 ## Composer un post
 
 1. Ouvrez **Social Posting Butler** et allez dans l'onglet **Composer**.
-2. Écrivez votre **texte**.
-3. Choisissez une **photo** :
+2. Écrivez votre **texte**, ou cliquez sur **Légende IA** pour obtenir de l'aide : donnez un sujet et un ton (ou laissez les deux vides pour des idées générales), ou activez **Écrire dans mon style** une fois que vous avez envoyé quelques posts pour obtenir des textes dans le style de vos propres écrits précédents. Choisissez une des variantes pour l'insérer directement dans le champ de texte.
+3. Cliquez sur **Suggérer des hashtags** pour ajouter un ensemble déjà prêt (vos propres valeurs par défaut enregistrées plus quelques hashtags saisonniers et pertinents pour le sujet) à la fin de votre texte. Il ne répète jamais un hashtag déjà présent dans votre texte.
+4. Si votre texte est trop long, surveillez l'avertissement de longueur sous le champ de texte : il signale quand vous dépassez la limite de caractères d'Instagram, de Threads ou de Telegram pour les destinations que vous avez choisies.
+5. Choisissez une **photo** :
    - **Importer la vôtre** : choisissez une ou plusieurs images sur votre ordinateur (jusqu'à 10). Elles sont copiées dans l'app pour rester disponibles même si vous déplacez les originales.
-   - **Générer avec l'IA** : décrivez l'image que vous voulez et Butler en crée une pour vous. Cela utilise votre clé OpenAI, la même que le reste de l'app pour les images IA.
+   - **Générer avec l'IA** : décrivez l'image que vous voulez et Butler en crée une pour vous.
    - **Aucune photo** : un post en texte seul.
-4. Ajoutez votre **lien**, s'il y en a un. Activez **Publier le lien dans le premier commentaire** si vous préférez que le lien arrive en premier commentaire plutôt que dans le texte. C'est une astuce courante pour garder le texte propre et éviter qu'une plateforme rétrograde un post contenant un lien sortant.
-5. Choisissez vos **destinations**, ou laissez tout décoché pour utiliser toutes les destinations que vous avez activées.
-6. Choisissez **quand publier** : Publier maintenant, Planifier une fois ou Permanent.
-7. Laissez **Regarder faire** activé si vous voulez voir la fenêtre du navigateur pendant la publication. Désactivez-le pour l'exécuter en arrière-plan.
-8. Cliquez sur **Enregistrer dans la bibliothèque** (pour les posts planifiés ou permanents) ou sur **Publier maintenant**.
+6. Ajoutez votre **lien**, s'il y en a un. Activez **Publier le lien dans le premier commentaire** si vous préférez que le lien arrive en premier commentaire plutôt que dans le texte. C'est une astuce courante pour garder le texte propre et éviter qu'une plateforme rétrograde un post contenant un lien sortant.
+7. Choisissez vos **destinations**, ou laissez tout décoché pour utiliser toutes les destinations que vous avez activées.
+8. Choisissez **quand publier** : Publier maintenant, Planifier une fois ou Permanent.
+9. Laissez **Regarder faire** activé si vous voulez voir la fenêtre du navigateur pendant la publication. Désactivez-le pour l'exécuter en arrière-plan.
+10. Cliquez sur **Enregistrer dans la bibliothèque** (pour les posts planifiés ou permanents) ou sur **Publier maintenant**. Si votre poste ne peut pas approuver de contenu (voir **Approbations d'équipe** plus bas), ce bouton affiche **Soumettre pour approbation** à la place, et le post attend qu'un propriétaire ou un gestionnaire l'approuve avant d'être publié.
 
 ## Voir ce qui arrive
 
@@ -44,6 +46,27 @@ L'onglet **À venir** montre chaque post planifié ou permanent, dans la vue que
 - **Tableau** : une liste triable. Cliquez sur un en-tête de colonne pour trier par heure, post ou type.
 
 Depuis n'importe quelle vue, vous pouvez **Modifier** un post (il se rouvre dans Composer), **Publier maintenant** ou le **Supprimer**. Un post permanent montre chaque heure à venir où il se publiera au cours des prochaines semaines.
+
+### Importer un calendrier de contenu
+
+Cliquez sur **Importer un CSV** dans l'onglet À venir pour deux façons de charger des posts en masse :
+
+- **Calendrier de contenu** : apportez n'importe quel tableau avec une colonne de date plus un texte, un lien ou un chemin d'image. Les noms de colonnes sont détectés automatiquement, donc Date, Caption, Link, Image, Destinations et Title fonctionnent dans n'importe quel ordre, avec presque n'importe quelle formulation d'en-tête. Chaque ligne devient un post planifié unique ; réimporter le même fichier met à jour les lignes correspondantes au lieu de les dupliquer, et une ligne que vous avez déjà modifiée à la main reste inchangée.
+- **File du Défi Butler** : la file au format fixe utilisée pour les défis de publication propres à Butler, ciblant un seul groupe Facebook.
+
+## Rapports : voyez ce qui a vraiment été publié
+
+L'onglet **Historique** affiche une étiquette pour chaque destination à laquelle chaque post a été envoyé : une coche verte si livré, une marque rouge si échoué (survolez-la pour voir la raison). Si quelque chose a échoué, un bouton **Réessayer les destinations échouées** renvoie uniquement celles qui n'ont pas abouti, sans toucher à celles qui ont réussi.
+
+Un post qui continue d'échouer (par exemple, une connexion expirée ou un lien cassé) arrête de réessayer silencieusement pour toujours : après plusieurs échecs consécutifs, Butler le désactive automatiquement pour qu'il n'insiste plus sur une destination qui ne l'acceptera pas. Réactivez-le depuis l'onglet À venir une fois le problème sous-jacent résolu.
+
+## Heures de silence
+
+Le planificateur de Social Posting Butler respecte les mêmes heures de silence (ou la fenêtre d'heures actives) que vous avez définies pour Deals Butler, donc un post permanent ne se publie jamais en pleine nuit simplement parce que cet espace de travail ne connaissait pas votre horaire. L'onglet **Paramètres** affiche un résumé en lecture seule de vos heures de silence actuelles, avec un lien pour les gérer dans Deals Butler.
+
+## Approbations d'équipe
+
+Si vous utilisez cette app avec un poste Team ou Agency avec les permissions par poste activées, un propriétaire ou un gestionnaire peut exiger que les posts d'une VA soient approuvés avant d'être publiés. Un poste sans la permission **Approuver les publications avant leur envoi** voit ses enregistrements atterrir dans le nouvel onglet **Approbations** au lieu d'être publiés directement ; un propriétaire ou un gestionnaire examine chacun là-bas et l'approuve ou le rejette. Les installations individuelles, et toute installation qui n'a pas activé les permissions par poste, ne sont pas concernées : tout ce que vous enregistrez se publie normalement, comme toujours.
 
 ## Destinations
 
@@ -56,11 +79,12 @@ Votre bibliothèque de posts et sa planification vivent sur votre ordinateur, à
 ## Problèmes courants
 
 - **"Aucune destination activée pour le moment"** : activez d'abord au moins une destination dans Deals Butler, puis revenez.
-- **L'image IA échoue** : configurez votre clé OpenAI dans API Integrations. La même clé alimente toutes les images IA de l'app.
-- **Un post planifié ne s'est pas publié** : vérifiez que le post est activé et que l'automatisation n'est pas en pause globale. Les posts permanents sautent une heure manquée (par exemple si l'ordinateur était en veille) plutôt que de la publier en retard.
+- **L'aide IA échoue** : configurez votre clé OpenAI dans API Integrations (ou vérifiez qu'il vous reste un quota d'IA hébergée sur votre plan). La même clé alimente toutes les fonctions IA de l'app.
+- **Un post planifié ne s'est pas publié** : vérifiez que le post est activé, qu'il n'a pas été désactivé automatiquement après des échecs répétés, et qu'il n'attend pas de décision dans Approbations. Vérifiez aussi que l'automatisation n'est pas en pause globale et que vous n'êtes pas dans vos heures de silence. Les posts permanents sautent une heure manquée (par exemple si l'ordinateur était en veille) plutôt que de la publier en retard.
 - **Le lien n'est pas dans le texte** : si vous avez activé "Publier le lien dans le premier commentaire", le lien est publié en premier commentaire, comme prévu.
+- **Mon post affiche "Soumettre pour approbation" au lieu de "Enregistrer dans la bibliothèque"** : votre poste n'a pas la permission d'approuver du contenu. Un propriétaire ou un gestionnaire doit l'approuver depuis l'onglet Approbations.
 
 ## Associé
 
-- [Tutoriel Deals Butler](/help/tutorials/deals) - où vous activez et configurez vos Destinations sociales.
-- [Tutoriel API Integrations](/help/tutorials/api-integrations) - où vous configurez la clé OpenAI utilisée pour les images IA.
+- [Tutoriel Deals Butler](/help/tutorials/deals) - où vous activez et configurez vos Destinations sociales et vos heures de silence.
+- [Tutoriel API Integrations](/help/tutorials/api-integrations) - où vous configurez la clé OpenAI utilisée pour les images et les textes IA.

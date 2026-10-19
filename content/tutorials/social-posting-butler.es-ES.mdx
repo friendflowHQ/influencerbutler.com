@@ -1,10 +1,10 @@
 ---
 title: "Social Posting Butler: programa tus propios posts perennes"
-summary: Carga tus propios posts una vez (tu foto o una generada con IA, tu texto, tu enlace o un enlace en el primer comentario) y deja que se publiquen con una programación. Míralo todo en una vista de calendario, tarjetas o tabla.
+summary: Carga tus propios posts una vez (tu foto o una generada con IA, tu texto, tu enlace o un enlace en el primer comentario) y deja que se publiquen con una programación. Incluye ayuda de IA para el texto y los hashtags, informes reales de entrega, reciclaje de contenido y aprobaciones de equipo.
 category: Other
 ---
 
-> **Ten en cuenta:** Las funciones de IA de este butler (las imágenes generadas con IA) usan tu propia clave de API de OpenAI (pagas a OpenAI directamente, normalmente céntimos; una suscripción a ChatGPT no funciona). El resto funciona sin ella. [Configúrala en 5 minutos](/help/tutorials/openai-api-setup).
+> **Ten en cuenta:** Las funciones de IA de este butler (las imágenes generadas con IA y la ayuda de IA para el texto) usan tu propia clave de API de OpenAI (pagas a OpenAI directamente, normalmente céntimos; una suscripción a ChatGPT no funciona), salvo que estés en el plan Beginner, donde una asignación limitada alojada te cubre. El resto funciona sin ella. [Configúrala en 5 minutos](/help/tutorials/openai-api-setup).
 
 ## Qué hace Social Posting Butler
 
@@ -16,7 +16,7 @@ También es el centro al que otros butlers entregan sus posts, así que todo lo 
 
 Cada post que creas es de uno de dos tipos:
 
-- **Programar una vez**: se publica una sola vez en la fecha y hora que elijas, y ya está.
+- **Programar una vez**: se publica una sola vez en la fecha y hora que elijas, y ya está. Activa **Volver a publicar esto automáticamente** y elige cada cuántos días, y en cuanto se publique se convertirá en un post perenne con esa cadencia en lugar de retirarse, así que un post que merece repetirse no hay que volver a montarlo a mano.
 - **Perenne**: se vuelve a publicar con su propia cadencia para siempre, hasta que lo desactives. Elige un intervalo simple (cada pocas horas o días) o días concretos de la semana a una hora fija. Es la opción de "configúralo y olvídate" para contenido que se mantiene vigente, como un recordatorio recurrente, un consejo insignia o una recomendación siempre relevante.
 
 También puedes usar **Publicar ahora** para publicar de inmediato sin guardarlo en tu biblioteca.
@@ -24,16 +24,18 @@ También puedes usar **Publicar ahora** para publicar de inmediato sin guardarlo
 ## Crear un post
 
 1. Abre **Social Posting Butler** y ve a la pestaña **Crear**.
-2. Escribe tu **texto**.
-3. Elige una **foto**:
+2. Escribe tu **texto**, o pulsa **Leyenda con IA** para que te ayude: dale un tema y un tono (o deja ambos en blanco para ideas generales), o activa **Escribir con mi estilo** en cuanto hayas enviado un par de posts para conseguir textos con el estilo de tu propia escritura anterior. Elige una de las variantes para añadirla directamente al cuadro de texto.
+3. Pulsa **Sugerir hashtags** para añadir un conjunto ya preparado (tus propios valores predeterminados guardados más algunos hashtags estacionales y relevantes al tema) al final de tu texto. Nunca repite un hashtag que ya esté en tu texto.
+4. Si tu texto es muy largo, fíjate en el aviso de longitud debajo del cuadro de texto: te avisa cuando superas el límite de caracteres de Instagram, Threads o Telegram para los destinos que hayas elegido.
+5. Elige una **foto**:
    - **Subir la tuya**: elige una o varias imágenes de tu ordenador (hasta 10). Se copian en la app para que sigan disponibles aunque muevas las originales.
-   - **Generar con IA**: describe la imagen que quieres y Butler crea una por ti. Usa tu clave de OpenAI, la misma que usa el resto de la app para imágenes con IA.
+   - **Generar con IA**: describe la imagen que quieres y Butler crea una por ti.
    - **Sin foto**: un post solo de texto.
-4. Añade tu **enlace**, si tienes. Activa **Publicar el enlace en el primer comentario** si prefieres que el enlace aparezca como primer comentario en lugar de en el texto. Es un truco habitual para mantener el texto limpio y evitar que una plataforma penalice un post con un enlace saliente.
-5. Elige tus **destinos**, o déjalos todos sin marcar para usar todos los destinos que tengas activados.
-6. Elige **cuándo publicar**: Publicar ahora, Programar una vez o Perenne.
-7. Deja **Watch it run** activado (parte superior derecha de la app, junto a la campana) si quieres ver la ventana del navegador mientras publica. Desactívalo para ejecutarlo en segundo plano.
-8. Haz clic en **Guardar en la biblioteca** (para posts programados o perennes) o en **Publicar ahora**.
+6. Añade tu **enlace**, si tienes. Activa **Publicar el enlace en el primer comentario** si prefieres que el enlace aparezca como primer comentario en lugar de en el texto. Es un truco habitual para mantener el texto limpio y evitar que una plataforma penalice un post con un enlace saliente.
+7. Elige tus **destinos**, o déjalos todos sin marcar para usar todos los destinos que tengas activados.
+8. Elige **cuándo publicar**: Publicar ahora, Programar una vez o Perenne.
+9. Deja **Watch it run** activado (parte superior derecha de la app, junto a la campana) si quieres ver la ventana del navegador mientras publica. Desactívalo para ejecutarlo en segundo plano.
+10. Haz clic en **Guardar en la biblioteca** (para posts programados o perennes) o en **Publicar ahora**. Si tu puesto no puede aprobar contenido (ver **Aprobaciones de equipo** más abajo), este botón dice **Enviar para aprobación** en su lugar, y el post espera a que un propietario o gestor lo apruebe antes de publicarse.
 
 ## Ver lo que viene
 
@@ -44,6 +46,27 @@ La pestaña **Próximos** muestra todos los posts programados o perennes, en la 
 - **Tabla**: una lista ordenable. Haz clic en un encabezado de columna para ordenar por hora, post o tipo.
 
 Desde cualquier vista puedes **Editar** un post (se abre de nuevo en Crear), **Publicar ahora** o **Eliminarlo**. Un post perenne muestra cada próxima hora en que se publicará durante las siguientes semanas.
+
+### Importar un calendario de contenido
+
+Pulsa **Importar CSV** en la pestaña Próximos para dos formas de cargar posts en bloque:
+
+- **Calendario de contenido**: trae cualquier hoja de cálculo con una columna de fecha más un texto, enlace o ruta de imagen. Los nombres de columna se detectan automáticamente, así que Date, Caption, Link, Image, Destinations y Title funcionan en cualquier orden, con casi cualquier redacción de encabezado. Cada fila se convierte en un post programado único; volver a importar el mismo archivo actualiza las filas que coinciden en lugar de duplicarlas, y una fila que ya hayas editado a mano se deja tal cual.
+- **Cola del Reto Butler**: la cola de formato fijo que se usa para los retos de publicación propios de Butler, dirigida a un único grupo de Facebook.
+
+## Informes: ve qué se publicó realmente
+
+La pestaña **Historial** muestra una etiqueta por cada destino al que se envió cada post: una marca verde si se entregó, una marca roja si falló (pasa el ratón por encima para ver el motivo). Si algo falló, un botón **Reintentar destinos fallidos** vuelve a enviar solo los que no llegaron, sin tocar los que ya tuvieron éxito.
+
+Un post que sigue fallando (por ejemplo, por una sesión caducada o un enlace roto) deja de reintentarse en silencio para siempre: tras varios intentos fallidos seguidos, Butler lo desactiva automáticamente para que no siga insistiendo en un destino que no lo va a aceptar. Vuelve a activarlo desde la pestaña Próximos en cuanto hayas solucionado el problema.
+
+## Horas de silencio
+
+El programador de Social Posting Butler respeta las mismas horas de silencio (o la ventana de horas activas) que configuraste para Deals Butler, así que un post perenne nunca se publica en mitad de la noche solo porque este espacio de trabajo no conociera tu horario. La pestaña **Configuración** muestra un resumen de solo lectura de tus horas de silencio actuales, con un enlace para gestionarlas en Deals Butler.
+
+## Aprobaciones de equipo
+
+Si usas esta app con un puesto de equipo (Team o Agency) con los permisos por puesto activados, un propietario o gestor puede exigir que se aprueben los posts de una VA antes de que se publiquen. Un puesto sin el permiso **Aprobar publicaciones antes de que salgan** guarda sus posts en la nueva pestaña **Aprobaciones** en lugar de publicarlos directamente; un propietario o gestor revisa cada uno allí y lo aprueba o lo rechaza. Las instalaciones individuales, y cualquier instalación que no haya activado los permisos por puesto, no se ven afectadas: todo lo que guardes se publica con normalidad, como siempre.
 
 ## Destinos
 
@@ -56,11 +79,12 @@ Tu biblioteca de posts y su programación viven en tu ordenador, junto a los dem
 ## Problemas habituales
 
 - **"Aún no hay destinos activados"**: activa al menos un destino en Deals Butler primero, y luego vuelve.
-- **La imagen de IA falla**: configura tu clave de OpenAI en API Integrations. La misma clave alimenta todas las imágenes de IA de la app.
-- **Un post programado no se publicó**: comprueba que el post está activado y que la automatización no está pausada globalmente. Los posts perennes se saltan una hora perdida (por ejemplo, si el ordenador estaba en reposo) en lugar de publicarla tarde.
+- **La ayuda de IA falla**: configura tu clave de OpenAI en API Integrations (o confirma que tienes asignación de IA alojada disponible en tu plan). La misma clave alimenta todas las funciones de IA de la app.
+- **Un post programado no se publicó**: comprueba que el post está activado, que no se ha desactivado automáticamente tras fallos repetidos, y que no está esperando una decisión en Aprobaciones. Comprueba también que la automatización no está pausada globalmente y que no estás dentro de tus horas de silencio. Los posts perennes se saltan una hora perdida (por ejemplo, si el ordenador estaba en reposo) en lugar de publicarla tarde.
 - **El enlace no está en el texto**: si activaste "Publicar el enlace en el primer comentario", el enlace se publica como primer comentario, tal como está diseñado.
+- **Mi post dice "Enviar para aprobación" en vez de "Guardar en la biblioteca"**: tu puesto no tiene permiso para aprobar contenido. Un propietario o gestor debe aprobarlo desde la pestaña Aprobaciones.
 
 ## Relacionado
 
-- [Tutorial de Deals Butler](/help/tutorials/deals) - donde activas y configuras tus Destinos sociales.
-- [Tutorial de API Integrations](/help/tutorials/api-integrations) - donde configuras la clave de OpenAI usada para las imágenes de IA.
+- [Tutorial de Deals Butler](/help/tutorials/deals) - donde activas y configuras tus Destinos sociales y tus horas de silencio.
+- [Tutorial de API Integrations](/help/tutorials/api-integrations) - donde configuras la clave de OpenAI usada para las imágenes y los textos con IA.

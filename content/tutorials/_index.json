@@ -344,7 +344,7 @@
       "id": "social-posting-butler",
       "title": "Social Posting Butler: schedule your own evergreen posts",
       "category": "Other",
-      "summary": "Load your own posts once (your photo or an AI-generated one, your caption, your link or a link in the first comment) and let them publish on a schedule. See everything in a calendar, card, or table view.",
+      "summary": "Load your own posts once (your photo or an AI-generated one, your caption, your link or a link in the first comment) and let them publish on a schedule. AI caption and hashtag help, real delivery reporting, content recycling, and team approvals included.",
       "order": 72,
       "locales": ["en-US", "es-ES", "fr-FR"],
       "audience": "power"
