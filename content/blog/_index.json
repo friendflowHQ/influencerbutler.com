@@ -2,6 +2,20 @@
   "version": 1,
   "posts": [
     {
+      "id": "is-your-private-proxy-really-private",
+      "title": "Your 'Private' Proxy Might Not Be Private: What Proxy Providers Don't Tell You",
+      "category": "Amazon",
+      "summary": "Even the right kind of proxy, residential, dedicated, paid for and labeled private, can still be shared on the provider's back end without you knowing. Here is what that actually means, and the questions to ask before you trust any provider with accounts that matter.",
+      "date": "2026-10-19",
+      "author": "Liz Dean",
+      "readingTime": "7 min read",
+      "keywords": "is my residential proxy shared, private proxy not actually private, dedicated proxy still shared, how to vet a proxy provider, residential proxy exclusivity, ip reputation checker, asn lookup proxy, ethically sourced residential proxy, static residential proxy checklist, amazon influencer proxy safety",
+      "image": "/assets/blog/is-your-private-proxy-really-private.png",
+      "imageAlt": "Illustration of two identical keys opening the same locked mailbox, representing a private proxy address quietly handed out to more than one customer",
+      "imagePrompt": "Editorial flat illustration of a single locked mailbox at a shipping warehouse with two identical keys floating near its lock, one held by a trustworthy-looking hand and one by a shadowy second hand, a quiet this-looks-safe-but-is-it mood, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
+      "order": 1
+    },
+    {
       "id": "cloud-automation-data-center-proxy-ban-risk",
       "title": "Does Your Amazon Influencer Tool Run While Your Computer Is Off? Here Is What That Actually Means",
       "category": "Amazon",
