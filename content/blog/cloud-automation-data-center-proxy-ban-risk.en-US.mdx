@@ -16,7 +16,7 @@ The short version: if a tool promises to keep accepting your Creator Connections
 
 ## There is no official shortcut for this
 
-Amazon does not offer an official way for outside tools to accept Creator Connections campaigns on your behalf. No approved connection, no shortcut. That means any tool doing this "in the cloud" is running an actual web browser against Amazon's website, clicking around like a person would, except nobody is actually there. It is doing this on a server, while you sleep.
+Amazon does not offer a public, approved API for outside tools to accept Creator Connections campaigns on your behalf. No approved connection, no shortcut. Every tool, including ours, works through your own logged-in Amazon session, either by clicking the dashboard the way you would or by sending the same requests the dashboard sends. So a tool that keeps going while your computer is off has to be holding your Amazon login on someone else's server, running a browser (or replaying the dashboard's own requests) with nobody actually there. It is doing this on a server, while you sleep.
 
 ## Why that points at a data center IP
 
