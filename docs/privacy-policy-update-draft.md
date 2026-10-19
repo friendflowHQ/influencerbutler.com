@@ -235,3 +235,70 @@ Publishing the retention periods makes them commitments. Today none is enforced 
 2. Scheduled cleanup: AI chats and call recordings at 12 months, support tickets and R2 attachments at 3 years, email events at 24 months.
 
 Status update (2026-10-18): items built and committed, NOT yet deployed or run against production. AI chats: `/api/cron/purge-ai-sessions` (daily, this repo) plus the desktop chat history prune. Call recordings: `/api/cron/purge-call-recordings` (daily; deletes the Recall.ai media, then clears the booking's recording fields). Support tickets and R2 attachments: hourly purge in the feedback Worker (`workers/feedback/src/retention.js`, 3 years from last activity). Still open: email events at 24 months, group-event recordings, and self-serve deletion of tickets/R2/Recall data. Before the first live run, call each cron with `?dry=1` (feedback Worker: `RETENTION_DRY_RUN=1`) and check the counts.
+
+---
+
+## Update 2026-10-19: Mobile companion app (brand new this week, currently undisclosed everywhere)
+
+**Not mechanical. Do not publish without sign-off.** This is a first disclosure of a new product surface, plus a new instance of the "we store a credential/session server-side" pattern that §2.2/§2.5 already treat carefully for Creator API credentials. Flagging per the standing rule: a new instance of that pattern gets the same careful treatment, not a rubber stamp.
+
+### What shipped
+
+Between 2026-10-18 15:51 and 2026-10-19 10:38 (desktop repo: `app/mobile-bridge/`, `mobile-web/`, `workers/mobile-hub/`, `docs/developer/mobile-protocol.md`), a full mobile companion web app shipped: a installable PWA at `m.influencerbutler.com` that pairs to the desktop app and lets you check butler status, pause/stop butlers, approve share-sheet actions, and get push notifications, from a phone. **Zero mentions of "mobile" exist today in `public/legal/privacy.html`, `public/legal/terms.html`, or `src/app/extension/privacy/page.tsx`.** The legal-notice paragraph's definition of "the Software" also does not list it.
+
+### New data this introduces (verified against the code, not guessed)
+
+1. **Pairing by QR code** (`POST /mobile/pair/start` + `/claim`): the phone generates a P-256 keypair and sends its public key to the hub; no email involved. The account id sent is `sha256(license key)`, never the raw key.
+2. **Pairing by email sign-in** (`POST /auth/request-magic-link` with `client: "phone"`, then `POST /license/phone-key`): the phone's **email address** is now tied to a new server-side credential, `IBPHONE-*`, stored in the licensing Worker's KV (`workers/licensing/src/routes/phoneDeviceKey.js`): `{ acct, email, variantId, status, keyHash, deviceId, label, createdAt, expiresAt, revoked }`. Lives 90 days, silently refreshable, with a hard 1-year cap that forces a fresh sign-in. This is a new server-side credential record, the same pattern as the Creator API vault, for a new purpose.
+3. **Device records in the mobile hub** (a Cloudflare Durable Object, one per account): device id, label, public key, `enrolledVia` (`qr` or `signin`), pending/approved state, and for signed-in phones, the email. The hub relays commands and status between phone and desktop end-to-end encrypted (the hub cannot read the content), but it does see device metadata, timestamps, and command ids for replay protection.
+4. **Push notification tokens** (new, `mobile-web/public/js/lib/push.js` + `workers/mobile-hub/src/lib/push.js`): the phone registers an FCM token (Firebase Cloud Messaging; APNs for iOS is reached through Firebase, so no separate Apple credential). The hub stores `{ token, platform }` per phone and calls Firebase's HTTP v1 API to deliver a short title/text the desktop chose. **This is a new subprocessor (Google Firebase) and a new data category (device push token) that is not in §2.3 or §2.1/§2.2 anywhere.** Per the code's own comment, this path is "NOT VERIFIED against real FCM yet... no Firebase project exists" so it may not be live-sending yet, but the token collection and storage code is.
+5. **App Lock** (keypad + fingerprint/face): this appears to be local-only, using the phone OS's own biometric unlock APIs (WebAuthn/platform credential), not sending biometric data anywhere. Worth a one-line confirmation from whoever reviews this that no biometric template or image ever reaches `mobile-web`'s own code before this gets stated as fact in the policy.
+6. **Everything else** (multi-select pause/stop, per-butler mute/quiet hours, share-sheet actions for campaign alert / creator watch / pitch / sample / idea list, "sign out everywhere", revoke-all) is control-plane traffic over the same encrypted relay, surfacing data categories already disclosed elsewhere (butler status, the five listed workspaces' own data) through a new destination (the phone). The new fact worth a sentence is that this data now also reaches a phone, not just the desktop and dashboard.
+
+### Why this isn't mechanical
+
+- First disclosure of a new mobile-app capability (explicit "never auto-publish" criterion).
+- New server-side storage of a credential/session record (`IBPHONE-*`, device records) tied to an email address, for a new purpose. Same pattern as the Creator API vault, which required careful §2.5 language rather than a rubber stamp.
+- New subprocessor (Google Firebase/FCM) whose addition is bundled with a new data category (push token), so it does not qualify for the "add a subprocessor when purpose+URL are the only new facts" mechanical carve-out.
+- Retention for device records, phone-key records (120-day KV TTL per `RECORD_TTL_SECONDS` in `phoneDeviceKey.js`), and push tokens is not yet promised anywhere in §7, and no one but Liz/counsel should decide what to promise.
+
+### Proposed blocks (ready to paste once approved)
+
+**Block L: legal-notice paragraph (privacy.html and terms.html).** Add "the Influencer Butler mobile companion app" to the list of surfaces the Software definition covers, alongside the desktop app, extension, and website.
+
+**Block M: new §2.11 (privacy.html, insert after §2.10, before §3):**
+
+```html
+<h3>2.11 Mobile companion app</h3>
+<p>If you pair a phone to the Influencer Butler mobile companion app (a web app you can install from <code>m.influencerbutler.com</code>), we process the following so it can show your butlers' status and relay your taps back to your computer:</p>
+<ul>
+    <li><strong>Pairing by QR code</strong>: your phone generates its own encryption key on the device. We never see your license key; we see a one-way hash of it (the same account identifier used elsewhere) and your phone's public key.</li>
+    <li><strong>Pairing by signing in with your email</strong>: if you pair by email instead of a QR code, we issue a phone-specific sign-in credential tied to your email address, separate from your license key, that expires and must be renewed (contract performance).</li>
+    <li><strong>Device information</strong>: a label you or your phone chooses (for example a device name), and whether the device is approved. You can see and remove paired phones, and sign out all phones at once, from Settings.</li>
+    <li><strong>Push notifications</strong>: if you allow notifications, your phone registers a push token with Google Firebase Cloud Messaging so we can deliver a short alert (for example, that a butler needs your attention). The alert text is limited to what is safe to show on a lock screen; the detailed status and commands between your phone and computer are end-to-end encrypted, so our servers relay them without being able to read them.</li>
+    <li><strong>What you already see on your computer or dashboard</strong>: status, counts, and controls for the butlers and features described elsewhere in this policy (for example §2.2, §2.5) also become visible on your paired phone. Pairing a phone does not create a new category of data about those features; it adds a new place you can view and act on it.</li>
+</ul>
+<p>[CONFIRM: retention period for device records, phone sign-in credentials, and push tokens after a phone is removed or inactive.] [CONFIRM: whether App Lock (phone PIN/biometric unlock) ever sends biometric data to us -- our reading of the code is no, it uses the phone's own OS unlock, but this should be confirmed before we state it as fact.]</p>
+```
+
+**Block N: §2.3 addition (new subprocessor line):**
+
+```html
+<li><strong>Google LLC (Firebase Cloud Messaging)</strong>: delivers push notifications to the mobile companion app (§2.11). Receives a device push token; does not receive the content of your butlers' status or commands, which travel end-to-end encrypted. This is separate from the Google Calendar/Meet/YouTube/Analytics uses described above. [CONFIRM: Firebase's privacy policy URL to cite -- https://firebase.google.com/support/privacy or Google's main policy, whichever you prefer to cite.]</li>
+```
+
+**Block O: §7 retention addition:**
+
+```html
+<li><strong>Mobile companion app</strong>: device records and phone sign-in credentials, until you remove the phone or it is inactive for [CONFIRM: a chosen period -- the phone sign-in credential itself expires after 90 days unless renewed, with a 1-year hard cap forcing re-sign-in; code does not yet define a cleanup period for removed/revoked device records]. Push tokens: deleted when you remove the phone or turn off notifications.</li>
+```
+
+**Block P: §9 international transfers:** add Google (Firebase) to the list of US-processed providers if Block N is accepted; it already names "Google" for Calendar/Meet/YouTube/GA4, so this may just need a parenthetical rather than a new entry.
+
+### Smaller, lower-priority item noticed in the same sweep
+
+**Target.com rate-card lookups (extension).** This week's Target parity work (`extension/src/background/rate-card.ts`, `/api/extension/target-rate-card`) sends Target product IDs (TCINs) to our own server for a commission-rate lookup, the same pattern already disclosed for Amazon ASINs in the extension privacy page's "Lookups that do not need an account" section, just for a new retailer and product-id shape. Judgment call on whether this needs its own sentence or is already covered by the existing general wording; flagging rather than deciding, per the "first disclosure" caution for retailer-specific flows. If you'd rather treat this one as mechanical and just add "and Target TCINs" to the existing sentence, say so and it can go out with the next mechanical batch.
+
+### What to do with this section
+
+Liz/counsel should: (1) decide the retention periods marked [CONFIRM] above, (2) confirm the Firebase citation, (3) confirm the App Lock biometric claim, (4) decide the Target TCIN item, then these blocks can be pasted into `privacy.html`, `terms.html`, and (if the mobile app ever gets its own store listing) a mobile-app-specific privacy page. Until then nothing here touches the live files.
