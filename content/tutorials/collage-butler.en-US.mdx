@@ -6,7 +6,7 @@ category: Collage
 
 ## What Collage Butler does
 
-Collage Butler turns a handful of Amazon products into a single, ready-to-post collage image. You give it keywords, it pulls matching products from the Creators API, arranges their photos in the layout you choose, adds your headline and call to action, and hands the finished image to Social Posting Butler. It is built for round-up style posts (new arrivals, a themed edit, a sale grid) where one image needs to show several products at once.
+Collage Butler turns a handful of Amazon products into a single, ready-to-post collage image. You give it keywords, it pulls matching products from the Creators API, arranges their photos in the layout you choose, adds your headline and call to action, and hands the finished image to Social Posting Butler. It is built for round-up style posts (new arrivals, a themed edit, a sale grid) where one image needs to show several products at once. You can also stage your products inside a shopping cart for the viral "5 things in a Walmart cart" look, and make a whole batch of graphics in one run.
 
 ## Before you start
 
@@ -20,14 +20,18 @@ Collage Butler turns a handful of Amazon products into a single, ready-to-post c
 2. Open the **Keywords & Filters** sub-section. Enter your **Keywords**, and optionally a **Category**, a **Minimum price**, and a **Maximum price**. These decide which Amazon products get pulled into the collage.
 3. Back on the main panel, open the **AI Collage Generator** tab. Under **Render mode**, pick one: **Template (real product photos)** for an exact, repeatable layout, **AI generated**, or **Hybrid (AI background + real photos)**.
 4. Choose a **Layout**, such as 2 x 2 (4 products) or 3 x 3 (9 products). The layout sets how many product photos appear.
-5. Type a **Headline** (for example, Amazon New Arrivals) and a **Call to action** (for example, Shop now).
-6. Click **Generate collage** to build the image and see it in the preview, or click **Generate and queue to Social Posting** to build it and send it straight to Social Posting Butler.
-7. Open the **Collage Gallery** sub-section any time to review every collage you have generated and its post status. This view is read-only.
-8. To reuse a look, open **Collage Templates** and save a default layout, font, colors, and headline and call-to-action presets you can pull into future collages.
+5. Pick an **AI render style** (used by the AI and Hybrid modes). Choose **Walmart cart** to stage your products inside a shopping cart on a bright store background, the viral "5 things in a cart" look, or pick **Magazine cover**, **Seasonal banner**, or **Minimalist flat lay**. Leave it on **Auto** to keep the default style.
+6. Type a **Headline** (for example, Amazon New Arrivals) and a **Call to action** (for example, Shop now).
+7. Set **How many graphics** to make a batch in one run. Leave it at 1 for a single collage, or raise it (up to 20) to get several at once. Tip: put one keyword theme per line in Keywords & Filters, and each theme becomes its own set of graphics, so one batch can cover several collections.
+8. Click **Generate collage** to build the image (or the whole batch) and see it in the preview, or click **Generate and queue to Social Posting** to build them and send them straight to Social Posting Butler.
+9. Open the **Collage Gallery** sub-section any time to review every collage you have generated and its post status. This view is read-only.
+10. To reuse a look, open **Collage Templates** and save a default layout, font, colors, and headline and call-to-action presets you can pull into future collages.
 
 ## Notes
 
 - **This workspace is in beta** and still being polished. Some pieces, like the **Build Your Post** caption editor and the full **Settings** panel (brand colors, watermark, spend cap), come online as the generator wiring lands, so expect a few gaps.
 - The **Console Log** tab shows generation activity and is handy if a collage does not come out as expected.
+- **Batch runs make several images at once.** In AI or Hybrid mode each image carries a small per-image cost, so a batch is capped at 20 graphics per run.
+- The **Walmart cart** and other AI styles apply to the AI and Hybrid render modes. Template mode always uses your real product photos in a grid, so the style picker does not change it.
 - Product photos come from the Amazon Creators API, so a keyword with no matching products yields an empty collage. Widen the keyword or ease the price filters if nothing shows up.
 - AI and Hybrid render modes generate new imagery and can carry a small per-image cost. A monthly spend cap keeps that in check once the Settings panel is live.

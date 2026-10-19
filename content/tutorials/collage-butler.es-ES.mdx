@@ -6,7 +6,7 @@ category: Collage
 
 ## Que hace Collage Butler
 
-Collage Butler convierte un punado de productos de Amazon en una sola imagen de collage lista para publicar. Le das palabras clave, trae los productos que coinciden desde la Creators API, coloca sus fotos en el diseno que elijas, anade tu titular y tu llamada a la accion, y entrega la imagen final a Social Posting Butler. Esta pensado para publicaciones tipo recopilatorio (novedades, una seleccion tematica, una parrilla de rebajas) donde una sola imagen tiene que mostrar varios productos a la vez.
+Collage Butler convierte un punado de productos de Amazon en una sola imagen de collage lista para publicar. Le das palabras clave, trae los productos que coinciden desde la Creators API, coloca sus fotos en el diseno que elijas, anade tu titular y tu llamada a la accion, y entrega la imagen final a Social Posting Butler. Esta pensado para publicaciones tipo recopilatorio (novedades, una seleccion tematica, una parrilla de rebajas) donde una sola imagen tiene que mostrar varios productos a la vez. Tambien puedes colocar tus productos dentro de un carrito de compra para el estilo viral "5 cosas en un carrito de Walmart", y crear un lote entero de graficos de una sola vez.
 
 ## Antes de empezar
 
@@ -20,14 +20,18 @@ Collage Butler convierte un punado de productos de Amazon en una sola imagen de 
 2. Abre la subseccion **Palabras clave y filtros**. Introduce tus **Palabras clave** y, si quieres, una **Categoria**, un **Precio minimo** y un **Precio maximo**. Estos deciden que productos de Amazon entran en el collage.
 3. De vuelta en el panel principal, abre la pestana **Generador de collage IA**. En **Modo de render**, elige uno: **Plantilla (fotos reales de productos)** para un diseno exacto y repetible, **Generado por IA**, o **Hibrido (fondo IA + fotos reales)**.
 4. Elige un **Diseno**, como 2 x 2 (4 productos) o 3 x 3 (9 productos). El diseno fija cuantas fotos de producto aparecen.
-5. Escribe un **Titular** (por ejemplo, Amazon New Arrivals) y una **Llamada a la accion** (por ejemplo, Comprar ahora).
-6. Pulsa **Generar collage** para crear la imagen y verla en la vista previa, o pulsa **Generar y enviar a Social Posting** para crearla y enviarla directo a Social Posting Butler.
-7. Abre la subseccion **Collage Gallery** cuando quieras para revisar todos los collages que has generado y su estado de publicacion. Esta vista es de solo lectura.
-8. Para reutilizar un estilo, abre **Collage Templates** y guarda un diseno por defecto, una fuente, colores y ajustes de titular y llamada a la accion que puedas reutilizar en futuros collages.
+5. Elige un **Estilo de render IA** (se usa en los modos IA e Hibrido). Elige **Carrito de Walmart** para colocar tus productos dentro de un carrito de compra sobre un fondo de tienda luminoso, el estilo viral "5 cosas en un carrito", o elige **Portada de revista**, **Banner de temporada** o **Composicion minimalista**. Dejalo en **Automatico** para mantener el estilo por defecto.
+6. Escribe un **Titular** (por ejemplo, Amazon New Arrivals) y una **Llamada a la accion** (por ejemplo, Comprar ahora).
+7. Ajusta **Cuantos graficos** para crear un lote de una vez. Dejalo en 1 para un solo collage, o subelo (hasta 20) para obtener varios a la vez. Consejo: pon un tema de palabras clave por linea en Palabras clave y filtros, y cada tema se convierte en su propio conjunto de graficos, asi un lote puede abarcar varias colecciones.
+8. Pulsa **Generar collage** para crear la imagen (o el lote entero) y verla en la vista previa, o pulsa **Generar y enviar a Social Posting** para crearlos y enviarlos directo a Social Posting Butler.
+9. Abre la subseccion **Collage Gallery** cuando quieras para revisar todos los collages que has generado y su estado de publicacion. Esta vista es de solo lectura.
+10. Para reutilizar un estilo, abre **Collage Templates** y guarda un diseno por defecto, una fuente, colores y ajustes de titular y llamada a la accion que puedas reutilizar en futuros collages.
 
 ## Notas
 
 - **Este espacio de trabajo esta en beta** y todavia se esta puliendo. Algunas partes, como el editor de texto **Crear publicacion** y el panel completo de **Ajustes** (colores de marca, marca de agua, limite de gasto), se activan a medida que se termina el cableado del generador, asi que espera algunos huecos.
 - La pestana **Registro de consola** muestra la actividad de generacion y resulta util si un collage no sale como esperabas.
+- **Los lotes crean varias imagenes a la vez.** En los modos IA e Hibrido cada imagen tiene un pequeno coste por imagen, asi que un lote se limita a 20 graficos por ejecucion.
+- El estilo **Carrito de Walmart** y los demas estilos IA se aplican a los modos de render IA e Hibrido. El modo Plantilla siempre usa tus fotos reales de producto en una parrilla, asi que el selector de estilo no lo cambia.
 - Las fotos de producto vienen de la Creators API de Amazon, asi que una palabra clave sin productos que coincidan da un collage vacio. Amplia la palabra clave o suaviza los filtros de precio si no aparece nada.
 - Los modos de render IA e Hibrido generan imagenes nuevas y pueden tener un pequeno coste por imagen. Un limite de gasto mensual lo mantiene bajo control cuando el panel de Ajustes este activo.
