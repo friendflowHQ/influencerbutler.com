@@ -2,6 +2,14 @@
   "version": 1,
   "tutorials": [
     {
+      "id": "mobile-companion",
+      "title": "The phone app: watch and control Butler from anywhere",
+      "category": "Getting Started",
+      "summary": "Pair your phone with the Influencer Butler desktop app to watch it, pause or resume butlers, share products to it from any shopping app, and ask Butler AI, all from your pocket.",
+      "order": 2,
+      "locales": ["en-US", "es-ES", "fr-FR"]
+    },
+    {
       "id": "tiktok-creator-stats",
       "title": "TikTok Creator Stats: your followers and recent video performance",
       "category": "TikTok",
