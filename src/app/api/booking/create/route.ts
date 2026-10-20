@@ -7,7 +7,7 @@
  * confirmation (+.ics) + owner notification emails.
  */
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { resolveAuth } from "@/lib/license-auth";
 import { getAdmin, validateSlot, loadConfig } from "@/lib/scheduling-server";
 import { CALL_TYPES, type CallTypeKey } from "@/lib/scheduling";
 import { tierForSubscriptionStatus } from "@/lib/entitlements";
@@ -23,9 +23,15 @@ export const dynamic = "force-dynamic";
 type Body = { type?: string; startMs?: number; timezone?: string; topic?: string; topics?: unknown; name?: string };
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user?.email) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  // Dual-mode auth so the in-chat booking card books from the website cookie AND
+  // from the desktop app / Chrome extension / phone (license-key bearer).
+  const authed = await resolveAuth(request);
+  if (!authed.ok) return NextResponse.json({ error: authed.error }, { status: authed.status });
+  const userId = authed.auth.userId;
+  const userEmail = authed.auth.email;
+  // A confirmation invite + Meet attendee needs a real address. A license bearer
+  // whose email could not be read cannot be booked (rare); ask them to sign in.
+  if (!userEmail) return NextResponse.json({ error: "We could not read your email to send the invite. Please sign in on the website to book." }, { status: 401 });
 
   let body: Body;
   try { body = (await request.json()) as Body; } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
@@ -42,7 +48,7 @@ export async function POST(request: Request) {
   // Gate: support calls require an active/trial subscription.
   if (ct.requiresSubscription) {
     const { data: sub } = await admin
-      .from("subscriptions").select("status,ls_variant_id").eq("user_id", user.id)
+      .from("subscriptions").select("status,ls_variant_id").eq("user_id", userId)
       .order("created_at", { ascending: false }).limit(1).maybeSingle();
     const tier = tierForSubscriptionStatus((sub?.status as string) ?? null);
     // Beginner plans do not include 1:1 calls (Power User and every pre-split
@@ -76,7 +82,7 @@ export async function POST(request: Request) {
       description: topic || undefined,
       startMs,
       endMs: v.userEndMs,
-      attendeeEmail: user.email,
+      attendeeEmail: userEmail,
     });
     if (m) { joinUrl = m.joinUrl; provider = "google_meet"; meetingId = m.meetingId; }
   }
@@ -95,8 +101,8 @@ export async function POST(request: Request) {
   }
 
   const { data: bookingId, error } = await admin.rpc("book_call", {
-    p_user_id: user.id,
-    p_user_email: user.email,
+    p_user_id: userId,
+    p_user_email: userEmail,
     p_user_name: name,
     p_call_type: type,
     p_starts_at: new Date(startMs).toISOString(),
@@ -164,7 +170,7 @@ export async function POST(request: Request) {
   const emailData: BookingEmailData = {
     id: String(bookingId),
     callType: type,
-    userEmail: user.email,
+    userEmail: userEmail,
     userName: name,
     startMs,
     userEndMs: v.userEndMs,
@@ -177,7 +183,7 @@ export async function POST(request: Request) {
   // Best-effort: a failed email must not fail a confirmed booking.
   try { await sendBookingConfirmation(emailData); } catch (e) { console.error("[booking] confirm email", e); }
   try {
-    const { data: sub } = await admin.from("subscriptions").select("status,plan_name").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+    const { data: sub } = await admin.from("subscriptions").select("status,plan_name").eq("user_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle();
     const tier = tierForSubscriptionStatus((sub?.status as string) ?? null);
     await sendOwnerNotification(emailData, `Subscription: ${tier}${sub?.plan_name ? ` (${sub.plan_name})` : ""}.`);
   } catch (e) { console.error("[booking] owner email", e); }

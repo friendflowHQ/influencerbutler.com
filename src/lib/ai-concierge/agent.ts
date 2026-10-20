@@ -19,8 +19,9 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { callTool } from "@/lib/mcp/tools";
 import type { Principal } from "@/lib/mcp/auth";
-import { loadSearchIndex } from "@/lib/tutorials";
+import { loadSearchIndex, loadManifest } from "@/lib/tutorials";
 import { getAdmin } from "@/lib/scheduling-server";
+import { CALL_TYPES, type CallTypeKey } from "@/lib/scheduling";
 import { tierForSubscriptionStatus } from "@/lib/entitlements";
 import { isPlaceholderCompEmail } from "@/lib/comp-codes";
 
@@ -356,6 +357,31 @@ export function buildInstructions(
     "  block, answer from the \"When a butler pauses\" facts below. Do not guess a resume time and do",
     "  not send the user to a platform status page.",
     "",
+    "Answering setup questions (be the fix, not a redirect):",
+    "- Your first job is to actually solve the user's problem in the chat. For a setup, how-to, or",
+    "  troubleshooting question, call search_help, then give concrete numbered steps with the exact",
+    "  click path. Do not reply with only a link to a tutorial page or only \"book a call\": answer it.",
+    "- When search_help returns a tutorial that has a videoId, call show_video with that tutorialId so",
+    "  the user gets a tappable video card next to your steps. Prefer the video that matches the exact",
+    "  butler the user asked about. Mention it in one short phrase (\"here is the quick video too\"); do",
+    "  not paste a YouTube url into your text, the card carries it.",
+    "- Only offer a human (offer_human_call) or an in-chat booking (offer_booking) AFTER you have given",
+    "  the self-serve answer, and mainly when the user is still stuck, asks for a person, or wants",
+    "  hands-on onboarding. Leading with \"book a call\" instead of answering is exactly what we are",
+    "  trying to stop.",
+    "",
+    "The Chrome extension and the phone app (cover these too):",
+    "- Chrome extension: a companion browser extension that shows money intel while the user browses",
+    "  (Butler Scores, price and video history, Campaign Radar and SPCC on Creator Connections, Video",
+    "  Money on the Creator Hub, deal and idea-list signals, deep links, the Global Maximizer). It",
+    "  signs in with the same license, syncs with the desktop app, and has its own Ask Butler AI chat.",
+    "  Install it from the Chrome Web Store, then sign in with the license email. For how-to detail,",
+    "  call search_help (the extension tutorials) and link /help/tutorials/extension.",
+    "- Phone app (mobile companion): a phone web app the user pairs to the desktop to watch butlers,",
+    "  approve actions, and share. To pair: on the desktop, open Settings, then Mobile, then Show",
+    "  pairing code, and scan the QR with the phone, or open the pairing link. It is paired to the",
+    "  account, not a second login. For detail, call search_help and link the mobile companion tutorial.",
+    "",
     "AI butlers and the user's own OpenAI key:",
     "- The AI butlers (for example Voiceover Butler, Benable Butler, the AI keyword generator, and AI",
     "  captions and titles) use the user's own OpenAI API key. It is separate from a ChatGPT",
@@ -563,6 +589,22 @@ export function buildInstructions(
     "  they give you an address call submit_feedback again with the same title and contact_email set.",
     "  Never tell the user to expect a reply when needsContactEmail came back true.",
     "",
+    "Booking a call in chat:",
+    "- The user can book a 1:1 call with the team without leaving the chat: call offer_booking and an",
+    "  in-app booking card with live times appears. There are two call types. The free Setup call",
+    "  (callType 'demo') is a relaxed session where we set the app up with them, and it is open to",
+    "  everyone, signed in or not. The Priority 1:1 (callType 'support') is a focused troubleshooting",
+    "  call that is part of a paid plan.",
+    "- Decide which to offer. For general confusion, onboarding, or \"can someone just set this up with",
+    "  me\", offer the free Setup call ('demo'). Only offer the Priority 1:1 ('support') to a user you",
+    "  have confirmed is on a paid plan (call get_subscription first); if they are on the free tier,",
+    "  offer 'demo' and mention the Priority call comes with a plan. Use 'both' only when a paid user",
+    "  would genuinely choose between them.",
+    "- Always answer the actual question first. offer_booking is for when self-serve is not enough, not",
+    "  a reflex. The user picks the time and confirms the booking themselves in the card; you never",
+    "  book it for them. offer_human_call (a plain link to the booking page) stays the fallback for a",
+    "  surface that cannot show the card.",
+    "",
     "Boundaries:",
     "- You cannot access the user's Amazon or Instagram accounts and cannot click inside their",
     "  desktop app for them. Give exact click paths; they do the clicking.",
@@ -624,6 +666,38 @@ export const AGENT_TOOLS: AgentTool[] = [
     parameters: {
       type: "object",
       properties: { reason: { type: "string", description: "Why a human call is being offered." } },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "offer_booking",
+    description:
+      "Offer to book a 1:1 call with the Influencer Butler team RIGHT HERE in the chat (an in-app booking card with live times, on every surface). Use this after you have given the self-serve answer, when the user is still stuck, asks for a person, or wants hands-on onboarding. Pass callType 'demo' for the free Setup call (open to anyone), 'support' for the paid Priority 1:1 (only offer this to users already on a paid plan: check get_subscription first), or 'both' to show both. This only shows the card; the user picks a time and confirms it themselves.",
+    parameters: {
+      type: "object",
+      properties: {
+        callType: {
+          type: "string",
+          enum: ["demo", "support", "both"],
+          description: "Which call type(s) to offer. Default 'demo' (the free Setup call, open to everyone).",
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: "show_video",
+    description:
+      "Show the user the exact tutorial VIDEO for a topic as a tappable video card (the desktop app and Chrome extension play it; it opens YouTube elsewhere). Pass the tutorialId of a tutorial that search_help returned WITH a videoId. Offer it alongside your written steps for setup and how-to questions, on every surface (desktop, website, extension, phone).",
+    parameters: {
+      type: "object",
+      properties: {
+        tutorialId: {
+          type: "string",
+          description: "The tutorial id whose walkthrough video to show. Must be a tutorial search_help returned with a videoId.",
+        },
+      },
+      required: ["tutorialId"],
       additionalProperties: false,
     },
   },
@@ -733,7 +807,16 @@ export type HelpHit = {
   url: string;
   snippet: string;
   images?: HelpImage[];
+  /** YouTube id of this tutorial's walkthrough, when one exists. */
+  videoId?: string;
+  /** Watch url for that video, so the model can offer show_video for this id. */
+  videoUrl?: string;
 };
+
+/** Public YouTube watch url for a video id. */
+export function youtubeWatchUrl(videoId: string): string {
+  return `https://www.youtube.com/watch?v=${videoId}`;
+}
 
 // Generic English filler that carries no topic signal. Without this a whole
 // support ticket dumped in as a query ("still dragging... please help") scores
@@ -801,6 +884,12 @@ export async function searchHelp(query: string, locale?: string): Promise<HelpHi
       .slice(0, MAX_HIT_IMAGES)
       .map((img) => ({ url: `${SITE}${img.src}`, alt: img.alt }));
     if (images.length) hit.images = images;
+    // When this tutorial has a video walkthrough, hand the model its id + watch
+    // url so it can offer show_video for a deep-linked video card.
+    if (e.videoId) {
+      hit.videoId = e.videoId;
+      hit.videoUrl = youtubeWatchUrl(e.videoId);
+    }
     return hit;
   });
 }
@@ -889,6 +978,71 @@ export function sanitizeWalkthroughArgs(raw: unknown): WalkthroughPayload | null
     if (steps.length) return { steps };
   }
   return null;
+}
+
+/**
+ * A video card the chat route forwards to the client with the reply. The client
+ * plays it in-app (desktop/extension) by tutorialId, or opens `url` on YouTube.
+ * Shared by the show_video executor (ack) and the chat route (which attaches the
+ * resolved payload to the response).
+ */
+export type VideoPayload = { tutorialId: string; title: string; videoId: string; url: string };
+
+/**
+ * Resolve a tutorial id to its walkthrough video, or null when the id is unknown
+ * or has no video. Reads the tutorial manifest (which attaches videoId from the
+ * public _videos.json), so a beta-gated tutorial with no published video simply
+ * resolves to null and no card is shown.
+ */
+export async function resolveVideo(tutorialId: string): Promise<VideoPayload | null> {
+  const id = typeof tutorialId === "string" ? tutorialId.trim() : "";
+  if (!/^[a-z0-9][a-z0-9-]{0,80}$/i.test(id)) return null;
+  const manifest = await loadManifest();
+  const entry = manifest.tutorials.find((t) => t.id === id);
+  if (!entry || !entry.videoId) return null;
+  return { tutorialId: id, title: entry.title || id, videoId: entry.videoId, url: youtubeWatchUrl(entry.videoId) };
+}
+
+/**
+ * One call type offered in the inline booking card. The client renders the card
+ * and fetches live slots itself from /api/booking/slots, then books through
+ * /api/booking/create, so this only describes what to show, never the slots.
+ */
+export type BookingCallType = {
+  key: CallTypeKey;
+  label: string;
+  userMinutes: number;
+  requiresSubscription: boolean;
+  description: string;
+};
+export type BookingPayload = { callTypes: BookingCallType[] };
+
+/**
+ * Resolve an offer_booking tool call into the booking signal the chat route
+ * forwards to the client. `callType` picks which call types to show: "support",
+ * "both", or "demo" (the default). Always returns at least the free Setup call.
+ */
+export function resolveBooking(raw: unknown): BookingPayload {
+  const which =
+    raw && typeof raw === "object" && typeof (raw as Record<string, unknown>).callType === "string"
+      ? String((raw as Record<string, unknown>).callType)
+      : "demo";
+  const keys: CallTypeKey[] = which === "support" ? ["support"] : which === "both" ? ["demo", "support"] : ["demo"];
+  const seen = new Set<string>();
+  const callTypes: BookingCallType[] = [];
+  for (const k of keys) {
+    if (seen.has(k) || !CALL_TYPES[k]) continue;
+    seen.add(k);
+    const ct = CALL_TYPES[k];
+    callTypes.push({
+      key: ct.key,
+      label: ct.label,
+      userMinutes: ct.userMinutes,
+      requiresSubscription: ct.requiresSubscription,
+      description: ct.description,
+    });
+  }
+  return { callTypes };
 }
 
 const MAX_REPLY_IMAGES = 4;
@@ -1043,6 +1197,31 @@ export async function executeAgentTool(
       // The chat route forwards the payload to the desktop; this ack is what
       // the model narrates over.
       return { ok: true, note: "The walkthrough will start on the user's screen. Tell them to follow the Next buttons." };
+    }
+    case "show_video": {
+      const tutorialId = typeof args.tutorialId === "string" ? args.tutorialId : "";
+      const video = await resolveVideo(tutorialId);
+      if (!video) {
+        return { error: "No walkthrough video is available for that tutorial. Give written steps and point them to the tutorial page instead." };
+      }
+      // The chat route forwards the resolved video to the client as a tappable
+      // card; this ack is what the model narrates over.
+      return {
+        ok: true,
+        title: video.title,
+        note: "A tappable video card will appear for the user. Mention the video in one short phrase. Do not paste the url into your text.",
+      };
+    }
+    case "offer_booking": {
+      const booking = resolveBooking(args);
+      // The chat route forwards the booking signal to the client, which renders
+      // the inline card and fetches live times itself; this ack is what the
+      // model narrates over.
+      const names = booking.callTypes.map((c) => c.label).join(" or ");
+      return {
+        ok: true,
+        note: `An in-app booking card for ${names} will appear. Invite the user to pick a time in the card. Do not list times in your text; the card is live.`,
+      };
     }
     case "submit_feedback":
       return submitFeedback(args, principal, client);

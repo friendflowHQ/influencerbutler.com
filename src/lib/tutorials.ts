@@ -381,6 +381,12 @@ export type SearchIndexEntry = {
   text: string;
   /** Screenshots from the tutorial body (same-origin /assets/ paths only). */
   images: SearchIndexImage[];
+  /**
+   * YouTube id of this tutorial's AI-narrated walkthrough, when one exists (from
+   * _videos.json, public videos only). Lets the concierge deep-link the exact
+   * video for a how-to answer instead of only pointing at the tutorial page.
+   */
+  videoId?: string;
 };
 
 const searchIndexCache = new Map<string, { entries: SearchIndexEntry[]; at: number }>();
@@ -445,6 +451,7 @@ export async function loadSearchIndex(requestedLocale?: string): Promise<SearchI
       summary: entry.summary || "",
       text,
       images: tutorial ? htmlToImages(tutorial.html) : [],
+      ...(entry.videoId ? { videoId: entry.videoId } : {}),
     });
   }
   searchIndexCache.set(locale, { entries, at: Date.now() });

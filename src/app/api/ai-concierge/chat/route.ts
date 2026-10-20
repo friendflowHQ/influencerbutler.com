@@ -14,8 +14,8 @@
 import { NextResponse } from "next/server";
 import { resolveAuth } from "@/lib/license-auth";
 import { rateLimit } from "@/lib/rate-limit";
-import { buildInstructions, toChatTools, executeAgentTool, extractReplyImages, sanitizeWalkthroughArgs, sanitizeTourCatalog } from "@/lib/ai-concierge/agent";
-import type { ClientMeta, WalkthroughPayload, TourCatalogEntry } from "@/lib/ai-concierge/agent";
+import { buildInstructions, toChatTools, executeAgentTool, extractReplyImages, sanitizeWalkthroughArgs, sanitizeTourCatalog, resolveVideo, resolveBooking } from "@/lib/ai-concierge/agent";
+import type { ClientMeta, WalkthroughPayload, TourCatalogEntry, VideoPayload, BookingPayload } from "@/lib/ai-concierge/agent";
 import { resolveTextProvider, openAiFallbackProvider } from "@/lib/ai-concierge/llm";
 import type { TextProvider } from "@/lib/ai-concierge/llm";
 import type { Principal } from "@/lib/mcp/auth";
@@ -49,6 +49,21 @@ function sanitizeClient(raw: unknown): ClientMeta | undefined {
     // times). Capped so a client can never bloat the prompt.
     ...(pick(c.butlerStatus, 2000) ? { butlerStatus: pick(c.butlerStatus, 2000) } : {}),
   };
+}
+
+// Assemble the client response: always reply + images, plus whichever structured
+// cards a tool produced this turn (walkthrough, video, booking). Omitting the
+// absent keys keeps the payload byte-identical to before for plain answers.
+function buildReply(
+  reply: string,
+  images: Array<{ url: string; alt: string }>,
+  extras: { walkthrough: WalkthroughPayload | null; video: VideoPayload | null; booking: BookingPayload | null },
+): Record<string, unknown> {
+  const payload: Record<string, unknown> = { reply, images };
+  if (extras.walkthrough) payload.walkthrough = extras.walkthrough;
+  if (extras.video) payload.video = extras.video;
+  if (extras.booking) payload.booking = extras.booking;
+  return payload;
 }
 
 export async function POST(request: Request) {
@@ -128,6 +143,10 @@ export async function POST(request: Request) {
   // A start_walkthrough tool call's payload is forwarded to the desktop with
   // the final reply (the executor only acks). First call wins; desktop only.
   let walkthrough: WalkthroughPayload | null = null;
+  // show_video / offer_booking payloads are forwarded to every surface with the
+  // reply so the client renders a video card / inline booking card. First wins.
+  let video: VideoPayload | null = null;
+  let booking: BookingPayload | null = null;
   try {
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
       let res = await callProvider(activeProvider);
@@ -160,6 +179,12 @@ export async function POST(request: Request) {
           if (call.function.name === "start_walkthrough" && !walkthrough && client?.surface === "desktop") {
             walkthrough = sanitizeWalkthroughArgs(args);
           }
+          if (call.function.name === "show_video" && !video) {
+            video = await resolveVideo(typeof args.tutorialId === "string" ? args.tutorialId : "");
+          }
+          if (call.function.name === "offer_booking" && !booking) {
+            booking = resolveBooking(args);
+          }
           const result = await executeAgentTool(call.function.name, args, principal, client);
           messages.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(result).slice(0, 8000) });
         }
@@ -167,13 +192,12 @@ export async function POST(request: Request) {
       }
 
       const { text, images } = extractReplyImages(choice.content ?? "");
-      return NextResponse.json(walkthrough ? { reply: text, images, walkthrough } : { reply: text, images });
+      return NextResponse.json(buildReply(text, images, { walkthrough, video, booking }));
     }
-    return NextResponse.json(
-      walkthrough
-        ? { reply: "The walkthrough is ready. Follow the Next buttons on screen.", images: [], walkthrough }
-        : { reply: "I ran into a loop working that out. Could you rephrase, or book a human call?", images: [] },
-    );
+    const fallbackText = walkthrough
+      ? "The walkthrough is ready. Follow the Next buttons on screen."
+      : "I ran into a loop working that out. Could you rephrase, or book a human call?";
+    return NextResponse.json(buildReply(fallbackText, [], { walkthrough, video, booking }));
   } catch (err) {
     console.error("[ai-concierge/chat] threw", err);
     return NextResponse.json({ error: "The assistant is unavailable right now." }, { status: 502 });

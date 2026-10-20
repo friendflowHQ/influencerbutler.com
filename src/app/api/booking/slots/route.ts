@@ -4,7 +4,7 @@
  * Server recomputes availability (never trusts the client).
  */
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { resolveAuth } from "@/lib/license-auth";
 import { getAdmin, availabilityForType } from "@/lib/scheduling-server";
 import { CALL_TYPES, type CallTypeKey } from "@/lib/scheduling";
 
@@ -12,9 +12,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  // Dual-mode auth so the in-chat booking card works from the website cookie AND
+  // from the desktop app / Chrome extension / phone (license-key bearer).
+  const authed = await resolveAuth(request);
+  if (!authed.ok) return NextResponse.json({ error: authed.error }, { status: authed.status });
 
   const type = new URL(request.url).searchParams.get("type");
   if (type !== "support" && type !== "demo") {

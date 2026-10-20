@@ -18,6 +18,7 @@ vi.mock("@/lib/tutorials", () => ({
       images: [
         { src: "/assets/tutorials/goldmine/setup.png", alt: "The Goldmine setup screen" },
       ],
+      videoId: "GOLDvid123",
     },
     {
       id: "instagram-butler",
@@ -28,6 +29,13 @@ vi.mock("@/lib/tutorials", () => ({
       images: [],
     },
   ]),
+  loadManifest: vi.fn(async () => ({
+    version: 1,
+    tutorials: [
+      { id: "goldmine-butler", title: "Goldmine Butler setup", category: "Amazon", summary: "", order: 1, locales: ["en-US"], videoId: "GOLDvid123" },
+      { id: "instagram-butler", title: "Instagram Butler", category: "Instagram", summary: "", order: 2, locales: ["en-US"] },
+    ],
+  })),
 }));
 
 import {
@@ -37,6 +45,8 @@ import {
   extractReplyImages,
   sanitizeWalkthroughArgs,
   sanitizeTourCatalog,
+  resolveVideo,
+  resolveBooking,
   toChatTools,
   toRealtimeTools,
   AGENT_TOOLS,
@@ -193,6 +203,106 @@ describe("searchHelp", () => {
 
   it("returns nothing for a too-short or no-match query", async () => {
     expect(await searchHelp("zz")).toEqual([]);
+  });
+
+  it("hands the model the tutorial's walkthrough video id and watch url", async () => {
+    const hits = await searchHelp("how do I set up goldmine");
+    expect(hits[0].videoId).toBe("GOLDvid123");
+    expect(hits[0].videoUrl).toBe("https://www.youtube.com/watch?v=GOLDvid123");
+    // A tutorial with no video carries neither field.
+    const igOnly = (await searchHelp("instagram dm outreach")).find((h) => h.id === "instagram-butler");
+    expect(igOnly?.videoId).toBeUndefined();
+  });
+});
+
+describe("show_video (tutorial video cards)", () => {
+  it("exposes the tool on both chat and realtime shapes", () => {
+    const tool = AGENT_TOOLS.find((t) => t.name === "show_video");
+    expect(tool).toBeTruthy();
+    const props = (tool?.parameters as { properties: Record<string, unknown>; required?: string[] });
+    expect(Object.keys(props.properties)).toEqual(["tutorialId"]);
+    expect(props.required).toEqual(["tutorialId"]);
+    expect(toChatTools().some((t) => t.function.name === "show_video")).toBe(true);
+    expect(toRealtimeTools().some((t) => t.name === "show_video")).toBe(true);
+  });
+
+  it("resolveVideo returns the card payload for a tutorial that has a video", async () => {
+    expect(await resolveVideo("goldmine-butler")).toEqual({
+      tutorialId: "goldmine-butler",
+      title: "Goldmine Butler setup",
+      videoId: "GOLDvid123",
+      url: "https://www.youtube.com/watch?v=GOLDvid123",
+    });
+  });
+
+  it("resolveVideo returns null for an unknown id or one with no video", async () => {
+    expect(await resolveVideo("instagram-butler")).toBeNull();
+    expect(await resolveVideo("nope-not-real")).toBeNull();
+    expect(await resolveVideo("../etc/passwd")).toBeNull();
+  });
+
+  it("executor acks a real video and errors on a videoless tutorial", async () => {
+    const ok = (await executeAgentTool("show_video", { tutorialId: "goldmine-butler" }, null)) as { ok: boolean; title: string };
+    expect(ok.ok).toBe(true);
+    expect(ok.title).toBe("Goldmine Butler setup");
+    const bad = (await executeAgentTool("show_video", { tutorialId: "instagram-butler" }, null)) as { error: string };
+    expect(bad.error).toMatch(/no walkthrough video/i);
+  });
+});
+
+describe("offer_booking (inline booking card)", () => {
+  it("exposes the tool with a callType enum and no required args", () => {
+    const tool = AGENT_TOOLS.find((t) => t.name === "offer_booking");
+    expect(tool).toBeTruthy();
+    const props = (tool?.parameters as { properties: Record<string, { enum?: string[] }>; required?: string[] });
+    expect(props.properties.callType.enum).toEqual(["demo", "support", "both"]);
+    expect(props.required).toBeUndefined();
+  });
+
+  it("resolveBooking defaults to the free Setup call and never leaks an empty card", () => {
+    const demo = resolveBooking({});
+    expect(demo.callTypes).toHaveLength(1);
+    expect(demo.callTypes[0].key).toBe("demo");
+    expect(demo.callTypes[0].requiresSubscription).toBe(false);
+    expect(resolveBooking({ callType: "garbage" }).callTypes[0].key).toBe("demo");
+  });
+
+  it("resolveBooking honors support and both", () => {
+    expect(resolveBooking({ callType: "support" }).callTypes.map((c) => c.key)).toEqual(["support"]);
+    expect(resolveBooking({ callType: "both" }).callTypes.map((c) => c.key)).toEqual(["demo", "support"]);
+  });
+
+  it("executor acks with the call-type names", async () => {
+    const r = (await executeAgentTool("offer_booking", { callType: "both" }, null)) as { ok: boolean; note: string };
+    expect(r.ok).toBe(true);
+    expect(r.note).toContain("Setup call");
+    expect(r.note).toContain("Priority 1:1 call");
+  });
+});
+
+describe("buildInstructions: setup answers, booking, extension and phone", () => {
+  it("tells the model to answer first and offer the video, not redirect", () => {
+    const s = buildInstructions();
+    expect(s).toContain("Answering setup questions");
+    expect(s).toContain("show_video");
+    expect(s).toContain("offer_booking");
+    expect(s).not.toContain("—");
+  });
+
+  it("covers the Chrome extension and the phone app", () => {
+    const s = buildInstructions();
+    expect(s).toContain("Chrome extension");
+    expect(s).toContain("phone app");
+    expect(s).toContain("Show");
+    expect(s).toContain("pairing code");
+  });
+
+  it("carries the booking-in-chat guidance with both call types", () => {
+    const s = buildInstructions();
+    expect(s).toContain("Booking a call in chat");
+    expect(s).toContain("Setup call");
+    expect(s).toContain("Priority 1:1");
+    expect(s).toContain("get_subscription");
   });
 });
 
