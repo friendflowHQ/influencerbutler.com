@@ -302,3 +302,40 @@ Between 2026-10-18 15:51 and 2026-10-19 10:38 (desktop repo: `app/mobile-bridge/
 ### What to do with this section
 
 Liz/counsel should: (1) decide the retention periods marked [CONFIRM] above, (2) confirm the Firebase citation, (3) confirm the App Lock biometric claim, (4) decide the Target TCIN item, then these blocks can be pasted into `privacy.html`, `terms.html`, and (if the mobile app ever gets its own store listing) a mobile-app-specific privacy page. Until then nothing here touches the live files.
+
+---
+
+## Update 2026-10-20: Foyer / Link Butler newsletter subscribers (visitors' emails, undisclosed)
+
+**Not mechanical. Do not publish without sign-off.** Not legal advice; have counsel review before anything here goes live. No live legal file was touched.
+
+### What changed (desktop repo, last 7 days)
+
+- `workers/links` (Foyer public page newsletter): the email-capture form now requires a marketing-consent checkbox and the worker stores `signup_consent_at` (epoch ms, migration 0019) per subscriber (commits 8eb0d66, 51bb750).
+- New subscriber import sources: `instagram_dm` (emails collected by Instagram Email Collection, handed off to the Foyer list via a new IPC; commits 34a33dc, 3d90fec, 0d61e49) alongside the existing `csv_import` and `facebook_group`.
+- Foyer handles are auto-reclaimed when a customer's key changes (ae2039e).
+
+### Gap
+
+`privacy.html`, `terms.html` and this draft never mention Foyer, Link Butler pages, or visitors/fans whose email addresses we store on a customer's behalf. This is a third-party data subject category (people who are not our users), where we are likely a **processor** for the creator (the controller), plus a consent record and imported contact lists held server-side (Cloudflare D1). That is a new data category and a legal-basis/role characterization, so it needs a human decision.
+
+### Proposed block (new §2.12, insert after §2.11 once the mobile section is approved)
+
+```html
+<h3>2.12 Foyer pages and newsletter subscribers</h3>
+<p>If you publish a Foyer page or Butler Link page, the page can collect email addresses from your visitors and send them your newsletter. For those visitors, you are the one who decides why their email is collected, and we store and send on your behalf (processor role). We store, in our Cloudflare database:</p>
+<ul>
+    <li><strong>Subscriber records</strong>: the visitor's email address, status (pending, confirmed, unsubscribed), the source (Foyer page signup, or a list you imported), delivery, open and click events, and the time the visitor ticked the marketing-consent checkbox on your page.</li>
+    <li><strong>Lists you import</strong>: if you import contacts (for example a CSV, a Facebook group list, or addresses collected by Instagram Email Collection), you confirm you have the right to email them. Those addresses are stored on our servers for the newsletter.</li>
+</ul>
+<p>Newsletters are delivered through Resend (§2.3). Visitors can unsubscribe from any message. [CONFIRM: retention for subscriber records after a customer cancels or deletes their page.] [CONFIRM: whether we are processor only, and whether a customer-facing DPA/terms clause covers this.]</p>
+```
+
+Also: add a sentence to terms.html that customers are responsible for lawful consent for lists they import. [CONFIRM: counsel wording.]
+
+### Checked this week, no action needed
+
+- Residential proxy drop guard (f2346f0): uses the already-disclosed egress-IP check (ipify.org, proxycheck.io, ffc3abe3 already live) and an existing email alert; no new data.
+- Extension 0.1.34 Target parity / "Who buys this" card: audience profile is read from the paired desktop app locally; Target rate-card lookups remain the open item already flagged on 2026-10-19.
+- Retention cleanup jobs and mobile app: already tracked above; still awaiting deployment and sign-off.
+- Appendix B extension page gaps remain open (Creator API vault, Vercel/Supabase, relay).
