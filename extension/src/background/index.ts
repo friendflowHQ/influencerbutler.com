@@ -58,6 +58,8 @@ import { generateAiPost } from "./ai-post";
 import { initSocialContextMenu, openComposeWindow } from "./social-compose-window";
 import {
   assistantChat,
+  assistantBookingSlots,
+  assistantBookingCreate,
   assistantVoiceSession,
   assistantVoiceTool,
   assistantVoiceTranscript,
@@ -476,6 +478,17 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "AI_CHAT":
       void assistantChat(message.messages).then(sendResponse);
+      return true;
+    case "BOOKING_SLOTS":
+      void assistantBookingSlots(message.callType).then(sendResponse);
+      return true;
+    case "BOOKING_CREATE":
+      void assistantBookingCreate({
+        callType: message.callType,
+        startMs: message.startMs,
+        name: message.name,
+        timezone: message.timezone,
+      }).then(sendResponse);
       return true;
     case "OPEN_SOCIAL_COMPOSE":
       void openComposeWindow({

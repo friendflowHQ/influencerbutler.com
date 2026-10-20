@@ -3,6 +3,12 @@ import { getState } from "../storage/store";
 import type {
   AiChatResult,
   AiChatTurn,
+  AiChatVideo,
+  AiChatBooking,
+  AiChatBookingCallType,
+  BookingDay,
+  BookingSlotsResult,
+  BookingCreateResult,
   VoiceSessionResult,
   VoiceToolResult,
   VoiceTranscriptResult,
@@ -31,6 +37,74 @@ function safeImages(raw: unknown): Array<{ url: string; alt: string }> {
   return out;
 }
 
+// A tutorial-video card (show_video): validate the YouTube id and rebuild a
+// canonical watch url so a tampered reply can never point the card elsewhere.
+const YT_ID_RE = /^[A-Za-z0-9_-]{6,20}$/;
+function safeVideo(raw: unknown): AiChatVideo | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const r = raw as Record<string, unknown>;
+  const tutorialId = typeof r.tutorialId === "string" ? r.tutorialId.trim().slice(0, 80) : "";
+  const videoId = typeof r.videoId === "string" ? r.videoId.trim() : "";
+  if (!tutorialId || !YT_ID_RE.test(videoId)) return undefined;
+  return {
+    tutorialId,
+    title: typeof r.title === "string" ? r.title.slice(0, 160) : "",
+    videoId,
+    url: `https://www.youtube.com/watch?v=${videoId}`,
+  };
+}
+
+// An inline-booking signal (offer_booking): allowlisted call-type keys + caps.
+const BOOKING_KEYS = new Set(["demo", "support"]);
+function safeBooking(raw: unknown): AiChatBooking | undefined {
+  if (!raw || typeof raw !== "object" || !Array.isArray((raw as { callTypes?: unknown }).callTypes)) return undefined;
+  const list = (raw as { callTypes: unknown[] }).callTypes;
+  const out: AiChatBookingCallType[] = [];
+  const seen = new Set<string>();
+  for (const ct of list) {
+    if (!ct || typeof ct !== "object") continue;
+    const r = ct as Record<string, unknown>;
+    const key = typeof r.key === "string" ? r.key.trim() : "";
+    if (!BOOKING_KEYS.has(key) || seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      key: key as "demo" | "support",
+      label: typeof r.label === "string" ? r.label.slice(0, 80) : key,
+      userMinutes: typeof r.userMinutes === "number" && isFinite(r.userMinutes) ? Math.max(1, Math.min(600, Math.round(r.userMinutes))) : 0,
+      requiresSubscription: r.requiresSubscription === true,
+      description: typeof r.description === "string" ? r.description.slice(0, 300) : "",
+    });
+    if (out.length >= 2) break;
+  }
+  return out.length ? { callTypes: out } : undefined;
+}
+
+// Live availability from /api/booking/slots, trimmed + capped for the card.
+const BOOKING_DAYS_MAX = 31;
+const BOOKING_SLOTS_MAX = 48;
+function safeDays(raw: unknown): BookingDay[] {
+  if (!Array.isArray(raw)) return [];
+  const days: BookingDay[] = [];
+  for (const d of raw as Array<Record<string, unknown>>) {
+    if (!d || typeof d !== "object") continue;
+    const date = typeof d.date === "string" ? d.date.slice(0, 10) : "";
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+    const timezone = typeof d.timezone === "string" ? d.timezone.slice(0, 64) : "";
+    const slots: BookingDay["slots"] = [];
+    for (const s of Array.isArray(d.slots) ? (d.slots as Array<Record<string, unknown>>) : []) {
+      if (!s || typeof s !== "object") continue;
+      const startMs = Number(s.startMs);
+      const userEndMs = Number(s.userEndMs);
+      if (!isFinite(startMs)) continue;
+      slots.push({ startMs, userEndMs: isFinite(userEndMs) ? userEndMs : startMs });
+      if (slots.length >= BOOKING_SLOTS_MAX) break;
+    }
+    if (slots.length) days.push({ date, timezone, slots });
+    if (days.length >= BOOKING_DAYS_MAX) break;
+  }
+  return days;
+}
+
 export async function assistantChat(messages: AiChatTurn[]): Promise<AiChatResult> {
   const state = await getState();
   const key = state.auth.licenseKey;
@@ -42,11 +116,48 @@ export async function assistantChat(messages: AiChatTurn[]): Promise<AiChatResul
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
       body: JSON.stringify({ messages, client: { surface: "extension" } }),
     });
-    const data = (await res.json().catch(() => null)) as { reply?: string; images?: unknown; error?: string } | null;
+    const data = (await res.json().catch(() => null)) as { reply?: string; images?: unknown; video?: unknown; booking?: unknown; error?: string } | null;
     if (!res.ok || !data || typeof data.reply !== "string") {
       return { ok: false, error: data?.error || `The assistant is unavailable (HTTP ${res.status}).` };
     }
-    return { ok: true, reply: data.reply, images: safeImages(data.images) };
+    return { ok: true, reply: data.reply, images: safeImages(data.images), video: safeVideo(data.video), booking: safeBooking(data.booking) };
+  } catch {
+    return { ok: false, error: "Network error reaching the assistant." };
+  }
+}
+
+// In-chat booking: fetch live times, then book, both with the license bearer.
+export async function assistantBookingSlots(callType: "demo" | "support"): Promise<BookingSlotsResult> {
+  const key = await licenseKey();
+  if (!key) return { ok: false, error: "Sign in from the popup to book a call." };
+  const type = callType === "support" ? "support" : "demo";
+  try {
+    const res = await fetch(`${ENDPOINTS.bookingSlots}?type=${type}`, { headers: { Authorization: `Bearer ${key}` } });
+    const data = (await res.json().catch(() => null)) as { userMinutes?: number; days?: unknown; error?: string } | null;
+    if (!res.ok || !data) return { ok: false, error: data?.error || `HTTP ${res.status}` };
+    return { ok: true, callType: type, userMinutes: typeof data.userMinutes === "number" ? data.userMinutes : 0, days: safeDays(data.days) };
+  } catch {
+    return { ok: false, error: "Network error reaching the assistant." };
+  }
+}
+
+export async function assistantBookingCreate(p: {
+  callType: "demo" | "support";
+  startMs: number;
+  name: string;
+  timezone: string;
+}): Promise<BookingCreateResult> {
+  const key = await licenseKey();
+  if (!key) return { ok: false, error: "Sign in from the popup to book a call." };
+  try {
+    const res = await fetch(ENDPOINTS.bookingCreate, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+      body: JSON.stringify({ type: p.callType === "support" ? "support" : "demo", startMs: p.startMs, name: p.name, timezone: p.timezone }),
+    });
+    const data = (await res.json().catch(() => null)) as { ok?: boolean; id?: string | number; joinUrl?: string; error?: string } | null;
+    if (!res.ok || !data || !data.ok) return { ok: false, error: data?.error || `HTTP ${res.status}` };
+    return { ok: true, id: data.id != null ? String(data.id) : "", joinUrl: typeof data.joinUrl === "string" ? data.joinUrl : "" };
   } catch {
     return { ok: false, error: "Network error reaching the assistant." };
   }

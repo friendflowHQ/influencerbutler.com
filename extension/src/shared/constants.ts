@@ -28,6 +28,9 @@ export const ENDPOINTS = {
   enrich: `${API_BASE}/api/extension/enrich`,
   // AI concierge text chat (same brain as the website + desktop app).
   aiChat: `${API_BASE}/api/ai-concierge/chat`,
+  // In-chat 1:1 booking (the booking card fetches live times + books inline).
+  bookingSlots: `${API_BASE}/api/booking/slots`,
+  bookingCreate: `${API_BASE}/api/booking/create`,
   // AI concierge voice (OpenAI Realtime over WebRTC). The background worker mints
   // the ephemeral token / runs tool calls / saves the transcript with the license
   // bearer; the chat page owns the peer connection + mic.

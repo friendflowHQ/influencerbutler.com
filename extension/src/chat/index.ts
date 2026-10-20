@@ -9,6 +9,11 @@ import { sendToBackground } from "../shared/messages";
 import type {
   AiChatResult,
   AiChatTurn,
+  AiChatVideo,
+  AiChatBooking,
+  BookingDay,
+  BookingSlotsResult,
+  BookingCreateResult,
   VoiceSessionResult,
   VoiceToolResult,
   VoiceTranscriptResult,
@@ -28,6 +33,7 @@ const SUGGESTIONS = [
   "How do I set up the Chrome extension?",
   "How do I connect my Amazon Creator API?",
   "How does Deals posting work?",
+  "Can someone help me set this up on a call?",
 ];
 
 function main(): void {
@@ -97,6 +103,172 @@ function main(): void {
     return bubble;
   }
 
+  // A tappable tutorial-video card. Opens the YouTube watch page in a new tab.
+  function addVideoCard(video: AiChatVideo): void {
+    const card = el("a", "chat-video");
+    card.href = video.url;
+    card.target = "_blank";
+    card.rel = "noreferrer";
+    card.append(
+      el("span", "chat-video-icon", "▶"),
+      (() => {
+        const t = el("span", "chat-video-text");
+        t.append(
+          el("span", "chat-video-title", video.title || "Watch the tutorial"),
+          el("span", "chat-video-sub", "Open the video"),
+        );
+        return t;
+      })(),
+    );
+    log.appendChild(card);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  // The full in-chat booking card: pick a call type (when more than one), then a
+  // live day + time, then confirm. The invite goes to the account email; the
+  // user picks the time and confirms it themselves.
+  function addBookingCard(booking: AiChatBooking): void {
+    const callTypes = booking.callTypes || [];
+    if (!callTypes.length) return;
+    const card = el("div", "chat-booking");
+    type Step = "type" | "slots" | "confirm" | "done";
+    const state: {
+      step: Step;
+      type: AiChatBooking["callTypes"][number] | null;
+      days: BookingDay[];
+      activeDate: string;
+      slotMs: number;
+      name: string;
+      loading: boolean;
+      error: string;
+      booked: { joinUrl: string; startMs: number } | null;
+    } = {
+      step: callTypes.length > 1 ? "type" : "slots",
+      type: callTypes.length === 1 ? (callTypes[0] ?? null) : null,
+      days: [],
+      activeDate: "",
+      slotMs: 0,
+      name: "",
+      loading: false,
+      error: "",
+      booked: null,
+    };
+
+    const userTz = (): string => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch { return ""; } };
+    const fmtTime = (ms: number): string => { try { return new Date(ms).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); } catch { return ""; } };
+    const fmtDay = (iso: string): string => { try { return new Date(iso + "T12:00:00").toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }); } catch { return iso; } };
+
+    async function loadSlots(): Promise<void> {
+      if (!state.type) return;
+      state.loading = true; state.error = ""; render();
+      const res = await sendToBackground<BookingSlotsResult>({ kind: "BOOKING_SLOTS", callType: state.type.key });
+      state.loading = false;
+      if (res.ok) {
+        state.days = res.days || [];
+        state.activeDate = state.days[0]?.date ?? "";
+        if (!state.days.length) state.error = "No times are open right now. Please try again later.";
+      } else { state.error = res.error || "Could not load available times."; }
+      render();
+    }
+
+    async function confirm(): Promise<void> {
+      if (!state.slotMs || !state.type) return;
+      state.loading = true; state.error = ""; render();
+      const res = await sendToBackground<BookingCreateResult>({ kind: "BOOKING_CREATE", callType: state.type.key, startMs: state.slotMs, name: state.name.trim(), timezone: userTz() });
+      state.loading = false;
+      if (res.ok) { state.booked = { joinUrl: res.joinUrl || "", startMs: state.slotMs }; state.step = "done"; }
+      else { state.error = res.error || "Could not book that time. Please pick another."; }
+      render();
+    }
+
+    function render(): void {
+      card.textContent = "";
+      const head = el("div", "chat-booking-head");
+      head.appendChild(el("span", "chat-booking-title", "Book a call"));
+      if (state.type && state.step !== "done") head.appendChild(el("span", "chat-booking-sub", state.type.label));
+      card.appendChild(head);
+
+      if (state.booked) {
+        const ok = el("div", "chat-booking-done");
+        ok.appendChild(el("p", "chat-booking-done-title", "You're booked!"));
+        ok.appendChild(el("p", "chat-booking-when", fmtDay(new Date(state.booked.startMs).toISOString().slice(0, 10)) + ", " + fmtTime(state.booked.startMs)));
+        ok.appendChild(el("p", "chat-booking-done-sub", "We emailed your calendar invite and the video link."));
+        if (state.booked.joinUrl) {
+          const join = el("a", "chat-booking-join", "Open the video link");
+          join.href = state.booked.joinUrl; join.target = "_blank"; join.rel = "noreferrer";
+          ok.appendChild(join);
+        }
+        card.appendChild(ok);
+        log.scrollTop = log.scrollHeight;
+        return;
+      }
+
+      if (state.step === "type") {
+        const row = el("div", "chat-booking-types");
+        for (const ct of callTypes) {
+          const b = el("button", "chat-booking-type");
+          b.type = "button";
+          b.appendChild(el("span", "chat-booking-type-label", ct.label));
+          if (ct.description) b.appendChild(el("span", "chat-booking-type-desc", ct.description));
+          b.onclick = () => { state.type = ct; state.step = "slots"; void loadSlots(); };
+          row.appendChild(b);
+        }
+        card.appendChild(row);
+      } else if (state.step === "slots") {
+        if (state.loading) { card.appendChild(el("p", "chat-booking-note", "Finding open times...")); }
+        else if (state.days.length) {
+          const dayRow = el("div", "chat-booking-days");
+          for (const d of state.days) {
+            const db = el("button", "chat-booking-day" + (d.date === state.activeDate ? " active" : ""), fmtDay(d.date));
+            db.type = "button";
+            db.onclick = () => { state.activeDate = d.date; state.slotMs = 0; render(); };
+            dayRow.appendChild(db);
+          }
+          card.appendChild(dayRow);
+          const active = state.days.find((d) => d.date === state.activeDate);
+          const slotRow = el("div", "chat-booking-slots");
+          for (const s of (active && active.slots) || []) {
+            const sb = el("button", "chat-booking-slot" + (s.startMs === state.slotMs ? " active" : ""), fmtTime(s.startMs));
+            sb.type = "button";
+            sb.onclick = () => { state.slotMs = s.startMs; state.step = "confirm"; render(); };
+            slotRow.appendChild(sb);
+          }
+          card.appendChild(slotRow);
+          card.appendChild(el("p", "chat-booking-tz", "Times shown in your timezone."));
+        }
+      } else if (state.step === "confirm") {
+        card.appendChild(el("p", "chat-booking-when", fmtDay(state.activeDate) + ", " + fmtTime(state.slotMs)));
+        const nameLabel = el("label", "chat-booking-field");
+        nameLabel.appendChild(el("span", undefined, "Your name (optional)"));
+        const nameIn = el("input", "chat-booking-input");
+        nameIn.type = "text";
+        nameIn.value = state.name;
+        nameIn.oninput = () => { state.name = nameIn.value; };
+        nameLabel.appendChild(nameIn);
+        card.appendChild(nameLabel);
+        card.appendChild(el("p", "chat-booking-note", "The invite goes to your account email."));
+        const actions = el("div", "chat-booking-actions");
+        const back = el("button", "chat-booking-back", "Back");
+        back.type = "button";
+        back.onclick = () => { state.step = "slots"; state.slotMs = 0; render(); };
+        const go = el("button", "chat-booking-confirm primary", "Confirm booking");
+        go.type = "button";
+        go.disabled = state.loading;
+        go.onclick = () => void confirm();
+        actions.append(back, go);
+        card.appendChild(actions);
+      }
+
+      if (state.error) card.appendChild(el("p", "chat-booking-error", state.error));
+      log.scrollTop = log.scrollHeight;
+    }
+
+    render();
+    log.appendChild(card);
+    log.scrollTop = log.scrollHeight;
+    if (state.step === "slots") void loadSlots();
+  }
+
   async function send(text: string): Promise<void> {
     const content = text.trim();
     if (!content || sending) return;
@@ -116,6 +288,8 @@ function main(): void {
       if (res.ok && res.reply) {
         messages.push({ role: "assistant", content: res.reply });
         addBubble("assistant", res.reply, res.images);
+        if (res.video) addVideoCard(res.video);
+        if (res.booking) addBookingCard(res.booking);
       } else {
         addBubble("error", res.error || "The assistant is unavailable right now.");
       }

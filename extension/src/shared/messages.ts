@@ -295,6 +295,8 @@ export type RuntimeMessage =
   | { kind: "CLEAN_LINK"; url: string }
   | { kind: "OPENAI_COMPLETE"; prompt: string }
   | { kind: "AI_CHAT"; messages: AiChatTurn[] }
+  | { kind: "BOOKING_SLOTS"; callType: "demo" | "support" }
+  | { kind: "BOOKING_CREATE"; callType: "demo" | "support"; startMs: number; name: string; timezone: string }
   // Social Posting scheduler ("click an image, schedule a post"). All Bearer-
   // authed in the background so the license key never reaches a page.
   // Open the compose window (from a retailer tile / product action; the
@@ -1266,7 +1268,38 @@ export type CleanLinkResult = {
 
 export type AiChatTurn = { role: "user" | "assistant"; content: string };
 export type AiChatImage = { url: string; alt: string };
-export type AiChatResult = { ok: boolean; reply?: string; images?: AiChatImage[]; error?: string };
+// A tutorial-video card (show_video) the concierge may attach to a reply.
+export type AiChatVideo = { tutorialId: string; title: string; videoId: string; url: string };
+// An inline-booking signal (offer_booking): which 1:1 call type(s) to show.
+export type AiChatBookingCallType = {
+  key: "demo" | "support";
+  label: string;
+  userMinutes: number;
+  requiresSubscription: boolean;
+  description: string;
+};
+export type AiChatBooking = { callTypes: AiChatBookingCallType[] };
+export type AiChatResult = {
+  ok: boolean;
+  reply?: string;
+  images?: AiChatImage[];
+  video?: AiChatVideo;
+  booking?: AiChatBooking;
+  error?: string;
+};
+
+// Live availability + booking for the in-chat booking card (BOOKING_SLOTS /
+// BOOKING_CREATE), proxied through the background worker with the license bearer.
+export type BookingSlot = { startMs: number; userEndMs: number };
+export type BookingDay = { date: string; timezone: string; slots: BookingSlot[] };
+export type BookingSlotsResult = {
+  ok: boolean;
+  callType?: "demo" | "support";
+  userMinutes?: number;
+  days?: BookingDay[];
+  error?: string;
+};
+export type BookingCreateResult = { ok: boolean; id?: string; joinUrl?: string; error?: string };
 
 // Social Posting scheduler results.
 export type ScheduleSocialPostResult = { ok: boolean; id?: string; error?: string; migrationPending?: boolean };
