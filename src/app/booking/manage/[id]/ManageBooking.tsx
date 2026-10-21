@@ -8,9 +8,10 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { CallTypeKey } from "@/lib/scheduling";
 
 type Summary = {
-  callType: "support" | "demo";
+  callType: CallTypeKey;
   label: string;
   userMinutes: number;
   startMs: number;

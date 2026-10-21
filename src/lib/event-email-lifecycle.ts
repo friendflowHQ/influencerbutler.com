@@ -25,6 +25,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { parseAudience, type Audience } from "@/lib/email-audience";
 import { activeRegistrations } from "@/lib/events";
 import { sendEventReplay, type EventEmailData } from "@/lib/event-emails";
+import { hasOpenOffers } from "@/lib/event-call-offers";
 
 const SITE =
   process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
@@ -311,6 +312,7 @@ export async function sendEventReplays(
     if (!replayDue(endMs, ev.replay_hours_after, nowMs)) continue;
 
     const regs = await activeRegistrations(admin, ev.id);
+    const callBookingUrl = (await hasOpenOffers(admin, ev.id)) ? `${SITE}/dashboard/events/${ev.id}/book-a-call` : null;
     for (const r of regs) {
       const emailData: EventEmailData = {
         id: ev.id,
@@ -324,10 +326,12 @@ export async function sendEventReplays(
         timezone: r.userTimezone || ev.timezone,
         imageUrl: ev.image_url,
       };
-      const ok = await sendEventReplay(emailData, replayUrl, {
-        subject: ev.replay_subject,
-        body: ev.replay_body,
-      });
+      const ok = await sendEventReplay(
+        emailData,
+        replayUrl,
+        { subject: ev.replay_subject, body: ev.replay_body },
+        callBookingUrl,
+      );
       if (ok) sent += 1;
     }
 

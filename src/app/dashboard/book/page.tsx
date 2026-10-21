@@ -8,14 +8,14 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CALL_TYPES } from "@/lib/scheduling";
+import { CALL_TYPES, type CallTypeKey } from "@/lib/scheduling";
 import { getTopic } from "@/lib/call-topics";
 import { TopicPicker } from "@/components/scheduling/TopicChips";
 
 type Slot = { startMs: number; endMs: number; userEndMs: number };
 type DaySlots = { date: string; timezone: string; slots: Slot[] };
 type MyBooking = {
-  id: string; call_type: "support" | "demo"; starts_at: string; user_ends_at: string;
+  id: string; call_type: CallTypeKey; starts_at: string; user_ends_at: string;
   user_timezone: string | null; status: string; topic: string | null; join_url: string | null;
   manage_url?: string | null;
 };

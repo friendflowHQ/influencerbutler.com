@@ -3,6 +3,7 @@
  * extra views (views.tsx). Everything renders in the admin's own browser zone.
  */
 import { DateTime } from "luxon";
+import type { CallTypeKey } from "@/lib/scheduling";
 
 export type AiNotes = { summary?: string; keyTopics?: string[]; actionItems?: string[]; followUps?: string[] };
 
@@ -14,7 +15,7 @@ export type BookingCtx = {
 };
 
 export type Booking = {
-  id: string; user_email: string; user_name: string | null; call_type: "support" | "demo";
+  id: string; user_email: string; user_name: string | null; call_type: CallTypeKey;
   starts_at: string; user_ends_at: string; user_timezone: string | null; status: string;
   topic: string | null; topics?: string[] | null; join_url: string | null; meeting_provider: string | null; host_notes: string | null;
   recording_status?: string | null; recording_url?: string | null;
@@ -57,10 +58,16 @@ export function startOfWeekSun(dt: DateTime): DateTime { return dt.startOf("day"
 
 // Color coding shared by every view: status first (a resolved call reads very
 // differently from a live one), then call type. All pairs are AA on their tint.
+const CALL_TYPE_PILL_CLASS: Record<CallTypeKey, string> = {
+  support: "bg-orange-50 text-orange-700",
+  demo: "bg-emerald-50 text-emerald-700",
+  event_followup: "bg-indigo-50 text-indigo-800",
+};
+
 export function callPillClass(b: Booking): string {
   if (b.status === "no_show") return "bg-amber-50 text-amber-800";
   if (b.status === "completed") return "bg-slate-100 text-slate-600";
-  return b.call_type === "support" ? "bg-orange-50 text-orange-700" : "bg-emerald-50 text-emerald-700";
+  return CALL_TYPE_PILL_CLASS[b.call_type] ?? "bg-emerald-50 text-emerald-700";
 }
 
 export function statusPillClass(status: string): string {

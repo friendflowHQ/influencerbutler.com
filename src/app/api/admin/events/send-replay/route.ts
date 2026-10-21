@@ -16,10 +16,13 @@ import { requirePermission } from "@/lib/admin";
 import { logAdminAction } from "@/lib/admin-audit";
 import { getAdmin, getEvent, activeRegistrations } from "@/lib/events";
 import { sendEventReplay, type EventEmailData } from "@/lib/event-emails";
+import { hasOpenOffers } from "@/lib/event-call-offers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
+
+const SITE = process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
 
 const UUID_RE = /^[0-9a-f-]{36}$/i;
 
@@ -72,6 +75,7 @@ export async function POST(request: Request) {
   const regs = await activeRegistrations(admin, id);
   const endMs = Date.parse(event.endsAt);
   const startMs = Date.parse(event.startsAt);
+  const callBookingUrl = (await hasOpenOffers(admin, id)) ? `${SITE}/dashboard/events/${id}/book-a-call` : null;
 
   let sent = 0;
   for (const r of regs) {
@@ -87,7 +91,7 @@ export async function POST(request: Request) {
       timezone: r.userTimezone || event.timezone,
       imageUrl: event.imageUrl,
     };
-    const ok = await sendEventReplay(emailData, replayUrl, { subject, body: copyBody });
+    const ok = await sendEventReplay(emailData, replayUrl, { subject, body: copyBody }, callBookingUrl);
     if (ok) sent += 1;
   }
 

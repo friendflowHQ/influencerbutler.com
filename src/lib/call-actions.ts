@@ -137,6 +137,17 @@ export async function cancelBooking(
   if (updErr) { console.error("[call-actions] cancel", updErr.message); return { ok: false, status: 500, error: "Could not cancel" }; }
   if (!updated || updated.length === 0) return { ok: true, alreadyCancelled: true, emailSent: false };
 
+  // A cancelled event-followup call frees its offer back up for another
+  // registrant, instead of wasting one of the event's opened slots.
+  if (booking.call_type === "event_followup") {
+    try {
+      await admin
+        .from("event_call_offers")
+        .update({ status: "open", claimed_email: null, claimed_booking_id: null, claimed_at: null })
+        .eq("claimed_booking_id", booking.id);
+    } catch (e) { console.error("[call-actions] reopen offer", e); }
+  }
+
   let emailSent = false;
   try { emailSent = await sendCancellation(emailData(booking)); } catch (e) { console.error("[call-actions] cancel email", e); }
 

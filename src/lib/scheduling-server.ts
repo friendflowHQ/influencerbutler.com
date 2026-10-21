@@ -114,34 +114,73 @@ export async function loadConfig(admin: Admin): Promise<SchedConfig> {
 /**
  * Everything that makes the owner busy in [fromMs, toMs], as UTC busy ranges:
  * confirmed bookings, one-off manual blocks, weekly recurring protected blocks,
- * and (when connected) the owner's Google Calendar free/busy. Google is folded
- * in here so both availability listing and booking re-validation subtract it.
+ * open event-followup offers, and (when connected) the owner's Google Calendar
+ * free/busy. Google is folded in here so both availability listing and
+ * booking re-validation subtract it.
+ *
+ * `callType` is the type being scheduled/moved right now (the "requester");
+ * each confirmed booking and open offer is padded outward by
+ * `Math.max(requester's busyPadMinutes, that row's own type's busyPadMinutes)`
+ * before being treated as busy. For today's support/demo bookings asking
+ * about support/demo, both pads are 0, so this is a no-op - identical ranges
+ * to before this existed. An event_followup row (booking or open offer) always
+ * repels anything within its own 30-min pad, regardless of who's asking, since
+ * its own pad dominates the max(). `call_blocks`/recurring/Google are not
+ * call-type-specific and stay unpadded, unchanged.
  */
 export async function loadBusy(
   admin: Admin,
   fromMs: number,
   toMs: number,
-  opts?: { googleRefreshToken?: string | null; excludeBookingId?: string | null; ownEvent?: { startMs: number; endMs: number } | null },
+  opts?: {
+    googleRefreshToken?: string | null;
+    excludeBookingId?: string | null;
+    ownEvent?: { startMs: number; endMs: number } | null;
+    callType?: CallTypeKey;
+  },
 ): Promise<BusyRange[]> {
   const fromIso = new Date(fromMs).toISOString();
   const toIso = new Date(toMs).toISOString();
   const busy: BusyRange[] = [];
+  const requesterPad = opts?.callType ? CALL_TYPES[opts.callType].busyPadMinutes : 0;
+  const padFor = (rowType: string) => {
+    const rowPad = (CALL_TYPES as Record<string, { busyPadMinutes: number }>)[rowType]?.busyPadMinutes ?? 0;
+    return Math.max(requesterPad, rowPad) * 60_000;
+  };
+
   let bq = admin
     .from("call_bookings")
-    .select("starts_at,ends_at")
+    .select("starts_at,ends_at,call_type")
     .eq("status", "confirmed")
     .lt("starts_at", toIso)
     .gt("ends_at", fromIso);
   // A booking being moved must not conflict with its own current slot.
   if (opts?.excludeBookingId) bq = bq.neq("id", opts.excludeBookingId);
   const b = await bq;
-  if (!b.error) for (const r of b.data ?? []) busy.push({ startMs: Date.parse(r.starts_at as string), endMs: Date.parse(r.ends_at as string) });
+  if (!b.error) for (const r of b.data ?? []) {
+    const pad = padFor(r.call_type as string);
+    busy.push({ startMs: Date.parse(r.starts_at as string) - pad, endMs: Date.parse(r.ends_at as string) + pad });
+  }
   const m = await admin
     .from("call_blocks")
     .select("starts_at,ends_at")
     .lt("starts_at", toIso)
     .gt("ends_at", fromIso);
   if (!m.error) for (const r of m.data ?? []) busy.push({ startMs: Date.parse(r.starts_at as string), endMs: Date.parse(r.ends_at as string) });
+
+  // Open event-followup offers: held from the instant they're confirmed, well
+  // before anyone claims them. Always padded as event_followup (their row
+  // "type" is implicitly event_followup - this table only ever holds those).
+  const o = await admin
+    .from("event_call_offers")
+    .select("starts_at,ends_at")
+    .eq("status", "open")
+    .lt("starts_at", toIso)
+    .gt("ends_at", fromIso);
+  if (!o.error) for (const r of o.data ?? []) {
+    const pad = padFor("event_followup");
+    busy.push({ startMs: Date.parse(r.starts_at as string) - pad, endMs: Date.parse(r.ends_at as string) + pad });
+  }
 
   // Weekly recurring protected blocks, expanded across the window.
   const recurring = await loadRecurringBlocks(admin);
@@ -176,7 +215,7 @@ export async function availabilityForType(admin: Admin, callType: CallTypeKey, n
   const dates = horizonDates(nowMs, config.bookingHorizonDays, walkTz);
   const rangeStart = nowMs;
   const rangeEnd = nowMs + (config.bookingHorizonDays + 1) * 86_400_000;
-  const busy = await loadBusy(admin, rangeStart, rangeEnd, { googleRefreshToken: config.googleRefreshToken, ...move });
+  const busy = await loadBusy(admin, rangeStart, rangeEnd, { googleRefreshToken: config.googleRefreshToken, callType, ...move });
   const decoyOpts = { minPerDay: config.decoyMin, maxPerDay: config.decoyMax };
 
   const out: DaySlots[] = [];
@@ -214,7 +253,7 @@ export async function validateSlot(
   const walkTz = rules[0]?.timezone || "UTC";
   const isoDate = new Intl.DateTimeFormat("en-CA", { timeZone: walkTz, year: "numeric", month: "2-digit", day: "2-digit" })
     .format(date); // YYYY-MM-DD
-  const busy = await loadBusy(admin, startMs - 86_400_000, startMs + ct.blockMinutes * 60_000 + 86_400_000, { googleRefreshToken: config.googleRefreshToken, ...move });
+  const busy = await loadBusy(admin, startMs - 86_400_000, startMs + ct.blockMinutes * 60_000 + 86_400_000, { googleRefreshToken: config.googleRefreshToken, callType, ...move });
   const slots = computeDaySlots({
     dateISO: isoDate,
     callType,
@@ -252,7 +291,7 @@ export async function checkMove(
   const config = await loadConfig(admin);
   const from = startMs - 3600_000;
   const to = endMs + 3600_000;
-  const busy = await loadBusy(admin, from, to, { excludeBookingId: bookingId });
+  const busy = await loadBusy(admin, from, to, { excludeBookingId: bookingId, callType });
   if (config.googleRefreshToken && isGoogleConfigured()) {
     try {
       const own = ownEvent;

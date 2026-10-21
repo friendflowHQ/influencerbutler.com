@@ -219,6 +219,7 @@ export async function sendEventReplay(
   e: EventEmailData,
   replayUrl: string,
   copy?: { subject?: string | null; body?: string | null },
+  callBookingUrl?: string | null,
 ): Promise<boolean> {
   const subject = (copy?.subject || "").trim() || `Replay: ${e.title}`;
   let body = (copy?.body || "").trim();
@@ -240,9 +241,15 @@ export async function sendEventReplay(
       `Your Influencer Butler Team`,
     ].join("\n");
   }
+  // A private 1:1 follow-up call, open only to this event's registrants - add
+  // the link if the admin opened any and it isn't already in the copy.
+  if (callBookingUrl && !body.includes(callBookingUrl)) {
+    body += `\n\nWant to talk it through 1:1? Book a private follow-up call: ${callBookingUrl}`;
+  }
   const html = htmlFrom(body, [
     { phrase: "Upcoming Events", href: EVENTS_URL },
     { phrase: replayUrl, href: replayUrl },
+    ...(callBookingUrl ? [{ phrase: callBookingUrl, href: callBookingUrl }] : []),
   ]);
   return sendResend(e.toEmail, subject, body, "event_replay", undefined, html);
 }

@@ -203,6 +203,7 @@ export default function AdminEventsPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [callOffersOpenId, setCallOffersOpenId] = useState<string | null>(null);
   const [imagingId, setImagingId] = useState<string | null>(null);
   const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
   const uploadTargetId = useRef<string | null>(null);
@@ -1438,6 +1439,13 @@ export default function AdminEventsPage() {
                   </button>
                   <button
                     type="button"
+                    onClick={() => setCallOffersOpenId(callOffersOpenId === e.id ? null : e.id)}
+                    className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-indigo-400 hover:text-indigo-700"
+                  >
+                    {callOffersOpenId === e.id ? "Hide follow-up calls" : "1:1 follow-up calls"}
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => generateImage(e.id)}
                     disabled={imagingId === e.id}
                     className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-indigo-400 hover:text-indigo-700 disabled:opacity-60"
@@ -1522,6 +1530,7 @@ export default function AdminEventsPage() {
                 </div>
               </div>
               {openId === e.id ? <RegistrationsPanel eventId={e.id} /> : null}
+              {callOffersOpenId === e.id ? <CallOffersPanel eventId={e.id} /> : null}
             </div>
           ))}
         </div>
@@ -1675,6 +1684,215 @@ function RegistrationsPanel({ eventId }: { eventId: string }) {
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+type Offer = {
+  id: string;
+  startsAt: string;
+  endsAt: string;
+  status: "open" | "claimed" | "cancelled";
+  claimedEmail: string | null;
+};
+type DraftSlot = { startsAt: string; endsAt: string };
+
+function CallOffersPanel({ eventId }: { eventId: string }) {
+  const [offers, setOffers] = useState<Offer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [count, setCount] = useState(3);
+  const [drafts, setDrafts] = useState<DraftSlot[] | null>(null);
+  const [suggesting, setSuggesting] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/admin/events/call-offers/list?eventId=${encodeURIComponent(eventId)}`, { cache: "no-store" });
+      if (!res.ok) return;
+      const data = (await res.json()) as { offers?: Offer[] };
+      setOffers(data.offers ?? []);
+    } finally {
+      setLoading(false);
+    }
+  }, [eventId]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const suggest = async () => {
+    setSuggesting(true);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/admin/events/call-offers/suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId, count }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string; slots?: { startMs: number; endMs: number }[] };
+      if (!res.ok || !data.slots) {
+        setMessage(data.error || "Could not suggest times.");
+        return;
+      }
+      if (data.slots.length < count) {
+        setMessage(`Only found ${data.slots.length} of ${count} open times in the booking window.`);
+      }
+      setDrafts(data.slots.map((s) => ({ startsAt: toLocalInput(new Date(s.startMs).toISOString()), endsAt: toLocalInput(new Date(s.endMs).toISOString()) })));
+    } finally {
+      setSuggesting(false);
+    }
+  };
+
+  const updateDraft = (i: number, field: keyof DraftSlot, value: string) => {
+    setDrafts((d) => (d ? d.map((s, idx) => (idx === i ? { ...s, [field]: value } : s)) : d));
+  };
+
+  const confirm = async () => {
+    if (!drafts || drafts.length === 0) return;
+    setConfirming(true);
+    setMessage(null);
+    try {
+      const slots = drafts
+        .map((d) => ({ startMs: Date.parse(fromLocalInput(d.startsAt)), endMs: Date.parse(fromLocalInput(d.endsAt)) }))
+        .filter((s) => Number.isFinite(s.startMs) && Number.isFinite(s.endMs) && s.endMs > s.startMs);
+      const res = await fetch("/api/admin/events/call-offers/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventId, slots }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string; created?: unknown[]; skipped?: unknown[] };
+      if (!res.ok) {
+        setMessage(data.error || "Could not hold those times.");
+        return;
+      }
+      const created = data.created?.length ?? 0;
+      const skipped = data.skipped?.length ?? 0;
+      setMessage(skipped > 0 ? `Held ${created} time(s); ${skipped} were taken in the meantime.` : `Held ${created} time(s).`);
+      setDrafts(null);
+      await load();
+    } finally {
+      setConfirming(false);
+    }
+  };
+
+  const cancelOffer = async (offerId: string) => {
+    await fetch("/api/admin/events/call-offers/cancel", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ offerId }),
+    });
+    await load();
+  };
+
+  if (loading) return <p className="mt-3 text-sm text-slate-500">Loading follow-up calls...</p>;
+
+  return (
+    <div className="mt-4 border-t border-slate-100 pt-4">
+      <p className="text-sm font-medium text-slate-700">
+        Private 1:1 follow-up calls - 45 min, open only to this event&apos;s registrants, held with a
+        30-minute gap around your other calls and events.
+      </p>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <label className="flex items-center gap-2 text-sm">
+          <span className="text-slate-600">Open</span>
+          <input
+            type="number"
+            min={1}
+            max={20}
+            value={count}
+            onChange={(e) => setCount(Math.max(1, Math.min(20, Number(e.target.value) || 1)))}
+            className="w-16 rounded-lg border border-slate-300 px-2 py-1"
+          />
+          <span className="text-slate-600">call(s)</span>
+        </label>
+        <button
+          type="button"
+          onClick={suggest}
+          disabled={suggesting}
+          className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-indigo-400 hover:text-indigo-700 disabled:opacity-60"
+        >
+          {suggesting ? "Suggesting..." : "Suggest times"}
+        </button>
+      </div>
+
+      {message ? <p className="mt-2 text-xs text-slate-500">{message}</p> : null}
+
+      {drafts && drafts.length > 0 ? (
+        <div className="mt-3 flex flex-col gap-2 rounded-lg border border-indigo-100 bg-indigo-50/40 p-3">
+          <p className="text-xs font-medium text-indigo-900">Review before holding these times:</p>
+          {drafts.map((d, i) => (
+            <div key={i} className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <input
+                type="datetime-local"
+                value={d.startsAt}
+                onChange={(e) => updateDraft(i, "startsAt", e.target.value)}
+                className="rounded-lg border border-slate-300 px-2 py-1 text-sm"
+              />
+              <input
+                type="datetime-local"
+                value={d.endsAt}
+                onChange={(e) => updateDraft(i, "endsAt", e.target.value)}
+                className="rounded-lg border border-slate-300 px-2 py-1 text-sm"
+              />
+            </div>
+          ))}
+          <div className="mt-1 flex gap-2">
+            <button
+              type="button"
+              onClick={confirm}
+              disabled={confirming}
+              className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+            >
+              {confirming ? "Holding..." : `Confirm ${drafts.length} time(s)`}
+            </button>
+            <button
+              type="button"
+              onClick={() => setDrafts(null)}
+              className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="mt-3">
+        {offers.length === 0 ? (
+          <p className="text-sm text-slate-500">No follow-up calls opened for this event yet.</p>
+        ) : (
+          <ul className="flex flex-col gap-1 text-sm text-slate-600">
+            {offers.map((o) => (
+              <li key={o.id} className="flex items-center gap-2">
+                <span
+                  className={[
+                    "rounded-full px-2 py-0.5 text-xs font-medium",
+                    o.status === "open"
+                      ? "bg-indigo-50 text-indigo-700"
+                      : o.status === "claimed"
+                        ? "bg-emerald-50 text-emerald-700"
+                        : "bg-slate-100 text-slate-500",
+                  ].join(" ")}
+                >
+                  {o.status}
+                </span>
+                <span>{new Date(o.startsAt).toLocaleString()}</span>
+                {o.claimedEmail ? <span className="text-xs text-slate-500">({o.claimedEmail})</span> : null}
+                {o.status === "open" ? (
+                  <button
+                    type="button"
+                    onClick={() => cancelOffer(o.id)}
+                    className="ml-auto text-xs font-medium text-rose-600 hover:underline"
+                  >
+                    Cancel
+                  </button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

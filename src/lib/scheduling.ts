@@ -6,7 +6,7 @@
  */
 import { DateTime } from "luxon";
 
-export type CallTypeKey = "support" | "demo";
+export type CallTypeKey = "support" | "demo" | "event_followup";
 
 export const CALL_TYPES: Record<CallTypeKey, {
   key: CallTypeKey;
@@ -15,6 +15,14 @@ export const CALL_TYPES: Record<CallTypeKey, {
   blockMinutes: number;  // reserved on the owner's calendar (incl. wrap buffer)
   requiresSubscription: boolean;
   description: string;
+  // Minimum minutes any OTHER call/offer must keep clear of this one, on both
+  // sides. Applied symmetrically in loadBusy() (scheduling-server.ts): the
+  // larger of the busy row's own pad and the pad of whatever is being
+  // scheduled wins, so an event_followup call always keeps its 30-min buffer
+  // regardless of which type is asking. 0 for support/demo preserves today's
+  // behavior exactly (their own trailing buffer, if any, still comes from
+  // blockMinutes > userMinutes, as before).
+  busyPadMinutes: number;
 }> = {
   support: {
     key: "support",
@@ -23,6 +31,7 @@ export const CALL_TYPES: Record<CallTypeKey, {
     blockMinutes: 60,
     requiresSubscription: true,
     description: "A focused 45-minute 1:1 to troubleshoot a specific issue, fast. Included with any plan.",
+    busyPadMinutes: 0,
   },
   demo: {
     key: "demo",
@@ -31,6 +40,16 @@ export const CALL_TYPES: Record<CallTypeKey, {
     blockMinutes: 120,
     requiresSubscription: false,
     description: "A free 2-hour 1:1 where we set up Influencer Butler with you, any butler you want (YouTube Butler, Amazon Butler, and more).",
+    busyPadMinutes: 0,
+  },
+  event_followup: {
+    key: "event_followup",
+    label: "Event follow-up call",
+    userMinutes: 45,
+    blockMinutes: 45,
+    requiresSubscription: false,
+    description: "A private 45-minute 1:1 follow-up, offered only to people who registered for a specific event.",
+    busyPadMinutes: 30,
   },
 };
 
@@ -240,5 +259,51 @@ export function horizonDates(nowMs: number, horizonDays: number, tz: string): st
   const start = DateTime.fromMillis(nowMs, { zone: tz }).startOf("day");
   const out: string[] = [];
   for (let i = 0; i < horizonDays; i++) out.push(start.plus({ days: i }).toISODate() as string);
+  return out;
+}
+
+/**
+ * Finds up to `count` candidate slots of `durationMinutes`. `busy` is assumed
+ * to already carry whatever padding the caller wants against EXISTING
+ * busy ranges (exactly like computeDaySlots's own `busy` contract - this
+ * function adds no extra padding on that side). `padMinutes` instead keeps
+ * newly-suggested candidates at least that far apart from EACH OTHER within
+ * this one batch (an already-accepted candidate's range is padded before the
+ * next candidate is checked against it; the new candidate itself is checked
+ * unpadded, so the gap ends up exactly `padMinutes`, not double-counted).
+ * Deliberately separate from computeDaySlots - no decoys, no per-call-type
+ * lookup - so this never risks the existing public booking engine's behavior.
+ */
+export function suggestSlots(args: {
+  dates: string[];           // ISO dates to search, in order
+  rules: AvailabilityRule[];
+  busy: BusyRange[];
+  nowMs: number;
+  leadHours: number;
+  durationMinutes: number;
+  padMinutes: number;
+  count: number;
+}): Slot[] {
+  const leadFloorMs = args.nowMs + args.leadHours * 3600_000;
+  const padMs = args.padMinutes * 60_000;
+  const accepted: BusyRange[] = [];
+  const out: Slot[] = [];
+
+  for (const dateISO of args.dates) {
+    if (out.length >= args.count) break;
+    const rule = activeRuleForDate(args.rules, dateISO);
+    if (!rule) continue;
+    const tz = rule.timezone;
+    for (let m = rule.start_min; m + args.durationMinutes <= rule.end_min; m += GRID_MIN) {
+      if (out.length >= args.count) break;
+      const startMs = localMinToUtcMs(dateISO, m, tz);
+      if (startMs < leadFloorMs) continue;
+      const endMs = startMs + args.durationMinutes * 60_000;
+      if (overlaps(startMs, endMs, args.busy)) continue;
+      if (overlaps(startMs, endMs, accepted)) continue;
+      out.push({ startMs, endMs, userEndMs: endMs });
+      accepted.push({ startMs: startMs - padMs, endMs: endMs + padMs });
+    }
+  }
   return out;
 }
