@@ -62,6 +62,20 @@
       "order": 1
     },
     {
+      "id": "ai-assistants-logged-in-accounts-own-connection",
+      "title": "Even AI Assistants Draw This Line: Why Your Logged-In Accounts Belong on Your Own Connection",
+      "category": "Amazon",
+      "tags": "Instagram, Facebook, Proxy",
+      "summary": "Claude can run in the cloud and keep working while your laptop is closed. But watch what happens the moment one of your logged-in accounts is involved. Here is the line Anthropic's own documentation draws, and why it is the same line Influencer Butler drew on day one.",
+      "date": "2026-10-21",
+      "author": "Liz Dean",
+      "readingTime": "7 min read",
+      "keywords": "does claude log into your accounts, claude ai own browser vs cloud, claude in chrome how it works, claude computer use local machine, ai assistant logged in accounts privacy, amazon creator connections official api, why influencer butler is a desktop app, cloud automation amazon influencer risk, residential proxy amazon influencer",
+      "image": "/assets/blog/why-influencer-butler-is-a-desktop-app-not-a-cloud-app.png",
+      "imageAlt": "Illustration of a laptop at home posting from its own internet connection on one side, and a crowded data center server running many identical browser windows with a warning sign on the other",
+      "order": 1
+    },
+    {
       "id": "become-admin-of-facebook-groups-that-lost-their-admins",
       "title": "How to Become Admin of Facebook Groups That Lost Their Admins",
       "category": "Growth",
