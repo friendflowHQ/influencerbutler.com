@@ -40,7 +40,7 @@ const STEPS = [
   {
     n: "03",
     title: "You create their links",
-    body: "Call the API with those two headers. Every link you create lands in that creator's namespace, so it shows up in their own Link Butler dashboard and analytics automatically.",
+    body: "Call the API with those two headers. Every link you create lands in that creator's namespace, so it shows up in their own Deeplink Butler dashboard and analytics automatically.",
   },
 ];
 

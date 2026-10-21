@@ -499,30 +499,30 @@ function wireSocialSchedule(locale: Settings["locale"]): void {
 async function wireLinkButler(locale: Settings["locale"]): Promise<void> {
   const dict = {
     en: {
-      heading: "Link Butler",
+      heading: "Deeplink Butler",
       blurb:
         "See how your branded links are performing, fix a posted link, and manage retargeting pixels.",
-      open: "Open Link Butler",
+      open: "Open Deeplink Butler",
       brandedLabel: "Copy short branded links",
       brandedHint:
         "Copy my link hands you a links.influencerbutler.com short link instead of a long Amazon url. Your affiliate tag stays out of what you post, and clicks are counted. Free on any plan. Turn it off to copy the plain Amazon link.",
       brandedSignIn: "Connect your license key above to use branded links.",
     },
     es: {
-      heading: "Link Butler",
+      heading: "Deeplink Butler",
       blurb:
         "Mira el rendimiento de tus enlaces de marca, corrige un enlace publicado y gestiona los pixeles de retargeting.",
-      open: "Abrir Link Butler",
+      open: "Abrir Deeplink Butler",
       brandedLabel: "Copiar enlaces cortos de marca",
       brandedHint:
         "Copiar mi enlace te da un enlace corto de links.influencerbutler.com en lugar de una url larga de Amazon. Tu etiqueta de afiliado no aparece en lo que publicas y se cuentan los clics. Gratis en cualquier plan. Desactívalo para copiar el enlace normal de Amazon.",
       brandedSignIn: "Conecta tu clave de licencia arriba para usar enlaces de marca.",
     },
     fr: {
-      heading: "Link Butler",
+      heading: "Deeplink Butler",
       blurb:
         "Suivez les performances de vos liens de marque, corrigez un lien publie et gerez les pixels de reciblage.",
-      open: "Ouvrir Link Butler",
+      open: "Ouvrir Deeplink Butler",
       brandedLabel: "Copier des liens de marque courts",
       brandedHint:
         "Copier mon lien vous donne un lien court links.influencerbutler.com au lieu d'une longue url Amazon. Votre balise d'affiliation reste hors de ce que vous publiez et les clics sont comptes. Gratuit sur toute offre. Desactivez-le pour copier le lien Amazon brut.",

@@ -95,11 +95,11 @@ export type LinksDict = {
 };
 
 const EN: LinksDict = {
-  pageTitle: "Link Butler",
+  pageTitle: "Deeplink Butler",
   pageIntro:
     "Your branded Influencer Butler links: see how they are performing, fix a posted link, and manage smart routing.",
-  signedOut: "Connect your Influencer Butler license key to open your Link Butler.",
-  connectHeading: "Connect Link Butler",
+  signedOut: "Connect your Influencer Butler license key to open your Deeplink Butler.",
+  connectHeading: "Connect Deeplink Butler",
   connectPlaceholder: "License key",
   connectButton: "Connect",
   connectError: "That license key did not verify. Check it and try again.",
@@ -184,11 +184,11 @@ const EN: LinksDict = {
 };
 
 const ES: LinksDict = {
-  pageTitle: "Link Butler",
+  pageTitle: "Deeplink Butler",
   pageIntro:
     "Tus enlaces de marca de Influencer Butler: mira su rendimiento, corrige un enlace publicado y gestiona el enrutamiento inteligente.",
-  signedOut: "Conecta tu clave de licencia de Influencer Butler para abrir tu Link Butler.",
-  connectHeading: "Conectar Link Butler",
+  signedOut: "Conecta tu clave de licencia de Influencer Butler para abrir tu Deeplink Butler.",
+  connectHeading: "Conectar Deeplink Butler",
   connectPlaceholder: "Clave de licencia",
   connectButton: "Conectar",
   connectError: "Esa clave de licencia no se pudo verificar. Revisala e intenta de nuevo.",
@@ -273,11 +273,11 @@ const ES: LinksDict = {
 };
 
 const FR: LinksDict = {
-  pageTitle: "Link Butler",
+  pageTitle: "Deeplink Butler",
   pageIntro:
     "Vos liens de marque Influencer Butler : suivez leurs performances, corrigez un lien publie et gerez le routage intelligent.",
-  signedOut: "Connectez votre cle de licence Influencer Butler pour ouvrir votre Link Butler.",
-  connectHeading: "Connecter Link Butler",
+  signedOut: "Connectez votre cle de licence Influencer Butler pour ouvrir votre Deeplink Butler.",
+  connectHeading: "Connecter Deeplink Butler",
   connectPlaceholder: "Cle de licence",
   connectButton: "Connecter",
   connectError: "Cette cle de licence n'a pas pu etre verifiee. Verifiez-la et reessayez.",

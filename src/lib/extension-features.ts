@@ -185,11 +185,11 @@ export const EXTENSION_TOOLS: readonly ExtensionTool[] = [
   },
   {
     id: "link-butler",
-    name: "Branded short links with the Link Butler click ledger",
+    name: "Branded short links with the Deeplink Butler click ledger",
     group: "deep-links",
     tagline: "A short link you own, with clicks by day and country",
     description:
-      "Sign in with your Influencer Butler license key and mint branded short links, then watch clicks by day, country, device, and surface in the Link Butler ledger. If a product goes unavailable, repoint the same link so old posts keep earning.",
+      "Sign in with your Influencer Butler license key and mint branded short links, then watch clicks by day, country, device, and surface in the Deeplink Butler ledger. If a product goes unavailable, repoint the same link so old posts keep earning.",
   },
 
   // Global Maximizer (extension/src/tools/global-maximizer).

@@ -134,7 +134,7 @@ const DESKTOP_NAV: Array<{ label: string; key?: string; items?: NavLeaf[] }> = [
     ],
   },
   {
-    label: "Link Butler",
+    label: "Deeplink Butler",
     items: [
       { label: "Influencer Deeplink Butler", key: "link-butler" },
       { label: "Relink Butler", key: "relink-butler" },
@@ -197,7 +197,7 @@ const WALKTHROUGH_TOURS: Array<{ id: string; about: string }> = [
   { id: "deals-setup", about: "Deals Butler filters, post builder, destinations, scheduler" },
   { id: "deals-harvest", about: "Deals Butler deal harvest and send" },
   { id: "api-integrations", about: "API Integrations and DeepLink Routing setup" },
-  { id: "deeplink-mint", about: "Mint a short Butler Link in Link Butler" },
+  { id: "deeplink-mint", about: "Mint a short Butler Link in Deeplink Butler" },
   { id: "daily-commission-harvest", about: "Daily Commission Butler run and schedule" },
   { id: "feedback-report", about: "Send feedback from the Feedback panel" },
   { id: "instagram-goldmine-harvest", about: "Instagram Goldmine: harvest follower emails from accounts or hashtags" },

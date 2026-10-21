@@ -109,7 +109,7 @@ export const SWITCH_ROWS: readonly SwitchRow[] = [
   {
     id: "deep-links",
     theirs: "Deep links",
-    ours: "Get link (opens the Amazon app) and branded short links with the Link Butler click ledger",
+    ours: "Get link (opens the Amazon app) and branded short links with the Deeplink Butler click ledger",
     surface: "extension",
     plan: "Free",
     where: "Pinned at the top of the free Chrome extension panel on every product page",
