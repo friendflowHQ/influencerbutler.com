@@ -45,6 +45,8 @@ export type EventRow = {
   youtubeError: string | null;
   youtubeUploadedAt: string | null;
   imageUrl: string | null;
+  isPrivate: boolean;
+  seriesId: string | null;
   createdAt: string;
   cancelledAt: string | null;
   // Email-lifecycle fields (migration 20260917_event_email_lifecycle). Read via
@@ -98,7 +100,7 @@ const EVENT_COLS =
   "banner_enabled,banner_text,banner_cta_label,banner_starts_at,banner_ends_at,banner_surfaces," +
   "record_enabled,recall_bot_id,recording_status,recording_url,ai_notes,recorded_at,highlights_emailed_at," +
   "youtube_status,youtube_video_id,youtube_url,youtube_error,youtube_uploaded_at," +
-  "image_url,created_at,cancelled_at";
+  "image_url,is_private,series_id,created_at,cancelled_at";
 
 // The email-lifecycle columns (migration 20260917) live only in the admin read
 // path. They are appended to EVENT_COLS for the "full" select; if that select
@@ -156,6 +158,8 @@ function toEvent(r: Record<string, unknown>): EventRow {
     youtubeError: (r.youtube_error as string | null) ?? null,
     youtubeUploadedAt: (r.youtube_uploaded_at as string | null) ?? null,
     imageUrl: (r.image_url as string | null) ?? null,
+    isPrivate: r.is_private === true,
+    seriesId: (r.series_id as string | null) ?? null,
     createdAt: (r.created_at as string) ?? new Date().toISOString(),
     cancelledAt: (r.cancelled_at as string | null) ?? null,
     inviteAudience: r.invite_audience ?? null,
@@ -221,17 +225,42 @@ export async function getEvent(admin: Admin, id: string): Promise<EventRow | nul
   return toEvent(data as Record<string, unknown>);
 }
 
-/** Upcoming, non-cancelled events for the customer-facing list. */
+/**
+ * Upcoming, non-cancelled events for the customer-facing list: the public
+ * /events marketing page and the signed-in /dashboard/events list. Excludes
+ * private events - a private event is only discoverable via its direct
+ * /events/<id> share link, never via these listings.
+ */
 export async function listUpcomingEvents(admin: Admin, limit = 50): Promise<EventRow[]> {
   const { data, error } = await admin
     .from("events")
     .select(EVENT_COLS)
     .eq("status", "scheduled")
+    .eq("is_private", false)
     .gte("ends_at", new Date().toISOString())
     .order("starts_at", { ascending: true })
     .limit(limit);
   if (error) {
     console.error("[events] listUpcomingEvents", error.message);
+    return [];
+  }
+  return ((data ?? []) as unknown as Record<string, unknown>[]).map(toEvent);
+}
+
+/**
+ * Sibling "pick one of several times" occurrences sharing `seriesId`
+ * (non-cancelled), soonest first - used by the share page to list every time
+ * option for a multi-date private (or public) event.
+ */
+export async function listSeriesEvents(admin: Admin, seriesId: string): Promise<EventRow[]> {
+  const { data, error } = await admin
+    .from("events")
+    .select(EVENT_COLS)
+    .eq("series_id", seriesId)
+    .neq("status", "cancelled")
+    .order("starts_at", { ascending: true });
+  if (error) {
+    console.error("[events] listSeriesEvents", error.message);
     return [];
   }
   return ((data ?? []) as unknown as Record<string, unknown>[]).map(toEvent);

@@ -1,10 +1,12 @@
 /**
  * POST /api/admin/events/update
- * Body: { id, title, description?, startsAt, endsAt, timezone?, recordEnabled?,
- *         joinUrl?, banner?: {...} }
- * Edits an existing event's details + banner config. Does not re-provision the
- * Meet link or Recall bot (those are set at create time); a manual joinUrl edit
- * is honored. Gated by events.manage; audit-logged.
+ * Body: { id, title, description?, dateOptions: [{startsAt, endsAt}], timezone?,
+ *         recordEnabled?, joinUrl?, isPrivate?, banner?: {...} }
+ * Edits an existing event's details + banner config. Always targets exactly one
+ * occurrence row (only dateOptions[0] is used) - sibling time options on a
+ * multi-date event, if any, are untouched. Does not re-provision the Meet link
+ * or Recall bot (those are set at create time); a manual joinUrl edit is
+ * honored. Gated by events.manage; audit-logged.
  */
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
@@ -40,6 +42,9 @@ export async function POST(request: Request) {
   const parsed = parseEventInput(raw);
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
   const input = parsed.value;
+  // Editing always targets exactly one occurrence row - sibling time options
+  // (if any) are untouched, so only the first dateOptions entry is used here.
+  const [{ startMs, endMs }] = input.dateOptions;
 
   const admin = getAdmin();
   if (!admin) return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
@@ -47,10 +52,11 @@ export async function POST(request: Request) {
   const patch: Record<string, unknown> = {
     title: input.title,
     description: input.description,
-    starts_at: new Date(input.startMs).toISOString(),
-    ends_at: new Date(input.endMs).toISOString(),
+    starts_at: new Date(startMs).toISOString(),
+    ends_at: new Date(endMs).toISOString(),
     timezone: input.timezone,
     record_enabled: input.recordEnabled,
+    is_private: input.isPrivate,
     banner_enabled: input.banner.enabled,
     banner_text: input.banner.text,
     banner_cta_label: input.banner.ctaLabel,
@@ -87,8 +93,8 @@ export async function POST(request: Request) {
             id,
             title: input.title,
             description: input.description,
-            startMs: input.startMs,
-            endMs: input.endMs,
+            startMs,
+            endMs,
             timezone: input.timezone,
           },
           plan: invitePlan,

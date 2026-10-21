@@ -5,13 +5,14 @@
  * card so pasting the link into social or chat unfurls the branded image (the
  * dashboard events page is auth-gated, so scrapers can never see it there).
  */
-import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SiteHeader, SiteFooter } from "@/components/blog/SiteChrome";
-import { getAdmin, getEvent, type EventRow } from "@/lib/events";
+import { createClient } from "@/lib/supabase/server";
+import { getAdmin, getEvent, listSeriesEvents, type EventRow } from "@/lib/events";
 import { formatEventDate, formatEventTime } from "@/lib/event-image-text";
 import { RECORDING_CONSENT_NOTICE } from "@/lib/event-consent";
+import RegisterButton from "./RegisterButton";
 
 export const dynamic = "force-dynamic";
 
@@ -78,6 +79,22 @@ export default async function EventSharePage({
   const event = await loadShareableEvent(id);
   if (!event) notFound();
 
+  const admin = getAdmin();
+  const supabase = await createClient();
+  const [siblings, { data: userData }] = await Promise.all([
+    event.seriesId && admin ? listSeriesEvents(admin, event.seriesId) : Promise.resolve([]),
+    supabase.auth.getUser(),
+  ]);
+  const signedIn = Boolean(userData.user?.email);
+
+  // This occurrence plus every other time option for the same event, soonest
+  // first, each with its own Register action tied to that specific occurrence.
+  const timeOptions = event.seriesId
+    ? siblings.length
+      ? siblings
+      : [event]
+    : [event];
+
   const dateLine = formatEventDate(event.startsAt, event.timezone);
   const timeLine = formatEventTime(event.startsAt, event.endsAt, event.timezone);
 
@@ -99,7 +116,7 @@ export default async function EventSharePage({
               Live event
             </p>
             <h1 className="mt-2 text-2xl font-bold text-slate-900 sm:text-3xl">{event.title}</h1>
-            {dateLine ? (
+            {timeOptions.length === 1 && dateLine ? (
               <p className="mt-3 text-base font-medium text-slate-700">
                 {dateLine}
                 {timeLine ? `, ${timeLine}` : ""}
@@ -108,17 +125,47 @@ export default async function EventSharePage({
             {event.description ? (
               <p className="mt-4 whitespace-pre-wrap text-sm text-slate-600">{event.description}</p>
             ) : null}
-            <div className="mt-6">
-              <Link
-                href="/dashboard/events"
-                className="inline-flex items-center justify-center rounded-lg bg-[#f97316] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#ea580c]"
-              >
-                Register for this event
-              </Link>
-              <p className="mt-2 text-xs text-slate-500">
-                Registration opens in your dashboard. New here? You can start a free trial and join.
-              </p>
-            </div>
+            {timeOptions.length > 1 ? (
+              <div className="mt-6 flex flex-col gap-3">
+                <p className="text-sm font-semibold text-slate-700">Pick a time that works for you:</p>
+                {timeOptions.map((opt) => {
+                  const optDate = formatEventDate(opt.startsAt, opt.timezone);
+                  const optTime = formatEventTime(opt.startsAt, opt.endsAt, opt.timezone);
+                  return (
+                    <div
+                      key={opt.id}
+                      className="flex flex-col gap-3 rounded-xl border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <p className="text-sm font-medium text-slate-700">
+                        {optDate}
+                        {optTime ? `, ${optTime}` : ""}
+                      </p>
+                      <RegisterButton
+                        eventId={opt.id}
+                        signedIn={signedIn}
+                        label="Register for this time"
+                        returnPath={`/events/${event.id}`}
+                      />
+                    </div>
+                  );
+                })}
+                <p className="text-xs text-slate-500">
+                  New here? Registering starts a free trial and joins you in.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-6">
+                <RegisterButton
+                  eventId={event.id}
+                  signedIn={signedIn}
+                  label="Register for this event"
+                  returnPath={`/events/${event.id}`}
+                />
+                <p className="mt-2 text-xs text-slate-500">
+                  New here? Registering starts a free trial and joins you in.
+                </p>
+              </div>
+            )}
             {event.recordEnabled ? (
               <p className="mt-4 rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-500">
                 {RECORDING_CONSENT_NOTICE}

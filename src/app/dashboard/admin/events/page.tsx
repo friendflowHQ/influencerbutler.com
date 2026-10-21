@@ -37,6 +37,8 @@ type AdminEvent = {
   bannerEndsAt: string | null;
   bannerSurfaces: BannerSurface[];
   imageUrl: string | null;
+  isPrivate: boolean;
+  seriesId: string | null;
   youtubeStatus: string;
   youtubeUrl: string | null;
   youtubeError: string | null;
@@ -54,15 +56,20 @@ type AdminEvent = {
 // re-engagement cohort (opened more than N of our emails, not unsubscribed).
 type InviteAudienceKind = "all_contacts" | "pro" | "trial" | "engaged" | "tag" | "pasted";
 
+type DateOptionInput = { startsAt: string; endsAt: string };
+
 type FormState = {
   id: string | null;
   title: string;
   description: string;
-  startsAt: string;
-  endsAt: string;
+  // One or more selectable times for this event ("pick one of several
+  // times"). Always length 1 when editing an existing occurrence - adding
+  // more times is a create-time-only affordance.
+  dateOptions: DateOptionInput[];
   timezone: string;
   recordEnabled: boolean;
   joinUrl: string;
+  isPrivate: boolean;
   bannerEnabled: boolean;
   bannerText: string;
   bannerCtaLabel: string;
@@ -128,11 +135,11 @@ function emptyForm(): FormState {
     id: null,
     title: "",
     description: "",
-    startsAt: "",
-    endsAt: "",
+    dateOptions: [{ startsAt: "", endsAt: "" }],
     timezone: browserTz(),
     recordEnabled: true,
     joinUrl: "",
+    isPrivate: false,
     bannerEnabled: false,
     bannerText: "",
     bannerCtaLabel: "Register",
@@ -288,11 +295,11 @@ export default function AdminEventsPage() {
       id: e.id,
       title: e.title,
       description: e.description ?? "",
-      startsAt: toLocalInput(e.startsAt),
-      endsAt: toLocalInput(e.endsAt),
+      dateOptions: [{ startsAt: toLocalInput(e.startsAt), endsAt: toLocalInput(e.endsAt) }],
       timezone: e.timezone,
       recordEnabled: e.recordEnabled,
       joinUrl: e.joinUrl ?? "",
+      isPrivate: e.isPrivate,
       bannerEnabled: e.bannerEnabled,
       bannerText: e.bannerText ?? "",
       bannerCtaLabel: e.bannerCtaLabel ?? "Register",
@@ -319,6 +326,21 @@ export default function AdminEventsPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const updateDateOption = (index: number, field: keyof DateOptionInput, value: string) => {
+    setForm((f) => ({
+      ...f,
+      dateOptions: f.dateOptions.map((o, i) => (i === index ? { ...o, [field]: value } : o)),
+    }));
+  };
+
+  const addDateOption = () => {
+    setForm((f) => ({ ...f, dateOptions: [...f.dateOptions, { startsAt: "", endsAt: "" }] }));
+  };
+
+  const removeDateOption = (index: number) => {
+    setForm((f) => ({ ...f, dateOptions: f.dateOptions.filter((_, i) => i !== index) }));
+  };
+
   const toggleSurface = (s: BannerSurface) => {
     setForm((f) => ({
       ...f,
@@ -335,11 +357,14 @@ export default function AdminEventsPage() {
       id: form.id ?? undefined,
       title: form.title,
       description: form.description,
-      startsAt: fromLocalInput(form.startsAt),
-      endsAt: fromLocalInput(form.endsAt),
+      dateOptions: form.dateOptions.map((o) => ({
+        startsAt: fromLocalInput(o.startsAt),
+        endsAt: fromLocalInput(o.endsAt),
+      })),
       timezone: form.timezone,
       recordEnabled: form.recordEnabled,
       joinUrl: form.joinUrl,
+      isPrivate: form.isPrivate,
       banner: {
         enabled: form.bannerEnabled,
         text: form.bannerText,
@@ -378,20 +403,34 @@ export default function AdminEventsPage() {
       const data = (await res.json().catch(() => ({}))) as {
         error?: string;
         id?: string;
+        ids?: string[];
         joinUrl?: string | null;
       };
       if (!res.ok) {
         setMessage(data.error || "Could not save.");
         return;
       }
-      const savedId = form.id ?? data.id ?? null;
-      setMessage(form.id ? "Event updated." : "Event scheduled.");
+      const savedIds = form.id
+        ? [form.id]
+        : data.ids && data.ids.length
+          ? data.ids
+          : data.id
+            ? [data.id]
+            : [];
+      setMessage(
+        form.id
+          ? "Event updated."
+          : savedIds.length > 1
+            ? `${savedIds.length} time options scheduled.`
+            : "Event scheduled.",
+      );
       setForm(emptyForm());
       setDraftNote(null);
       await refetch();
-      // Auto-generate the branded cover image (title + date + time) as a
-      // follow-up step so saving stays fast. Best-effort: never blocks.
-      if (savedId) void generateImage(savedId);
+      // Auto-generate the branded cover image (title + date + time) for every
+      // occurrence created, as a follow-up step so saving stays fast.
+      // Best-effort: never blocks.
+      for (const sid of savedIds) void generateImage(sid);
     } finally {
       setSaving(false);
     }
@@ -401,12 +440,15 @@ export default function AdminEventsPage() {
   // title + time (and the description box used as a rough brief). Fills the form
   // for review; nothing is saved until the operator clicks Schedule.
   const draftWithAi = async () => {
-    if (!form.title.trim() || !form.startsAt || !form.endsAt) {
+    // Drafting only needs one representative time, even with multiple date
+    // options - the first option stands in for the rest.
+    const firstOption = form.dateOptions[0];
+    if (!form.title.trim() || !firstOption?.startsAt || !firstOption?.endsAt) {
       setDraftNote("Add a title, a start time, and an end time first, then Draft with AI.");
       return;
     }
-    const startIso = fromLocalInput(form.startsAt);
-    const endIso = fromLocalInput(form.endsAt);
+    const startIso = fromLocalInput(firstOption.startsAt);
+    const endIso = fromLocalInput(firstOption.endsAt);
     if (!startIso || !endIso || Date.parse(endIso) <= Date.parse(startIso)) {
       setDraftNote("The end time must be after the start time. Check the Ends date.");
       return;
@@ -419,8 +461,8 @@ export default function AdminEventsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: form.title,
-          startsAt: fromLocalInput(form.startsAt),
-          endsAt: fromLocalInput(form.endsAt),
+          startsAt: startIso,
+          endsAt: endIso,
           timezone: form.timezone,
           notes: form.description,
         }),
@@ -874,24 +916,69 @@ export default function AdminEventsPage() {
               placeholder="What the call covers, who it is for, what to bring."
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium text-slate-700">Starts</span>
+          <label className="sm:col-span-2 flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
             <input
-              type="datetime-local"
-              value={form.startsAt}
-              onChange={(e) => setForm({ ...form, startsAt: e.target.value })}
-              className="rounded-lg border border-slate-300 px-3 py-2"
+              type="checkbox"
+              checked={form.isPrivate}
+              onChange={(e) => setForm({ ...form, isPrivate: e.target.checked })}
+              className="mt-0.5"
             />
+            <span className="text-slate-700">
+              <span className="font-medium">Private event</span> - not shown on the public events
+              page or the dashboard events list. Share the direct link yourself.
+            </span>
           </label>
-          <label className="flex flex-col gap-1 text-sm">
-            <span className="font-medium text-slate-700">Ends</span>
-            <input
-              type="datetime-local"
-              value={form.endsAt}
-              onChange={(e) => setForm({ ...form, endsAt: e.target.value })}
-              className="rounded-lg border border-slate-300 px-3 py-2"
-            />
-          </label>
+          <div className="sm:col-span-2 flex flex-col gap-3">
+            <span className="text-sm font-medium text-slate-700">
+              Date &amp; time{form.dateOptions.length > 1 ? " options" : ""}
+            </span>
+            {form.dateOptions.length > 1 ? (
+              <p className="-mt-2 text-xs text-slate-500">
+                Each time below is created as its own event; invitees pick whichever one works for
+                them. Each option sends its own invite/replay emails if those are turned on below.
+              </p>
+            ) : null}
+            {form.dateOptions.map((option, i) => (
+              <div key={i} className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+                <label className="flex flex-col gap-1 text-sm">
+                  <span className="font-medium text-slate-700">Starts</span>
+                  <input
+                    type="datetime-local"
+                    value={option.startsAt}
+                    onChange={(e) => updateDateOption(i, "startsAt", e.target.value)}
+                    className="rounded-lg border border-slate-300 px-3 py-2"
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-sm">
+                  <span className="font-medium text-slate-700">Ends</span>
+                  <input
+                    type="datetime-local"
+                    value={option.endsAt}
+                    onChange={(e) => updateDateOption(i, "endsAt", e.target.value)}
+                    className="rounded-lg border border-slate-300 px-3 py-2"
+                  />
+                </label>
+                {!form.id && form.dateOptions.length > 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => removeDateOption(i)}
+                    className="h-fit rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                  >
+                    Remove
+                  </button>
+                ) : null}
+              </div>
+            ))}
+            {!form.id ? (
+              <button
+                type="button"
+                onClick={addDateOption}
+                className="w-fit rounded-lg border border-dashed border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+              >
+                + Add another time
+              </button>
+            ) : null}
+          </div>
           <label className="flex flex-col gap-1 text-sm">
             <span className="font-medium text-slate-700">Display timezone</span>
             <input
@@ -924,7 +1011,14 @@ export default function AdminEventsPage() {
           </label>
         </div>
 
-        {/* Banner block */}
+        {/* Banner block - not available for a private event, which never
+            advertises itself cross-app. */}
+        {form.isPrivate ? (
+          <p className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+            Private events don&apos;t show a banner. Uncheck &quot;Private event&quot; above to push
+            a banner notice.
+          </p>
+        ) : (
         <div className="mt-5 rounded-xl border border-indigo-100 bg-indigo-50/40 p-4">
           <label className="flex items-center gap-2 text-sm font-semibold text-indigo-900">
             <input
@@ -997,6 +1091,7 @@ export default function AdminEventsPage() {
             </div>
           ) : null}
         </div>
+        )}
 
         {/* Email plan block: auto-invite ahead of time + replay follow-up. The
             24h/1h reminders to registrants are always automatic. */}
@@ -1244,12 +1339,31 @@ export default function AdminEventsPage() {
                     >
                       {e.status}
                     </span>
+                    {e.isPrivate ? (
+                      <span className="rounded-full bg-slate-800 px-2 py-0.5 text-xs font-medium text-white">
+                        Private
+                      </span>
+                    ) : null}
                     {e.bannerEnabled ? (
                       <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
                         banner: {e.bannerSurfaces.join(", ") || "none"}
                       </span>
                     ) : null}
                   </div>
+                  {e.seriesId
+                    ? (() => {
+                        const siblings = events
+                          .filter((o) => o.seriesId === e.seriesId && o.id !== e.id)
+                          .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt));
+                        const total = siblings.length + 1;
+                        return siblings.length ? (
+                          <p className="mt-1 text-xs text-slate-500">
+                            One of {total} time options · also:{" "}
+                            {siblings.map((s) => new Date(s.startsAt).toLocaleString()).join(", ")}
+                          </p>
+                        ) : null;
+                      })()
+                    : null}
                   <p className="mt-1 text-sm text-slate-600">
                     {new Date(e.startsAt).toLocaleString()} · {e.registrations} registered ·{" "}
                     {e.meetingProvider === "google_meet" ? "Meet" : e.joinUrl ? "manual link" : "no link"} ·
