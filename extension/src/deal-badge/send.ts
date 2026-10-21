@@ -49,7 +49,7 @@ export function chipStateFor(
 ): { state: ChipState; detail?: string } {
   if (!result) return { state: "error", detail: dict.cardAppNotRunning };
   if (result.needsPairing) return { state: "error", detail: dict.cardNeedsPairing };
-  if (!result.ok) return { state: "error", detail: result.message || dict.cardFailed };
+  if (!result.ok) return { state: "error", detail: result.message || dict.cardFailedDetail };
   return { state: "sent" };
 }
 
