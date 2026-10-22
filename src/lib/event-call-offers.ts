@@ -105,7 +105,11 @@ export async function suggestEventFollowupSlots(
     dates,
     rules,
     busy: [...busy, ...eventBusy],
-    nowMs,
+    // The floor is "after this event" (fromMs), not just "now" - horizonDates
+    // starts at fromMs's own calendar day, so without this, suggestSlots's
+    // lead-time check (which only compares against its nowMs) would happily
+    // offer times earlier the same day, before the event even starts.
+    nowMs: fromMs,
     leadHours: config.leadTimeHours,
     durationMinutes: ct.userMinutes,
     padMinutes: ct.busyPadMinutes,
