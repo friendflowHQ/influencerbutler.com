@@ -204,6 +204,7 @@ export default function AdminEventsPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [callOffersOpenId, setCallOffersOpenId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [imagingId, setImagingId] = useState<string | null>(null);
   const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
   const uploadTargetId = useRef<string | null>(null);
@@ -504,6 +505,19 @@ export default function AdminEventsPage() {
       setDraftNote("Could not reach the drafter. Check your connection and try again.");
     } finally {
       setDrafting(false);
+    }
+  };
+
+  // The share page (/events/<id>) is the direct link to give registrants -
+  // the only path in for a private event, since it's not listed anywhere.
+  const copyShareLink = async (id: string) => {
+    const url = `${window.location.origin}/events/${id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId((cur) => (cur === id ? null : cur)), 2000);
+    } catch {
+      window.prompt("Copy this link:", url);
     }
   };
 
@@ -1430,6 +1444,14 @@ export default function AdminEventsPage() {
                   ) : null}
                 </div>
                 <div className="flex flex-wrap items-center gap-2 sm:max-w-[62%] sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => copyShareLink(e.id)}
+                    className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-indigo-400 hover:text-indigo-700"
+                    title="Copy the direct registration link to share with this event's audience"
+                  >
+                    {copiedId === e.id ? "Link copied!" : "Copy link"}
+                  </button>
                   <button
                     type="button"
                     onClick={() => setOpenId(openId === e.id ? null : e.id)}
