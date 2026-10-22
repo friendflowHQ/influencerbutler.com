@@ -51,18 +51,31 @@ const MAX_TRANSCRIPT_CHARS = 100_000;
 // support queue. The prompt is also told to dedupe and stay concise.
 const MAX_ITEMS = 6;
 
-const SYSTEM_PROMPT =
-  "You read a transcript of a recorded 1:1 call between Influencer Butler (an " +
-  "Amazon-influencer automation app) and a customer, and pull out ONLY items worth " +
-  "opening a support ticket for. Two kinds qualify: (1) a concrete bug or problem the " +
-  "customer actually hit with the product, and (2) an explicit feature request the " +
-  "customer asked for. Do NOT include general questions that were answered on the call, " +
-  "praise, small talk, billing chit-chat, or the host's own follow-up tasks. If nothing " +
-  "qualifies, return an empty list. Merge duplicates. Do not invent anything not in the " +
-  'transcript. Respond ONLY with a JSON object of shape {"items": Array<{"type": "bug" | ' +
-  '"feature", "title": string, "description": string}>}. title: a short specific summary ' +
-  "(max ~120 chars). description: 1-3 sentences of detail from the call, enough for support " +
-  "to act on. Do not use em-dashes.";
+function systemPrompt(kind: "call" | "concierge"): string {
+  const subject =
+    kind === "concierge"
+      ? "a chat or voice transcript between Influencer Butler's AI concierge (an automated " +
+        "assistant, not a human) and a customer"
+      : "a recorded 1:1 call between Influencer Butler (an Amazon-influencer automation app) " +
+        "and a customer";
+  const exclude =
+    kind === "concierge"
+      ? "praise, small talk, billing chit-chat, or anything the assistant's own reply already " +
+        "says it filed or reported on the customer's behalf (do not double-file something the " +
+        "assistant already submitted)"
+      : "praise, small talk, billing chit-chat, or the host's own follow-up tasks";
+  return (
+    `You read a transcript of ${subject}, and pull out ONLY items worth ` +
+    "opening a support ticket for. Two kinds qualify: (1) a concrete bug or problem the " +
+    "customer actually hit with the product, and (2) an explicit feature request the " +
+    `customer asked for. Do NOT include general questions that were answered, ${exclude}. ` +
+    "If nothing qualifies, return an empty list. Merge duplicates. Do not invent anything not in " +
+    'the transcript. Respond ONLY with a JSON object of shape {"items": Array<{"type": "bug" | ' +
+    '"feature", "title": string, "description": string}>}. title: a short specific summary ' +
+    "(max ~120 chars). description: 1-3 sentences of detail, enough for support to act on. " +
+    "Do not use em-dashes."
+  );
+}
 
 /**
  * Pull support-ticket-worthy items out of a transcript. `summary` (the AI notes
@@ -71,7 +84,7 @@ const SYSTEM_PROMPT =
  */
 export async function extractSupportItems(
   transcript: string,
-  ctx: { callType: string; topic?: string | null; summary?: string | null },
+  ctx: { callType: string; topic?: string | null; summary?: string | null; kind?: "call" | "concierge" },
 ): Promise<CallTicketItem[]> {
   const provider = resolveProvider();
   if (!provider) { console.warn("[call-tickets] no GROQ_API_KEY / OPENAI_API_KEY configured"); return []; }
@@ -98,7 +111,7 @@ export async function extractSupportItems(
         temperature: 0.1,
         response_format: { type: "json_object" },
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: systemPrompt(ctx.kind ?? "call") },
           { role: "user", content: userPrompt },
         ],
       }),

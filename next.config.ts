@@ -33,6 +33,18 @@ const connectSrc = [
   // browser to OpenAI (/v1/realtime/calls) with the minted ephemeral token.
   // Without this entry the CSP rejects that fetch and voice can never connect.
   "https://api.openai.com",
+  // Meta (Facebook) Pixel: fbevents.js loads from connect.facebook.net and the
+  // pixel posts/pings events to www.facebook.com (/tr). Server-side CAPI talks
+  // to graph.facebook.com from the server, which the browser CSP never sees.
+  "https://connect.facebook.net",
+  "https://www.facebook.com",
+  // Google Ads conversion + remarketing pings (gtag's AW- config). The tag JS
+  // itself still loads from googletagmanager.com (already in script-src).
+  "https://googleads.g.doubleclick.net",
+  "https://td.doubleclick.net",
+  "https://www.google.com",
+  // TikTok Pixel loads events.js and beacons events to analytics.tiktok.com.
+  "https://analytics.tiktok.com",
 ];
 const imgSrc = [
   "'self'",
@@ -43,11 +55,19 @@ const imgSrc = [
   "https://www.googletagmanager.com",
   // /videos cards show YouTube thumbnails.
   "https://i.ytimg.com",
+  // Meta Pixel's no-script/image fallback pings www.facebook.com/tr as an <img>.
+  "https://www.facebook.com",
+  // Google Ads remarketing fires 1x1 pixels from these conversion domains.
+  "https://googleads.g.doubleclick.net",
+  "https://td.doubleclick.net",
+  "https://www.google.com",
+  // TikTok Pixel image beacons.
+  "https://analytics.tiktok.com",
 ];
 
 const contentSecurityPolicy = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://assets.lemonsqueezy.com https://www.googletagmanager.com https://challenges.cloudflare.com",
+  "script-src 'self' 'unsafe-inline' https://assets.lemonsqueezy.com https://www.googletagmanager.com https://challenges.cloudflare.com https://connect.facebook.net https://analytics.tiktok.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   `img-src ${imgSrc.join(" ")}`,

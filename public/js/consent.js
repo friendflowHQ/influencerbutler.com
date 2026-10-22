@@ -18,6 +18,13 @@
   "use strict";
 
   var GA_ID = "G-S1TC1QLYNN";
+  // Google Ads conversion + remarketing tag, loaded on the SAME gtag.js instance
+  // as GA4 below so both the App Router and the static pages get it (both load
+  // this file). Dark until the real AW-XXXXXXXXX id from Google Ads is pasted
+  // here and committed. Remarketing/conversions ride ad_storage +
+  // ad_personalization, which Consent Mode (below) only grants on "Accept all",
+  // so no extra gating is needed. Setup: docs/google-ads-tracking.md.
+  var GOOGLE_ADS_ID = "";
   var STORAGE_KEY = "ibConsent";
   // Bumped 1 -> 2 when the Meta Pixel was added: "Accept all" now also covers
   // advertising measurement, so everyone re-consents against the new copy.
@@ -56,6 +63,8 @@
     document.head.appendChild(s);
     gtag("js", new Date());
     gtag("config", GA_ID, { anonymize_ip: true });
+    // Google Ads rides the same gtag.js load; no-ops while GOOGLE_ADS_ID is "".
+    if (GOOGLE_ADS_ID) gtag("config", GOOGLE_ADS_ID);
   })();
 
   function readStored() {

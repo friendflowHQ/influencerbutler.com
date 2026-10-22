@@ -56,6 +56,9 @@ export default function MetaPixel() {
   // Watch consent: initial state + react to the banner choice live.
   useEffect(() => {
     if (!PIXEL_ID) return;
+    // SSR renders null (consented=false); reading consent after mount and
+    // flipping here is intentional and avoids a hydration mismatch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (readAdsConsent()) setConsented(true);
     const onChange = (e: Event) => {
       const granted = (e as CustomEvent<{ analytics?: boolean }>).detail?.analytics;

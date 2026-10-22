@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import MetaPixel from "@/components/MetaPixel";
+import TikTokPixel from "@/components/TikTokPixel";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -65,6 +66,7 @@ export default function RootLayout({
         </a>
         {children}
         <MetaPixel />
+        <TikTokPixel />
         <Script src="/download-guidance.js" strategy="afterInteractive" />
         <Script src="/js/activity-widget.js" strategy="afterInteractive" />
         <Script src="/js/webmcp.js" strategy="afterInteractive" />

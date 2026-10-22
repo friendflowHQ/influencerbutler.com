@@ -549,8 +549,18 @@ class ChatBubble {
   // to a newly-answered thread the first time we see it (only on the visible tab,
   // so a reply does not pop the bubble on every background tab at once).
   private startReplyPolling(): void {
-    void this.refreshThreads(true);
-    this.pollTimer = setInterval(() => { void this.refreshThreads(true); }, 90_000);
+    // Only poll from a foreground tab. A user often has many Amazon tabs open,
+    // each rendering its own bubble; polling the hidden ones multiplied the
+    // support-reply traffic to the server for no benefit (nobody is looking at a
+    // hidden tab). The timer still ticks, but the fetch is skipped while hidden,
+    // and we catch up the moment the tab is brought back to the foreground.
+    const poll = () => {
+      if (document.visibilityState !== "visible") return;
+      void this.refreshThreads(true);
+    };
+    poll();
+    this.pollTimer = setInterval(poll, 180_000);
+    document.addEventListener("visibilitychange", poll);
   }
 
   private build(): void {

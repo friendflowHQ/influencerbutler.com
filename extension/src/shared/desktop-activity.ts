@@ -38,7 +38,11 @@ function clip(text: string, max = MAX_DETAIL): string {
 
 // Commands the page fires on its own (not because the creator clicked). Logged
 // only when they fail, so a healthy session is not buried in routine reports.
-const AUTOMATIC_COMMANDS = new Set(["reach.report.batch", "audioSuppressed.report.batch"]);
+const AUTOMATIC_COMMANDS = new Set([
+  "reach.report.batch",
+  "audioSuppressed.report.batch",
+  "storefront.verify",
+]);
 
 export function isAutomaticCommand(type: string): boolean {
   return AUTOMATIC_COMMANDS.has(type);
@@ -71,6 +75,7 @@ export function summarizeCommand(command: unknown): { action: string; detail?: s
     parts.push(`video ${video.contentId.slice(0, 24)}`);
   }
   if (typeof c.brand === "string" && c.brand) parts.push(`brand ${clip(c.brand, 40)}`);
+  if (typeof c.handle === "string" && c.handle) parts.push(`handle ${clip(c.handle, 40)}`);
 
   return { action, detail: parts.length ? clip(parts.join(", ")) : undefined };
 }

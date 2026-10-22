@@ -33,6 +33,7 @@ export async function POST(request: Request) {
 
   // Per-user daily cap (best-effort; also bounded by the client-side timer).
   const admin = getAdmin();
+  if (!admin) console.error("[ai-concierge/session] no admin client - cap check + session logging skipped", user.email);
   if (admin) {
     const since = new Date();
     since.setUTCHours(0, 0, 0, 0);

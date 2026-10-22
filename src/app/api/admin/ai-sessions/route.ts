@@ -24,7 +24,7 @@ export async function GET(request: Request) {
 
   const { data, error } = await admin
     .from("ai_concierge_sessions")
-    .select("id,user_email,mode,started_at,ended_at,summary")
+    .select("id,user_email,mode,started_at,ended_at,summary,filed_ticket_ids")
     .order("started_at", { ascending: false })
     .limit(limit);
   if (error) {

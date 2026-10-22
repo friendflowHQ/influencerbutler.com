@@ -255,7 +255,14 @@ export type HudCommand =
   // (and returns its stored title/tags) so the creator finishes the Amazon
   // upload by hand. The engine owns its own duplicate-detection cooldown, so
   // this command does not carry or enforce one itself.
-  | { type: "video.reload"; video: VideoReloadRef; mode: "auto" | "assist" };
+  | { type: "video.reload"; video: VideoReloadRef; mode: "auto" | "assist" }
+  // "Verify with extension": the desktop's CC Storefront ID field opened the
+  // Creator Connections campaigns page and asked the extension to read the
+  // creator's off-site Amazon Associates tag off it. Sent at most once per
+  // page view (tools/storefront-verify/capture.ts), only once a real off-site
+  // tag (not an onamz... on-site id) was found. `handle` is the bare tag, e.g.
+  // "littleprettyl-20".
+  | { type: "storefront.verify"; handle: string };
 
 export type HudCommandResult = {
   ok: boolean;

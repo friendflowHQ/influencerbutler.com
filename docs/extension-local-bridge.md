@@ -297,6 +297,23 @@ counts ("Queued N of M product(s) for Idea List Butler.").
 }
 ```
 
+**`storefront.verify`** - "Verify with extension": behind the desktop's CC
+Storefront ID field, a "Verify with extension" button opens
+`https://affiliate-program.amazon.com/p/connect/requests` and asks the
+extension to read the creator's off-site Amazon Associates tag off that page
+and push it back. The extension reads it from the page's own "StoreID:
+littleprettyl-20" header (the same value already captured for the Creator
+Connections Messages widget) and sends this at most once per page view, only
+for a real off-site tag (never an `onamz...` on-site id, which is silently
+skipped). The app validates the handle and replies with the standard
+`command.result`; a rejected handle (e.g. still an on-site id) comes back
+`{ "ok": false, "message": "<short line>" }` for the desktop's own "Verified
+via extension" UI to show.
+
+```json
+{ "type": "storefront.verify", "handle": "littleprettyl-20" }
+```
+
 **`video.reload`** - "Bump it": the product-page chip found one of the
 creator's own videos missing from the listing's carousel (verified against a
 hydrated rail and the video's own tagged asins - never a guess); the creator

@@ -11,6 +11,7 @@ import { NextResponse } from "next/server";
 import { resolveAuth } from "@/lib/license-auth";
 import { getAdmin } from "@/lib/scheduling-server";
 import { summarizeTranscript } from "@/lib/ai-notes";
+import { fileTicketsFromConciergeSession, type ConciergeSessionRow } from "@/lib/concierge-tickets";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,13 +35,23 @@ export async function POST(request: Request) {
   const transcript = (body.transcript || "").slice(0, MAX_TRANSCRIPT).trim();
   const mode = body.mode === "text" ? "text" : "voice";
   const admin = getAdmin();
-  if (!admin) return NextResponse.json({ ok: false }, { status: 200 });
+  if (!admin) {
+    console.error("[ai-concierge/transcript] no admin client - session not logged", user.email);
+    return NextResponse.json({ ok: false }, { status: 200 });
+  }
 
   // Summarize (best-effort; store the raw transcript regardless).
   const summary = transcript ? await summarizeTranscript(transcript, { callType: `ai-${mode}` }) : null;
   const endedAt = new Date().toISOString();
 
-  let insertedId: string | null = null;
+  // The core save (transcript/summary) must never be at the mercy of the
+  // ticket-filing columns below: on a fresh deploy the migration adding
+  // tickets_filed_at/filed_ticket_ids may not be applied yet (hand-applied in
+  // the Supabase SQL editor, same as the rest of this table), and an UPDATE
+  // ... RETURNING that names a column which does not exist fails the WHOLE
+  // statement, not just the SELECT. So this stays a plain "id" round trip,
+  // deliberately separate from the best-effort ticket-filing step after it.
+  let rowId: string | null = null;
   try {
     if (body.sessionId) {
       const { error } = await admin
@@ -49,6 +60,7 @@ export async function POST(request: Request) {
         .eq("id", body.sessionId)
         .eq("user_id", user.id);
       if (error) console.error("[ai-concierge/transcript] update", error.message);
+      else rowId = body.sessionId;
     } else {
       const startedAt = body.startedAt ? new Date(body.startedAt).toISOString() : endedAt;
       const { data, error } = await admin
@@ -66,11 +78,28 @@ export async function POST(request: Request) {
         .maybeSingle();
       if (error) console.error("[ai-concierge/transcript] insert", error.message);
       // Returned so a long-lived text widget can update the same row on later saves.
-      insertedId = (data as { id?: string } | null)?.id ?? null;
+      rowId = (data as { id?: string } | null)?.id ?? null;
     }
   } catch (err) {
     console.error("[ai-concierge/transcript] threw", err);
   }
 
-  return NextResponse.json({ ok: true, ...(insertedId ? { id: insertedId } : {}) });
+  // Best-effort auto-filing, fully decoupled from the save above: any failure
+  // here (including the migration not being applied yet) only drops ticket
+  // filing for this save, never the transcript itself.
+  if (rowId && transcript) {
+    try {
+      const { data: row, error } = await admin
+        .from("ai_concierge_sessions")
+        .select("id,mode,user_email,tickets_filed_at")
+        .eq("id", rowId)
+        .maybeSingle();
+      if (error) console.error("[ai-concierge/transcript] ticket lookup", error.message);
+      else if (row) await fileTicketsFromConciergeSession(admin, row as ConciergeSessionRow, transcript, summary);
+    } catch (err) {
+      console.error("[ai-concierge/transcript] ticket filing threw", err);
+    }
+  }
+
+  return NextResponse.json({ ok: true, ...(rowId ? { id: rowId } : {}) });
 }

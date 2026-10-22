@@ -86,6 +86,7 @@ import {
 import { initBrandKeywords, teardownBrandKeywords } from "../tools/brand-keywords/overlay";
 import { initMessageTemplates, teardownMessageTemplates } from "../tools/message-templates/overlay";
 import { initMessageCards, teardownMessageCards } from "../tools/cc-messages/overlay";
+import { initStorefrontVerify, stopStorefrontVerify } from "../tools/storefront-verify/capture";
 import { renderWatchButton } from "../tools/watchlist/panel";
 import { renderProductListsPanel } from "../tools/product-lists/panel";
 import { maybeShowNudge } from "../tools/nudges/prompts";
@@ -590,6 +591,7 @@ async function runForPage(): Promise<void> {
   // Connections.
   teardownBrandKeywords();
   teardownMessageTemplates();
+  stopStorefrontVerify();
   teardownMessageCards();
   stopInboxSync();
 
@@ -1064,6 +1066,10 @@ async function runForPage(): Promise<void> {
         () => undefined,
       );
     }
+    // "Verify with extension" push: the desktop app's CC Storefront ID field
+    // opens this exact page regardless of the creator's onsite/offsite channel
+    // setting, so this must run before the showOnsite gate below.
+    guard("storefront-verify", () => initStorefrontVerify());
     if (!showOnsite) return; // onsite-only page (Creator Connections radar)
     guard("campaign-radar", () => {
       if (settings.tools.campaignRadar) {
@@ -1108,6 +1114,9 @@ async function runForPage(): Promise<void> {
         () => undefined,
       );
     }
+    // Same "Verify with extension" push as campaign-grid (a single campaign's
+    // detail page carries the same header), before the showOnsite gate.
+    guard("storefront-verify", () => initStorefrontVerify());
     if (!showOnsite) return; // onsite-only page (Creator Connections detail)
     guard("campaign-detail", () => {
       if (settings.tools.campaignDetail) {
@@ -1309,7 +1318,12 @@ function emitProductScan(
   approved: boolean,
   approvedCriteria?: Record<string, boolean>,
 ): void {
-  if (!signals.asin || carousel.strategy === "none") return;
+  // Match the server's ASIN validation (/^[A-Z0-9]{10}$/ after upper-casing) so
+  // we never enqueue a scan the /api/extension/scans route will reject. The old
+  // guard only checked that asin was truthy; a non-empty but malformed asin got
+  // through and, when it was the only scan in a flush, made the whole batch 400
+  // ("No valid scans in batch"). Guarding here drops that wasted request.
+  if (!signals.asin || !/^[A-Z0-9]{10}$/i.test(signals.asin) || carousel.strategy === "none") return;
   // Cache classified live extractions so the order-history scan can reuse
   // real breakdowns for products the user has actually viewed.
   if (carousel.strategy === "json" || carousel.strategy === "dom") {

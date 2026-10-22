@@ -111,7 +111,7 @@ async function fileTicketsFromCall(
 }
 
 /** Owner/support inbox tickets are filed under. Mirrors call-emails ownerNotifyEmail. */
-function ownerSupportEmail(): string | null {
+export function ownerSupportEmail(): string | null {
   const explicit = process.env.SCHEDULING_OWNER_EMAIL?.trim();
   if (explicit) return explicit;
   const first = (process.env.ADMIN_EMAILS || "")

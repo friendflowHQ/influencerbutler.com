@@ -35,6 +35,9 @@ export type StrikingRow = {
   prevPosition?: number | null;
   /** True when a snapshot exists and this query was not on it. */
   isNew?: boolean;
+  /** YYYY-MM-DD the page was last edited, when that is recent enough that Search
+   * Console has not caught up yet. Null or absent = no recent edit. */
+  recentlyUpdated?: string | null;
 };
 
 export type StrikingSnapshot = {
@@ -249,4 +252,39 @@ export function applySnapshot(rows: StrikingRow[], snapshot: StrikingSnapshot | 
       ? { ...r, prevPosition: null, isNew: true }
       : { ...r, prevPosition: was, isNew: false };
   });
+}
+
+// Search Console reports a 28-day window that ends about 3 days ago, so an edit
+// is not fully reflected in average position until this many days after it.
+export const RECENT_EDIT_DAYS = 31;
+
+/** Path -> YYYY-MM-DD last edit, as written by scripts/generate-page-lastmod.mjs. */
+export type PageLastModified = Record<string, string>;
+
+/**
+ * The page's last edit date if it falls inside the window Search Console is still
+ * averaging over, else null. Trailing slashes are ignored when matching.
+ */
+export function recentEditDate(
+  page: string,
+  lastModified: PageLastModified,
+  now: Date,
+  windowDays = RECENT_EDIT_DAYS,
+): string | null {
+  const path = page.length > 1 ? page.replace(/\/+$/, "") : page;
+  const date = lastModified[path];
+  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+  const edited = Date.parse(`${date}T00:00:00Z`);
+  if (!Number.isFinite(edited)) return null;
+  const ageDays = (now.getTime() - edited) / 86400000;
+  return ageDays >= -1 && ageDays <= windowDays ? date : null;
+}
+
+/** Flag rows whose page was edited recently, so the panel stops re-recommending done work. */
+export function applyRecentEdits(
+  rows: StrikingRow[],
+  lastModified: PageLastModified,
+  now: Date = new Date(),
+): StrikingRow[] {
+  return rows.map((r) => ({ ...r, recentlyUpdated: recentEditDate(r.page, lastModified, now) }));
 }

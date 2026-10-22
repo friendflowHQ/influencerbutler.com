@@ -109,9 +109,12 @@ optimizes toward buyers, not clickers.
 
 ## Notes
 
-- Everything no-ops with the env vars unset; there is no consent banner on
-  the site today and the pixel follows the same posture as the existing GA4
-  tag.
+- Everything no-ops with the env vars unset. The site has a cookie-consent
+  banner (`public/js/consent.js`, Consent Mode v2): the browser pixel loads
+  only after the visitor clicks "Accept all", and the server-side CAPI calls
+  gate on the same `ib_ads_consent` cookie, so no Meta event fires without
+  advertising consent. CSP note: `connect.facebook.net` and `www.facebook.com`
+  are allowlisted in `next.config.ts`, which the browser pixel needs.
 - The pixel writes the `_fbp`/`_fbc` cookies itself; no extra fbclid handling
   exists or is needed.
 - Server module: `src/lib/meta-capi.ts`. Client helper: `trackMetaEvent` in

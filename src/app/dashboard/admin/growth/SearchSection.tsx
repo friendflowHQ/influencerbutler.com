@@ -25,6 +25,8 @@ export type StrikingRow = {
   action: string;
   prevPosition?: number | null;
   isNew?: boolean;
+  /** YYYY-MM-DD of a recent page edit Search Console has not caught up with yet. */
+  recentlyUpdated?: string | null;
 };
 
 export type SearchResponse = {
@@ -259,7 +261,19 @@ function StrikingDistancePanel({
                   <td className="py-2 px-2 text-right font-medium text-emerald-700">
                     +{Math.max(1, Math.round(r.potentialClicks)).toLocaleString("en-US")}
                   </td>
-                  <td className="py-2 pl-2 text-xs text-slate-600">{r.action}</td>
+                  <td className="py-2 pl-2 text-xs text-slate-600">
+                    {r.recentlyUpdated ? (
+                      <span title={`Suggested before the edit: ${r.action}`}>
+                        <span className="inline-block rounded-full bg-sky-50 px-2 py-0.5 font-medium text-sky-800">
+                          Updated {formatDay(r.recentlyUpdated)}, waiting on Google
+                        </span>{" "}
+                        Search Console averages 28 days, so give it a few weeks before changing
+                        this page again.
+                      </span>
+                    ) : (
+                      r.action
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -274,6 +288,13 @@ function StrikingDistancePanel({
       </p>
     </div>
   );
+}
+
+// YYYY-MM-DD as a short date, read in UTC so it never shifts a day.
+function formatDay(day: string): string {
+  const d = new Date(`${day}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return day;
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 }
 
 // Position moved vs the weekly snapshot. Lower is better, so a drop in the

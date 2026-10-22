@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
-import { trackEvent, trackMetaEvent } from "@/lib/analytics-client";
+import { trackEvent, trackMetaEvent, trackTikTokEvent, trackAdsConversion } from "@/lib/analytics-client";
 import { TierBadge } from "@/components/TierBadge";
 import {
   DISCOUNT_PCT_FIRST,
@@ -65,6 +65,12 @@ function formatMoneyFromDollars(value: number): string {
     : { minimumFractionDigits: 2, maximumFractionDigits: 2 };
   return `$${value.toLocaleString("en-US", opts)}`;
 }
+
+// Google Ads conversion label for "opened checkout" (shaped
+// "AW-XXXXXXXXX/abcDEFgh..."). Dark until a conversion action is created in
+// Google Ads and its label pasted here; trackAdsConversion no-ops on "". See
+// docs/google-ads-tracking.md.
+const GOOGLE_ADS_CHECKOUT_CONVERSION = "";
 
 function hasAuthCookie(): boolean {
   return document.cookie
@@ -147,6 +153,10 @@ export default function PricingCardsClient({
       { content_name: plan, content_category: billing },
       window.crypto?.randomUUID?.(),
     );
+    // TikTok + Google Ads twins of the same funnel step (both no-op while their
+    // pixel/tag is dark, so this is safe to ship before the ad accounts exist).
+    trackTikTokEvent("InitiateCheckout", { content_name: plan, content_category: billing });
+    trackAdsConversion(GOOGLE_ADS_CHECKOUT_CONVERSION, { plan, billing });
     try {
       const codeParam = initialCode && initialCode.length > 0 ? initialCode : "";
 

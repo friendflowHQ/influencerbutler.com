@@ -1,5 +1,17 @@
-// Idempotent codemod: inject the Google Analytics (gtag.js) snippet into every
-// public/**/*.html. Run via `npm run inject:gtag` or as a `prebuild` hook.
+// Idempotent codemod: make public/js/consent.js the SINGLE Google Analytics
+// loader on every static public/**/*.html page, matching the App Router.
+//
+// History: this script used to inject a raw gtag.js block straight into each
+// page's <head>. That block called gtag('config', ...) immediately, before
+// consent.js (loaded with `defer`) could set Consent Mode v2 defaults, so pages
+// that also loaded consent.js double-loaded gtag.js and fired a pre-consent
+// ping, and pages that did NOT load consent.js ran GA with no consent banner at
+// all. consent.js already loads gtag.js itself under Consent Mode, so the raw
+// block is both redundant and wrong.
+//
+// Now this script: (1) strips any legacy raw gtag block, and (2) guarantees the
+// consent.js loader is present (it is the proper consent-gated GA loader).
+// Run via `npm run inject:gtag` or the `prebuild` hook.
 import { readFile, writeFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,16 +20,17 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 const publicDir = path.join(repoRoot, "public");
 
-const GA_ID = "G-S1TC1QLYNN";
-const GTAG_BLOCK = `<!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=${GA_ID}"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', '${GA_ID}');
-  </script>`;
-const MARKER = `id=${GA_ID}`;
+const CONSENT_TAG = `<script src="/js/consent.js" defer></script>`;
+
+// Matches the legacy machine-injected gtag block regardless of indentation,
+// including a trailing newline, so it can be removed cleanly. Bounded,
+// non-greedy: it consumes exactly one block up to its gtag('config') + </script>.
+const LEGACY_GTAG_RE = new RegExp(
+  "[ \\t]*<!-- Google tag \\(gtag\\.js\\) -->\\s*" +
+    '<script async src="https://www\\.googletagmanager\\.com/gtag/js\\?id=G-S1TC1QLYNN"></script>\\s*' +
+    "<script>[\\s\\S]*?gtag\\('config', 'G-S1TC1QLYNN'\\);\\s*</script>\\n?",
+  "g",
+);
 
 async function* walk(dir) {
   const entries = await readdir(dir, { withFileTypes: true });
@@ -31,20 +44,33 @@ async function* walk(dir) {
   }
 }
 
-async function injectInto(file) {
+async function fixFile(file) {
   const html = await readFile(file, "utf8");
-  if (html.includes(MARKER)) return false;
+  let updated = html;
+  const actions = [];
 
-  let updated;
-  if (/<\/head>/i.test(html)) {
-    updated = html.replace(/<\/head>/i, `  ${GTAG_BLOCK}\n</head>`);
-  } else if (/<body[^>]*>/i.test(html)) {
-    updated = html.replace(/<body[^>]*>/i, (match) => `${GTAG_BLOCK}\n${match}`);
-  } else {
-    updated = `${GTAG_BLOCK}\n${html}`;
+  // 1) Strip any legacy raw gtag block(s).
+  if (LEGACY_GTAG_RE.test(updated)) {
+    updated = updated.replace(LEGACY_GTAG_RE, "");
+    actions.push("stripped-gtag");
   }
+
+  // 2) Ensure the consent.js loader is present (it loads GA under Consent Mode).
+  if (!updated.includes("/js/consent.js")) {
+    const block = `  ${CONSENT_TAG}\n`;
+    if (/<\/head>/i.test(updated)) {
+      updated = updated.replace(/<\/head>/i, `${block}</head>`);
+    } else if (/<body[^>]*>/i.test(updated)) {
+      updated = updated.replace(/<body[^>]*>/i, (match) => `${block}${match}`);
+    } else {
+      updated = `${block}${updated}`;
+    }
+    actions.push("added-consent");
+  }
+
+  if (updated === html) return null;
   await writeFile(file, updated);
-  return true;
+  return actions.join("+");
 }
 
 async function main() {
@@ -52,9 +78,10 @@ async function main() {
   let modified = 0;
   for await (const file of walk(publicDir)) {
     scanned++;
-    if (await injectInto(file)) {
+    const action = await fixFile(file);
+    if (action) {
       modified++;
-      console.log(`  + injected: ${path.relative(repoRoot, file)}`);
+      console.log(`  + ${action}: ${path.relative(repoRoot, file)}`);
     }
   }
   console.log(`inject-gtag: scanned ${scanned} files, modified ${modified}`);

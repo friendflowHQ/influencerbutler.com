@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/affiliate-funnel",
-      "schedule": "*/5 * * * *"
+      "schedule": "*/15 * * * *"
     },
     {
       "path": "/api/cron/process-account-deletions",
@@ -22,7 +22,7 @@
     },
     {
       "path": "/api/cron/seed-activity",
-      "schedule": "*/10 * * * *"
+      "schedule": "*/30 * * * *"
     },
     {
       "path": "/api/cron/newsletter",
@@ -49,12 +49,8 @@
       "schedule": "0 4 * * *"
     },
     {
-      "path": "/api/cron/build-cc-rates",
-      "schedule": "30 */2 * * *"
-    },
-    {
       "path": "/api/cron/build-spcc-rates",
-      "schedule": "45 */2 * * *"
+      "schedule": "45 4 * * *"
     },
     {
       "path": "/api/cron/comp-expiry",
@@ -62,7 +58,7 @@
     },
     {
       "path": "/api/cron/payout-status",
-      "schedule": "0 * * * *"
+      "schedule": "0 */4 * * *"
     },
     {
       "path": "/api/cron/call-reminders",
@@ -74,7 +70,7 @@
     },
     {
       "path": "/api/cron/youtube-uploads",
-      "schedule": "20 * * * *"
+      "schedule": "20 */4 * * *"
     },
     {
       "path": "/api/cron/event-reminders",
@@ -110,7 +106,7 @@
     },
     {
       "path": "/api/cron/email-marketing",
-      "schedule": "*/5 * * * *"
+      "schedule": "*/10 * * * *"
     },
     {
       "path": "/api/cron/blog-autogen",

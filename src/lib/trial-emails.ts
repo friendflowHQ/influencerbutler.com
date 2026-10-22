@@ -85,24 +85,33 @@ export const TRIAL_COPY: Record<TrialTier, TierCopy> = {
     },
   },
   day1: {
-    subject: "Day 1 of your trial: three butlers to switch on today",
+    // One concrete win, not a menu. The old three-butler list had the lowest
+    // open rate in the day 0-3 drip and zero clicks over 90 days (Oct 2026),
+    // so this asks for a single five-minute action: a Daily Commission Butler
+    // dry run that shows money already sitting on products the user sells.
+    // No OpenAI key needed, and "Run once" previews without accepting anything.
+    subject: "the bonus commissions you haven't claimed yet",
     build: (v) => {
       return [
         `Hi ${v.firstName},`,
         ``,
-        `You're one day into your 14-day Pro trial - here are the three fastest ways to see real results before it ends:`,
+        `One thing to try today. It takes about five minutes.`,
         ``,
-        `  1. Run Orders Butler to sync your real Amazon order history. It gives every other butler accurate signal on what you actually sell.`,
-        `  2. Turn on Daily Commission Butler so it auto-accepts the right Creator Connections campaigns based on yesterday's sales.`,
-        `  3. Set up the Deals Butler to find deals in your niche and post them automatically.`,
+        `Amazon runs Creator Connections campaigns that pay a bonus commission on top of your normal rate. Plenty of them are on products you already sell, and they pay nothing unless you accept them.`,
         ``,
-        `Heads up: the AI butlers (like the Deals Butler's caption voice) run on your own OpenAI API key. You pay OpenAI directly (usually pennies), and a ChatGPT subscription does not work. Two-minute setup: ${OPENAI_SETUP_URL}`,
+        `Daily Commission Butler finds them for you:`,
         ``,
-        `Step-by-step tutorials for every butler: https://www.influencerbutler.com/help`,
+        `  1. In the desktop app, run CC Check so the campaign list is fresh.`,
+        `  2. Open Daily Commission Butler and click Run once.`,
+        `  3. Look at the list. These are campaigns on products you sold recently or that top your storefront. Run once only previews, nothing is accepted until you click Accept all.`,
         ``,
-        `Reply with any question - a real human will answer.`,
+        `If the list looks right, accept them and switch on the daily schedule. From then on it claims new matches every morning without you.`,
         ``,
-        COMMUNITY_LINE,
+        `Full walkthrough: https://www.influencerbutler.com/help/tutorials/dailycommissionbutler`,
+        ``,
+        `Empty list? Usually Orders Butler hasn't synced yet. Run it once and try again. Haven't installed the app? Start here: https://www.influencerbutler.com/download`,
+        ``,
+        `Reply and tell me how many it found. A real human reads every reply.`,
         ``,
         `- The Influencer Butler team`,
       ].join("\n");

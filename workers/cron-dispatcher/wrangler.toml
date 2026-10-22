@@ -1,0 +1,22 @@
+name = "ib-cron-dispatcher"
+main = "src/index.ts"
+compatibility_date = "2026-01-01"
+
+# One trigger, fires every minute. The Worker itself decides which Vercel cron
+# routes are due this minute (see SCHEDULE in src/index.ts) and pings them.
+# This keeps us to a SINGLE Cloudflare cron trigger no matter how many routes
+# we schedule, so we never hit Cloudflare's per-Worker trigger limit and we
+# stop consuming Vercel's 40-cron-job cap.
+[triggers]
+crons = ["* * * * *"]
+
+[vars]
+# The deployed site origin whose /api/cron/* routes we ping. No trailing slash.
+VERCEL_BASE_URL = "https://www.influencerbutler.com"
+
+# CRON_SECRET is NOT set here. Add it as an encrypted secret so it never lands
+# in git:
+#   cd workers/cron-dispatcher
+#   npx wrangler secret put CRON_SECRET
+# Use the SAME value as the Vercel CRON_SECRET env var, because the routes
+# authenticate every call with `verifyBearer(request, "CRON_SECRET")`.

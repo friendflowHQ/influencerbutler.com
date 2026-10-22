@@ -69,6 +69,57 @@ export function trackMetaEvent(
   }
 }
 
+// Google Ads conversion helper. Fires gtag's `conversion` event into the same
+// gtag instance consent.js loads (the AW-XXXXXXXXX config). A no-op until the
+// Google Ads tag is configured (GOOGLE_ADS_ID in consent.js) and a conversion
+// action exists. `sendTo` is the per-conversion-action label from Google Ads,
+// shaped "AW-XXXXXXXXX/abcDEFgh...". Passing an empty/undefined sendTo no-ops,
+// so call sites can stay dark-safe. See docs/google-ads-tracking.md.
+export function trackAdsConversion(
+  sendTo: string | undefined,
+  params?: GtagParams,
+): void {
+  if (typeof window === "undefined" || !sendTo) return;
+  const w = window as GtagWindow;
+  try {
+    if (typeof w.gtag === "function") {
+      w.gtag("event", "conversion", { send_to: sendTo, ...(params ?? {}) });
+    }
+    if (process.env.NODE_ENV !== "production") {
+      console.debug("[trackAdsConversion]", sendTo, params ?? {});
+    }
+  } catch {
+    // Analytics must never break the page.
+  }
+}
+
+// TikTok Pixel twin of trackMetaEvent. Fires into the `ttq` instance that
+// src/components/TikTokPixel.tsx loads (gated on NEXT_PUBLIC_TIKTOK_PIXEL_ID +
+// advertising consent); a no-op when the pixel is absent or blocked. Event
+// names follow TikTok's standard set (ViewContent, InitiateCheckout, Lead,
+// CompleteRegistration, CompletePayment). See docs/tiktok-tracking.md.
+type TtqWindow = Window & {
+  ttq?: { track?: (name: string, params?: Record<string, unknown>) => void };
+};
+
+export function trackTikTokEvent(
+  name: string,
+  params?: Record<string, string | number>,
+): void {
+  if (typeof window === "undefined") return;
+  const w = window as TtqWindow;
+  try {
+    if (w.ttq && typeof w.ttq.track === "function") {
+      w.ttq.track(name, params ?? {});
+    }
+    if (process.env.NODE_ENV !== "production") {
+      console.debug("[trackTikTokEvent]", name, params ?? {});
+    }
+  } catch {
+    // Analytics must never break the page.
+  }
+}
+
 // Conversion-funnel sink (Cloudflare Analytics Engine via the licensing worker).
 // Mirrors the desktop app's first-launch / walkthrough-complete beacons so all
 // four stages (download-click -> installer-downloaded -> first-launch ->

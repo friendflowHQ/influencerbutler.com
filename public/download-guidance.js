@@ -242,6 +242,30 @@
     }
   }
 
+  // Ad-platform conversion twins for the trial/download CTA click (the "Lead"
+  // step). Both stay dark until configured: the TikTok call no-ops until the
+  // pixel loads (window.ttq present + advertising consent), and the Google Ads
+  // call no-ops while the conversion label below is "". The label is shaped
+  // "AW-XXXXXXXXX/abcDEFgh..." - paste it from Google Ads once the conversion
+  // action exists (docs/google-ads-tracking.md).
+  var GOOGLE_ADS_TRIAL_CONVERSION = "";
+  function trackTrialConversions(params) {
+    try {
+      if (window.ttq && typeof window.ttq.track === "function") {
+        window.ttq.track("Lead", params || {});
+      }
+    } catch (e) {
+      /* never break the page for an analytics call */
+    }
+    try {
+      if (GOOGLE_ADS_TRIAL_CONVERSION && typeof window.gtag === "function") {
+        window.gtag("event", "conversion", { send_to: GOOGLE_ADS_TRIAL_CONVERSION });
+      }
+    } catch (e) {
+      /* never break the page for an analytics call */
+    }
+  }
+
   // Unified funnel sink (Cloudflare Analytics Engine via the licensing worker),
   // so download-click sits in the same dataset as installer-downloaded /
   // first-launch / walkthrough-complete. text/plain keeps it a CORS-simple
@@ -308,6 +332,7 @@
       if (cta) {
         track("cta_trial_click", cta);
         trackFunnel("download-click", { os: cta.os, source: cta.src });
+        trackTrialConversions(cta);
       }
     },
     true,

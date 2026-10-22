@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyRecentEdits,
   applySnapshot,
   benchmarkCtr,
   buildStrikingDistance,
   isBrandQuery,
   pageKindOf,
+  recentEditDate,
   suggestAction,
   toPath,
   toSnapshot,
@@ -150,5 +152,33 @@ describe("weekly snapshot", () => {
 
   it("leaves rows untouched without a snapshot", () => {
     expect(applySnapshot(live, null)).toBe(live);
+  });
+});
+
+describe("recent edits", () => {
+  const now = new Date("2026-10-21T15:00:00Z");
+  const map = {
+    "/features/instagram-like-butler": "2026-10-21",
+    "/blog/old-post": "2026-08-01",
+    "/compare/x": "2026-09-21",
+  };
+
+  it("flags pages edited inside the Search Console window", () => {
+    expect(recentEditDate("/features/instagram-like-butler", map, now)).toBe("2026-10-21");
+    expect(recentEditDate("/features/instagram-like-butler/", map, now)).toBe("2026-10-21");
+    expect(recentEditDate("/compare/x", map, now)).toBe("2026-09-21");
+  });
+
+  it("ignores old edits and unknown pages", () => {
+    expect(recentEditDate("/blog/old-post", map, now)).toBeNull();
+    expect(recentEditDate("/nope", map, now)).toBeNull();
+  });
+
+  it("annotates rows without touching anything else", () => {
+    const rows = buildStrikingDistance([row({})]);
+    const out = applyRecentEdits(rows, map, now);
+    expect(out[0].recentlyUpdated).toBe("2026-10-21");
+    expect(out[0].action).toBe(rows[0].action);
+    expect(applyRecentEdits(rows, {}, now)[0].recentlyUpdated).toBeNull();
   });
 });
