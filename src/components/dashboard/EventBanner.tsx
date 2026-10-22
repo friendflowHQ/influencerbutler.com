@@ -7,8 +7,9 @@ import { trackEvent } from "@/lib/analytics-client";
  * Dashboard-wide banner for an upcoming group event. The admin schedules the
  * event and controls the banner text, CTA, target surfaces, and window from
  * /dashboard/admin/events; this renders the active `web` banner (if any) and
- * links to the Upcoming Events page to register. Session-dismissible per event,
- * same pattern as SwitchToAnnualBanner.
+ * links to the Upcoming Events page to register. Dismissal persists
+ * server-side per event, in profiles.dashboard_dismissals, same pattern as
+ * SwitchToAnnualBanner.
  */
 type Banner = { id: string; text: string; ctaLabel: string | null; ctaUrl: string };
 
@@ -25,9 +26,12 @@ export default function EventBanner() {
         const data = (await res.json()) as { banner?: Banner | null };
         if (!alive || !data.banner) return;
         setBanner(data.banner);
-        const key = `ib_event_banner_dismissed_${data.banner.id}`;
-        const hidden = typeof window !== "undefined" && sessionStorage.getItem(key) === "1";
-        setDismissed(hidden);
+        const key = `event_banner:${data.banner.id}`;
+        const dres = await fetch(`/api/dashboard/banner-dismissals?key=${encodeURIComponent(key)}`, {
+          cache: "no-store",
+        });
+        const ddata = dres.ok ? ((await dres.json()) as { dismissed?: boolean }) : {};
+        if (alive) setDismissed(Boolean(ddata.dismissed));
       } catch (error) {
         console.error("EventBanner fetch failed", error);
       }
@@ -40,12 +44,12 @@ export default function EventBanner() {
   if (!banner || dismissed) return null;
 
   const handleDismiss = () => {
-    try {
-      sessionStorage.setItem(`ib_event_banner_dismissed_${banner.id}`, "1");
-    } catch {
-      // sessionStorage may be unavailable - dismiss in-memory only
-    }
     setDismissed(true);
+    fetch("/api/dashboard/banner-dismissals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: `event_banner:${banner.id}` }),
+    }).catch((error) => console.error("EventBanner dismiss failed", error));
   };
 
   return (

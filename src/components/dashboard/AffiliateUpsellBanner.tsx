@@ -7,7 +7,8 @@ type Offer = {
   code: string | null;
 };
 
-const DISMISS_KEY_PREFIX = "ib_aff_upsell_dismissed_";
+// Dismissal persists server-side per tier, in profiles.dashboard_dismissals.
+const DISMISS_KEY_PREFIX = "aff_upsell:";
 
 const TIER_HEADLINES: Record<Exclude<Offer["tier"], null>, { headline: string; sub: string; cta: string }> = {
   "20": {
@@ -45,8 +46,11 @@ export default function AffiliateUpsellBanner() {
 
         if (data.tier) {
           const key = `${DISMISS_KEY_PREFIX}${data.tier}`;
-          const hidden = typeof window !== "undefined" && sessionStorage.getItem(key) === "1";
-          setDismissed(hidden);
+          const dres = await fetch(`/api/dashboard/banner-dismissals?key=${encodeURIComponent(key)}`, {
+            cache: "no-store",
+          });
+          const ddata = dres.ok ? ((await dres.json()) as { dismissed?: boolean }) : {};
+          if (alive) setDismissed(Boolean(ddata.dismissed));
         }
       } catch (error) {
         console.error("AffiliateUpsellBanner fetch failed", error);
@@ -75,12 +79,12 @@ export default function AffiliateUpsellBanner() {
 
   const handleDismiss = () => {
     if (!offer.tier) return;
-    try {
-      sessionStorage.setItem(`${DISMISS_KEY_PREFIX}${offer.tier}`, "1");
-    } catch {
-      // sessionStorage may be unavailable - dismiss in-memory only
-    }
     setDismissed(true);
+    fetch("/api/dashboard/banner-dismissals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: `${DISMISS_KEY_PREFIX}${offer.tier}` }),
+    }).catch((error) => console.error("AffiliateUpsellBanner dismiss failed", error));
   };
 
   return (

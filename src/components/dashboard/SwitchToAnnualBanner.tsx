@@ -11,10 +11,11 @@ import { trackEvent } from "@/lib/analytics-client";
  * This only promotes the offer and links to the subscription page, where the
  * existing "Switch to annual" button (backed by /api/subscription/upgrade) does
  * the billing-sensitive LS variant swap with proration. Eligibility comes from
- * the lightweight /api/dashboard/annual-offer check. Session-dismissible, same
- * pattern as AffiliateUpsellBanner.
+ * the lightweight /api/dashboard/annual-offer check. Dismissal persists
+ * server-side in profiles.dashboard_dismissals, same pattern as
+ * AffiliateUpsellBanner.
  */
-const DISMISS_KEY = "ib_annual_switch_dismissed";
+const DISMISS_KEY = "annual_switch";
 
 export default function SwitchToAnnualBanner() {
   const [eligible, setEligible] = useState(false);
@@ -30,9 +31,11 @@ export default function SwitchToAnnualBanner() {
         if (!alive) return;
         if (data.eligible) {
           setEligible(true);
-          const hidden =
-            typeof window !== "undefined" && sessionStorage.getItem(DISMISS_KEY) === "1";
-          setDismissed(hidden);
+          const dres = await fetch(`/api/dashboard/banner-dismissals?key=${DISMISS_KEY}`, {
+            cache: "no-store",
+          });
+          const ddata = dres.ok ? ((await dres.json()) as { dismissed?: boolean }) : {};
+          if (alive) setDismissed(Boolean(ddata.dismissed));
         }
       } catch (error) {
         console.error("SwitchToAnnualBanner fetch failed", error);
@@ -48,12 +51,12 @@ export default function SwitchToAnnualBanner() {
   const savings = annualSavingsPct("solo");
 
   const handleDismiss = () => {
-    try {
-      sessionStorage.setItem(DISMISS_KEY, "1");
-    } catch {
-      // sessionStorage may be unavailable - dismiss in-memory only
-    }
     setDismissed(true);
+    fetch("/api/dashboard/banner-dismissals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: DISMISS_KEY }),
+    }).catch((error) => console.error("SwitchToAnnualBanner dismiss failed", error));
   };
 
   return (

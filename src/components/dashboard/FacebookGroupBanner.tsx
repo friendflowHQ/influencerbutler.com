@@ -1,41 +1,49 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import { FACEBOOK_GROUP_URL } from "@/lib/social";
 
 // Evergreen community invite shown to every logged-in user (trial and paid).
-// Dismissal is per-session, matching the other dashboard banners
-// (FreeToolsBanner). No sunset date: the group invite is not a time-boxed
+// Dismissal persists server-side in profiles.dashboard_dismissals, so closing
+// it stays closed across logins and devices instead of just the current
+// browser session. No sunset date: the group invite is not a time-boxed
 // campaign.
-const DISMISS_KEY = "ib_facebook_group_join_dismissed_v1";
-
-// sessionStorage fires no events for same-tab writes, so the subscription is a
-// no-op; the in-session dismissal lives in React state instead.
-const subscribe = () => () => {};
-
-function readDismissed(): boolean {
-  try {
-    return sessionStorage.getItem(DISMISS_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
+const DISMISS_KEY = "facebook_group";
 
 export default function FacebookGroupBanner() {
-  // Dismissed on the server render so the banner only appears after hydration.
-  const storedDismissed = useSyncExternalStore(subscribe, readDismissed, () => true);
-  const [dismissedNow, setDismissedNow] = useState(false);
-  const dismissed = storedDismissed || dismissedNow;
+  // Hidden until the server confirms it isn't dismissed, so it only appears
+  // after that check resolves (same effect the old sessionStorage read had).
+  const [dismissed, setDismissed] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch(`/api/dashboard/banner-dismissals?key=${DISMISS_KEY}`, {
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+        const data = (await res.json()) as { dismissed?: boolean };
+        if (alive) setDismissed(Boolean(data.dismissed));
+      } catch (error) {
+        console.error("FacebookGroupBanner dismissal fetch failed", error);
+        if (alive) setDismissed(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   if (dismissed) return null;
 
   const handleDismiss = () => {
-    try {
-      sessionStorage.setItem(DISMISS_KEY, "1");
-    } catch {
-      // sessionStorage may be unavailable - dismiss in-memory only
-    }
-    setDismissedNow(true);
+    setDismissed(true);
+    fetch("/api/dashboard/banner-dismissals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: DISMISS_KEY }),
+    }).catch((error) => console.error("FacebookGroupBanner dismiss failed", error));
   };
 
   return (
