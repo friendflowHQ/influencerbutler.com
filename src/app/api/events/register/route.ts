@@ -1,10 +1,12 @@
 /**
  * POST /api/events/register
  * Body: { eventId: string, timezone?: string, name?: string }
- * Registers the signed-in user for an upcoming event (RSVP), capturing their
- * email server-side from the session (never from the body, matching
- * booking/create), then emails a confirmation with a .ics invite. The email is
- * best-effort and never fails the registration.
+ * Registers the signed-in user for an event (RSVP), capturing their email
+ * server-side from the session (never from the body, matching
+ * booking/create), then emails a confirmation with a .ics invite. The event
+ * may already have happened - registering after the fact is allowed on
+ * purpose, see the comment below. The email is best-effort and never fails
+ * the registration.
  */
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
@@ -40,9 +42,11 @@ export async function POST(request: Request) {
   if (!event || event.status !== "scheduled") {
     return NextResponse.json({ error: "That event is not open for registration." }, { status: 404 });
   }
-  if (Date.parse(event.endsAt) < Date.now()) {
-    return NextResponse.json({ error: "That event has already ended." }, { status: 409 });
-  }
+  // Registering after the event already happened is allowed on purpose - the
+  // direct share link is also how someone who attended live (e.g. from a
+  // partner's Facebook group) without pre-registering gets added afterward,
+  // which is what makes them eligible for anything gated on registration
+  // (private 1:1 follow-up calls, the replay email).
 
   const name = (body.name || "").trim().slice(0, 200) || null;
   const timezone = (body.timezone || "").trim().slice(0, 64) || null;

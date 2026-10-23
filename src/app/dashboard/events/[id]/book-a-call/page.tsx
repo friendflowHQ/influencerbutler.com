@@ -21,11 +21,14 @@ function formatWhen(startsAt: string, endsAt: string, tz: string): string {
   return `${dateFmt.format(start)}, ${timeFmt.format(start)} to ${timeFmt.format(end)}`;
 }
 
+type Blocker = { kind: "signin" | "register"; message: string } | null;
+
 export default function BookAFollowUpCallPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: eventId } = use(params);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [blocker, setBlocker] = useState<Blocker>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [bookedOfferId, setBookedOfferId] = useState<string | null>(null);
   const tz = browserTz();
@@ -35,10 +38,20 @@ export default function BookAFollowUpCallPage({ params }: { params: Promise<{ id
       const res = await fetch(`/api/events/call-offers?eventId=${encodeURIComponent(eventId)}`, { cache: "no-store" });
       const data = (await res.json().catch(() => ({}))) as { offers?: Offer[]; error?: string };
       if (!res.ok) {
-        setError(data.error || "Could not load call times.");
+        // A visitor who isn't signed in, or hasn't registered for this event
+        // yet, gets a clear next step (sign in / register) rather than a
+        // dead-end error - this page is the link people share directly.
+        if (res.status === 401) {
+          setBlocker({ kind: "signin", message: "Sign in (or create a free account) to see and book a call time." });
+        } else if (res.status === 403) {
+          setBlocker({ kind: "register", message: data.error || "You need to register for this event first." });
+        } else {
+          setError(data.error || "Could not load call times.");
+        }
         setOffers([]);
         return;
       }
+      setBlocker(null);
       setOffers(data.offers ?? []);
       setError(null);
     } catch {
@@ -87,7 +100,31 @@ export default function BookAFollowUpCallPage({ params }: { params: Promise<{ id
         </div>
       ) : null}
 
-      {bookedOfferId ? (
+      {blocker ? (
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 text-sm shadow-sm">
+          <p className="text-slate-700">{blocker.message}</p>
+          {blocker.kind === "signin" ? (
+            <a
+              href={`/login?next=${encodeURIComponent(`/dashboard/events/${eventId}/book-a-call`)}`}
+              className="mt-4 inline-flex items-center justify-center rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#ea580c]"
+            >
+              Sign in or sign up
+            </a>
+          ) : (
+            <>
+              <a
+                href={`/events/${eventId}`}
+                className="mt-4 inline-flex items-center justify-center rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-[#ea580c]"
+              >
+                Register for the event
+              </a>
+              <p className="mt-2 text-xs text-slate-500">Then come back to this link to book your call.</p>
+            </>
+          )}
+        </div>
+      ) : null}
+
+      {blocker ? null : bookedOfferId ? (
         <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-sm text-emerald-800">
           You&apos;re booked. Check your email for the details and calendar invite.
         </div>
