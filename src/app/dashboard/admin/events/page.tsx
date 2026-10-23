@@ -1727,6 +1727,7 @@ function CallOffersPanel({ eventId }: { eventId: string }) {
   const [suggesting, setSuggesting] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -1807,6 +1808,20 @@ function CallOffersPanel({ eventId }: { eventId: string }) {
     await load();
   };
 
+  // The claim page checks the signer's email against this event's registrant
+  // list itself, so this one link is safe to share anywhere (group chat,
+  // email, a pinned post) - anyone else who clicks it just sees nothing to book.
+  const copyBookingLink = async () => {
+    const url = `${window.location.origin}/dashboard/events/${eventId}/book-a-call`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch {
+      window.prompt("Copy this link:", url);
+    }
+  };
+
   if (loading) return <p className="mt-3 text-sm text-slate-500">Loading follow-up calls...</p>;
 
   return (
@@ -1817,6 +1832,14 @@ function CallOffersPanel({ eventId }: { eventId: string }) {
       </p>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={copyBookingLink}
+          className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-indigo-400 hover:text-indigo-700"
+          title="Copy the link for registrants to book one of the open times"
+        >
+          {linkCopied ? "Booking link copied!" : "Copy booking link"}
+        </button>
         <label className="flex items-center gap-2 text-sm">
           <span className="text-slate-600">Open</span>
           <input
