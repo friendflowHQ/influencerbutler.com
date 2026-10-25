@@ -43,7 +43,7 @@ Lista completa de proveedores:
 - **Levanta**: red de marcas.
 - **Archer**: red de afiliados.
 - **Logie**: red de afiliados.
-- **Mavely**: red multimarca para ofertas fuera de Amazon (Walmart, Target y un amplio catálogo de marcas). Inicias sesión en vez de pegar una clave. Mira la sección de Mavely más abajo.
+- **Mavely**: red multimarca para ofertas fuera de Amazon (Walmart, Target y un amplio catálogo de marcas). Inicias sesión en vez de pegar una clave, desde su propia tarjeta en Deeplink Butler > Ajustes, no en esta página. Consulta el [tutorial de Deeplink Butler](/help/tutorials/link-butler).
 - **Benable**: enlace de referido.
 - **Proveedores de deeplinks**: Influencer Butler (enlaces de marca con un panel de clics integrado), PostTap, Linktw.in, URLGenius, Geniuslink, Mavely. Elige uno como principal.
 
@@ -79,20 +79,7 @@ Los enlaces de atribución de Levanta / Archer / Logie son un caso especial: se 
 
 ## Mavely (inicia sesión, sin clave de API)
 
-Mavely es distinto de las otras redes de afiliados: no tiene clave de API que pegar. Monetiza ofertas **fuera de Amazon**, así que es la forma de ganar comisión en Walmart, Target y su amplio catálogo de marcas directamente desde el publicador de ofertas.
-
-En la tarjeta de Mavely:
-
-1. Haz clic en **Iniciar sesión en Mavely**. Se abre una ventana normal de Chrome en el sitio de creadores de Mavely.
-2. Inicia sesión con tu cuenta de Mavely y cierra esa ventana.
-3. De vuelta en el panel, haz clic en **Comprobar estado**. Debería decir "Sesión iniciada en Mavely".
-
-Una vez con la sesión iniciada, tienes dos formas de usarlo:
-
-- **Para tus ofertas de Walmart**: abre **Walmart Butler**, luego **Ajustes**, y pon **Walmart link provider** en **Mavely (mave.ly links)**. Ese ajuste es independiente de DeepLink Routing, así que tus ofertas de Walmart ganan comisión con Mavely mientras tus enlaces de Amazon siguen con tu propia etiqueta. Elegir **Mavely** en **DeepLink Routing** también monetiza las ofertas que no son de Amazon, pero además envía tus páginas de producto de Amazon a través de Mavely, así que elige eso solo si no necesitas esas ventas con tu propia etiqueta de Amazon.
-- **Enlaces sueltos**: pega cualquier URL de producto en el campo URL del producto de la tarjeta de Mavely y haz clic en **Crear enlace** para obtener un enlace de Mavely al momento. El botón de enlaces de la extensión de Chrome hace lo mismo para páginas fuera de Amazon.
-
-Mavely no toca tus enlaces de Amazon a menos que tú lo decidas. Dos ajustes pueden entregarle Amazon a Mavely: elegir **Mavely** en **DeepLink Routing**, que envía las páginas de producto de Amazon a través de Mavely, y marcar Mavely en **Affiliate Routing Strategy**, donde compite por cualquier enlace de producto y gana la comisión más alta. Deja ambos como están y Mavely solo cubrirá los comercios fuera de Amazon. Si cierras sesión en Mavely, los enlaces vuelven en silencio a la URL del producto para que una publicación nunca salga rota.
+Mavely es distinto de las otras redes de afiliados: no tiene clave de API que pegar, y su tarjeta ya no está en esta página. Consulta [Deeplink Butler](/help/tutorials/link-butler) para los pasos de inicio de sesión y cómo enrutar Walmart, Target y su amplio catálogo de marcas a través de él.
 
 ## Test al arrancar
 
@@ -124,9 +111,10 @@ Las claves de API se guardan cifradas en `{userData}/InfluencerButler/secure-sto
 - **La clave de OpenAI da verde pero la generación falla**: distintos productos de OpenAI usan distintos límites. Una clave válida para completions puede chocar con un problema de billing/quota en un modelo específico. Revisa la pestaña de billing del dashboard de OpenAI.
 - **El OAuth de YouTube caduca inesperadamente**: Google rota los tokens OAuth aproximadamente cada año. Vuelve a ejecutar el Setup Wizard de YouTube Butler para refrescar.
 - **El enrutamiento de afiliados eligió el proveedor equivocado**: normalmente significa que se marcó el proveedor equivocado. Abre la sección de enrutamiento y verifica los checkboxes de proveedores participantes.
-- **Iniciaste sesión en Mavely pero Influencer Butler sigue diciendo que no**: el inicio de sesión solo cuenta dentro del navegador que Influencer Butler reserva para Mavely. Abrir creators.joinmavely.com en tu propio navegador, incluso desde un enlace del aviso de sesión cerrada, te conecta en un sitio que la aplicación no ve. Usa **Iniciar sesión en Mavely** en la tarjeta de Mavely, inicia sesión en la ventana que se abre, ciérrala y haz clic en **Comprobar estado**.
+- **No encuentras la tarjeta de Mavely en esta página**: es normal, se movió. El inicio de sesión de Mavely está en Deeplink Butler > Ajustes, consulta el [tutorial de Deeplink Butler](/help/tutorials/link-butler) para la guía completa.
+- **Iniciaste sesión en Mavely pero Influencer Butler sigue diciendo que no**: el inicio de sesión solo cuenta dentro del navegador que Influencer Butler reserva para Mavely. Abrir creators.joinmavely.com en tu propio navegador, incluso desde un enlace del aviso de sesión cerrada, te conecta en un sitio que la aplicación no ve. Usa **Iniciar sesión en Mavely** en la tarjeta de Mavely (Deeplink Butler > Ajustes), inicia sesión en la ventana que se abre, ciérrala y haz clic en **Comprobar estado**.
 - **Buscas una clave de API de Mavely**: no existe. Mavely es la red que se autentica iniciando sesión en lugar de con una clave pegada, así que su tarjeta no tiene campo de clave a propósito.
-- **No encuentras dónde configurar Mavely para Walmart, Target u otra tienda**: no hay configuración por tienda ni por cuenta, por eso no hay nada que encontrar. Mavely deduce el comercio del propio enlace del producto, así que tener la sesión iniciada es toda la configuración. Walmart es la única excepción, porque tiene una opción propia: **Walmart Butler**, luego **Ajustes**, luego **Walmart link provider**, donde **Mavely (mave.ly links)** envía las ofertas de Walmart por Mavely y **Walmart Creator (walmrt.us links)** usa tus propios enlaces de Walmart Creator. Para Target y el resto del catálogo, pega la URL del producto en el cuadro **Product URL** de la tarjeta de Mavely y pulsa **Create Link**, o usa el botón de enlace de la extensión de Chrome en la página del producto.
+- **No encuentras dónde configurar Mavely para Walmart, Target u otra tienda**: no hay configuración por tienda ni por cuenta, por eso no hay nada que encontrar. Mavely deduce el comercio del propio enlace del producto, así que tener la sesión iniciada es toda la configuración. Walmart es la única excepción, porque tiene una opción propia: **Walmart Butler**, luego **Ajustes**, luego **Walmart link provider**, donde **Mavely (mave.ly links)** envía las ofertas de Walmart por Mavely y **Walmart Creator (walmrt.us links)** usa tus propios enlaces de Walmart Creator. Para Target y el resto del catálogo, pega la URL del producto en el cuadro **Product URL** de la tarjeta de Mavely (Deeplink Butler > Ajustes) y pulsa **Create Link**, o usa el botón de enlace de la extensión de Chrome en la página del producto.
 
 ## También en la extensión de Chrome
 

@@ -56,6 +56,23 @@ Les clics Butler Links et les clics de vos rapports Amazon sont deux comptes dif
 
 L'onglet **Settings** contient les valeurs par défaut des nouveaux liens : votre tag d'affiliation par défaut, la page de confirmation ("The Doorman") et les pixels de reciblage en option ("The Doorbell") qui se déclenchent quand un acheteur ouvre une Calling Card.
 
+## Mavely (connexion, sans clé API)
+
+Mavely est différent des autres réseaux d'affiliation : il n'y a pas de clé API à coller. Il monétise les offres **hors Amazon**, c'est donc le moyen de gagner une commission sur Walmart, Target et son large catalogue de marques directement depuis le publicateur d'offres. Sa carte est dans l'onglet **Réglages** ici, dans Deeplink Butler, pas sur la page Clés d'IA et de données.
+
+Sur la carte Mavely :
+
+1. Cliquez sur **Se connecter à Mavely**. Une fenêtre Chrome normale s'ouvre sur le site créateurs de Mavely.
+2. Connectez-vous avec votre compte Mavely, puis fermez cette fenêtre.
+3. De retour dans le panneau, cliquez sur **Vérifier l'état**. Il devrait afficher « Connecté à Mavely ».
+
+Une fois connecté, vous avez deux façons de l'utiliser :
+
+- **Pour vos offres Walmart** : ouvrez **Walmart Butler**, puis **Réglages**, et mettez **Walmart link provider** sur **Mavely (mave.ly links)**. Ce réglage est indépendant de DeepLink Routing, donc vos offres Walmart rapportent via Mavely tandis que vos liens Amazon gardent votre propre balise. Choisir **Mavely** dans **DeepLink Routing** monétise aussi les offres hors Amazon, mais fait passer en plus vos pages produit Amazon par Mavely, donc ne choisissez cela que si vous n'avez pas besoin de ces ventes sur votre propre balise Amazon.
+- **Liens ponctuels** : collez n'importe quelle URL de produit dans le champ URL du produit de la carte Mavely et cliquez sur **Créer un lien** pour obtenir un lien Mavely immédiatement. Le bouton de liens de l'extension Chrome fait de même pour les pages hors Amazon.
+
+Mavely ne touche pas à vos liens Amazon sauf si vous le décidez. Deux réglages peuvent confier Amazon à Mavely : choisir **Mavely** dans **DeepLink Routing**, ce qui fait passer les pages produit Amazon par Mavely, et cocher Mavely dans **Affiliate Routing Strategy**, où il entre en concurrence sur n'importe quel lien produit et où la commission la plus élevée l'emporte. Laissez les deux tels quels et Mavely ne couvrira que les marchands hors Amazon. Si vous vous déconnectez de Mavely, les liens reviennent discrètement à l'URL du produit pour qu'une publication ne parte jamais cassée.
+
 ## Liens autorisés : publiez aussi vos propres sites
 
 Influencer Butler ne publie ni n'envoie jamais un lien qui ne peut pas vous rapporter de commission. Votre balise est ajoutée automatiquement aux liens Amazon et Walmart, et un lien qui ne peut pas être balisé, comme votre boutique Etsy, votre blog ou une page de concours, est mis en attente au lieu d'être publié. Ainsi, un identifiant de suivi manquant ne vous fait jamais perdre de ventes sans que vous le sachiez.
