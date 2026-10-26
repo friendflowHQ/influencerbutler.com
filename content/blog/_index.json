@@ -2639,6 +2639,21 @@
       "imageAlt": "Illustration of an eye watching a row of storefront icons, with one lighting up with an orange notification badge",
       "imagePrompt": "Editorial flat illustration of a simple geometric eye or a pair of binoculars shapes watching a row of small storefront icon cards, one of the cards glowing with an orange notification badge and a small spark, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
       "order": 1
+    },
+    {
+      "id": "collab-butler-explained",
+      "title": "Collab Butler, Explained: A Kanban Board for Every Brand Deal You're Juggling",
+      "category": "Growth",
+      "tags": "Growth, Content",
+      "summary": "Brand deals start in an email, move to DMs, and then live nowhere at all until a payout goes missing. Collab Butler is a Kanban-style board that tracks every collab from first contact to getting paid, with real stage names, drag-free list and board views, color-coded tags, and a tax export at year end.",
+      "date": "2026-10-31",
+      "author": "Liz Dean",
+      "readingTime": "7 min read",
+      "keywords": "brand collab tracker, influencer deal pipeline, kanban board for creators, track brand partnerships, creator payout tracker, collab butler, influencer CRM alternative, tax export for creators",
+      "image": "/assets/blog/collab-butler-explained.png",
+      "imageAlt": "Illustration of a Kanban-style board with columns of collab cards, one card showing a dollar-sign payout chip",
+      "imagePrompt": "Editorial flat illustration of a simple Kanban board with three to four columns and a handful of rounded rectangle cards, one card has a small dollar-sign chip, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
+      "order": 1
     }
   ]
 }
