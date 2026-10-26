@@ -2609,6 +2609,21 @@
       "imageAlt": "Illustration of a camera frame compositing a simple geometric figure next to a real product icon, representing an AI likeness placed into a product photo",
       "imagePrompt": "Editorial flat illustration of a camera or picture-frame shape compositing a soft geometric human silhouette alongside a simple product box icon, a sense of two real elements being combined rather than one invented from scratch, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
       "order": 1
+    },
+    {
+      "id": "ai-concierge-talk-to-butler-ai",
+      "title": "Talk to Butler AI, Explained: A 24/7 Concierge That Demos the App and Walks You to the Right Click",
+      "category": "Growth",
+      "tags": "Growth, Content",
+      "summary": "A chat and voice concierge built into the web dashboard and the desktop app that gives live demos, answers how-do-I questions with exact click paths, and can drive an on-screen guided walkthrough for you. Here is how to reach it, what it can actually do, and the specific things it is honest about not doing.",
+      "date": "2026-10-29",
+      "author": "Liz Dean",
+      "readingTime": "7 min read",
+      "keywords": "ai concierge, talk to butler ai, 24/7 customer support ai, in-app ai assistant, guided product walkthrough, ai setup help, ai chat support for saas, voice chat support",
+      "image": "/assets/blog/ai-concierge-talk-to-butler-ai.png",
+      "imageAlt": "Illustration of a friendly abstract chat helper with a headset icon and a spotlight ring guiding a click, in the brand's warm orange and navy style",
+      "imagePrompt": "Editorial flat illustration of a soft geometric chat-bubble character with a small headset shape, next to a spotlight ring highlighting a button, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
+      "order": 1
     }
   ]
 }
