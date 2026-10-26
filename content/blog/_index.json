@@ -2774,6 +2774,21 @@
       "imageAlt": "Illustration of a broken chain link being reconnected into a new link shape, with a small diff checklist beside it, representing an old affiliate link being rewritten to a new one",
       "imagePrompt": "Editorial flat illustration of a broken chain-link icon mid-reconnect into a fresh geometric link shape, a small diff-table or checklist glyph floating beside it, clean modern vector style, soft rounded shapes, warm orange (#F59E0B) and deep navy (#1E2A4A) on a soft cream background, generous negative space, no text, no logos",
       "order": 1
+    },
+    {
+      "id": "retag-butler-explained",
+      "title": "Retag Butler, Explained: Add a Replacement Tag the Moment Amazon Delists a Product",
+      "category": "Amazon",
+      "tags": "Amazon, Growth",
+      "summary": "When Amazon pulls a product you've linked to in old posts, videos, and pinned content, every one of those links stops earning anything, even though a near-identical replacement might already exist. Retag Butler scans your storefront for dead ASINs and adds a second tag pointing at a live replacement, without deleting anything you already built. Here is exactly how the setup, Review and Auto modes, and the two easily confused similarity settings work.",
+      "date": "2026-11-09",
+      "author": "Liz Dean",
+      "readingTime": "7 min read",
+      "keywords": "retag butler, dead asin replacement, amazon delisted product links, out of stock amazon links, storefront link maintenance, amazon affiliate link rot, auto tag replacement product, amazon storefront automation",
+      "image": "/assets/blog/retag-butler-explained.png",
+      "imageAlt": "Illustration of a faded out-of-stock product box connected by a plus-tag glyph to a fresh in-stock product box, representing an added replacement tag rather than a deletion",
+      "imagePrompt": "Editorial flat illustration of two product box icons side by side, the left one grayed out and faded with a small X mark showing it is out of stock, the right one solid and warm colored showing it is in stock, connected by a small plus or tag glyph in between representing an added second tag, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
+      "order": 1
     }
   ]
 }

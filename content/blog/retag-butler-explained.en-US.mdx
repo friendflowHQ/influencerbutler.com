@@ -1,0 +1,69 @@
+---
+title: "Retag Butler, Explained: Add a Replacement Tag the Moment Amazon Delists a Product"
+summary: "When Amazon pulls a product you've linked to in old posts, videos, and pinned content, every one of those links stops earning anything, even though a near-identical replacement might already exist. Retag Butler scans your storefront for dead ASINs and adds a second tag pointing at a live replacement, without deleting anything you already built. Here is exactly how the setup, Review and Auto modes, and the two easily confused similarity settings work."
+category: Amazon
+tags: Amazon, Growth
+date: 2026-11-09
+author: Liz Dean
+readingTime: 7 min read
+keywords: retag butler, dead asin replacement, amazon delisted product links, out of stock amazon links, storefront link maintenance, amazon affiliate link rot, auto tag replacement product, amazon storefront automation
+image: /assets/blog/retag-butler-explained.png
+imageAlt: Illustration of a faded out-of-stock product box connected by a plus-tag glyph to a fresh in-stock product box, representing an added replacement tag rather than a deletion
+imagePrompt: Editorial flat illustration of two product box icons side by side, the left one grayed out and faded with a small X mark showing it is out of stock, the right one solid and warm colored showing it is in stock, connected by a small plus or tag glyph in between representing an added second tag, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos
+---
+
+Amazon delists products constantly. A color variant gets discontinued, a seller runs out and never restocks, a listing gets pulled for a policy reason that has nothing to do with you. None of that is rare. It is just how the catalog works, week after week, product after product.
+
+The problem is what happens to everything you already built on top of that product. Every old blog post, every video description, every pinned post, every link you ever shared that points at that specific ASIN keeps pointing at it forever, even after Amazon quietly takes the page down. The content is still live. The traffic still shows up. The click still happens. It just lands on a dead page instead of a sale, and the commission that used to come from that link goes to zero, even though a near-identical replacement product might already exist on Amazon right now, in stock, ready to sell.
+
+You cannot watch for this by hand. Nobody has the time to re-check every ASIN in every post they have ever published. That is the job Retag Butler does.
+
+## What it actually does
+
+Retag Butler scans your storefront for ASINs that have gone out of stock or been delisted, and for each one it finds, it looks for a live replacement product that is close enough to stand in for it. When it finds a good match, it adds a second tag to that ASIN pointing at the replacement.
+
+The word "adds" matters here. Retag Butler does not delete or overwrite the original tag. It is additive by design, so nothing you already had gets removed. The dead ASIN keeps its original tag, and the replacement rides alongside it as a second tag. If you ever want to see what the original product was, that information is still sitting right there.
+
+This is also a good place to be clear about what Retag Butler is not. There is a separate tool, Relink Butler, that handles something different: rewriting link hosts, tags, and providers across your old posts, the kind of migration you'd run if you switched link shorteners or affiliate providers. Retag Butler is not that. It has one job: finding dead ASINs on your live storefront and giving them a working replacement. If you only remember one thing, remember that distinction, because the names are close enough to blur together.
+
+## Before you run it: set your storefront URL
+
+Retag Butler needs to know which storefront to scan, and it gets that from your Amazon storefront URL under Settings, in your Profile. If that field is empty, the run will fail. It is a small setup step, but it is not optional, so if your first run does not do anything, that is the first place to check.
+
+Once your storefront URL is set, Retag Butler can actually go look at what is live on your storefront versus what you have tagged in your content, and start finding the gap between the two.
+
+## Review mode versus Auto mode
+
+Once it is set up, you choose how it behaves when it finds a dead ASIN with a possible replacement.
+
+**Review mode** shows you each proposed match before anything happens. You see the dead ASIN, the candidate replacement it found, and you decide whether to approve it or skip it. Nothing gets tagged until you say yes.
+
+**Auto mode** skips that step for matches above a confidence threshold and applies them automatically. You still get a result you can look back on, but you are not approving each one individually.
+
+Which one you want depends mostly on how much is on your storefront and how much you trust the matching. If you run a smaller storefront and you want full control over which replacement gets attached to which old link, Review mode is the better fit. You will not be reviewing hundreds of candidates, and the extra five minutes of looking at each one buys you certainty. If you are sitting on hundreds of dead ASINs built up over years of posting and you trust the threshold to make reasonable calls, Auto mode is what actually gets the backlog cleared instead of sitting in a review queue you never get around to.
+
+There is no wrong choice here. Plenty of people run Review mode the first few times just to see how good the matches actually are, then switch to Auto once they trust it.
+
+## The two settings people mix up
+
+This is the part worth slowing down for, because the help documentation itself calls out that these two numbers get confused constantly, and once you see why, it is obvious.
+
+**Min title similarity** defaults to 50. This is a pre-filter. It decides what even shows up in your review queue in the first place. Set it low and you will see more candidate matches, including weaker ones. Set it high and the queue only shows matches that are already quite close by title. Either way, this number never applies a tag on its own. It only controls what you get shown.
+
+**Auto-tag threshold** defaults to 70. This is the number that actually matters for Auto mode, because it decides what gets applied automatically without you looking at it. A candidate match has to clear this bar before Retag Butler will tag it on its own.
+
+The confusion happens because both numbers describe "how similar," and both default to numbers in the same range, so it is easy to assume they are the same setting doing the same job at two different sensitivities. They are not. Min title similarity is about visibility: what you get to look at. Auto-tag threshold is about action: what gets applied without you looking at it at all. You can run Review mode with a low min title similarity so you see everything, including marginal matches, and never touch the auto-tag threshold at all since nothing is auto-applying. Or you can run Auto mode with a higher auto-tag threshold than your min title similarity, so the queue shows more candidates than actually get auto-tagged, with the rest left for you to handle by hand.
+
+## When a match is found
+
+There is one more setting worth knowing about: what Retag Butler shows you when it finds a match. You can set it to show a short list of candidate replacements, so you pick the best one yourself, or to show just the single best match it found, which is faster if you trust its top pick most of the time. This is a convenience setting on top of everything above, not a substitute for either threshold.
+
+Under the hood, this matching logic has more than 30 automated test files behind it, which tells you it has been iterated on carefully rather than shipped once and left alone. That does not mean every match will be perfect, but it does mean the matching behavior has been tested against a lot of edge cases, not just the obvious ones.
+
+## A realistic run
+
+Say you kick off a storefront scan and it comes back with 15 delisted ASINs. You are running Review mode, so you get to look at each one: the dead ASIN, its best-matching replacement candidate, side by side. Twelve of them are obvious. Same product line, same basic function, clearly the thing that replaced what used to be there, so you approve them one by one. The other three do not have a good match at all, maybe the product line was discontinued entirely with nothing comparable still selling, so you skip those and leave them for a manual look later.
+
+When you are done, all 12 approved ASINs now carry a second tag pointing at a live, in-stock replacement product, sitting right alongside the original tag you already had. Every old post, video, and pinned link that pointed at those 12 dead ASINs is now backed by a product that can actually convert again. The three you skipped are still flagged as dead, with no replacement forced onto them just to clear the queue.
+
+That is the whole point of Retag Butler. It does not try to fix everything automatically whether the match is good or not. It finds the gap between what you have tagged and what is actually still live on Amazon, hands you a reasonable answer for as many of those gaps as it can, and lets you decide the rest.
