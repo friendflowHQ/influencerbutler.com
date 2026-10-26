@@ -1,0 +1,67 @@
+---
+title: "Collage Butler, Explained: Turn Real Product Photos Into One Scroll-Stopping Collage"
+summary: "No AI model, no outfit, just your real product photos pulled by keyword from the Amazon Creators API and arranged into a branded multi-product graphic. Here is how Collage Butler actually builds a round-up post, what the Walmart-cart style does, and how batch mode makes a dozen graphics in one run."
+category: Growth
+tags: Amazon, Instagram, Facebook, Content
+date: 2026-11-11
+author: Liz Dean
+readingTime: 7 min read
+keywords: product collage maker, amazon round up post generator, walmart cart collage, multi product graphic for instagram, amazon creators api collage, collage templates branding, batch product graphics, creator affiliate collage tool
+image: /assets/blog/collage-butler-explained.png
+imageAlt: Illustration of small product thumbnails assembling into one branded collage card with a headline band and call-to-action band
+imagePrompt: Editorial flat illustration of small geometric product thumbnails flowing into and arranging themselves inside a branded picture frame with a headline band on top and a call-to-action band on the bottom, a sense of assembly and curation rather than a photograph, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos
+---
+
+Round-up posts work. "5 things in my cart," "new arrivals," "today's picks under $30," these are some of the easiest affiliate posts to make because they do not need a photoshoot. They need good products and one clean image that shows all of them at once. The part people actually dread is building that image: cropping product photos to the same size, lining them up in a grid, and adding a headline without it looking like a ransom note.
+
+Collage Butler is the tool for exactly that job. It is not about an AI model wearing your products (that is AI Influencer Butler, a separate feature with its own post). Collage Butler does not put a person in the picture at all. You give it keywords, it pulls matching products straight from the Amazon Creators API, arranges their real photos in a grid you pick, adds your headline and call to action, and hands the finished image to Social Posting Butler. It is a round-up generator, not a modeling studio.
+
+## The shopping list comes first
+
+Before you build anything, Collage Butler needs to know what to put in the picture. That decision happens on a separate sub-panel called **Keywords & Filters**, which the app treats as its own group member alongside the generator.
+
+Open **Collage Butler** in the left menu, then **Keywords & Filters**. There is a **Keywords** box where you type search terms separated by commas, for example "summer dresses, beach bags, sandals." Each term is its own search, so a few focused keywords usually beat one broad one. Below that sit three optional refinements: a **Category** field (type something like Fashion or Home, or leave it blank to search everything), a **Minimum price**, and a **Maximum price**. Leave a price field blank rather than typing 0 if you do not want a limit there. Everything auto-saves as you type, no save button anywhere, and these keywords and filters are shared by every collage you generate afterward, so changing them here changes what future collages pull in.
+
+If a keyword comes back thin, that is the Creators API telling you nothing matched well enough, not a bug. Widen the term or loosen the price filters and try again.
+
+## Picking how the image gets built
+
+Back on the main **Collage Butler** panel, the **AI Collage Generator** tab is where the actual image comes together. The first choice is **Render mode**, and the three options trade faithfulness for variety:
+
+- **Template (real product photos).** An exact, repeatable grid built from the real product photos the Creators API returned. Nothing is invented. This mode is deterministic and cheap because it is pure compositing, no image generation involved.
+- **AI generated.** The product photos go to the image generator as reference images and it composes the whole scene itself, products, background, lighting, staging, in one generated image. Most varied look, least faithful to the literal product photo, and it costs per image since it is an actual model render.
+- **Hybrid (AI background + real photos).** A middle path: the image generator paints only a styled background, then your real product photos get composited on top of it in the usual grid. You get a designed-looking backdrop without losing the literal product photo.
+
+Next is **Layout**, a dropdown with five grid shapes: 2 x 2 (4 products), 3 x 2 (6 products), 2 x 3 (6 products), 3 x 3 (9 products), and 4 x 2 (8 products). Pick whichever matches how many products you are actually featuring.
+
+Then comes **AI render style**, which only matters for the AI and Hybrid modes (Template mode always just grids your real photos, so this picker does not touch it). Leave it on **Auto** for the default, or pick one of four named looks: **Walmart cart (5 things in a cart)** stages your products sitting inside a shopping cart against a bright store background, which is the specific viral "5 things in a Walmart cart" format rather than a generic cart graphic. The others are **Magazine cover**, **Seasonal banner**, and **Minimalist flat lay**.
+
+Finally you type a **Headline** (the field's own placeholder suggests "Amazon New Arrivals") and a **Call to action** (placeholder: "Shop now"), the text that gets drawn onto the finished image in the header and CTA bands.
+
+## Making more than one at a time
+
+The last field in the generator, **How many graphics**, is where Collage Butler stops being a single-image tool. Leave it at 1 for one collage, or raise it up to 20 to run a batch in one click. The trick that makes a batch actually useful instead of just the same collage repeated twenty times: put one keyword theme per line back in Keywords & Filters, and each theme becomes its own set of graphics. One batch run can cover "summer dresses," "beach bags," and "sandals" as three separate round-ups without you touching the generator three times. Under the hood, batch mode fetches one product pool per theme and rotates which products land in which graphic, so even a few runs on the same theme do not all show the exact same four items.
+
+Because AI and Hybrid modes generate new imagery with a real per-image cost, a batch is capped at 20 graphics per run. Template mode, being pure compositing with no generation step, does not carry that same per-image cost.
+
+Once you are happy with the settings, click **Generate collage** to build the image (or the whole batch) and preview it, or **Generate and queue to Social Posting** to build it and send it straight to Social Posting Butler's queue in the same click. A **Console Log** tab on the same panel shows generation activity as it happens, which is the place to look if a collage does not come out the way you expected.
+
+## Saving the look so you stop rebuilding it
+
+Setting the layout, font, and colors from scratch every time gets old fast, which is what **Collage Templates** is for. It is a separate sub-panel, not a generator, nothing to run and nothing to schedule, and it works as your collage style sheet: set it once and Collage Butler starts every new collage from it.
+
+The fields are specific: a **Default layout** (the same five grid shapes as the generator, plus three extra shapes, a single hero image, a row of 3, and a row of 5, along with a text-only option that drops the product grid entirely for a pure headline card), a **Font** (Sans/Arial, Serif/Times, Monospace, or Display/bold), a **Font size** (Small, Medium, Large), three color pickers for **Background color**, **Accent color**, and **Text color**, and a **Default headline** and **Default call to action** you can still override per collage. Past the single active default, Collage Templates also keeps a library of **Saved templates**: name a look, click **Add template**, and it becomes a one-click preset you can apply later instead of re-entering every field. Every field saves the instant you touch it. Changes only apply to collages you generate next, not to ones already sitting in your gallery.
+
+## Where the finished collages live
+
+Every collage Collage Butler builds lands automatically in **Collage Gallery**, a read-only grid of thumbnails shown newest first. Under each thumbnail you can see how it was built (Template, AI, or Hybrid), its layout, and whether it was queued to Social Posting Butler. There is nothing to click here beyond browsing; you create, edit, and post from the main Collage Butler panel, and the gallery is purely for looking back at what you have made and deciding what is worth building again. A brand-new install starts the gallery empty, and the list keeps your most recent collages rather than growing forever, so very old entries do eventually roll off.
+
+## A realistic run
+
+Say you type "summer dresses, beach bags, sandals" into Keywords & Filters, one per line, with a Maximum price of 60 so nothing too expensive sneaks in. Back in the generator, you pick Hybrid mode, the 3 x 3 layout for 9 products, the Walmart cart style, type "Beach Bag Essentials" as the headline and "Shop the look" as the call to action, and set How many graphics to 3. One click on Generate and queue to Social Posting later, you have three separate 9-product collages, one per keyword theme, each staged in that bright shopping-cart style, already sitting in Social Posting Butler's queue and visible in Collage Gallery with their Hybrid tag.
+
+## What makes this different from AI Influencer Butler
+
+They share the word "collage" and some of the same branding fields (Collage Templates' colors are even reusable from AI Influencer Butler's own template picker), but the jobs are not the same. AI Influencer Butler puts a model, yours, a trained clone, or a generic AI face, into the picture wearing your products, and the collage is one layout option among several scene templates. Collage Butler never generates or places a person at all. It is a pure product round-up tool: keywords in, real product photos out, arranged and branded on their own. If what you are posting is "look what I'm trying on," reach for AI Influencer Butler. If it is "look what's in my cart" or "today's five finds," Collage Butler is the one built for it, and it is also the simpler, cheaper tool of the two whenever Template mode is enough.
+
+Collage Butler is still tagged In Beta in the app, with pieces like the Build Your Post caption editor and the full brand-colors-and-spend-cap Settings panel still coming online. The keywords, generator, templates, and gallery pieces covered here are already live and usable today.

@@ -2804,6 +2804,21 @@
       "imageAlt": "Illustration of a sound wave flowing into a simple video frame icon, representing a script generator that writes words for a creator to read on camera",
       "imagePrompt": "Editorial flat illustration of an abstract sound wave made of soft rounded bars flowing toward a simple geometric video frame icon, a small play triangle inside the frame, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
       "order": 1
+    },
+    {
+      "id": "collage-butler-explained",
+      "title": "Collage Butler, Explained: Turn Real Product Photos Into One Scroll-Stopping Collage",
+      "category": "Growth",
+      "tags": "Amazon, Instagram, Facebook, Content",
+      "summary": "No AI model, no outfit, just your real product photos pulled by keyword from the Amazon Creators API and arranged into a branded multi-product graphic. Here is how Collage Butler actually builds a round-up post, what the Walmart-cart style does, and how batch mode makes a dozen graphics in one run.",
+      "date": "2026-11-11",
+      "author": "Liz Dean",
+      "readingTime": "7 min read",
+      "keywords": "product collage maker, amazon round up post generator, walmart cart collage, multi product graphic for instagram, amazon creators api collage, collage templates branding, batch product graphics, creator affiliate collage tool",
+      "image": "/assets/blog/collage-butler-explained.png",
+      "imageAlt": "Illustration of small product thumbnails assembling into one branded collage card with a headline band and call-to-action band",
+      "imagePrompt": "Editorial flat illustration of small geometric product thumbnails flowing into and arranging themselves inside a branded picture frame with a headline band on top and a call-to-action band on the bottom, a sense of assembly and curation rather than a photograph, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
+      "order": 1
     }
   ]
 }
