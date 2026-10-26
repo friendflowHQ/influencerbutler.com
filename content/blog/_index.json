@@ -2909,6 +2909,21 @@
       "imageAlt": "Illustration of a status chip with a colored dot next to a small shield icon, representing a desktop app checking its own outgoing connection",
       "imagePrompt": "Editorial flat illustration of a rounded pill-shaped status chip with a glowing colored dot inside it, a small shield icon beside it, a thin signal line connecting it to a tiny house shape on one side and a distant server rack shape on the other, a calm at-a-glance safety mood, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
       "order": 1
+    },
+    {
+      "id": "influencer-butler-affiliate-program-explained",
+      "title": "Influencer Butler's Affiliate Program, Explained: Get Paid for Referring Other Creators",
+      "category": "Growth",
+      "tags": "Growth, Content",
+      "summary": "This is not the Amazon affiliate tooling built into the app. It is Influencer Butler's own referral program: apply, get a tracked link, and earn 30% recurring commission for 12 months on every creator you send our way. Here is exactly how the application, the 30-day first-touch cookie, and the monthly PayPal payouts work.",
+      "date": "2026-11-18",
+      "author": "Liz Dean",
+      "readingTime": "7 min read",
+      "keywords": "influencer butler affiliate program, software affiliate program for creators, recurring commission affiliate program, refer a creator earn commission, 30 percent recurring commission, affiliate referral link dashboard, first touch attribution cookie, creator referral payouts paypal",
+      "image": "/assets/blog/influencer-butler-affiliate-program-explained.png",
+      "imageAlt": "Illustration of a referral link connecting two creator profile icons, with a percent badge and a payout coin representing recurring commission",
+      "imagePrompt": "Editorial flat illustration of a chain link connecting two simple circular profile icons, a small percent badge and a coin or dollar glyph nearby suggesting a payout, clean modern vector style, soft rounded geometric shapes, warm orange (#f59e0b) and deep navy accents on a soft cream background, generous negative space, no text, no logos",
+      "order": 1
     }
   ]
 }
