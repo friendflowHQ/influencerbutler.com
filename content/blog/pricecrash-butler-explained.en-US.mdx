@@ -1,0 +1,57 @@
+---
+title: "Pricecrash Butler, Explained: Catch Amazon's Near-Mistake Prices Before They're Gone"
+summary: "Everyone has seen a screenshot of some Amazon item marked down 95% by what looks like a seller mistake. Pricecrash Butler sweeps Amazon's own catalog for those, and this is exactly how it scans, what a realistic catch rate looks like, and how to get a find posted in seconds before the price is fixed."
+category: Amazon
+tags: Amazon, Deals
+date: 2026-11-06
+author: Liz Dean
+readingTime: 7 min read
+keywords: pricecrash butler, amazon price glitch alerts, catch amazon price mistakes, extreme discount finder amazon, amazon deal automation, amazon price drop monitor, affiliate price alert tool, amazon creators api price scan
+image: /assets/blog/pricecrash-butler-explained.png
+imageAlt: Illustration of a price tag crashing downward with a percent-off badge and a radar scan sweep, representing an automated extreme-discount catch
+imagePrompt: Editorial flat illustration of a large price tag shape tilted and falling with a dramatic downward arrow motion, a circular percent-off badge beside it, and a thin radar scan sweep arc suggesting continuous monitoring, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos
+---
+
+You have seen the screenshot before. Someone posts an Amazon order confirmation for a $400 item that rang up at $4, with a caption along the lines of "the seller definitely did not mean to do this." Everybody reacts, a few people ask how to find these themselves, and the honest answer is that almost nobody does, because these prices get fixed within minutes to hours, not days. By the time a human notices one by scrolling, it is already gone. Pricecrash Butler is built to notice first.
+
+It lives under Amazon Butler in the desktop app, next to the tools that already handle deal posting and storefront links. Where those are built for a steady stream of ordinary markdowns, Pricecrash Butler is built for the rare, extreme ones: the near-mistake prices that look like a decimal point slipped, not a sale.
+
+## How the scan actually works
+
+Pricecrash Butler sweeps Amazon's Creators API using the SearchItems endpoint, sorted price-ascending, inside whatever category you select. Sorting cheapest-first is the trick that makes this useful at all. It means the items most likely to be a crashed price surface near the top of each sweep instead of getting buried in a normal listing sort.
+
+Each item it finds gets compared against a configurable discount threshold, the percentage off the item's regular price has to clear before Pricecrash Butler will flag it. The default is 99%, and the help copy recommends staying somewhere in the 75-99% range. You set a category (Electronics, Home, Toys, whatever you want it watching) and a threshold, and from there the scan runs on its own on a schedule you pick.
+
+Auto-scan presets are 1 hour, 3 hours, 6 hours, 12 hours, or 24 hours, plus a custom interval if none of those fit. The default is every 6 hours, which is a reasonable middle ground for most people: frequent enough to not miss much, not so frequent that you are hammering the API for no reason.
+
+## The honest part: how often this actually fires
+
+This is worth saying plainly instead of letting you find out the hard way. At the recommended default of 99% off, a realistic catch rate is roughly 0 to 2 finds a month. Not a day. A month.
+
+That is not a bug and it is not a reason to turn the threshold down to something looser just to see more activity. A 99% markdown is, by definition, a price that should almost never exist. If Pricecrash Butler were catching several of these a day, it would mean the threshold was not actually filtering for anything rare, it would just be relabeling ordinary clearance pricing as a "crash." Set your expectations around the low end, treat any threshold below 75% as a different kind of tool (a deal finder, not a mistake-price finder), and do not build a content calendar around this one. It is for the rare catch, not a steady feed.
+
+## Three ways to hand off a find
+
+When a sweep does turn something up, you are not stuck reviewing it manually unless you want to be. There are three hand-off modes:
+
+- **Draft.** The find gets queued for you to review by hand before anything goes out. The safest option, and the right one while you are still getting a feel for what the scan turns up.
+- **Auto-schedule.** The post goes out on its own, and you choose between "Post right away" or "On next scheduled post time." This is the mode that matters for the whole premise of the tool, because a genuinely crashed price does not wait for your next scheduled slot. If the gap between now and your next posting window is three hours, the item is very likely back to its normal price before that window opens. "Post right away" is what actually lets you act on a find inside the minutes-to-hours it is real.
+- **No hand-off.** The find is just logged, nothing gets posted. Useful if you want a record of what Pricecrash Butler is catching without it touching your feed at all, or if you are still deciding whether the category and threshold you picked are worth running.
+
+## Building the post itself
+
+Pricecrash Butler has its own composer, Build Your Post, separate from the general posting tools elsewhere in the app. The headline feature there is a red "Price-crash hype" pill that generates urgency-style caption language on a click, the kind of line that matches the energy of the find itself, something like "HURRY! THE SELLER DIDN'T KNOW THEY MARKED THIS DOWN 91%!!!" It is deliberately loud, because a 91% markdown is a loud event, and a flat caption undersells what is actually happening.
+
+One detail is easy to miss and worth calling out on its own: the composer shows the percentage off only, never the actual price. That is not a stylistic choice, it is a compliance one. Amazon Associates rules restrict showing specific prices in some contexts, and building the hand-off so the percentage is the headline number by default, rather than something you have to remember to strip out yourself, is a quieter but more useful piece of design than the hype pill is. It keeps you inside the rules without you having to think about it every time.
+
+## Keeping the scan inside sane limits
+
+Because this runs unattended on a schedule, there is a posting-limits card that caps activity three ways: a per-scan cap, a per-hour cap, and a per-day cap. If a single sweep somehow turns up more flagged items than you want handled in one go, or more than you want posted in a given hour or day, these caps hold the line regardless of what the scan finds.
+
+You can also rank which finds get priority when more than one shows up at once, by Best deal, Cheapest, Biggest percent off, or First found. If you are running a broad category with a looser threshold, this is what decides which item wins when the scan turns up two or three candidates in the same sweep.
+
+## A concrete run-through
+
+Say you set the category to Electronics, the threshold to 90%, turn on Auto-schedule with "Post right away," and leave the scan on its 6-hour default. Somewhere in a sweep, a $400 item briefly shows at $4, a seller error of exactly the kind that gets fixed fast. Pricecrash Butler catches it on that pass, because 90% off clears the threshold you set. Because the hand-off is Auto-schedule with post-right-away on, there is no queue, no waiting for a scheduled slot: the post goes out within seconds of the scan confirming the item qualifies, built from the composer's hype language, showing the 91% (or whatever the exact figure comes out to) off, with no specific price shown. By the time anyone outside your audience notices the same listing, your post is already up.
+
+That is the whole case for the tool in one scenario. It will not fire often, and at the recommended threshold it should not. But when it does, the only thing that matters is whether the post goes out in seconds or in hours, and Auto-schedule with post-right-away is the setting that decides which one you get.
