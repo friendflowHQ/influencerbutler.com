@@ -2849,6 +2849,21 @@
       "imageAlt": "Illustration of a phone-shaped video frame with an upload arrow pointing into a TikTok-style cloud, with a small archive folder sitting beside it to represent a local backup",
       "imagePrompt": "Editorial flat illustration of a stylized phone/video-frame shape with an upward arrow above it suggesting an upload, and a small geometric folder or archive box beside it, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream background, generous negative space, no text, no logos",
       "order": 1
+    },
+    {
+      "id": "tiktok-orders-butler-explained",
+      "title": "TikTok Orders Butler, Explained: One Dashboard for What You've Actually Earned",
+      "category": "Growth",
+      "tags": "TikTok, Amazon",
+      "summary": "A simple, read-only dashboard for your TikTok Shop affiliate orders: an order count, Projected commission on orders still working through TikTok's system, and Settled commission that's actually finalized. Here is what it shows, why Projected and Settled are not the same number, and what a real refresh cycle looks like.",
+      "date": "2026-11-14",
+      "author": "Liz Dean",
+      "readingTime": "5 min read",
+      "keywords": "tiktok orders butler, tiktok shop affiliate dashboard, tiktok shop commission tracker, projected vs settled commission, tiktok affiliate orders dashboard, tiktok shop creator tools",
+      "image": "/assets/blog/tiktok-orders-butler-explained.png",
+      "imageAlt": "Illustration of a dashboard card with an order-count tile and two small commission tiles, one dashed to suggest pending and one solid to suggest settled",
+      "imagePrompt": "Editorial flat illustration of an abstract dashboard card made of soft geometric shapes, one tile showing a stack of small bars for an order count, two smaller tiles beside it, one with a dashed outline and one with a solid filled outline, suggesting pending versus finalized, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
+      "order": 1
     }
   ]
 }
