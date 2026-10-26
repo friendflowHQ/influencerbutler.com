@@ -66,6 +66,8 @@ export const TRIAL_COPY: Record<TrialTier, TierCopy> = {
         `  2. Paste your license key (on your welcome page) into the app`,
         `  3. Log in to Amazon inside the app and run Orders Butler to sync your history`,
         ``,
+        `Quick heads-up on timing: that first run only takes a couple of minutes, but setting up everything end to end (storefront, Creator Connections, every butler you want running) is more like a 30-90 minute project you do once, mostly hands-off. No need to rush it in one sitting.`,
+        ``,
         `Prefer to start in your browser? The free Chrome extension works on every account: https://www.influencerbutler.com/extension`,
         ``,
         OPENAI_KEY_NOTE,

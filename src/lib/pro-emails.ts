@@ -49,6 +49,8 @@ export const PRO_COPY: Record<ProTier, TierCopy> = {
         `  2. Paste your license key (on your welcome page) into the app`,
         `  3. Log in to Amazon inside the app and run Orders Butler to sync your history`,
         ``,
+        `Quick heads-up on timing: that first run only takes a couple of minutes, but setting up everything end to end (storefront, Creator Connections, every butler you want running) is more like a 30-90 minute project you do once, mostly hands-off. No need to rush it in one sitting.`,
+        ``,
         `Prefer to start in your browser? The free Chrome extension works on every account: https://www.influencerbutler.com/extension`,
         ``,
         `One setup note: the AI butlers use your own OpenAI API key. You pay OpenAI directly for what you use (usually pennies), not Influencer Butler. A ChatGPT subscription does not work. The AI Assistant is included free. Setup guide: ${OPENAI_SETUP_URL}`,

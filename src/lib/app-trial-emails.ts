@@ -83,6 +83,8 @@ export const APP_TRIAL_COPY: Record<AppTrialTier, TierCopy> = {
         ``,
         `The fastest way to get it is to run one butler today. Open the app and start with Daily Commission Butler. It pulls your Amazon commissions automatically so you can see your real numbers without touching a spreadsheet. Two minutes, and you'll understand the whole product.`,
         ``,
+        `Heads-up on the bigger picture: that first run is two minutes, but getting every butler you want set up end to end is more like a 30-90 minute project, mostly hands-off. Spread it across a few sittings. No need to do it all today.`,
+        ``,
         OPENAI_KEY_NOTE,
         ``,
         `One favor: hit reply and tell me what you're hoping this saves you from. I read every one, and it shapes what I build next.`,

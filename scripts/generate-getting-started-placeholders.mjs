@@ -91,7 +91,7 @@ const SPECS = [
     out: "how-to-get-started-with-influencer-butler.png",
     badge: "Cover",
     title: "How to Get Started With Influencer Butler",
-    caption: "Your first fifteen minutes, from download to your first running butler",
+    caption: "From download to your first running butler, no rush required",
   },
   {
     out: "getting-started/01-download.png",

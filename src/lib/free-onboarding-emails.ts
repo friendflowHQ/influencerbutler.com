@@ -63,6 +63,8 @@ export const ONBOARDING_COPY: Record<OnboardingTier, TierCopy> = {
         ``,
         `All of that is on the free-forever plan: ${FREE_BUTLERS}. No card, no expiry.`,
         ``,
+        `Those 3 steps really are about 3 minutes. If you later add more butlers (brand campaigns, Creator Connections, the Amazon Influencer Program steps), budget more like 30-90 minutes total for the full setup, mostly hands-off. No rush either way.`,
+        ``,
         `One setup note for later: the AI butlers use your own OpenAI API key. You pay OpenAI directly for what you use (usually pennies), not Influencer Butler. A ChatGPT subscription does not work. The AI Assistant is included free. Setup guide: ${OPENAI_SETUP_URL}`,
         ``,
         `Prefer to start in your browser? The free Chrome extension works on every account: ${v.extensionUrl}`,

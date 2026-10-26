@@ -1343,6 +1343,13 @@ a.feature-card:hover h3 { color: var(--brand-600); }
   line-height: 1.6;
   margin-bottom: 1rem;
 }
+.feature-setup-time {
+  display: inline-block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--brand-700);
+  margin-bottom: 1.5rem;
+}
 .feature-free-pill {
   display: inline-flex;
   align-items: center;
