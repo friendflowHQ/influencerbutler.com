@@ -2834,6 +2834,21 @@
       "imageAlt": "Illustration of a heart icon, a follow icon, and a comment bubble icon arranged in sequence with small clock and timing dots between them, representing paced TikTok engagement",
       "imagePrompt": "Editorial flat illustration of three simple geometric icons, a heart, a plus-person follow icon, and a chat bubble, arranged left to right inside a branded picture frame with small clock and dot glyphs connecting them to suggest timed pacing, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
       "order": 1
+    },
+    {
+      "id": "tiktok-video-butler-explained",
+      "title": "TikTok Video Butler, Explained: Post Through TikTok's Own API and Back Up Every Video You've Made",
+      "category": "Growth",
+      "tags": "TikTok, Content",
+      "summary": "TikTok Video Butler uploads through TikTok's official Content Posting API instead of some workaround, in two honest modes: straight to your drafts folder, or direct to your live profile once TikTok itself approves the app for that access. It also backs up every video, cover image, and caption from your whole profile to your own computer.",
+      "date": "2026-11-13",
+      "author": "Liz Dean",
+      "readingTime": "7 min read",
+      "keywords": "tiktok video butler, tiktok content posting api, tiktok draft upload, tiktok direct post api approval, backup tiktok videos, tiktok video backup tool, official tiktok api posting, tiktok beta features",
+      "image": "/assets/blog/tiktok-video-butler-explained.png",
+      "imageAlt": "Illustration of a phone-shaped video frame with an upload arrow pointing into a TikTok-style cloud, with a small archive folder sitting beside it to represent a local backup",
+      "imagePrompt": "Editorial flat illustration of a stylized phone/video-frame shape with an upward arrow above it suggesting an upload, and a small geometric folder or archive box beside it, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream background, generous negative space, no text, no logos",
+      "order": 1
     }
   ]
 }
