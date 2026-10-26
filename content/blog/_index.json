@@ -2924,6 +2924,21 @@
       "imageAlt": "Illustration of a referral link connecting two creator profile icons, with a percent badge and a payout coin representing recurring commission",
       "imagePrompt": "Editorial flat illustration of a chain link connecting two simple circular profile icons, a small percent badge and a coin or dollar glyph nearby suggesting a payout, clean modern vector style, soft rounded geometric shapes, warm orange (#f59e0b) and deep navy accents on a soft cream background, generous negative space, no text, no logos",
       "order": 1
+    },
+    {
+      "id": "events-explained",
+      "title": "Events, Explained: Live Group Calls, a Timezone-Smart RSVP, and an AI Recap If You Miss It",
+      "category": "Growth",
+      "tags": "Growth, Content",
+      "summary": "The Influencer Butler team runs free live group calls for the community, and the whole loop is built to survive you being busy: a desktop app banner or the /events page tells you one is coming, registering while signed in locks in your timezone so reminders land at the right time, and if you miss it anyway, an AI-written recap of the call transcript catches you up.",
+      "date": "2026-11-19",
+      "author": "Liz Dean",
+      "readingTime": "7 min read",
+      "keywords": "influencer butler events, live group calls, creator community calls, event rsvp timezone, ai call recap, desktop app event banner, office hours for creators",
+      "image": "/assets/blog/events-explained.png",
+      "imageAlt": "Illustration of a calendar event card with an RSVP checkmark, a small cluster of people, and a recap document, in warm orange and navy",
+      "imagePrompt": "Editorial flat illustration of a calendar event card with a checkmark badge, a small group-of-people glyph, and a document icon nearby, abstract geometric style, soft rounded shapes, warm orange (#f59e0b) and deep navy accents on a cream background, no text, no logos",
+      "order": 1
     }
   ]
 }
