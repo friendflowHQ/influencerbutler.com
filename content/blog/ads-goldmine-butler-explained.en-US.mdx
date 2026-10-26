@@ -1,0 +1,73 @@
+---
+title: "Ads Goldmine Butler, Explained: Score the Products Amazon Is Already Paying to Promote"
+summary: "Ads Goldmine Butler doesn't harvest new products. It re-scores everything already sitting in your ledger, Lightning Deals, brand stores, sponsored carousels, Creator Connections and SPCC campaigns, into a single 0-100 score so you know which brands are worth a pitch today instead of guessing."
+category: Amazon
+tags: Amazon, Growth
+date: 2026-11-25
+author: Liz Dean
+readingTime: 7 min read
+keywords: ads goldmine butler, amazon sponsored products research, amazon creator connections scoring, find brands running amazon ads, amazon affiliate pitch targets, amazon lightning deals for creators, amazon spcc catalog, pitch butler amazon brands
+image: /assets/blog/ads-goldmine-butler-explained.png
+imageAlt: Illustration of a funnel sorting product icons by an ad badge, scoring which ones Amazon is actively promoting
+imagePrompt: Editorial flat illustration of a funnel or sieve with small geometric product-box icons falling through it, a few icons glowing with a small badge shape to represent an ad or deal signal, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos
+---
+
+If you run cc-check regularly, you already know the problem this feature solves: your Creator Connections and SPCC catalogs grow into hundreds of ASINs, and most of them look identical on paper. Same commission range, same product category, same "active campaign" badge. You cannot pitch all of them, and you cannot tell from a spreadsheet which ones Amazon itself is quietly putting money behind. Ads Goldmine Butler is the triage layer for that pile. It does not go out and find new products. It re-scores the ones you already have by how hard Amazon, or the brand itself, is already advertising them.
+
+## It's a scorer, not a harvester
+
+This is worth being precise about, because the name invites a different guess. "Goldmine" sounds like it should dig up new finds, the way TikTok Goldmine surfaces TikTok creators running paid partnerships. Ads Goldmine Butler does not scrape new listings. It is, in the app's own words, a "UI-only workspace" that runs a read-only join over catalogs you are already building elsewhere: the Creator Connections and SPCC catalogs cc-check maintains, plus every ASIN you have personally harvested through Daily Commission, Orders Butler, or Storefront Butler. It lives under Amazon Butler, and the table fills up even if your own ledger is small, because the CC and SPCC catalogs alone usually carry plenty of rows.
+
+What it adds is a score: a single 0-100 number per ASIN that answers "how actively is this product being advertised right now," built from five kinds of evidence.
+
+## The five signals, and how they're weighted
+
+The scoring logic lives in a plain weighted-points function, and the weights themselves tell you what the team considers strong versus weak evidence:
+
+- **Deal badge present**: 5 points. A generic deal tag on the listing.
+- **Lightning Deal**: 10 points. **Prime-exclusive deal**: 10 points. **Percent claimed over 60%**: 3 bonus points, since a fast-moving deal is the strongest "post this now" signal.
+- **In your Creator Connections catalog with an active campaign**: 15 points. **In your SPCC catalog with an active offer**: 15 points.
+- **Brand has its own storefront**: 20 points.
+- **Sponsored carousel detected on the product detail page**: 25 points, the single heaviest signal in the whole model.
+- **Brand story panel on the product page**: 5 points.
+- **Sponsored Brands carousel on the brand's own keyword search**: 10 points, flagged in the code as the strongest single-page proof that a brand is paying for Sponsored Brands ads specifically.
+- **Brand-search slot density**: up to 5 sponsored slots counted on the brand's own category search, 3 points each, capped at 15 points total.
+
+Cross a combined 30 points and the ASIN gets tagged "ads-active" on your master ledger. It takes dropping below 20, not just below 30, to lose that tag again, so a single flaky scrape does not flip a brand on and off every refresh.
+
+## Running your first refresh
+
+Before you touch it, two things need to already be true: cc-check needs to have run at least once (otherwise there is nothing to score), and you want a Creators API key saved in API Integrations, since that is what feeds the Deal column. Without the key, the Deal column just stays blank and the score leans on the other four signals.
+
+From there:
+
+1. Open **Ads Goldmine** under Amazon Butler.
+2. Click **Refresh Now**.
+
+Behind that one click, four passes run in order. First, catalog candidates get enumerated from your CC and SPCC catalogs, no API key needed for this step. Second, the Creators API deal probe runs, Lightning Deal, Prime-exclusive, percent claimed, on a 6-hour freshness window, so it skips ASINs it already checked recently. Third, brand-search density runs against a capped batch of 30 brands per session, refreshed every 7 days. Fourth, the product-detail-page probe walks the top-ranked brands looking for a brand store and sponsored carousels, on a 14-day freshness window. Creator Connections and SPCC presence itself gets resolved inline while the rows are built, no separate probe required.
+
+A first refresh on a cold catalog takes several minutes, since it is working through all four tiers. After that, refreshes run in minutes or seconds, because most of the data is still inside its freshness window. Deal, brand-store, and brand-search-density data fill in gradually across several refreshes rather than all at once, since each run only probes a capped batch of your highest-priority brands.
+
+## Reading the table
+
+Above the results table sits a catalog summary: ASINs scored, how many are High score (50 or above), how many have a CC opportunity, how many have an SPCC opportunity, and how many brands have their own store. The numbers recalculate after every refresh and again whenever you touch a filter.
+
+The table itself has columns for Brand, Product, ASIN, Score, and then per-signal columns, CC, SPCC, Brand Store, Deal, so you can see at a glance which specific signal is driving a high number instead of just trusting the score blindly. A Reason column spells it out in plain language, composed from the same signals, something like "In your Creator Connections catalog. Up to 8% commission" for one row, or a note about a Lightning Deal and a sponsored carousel for another. A Pitched column shows a badge that lights up automatically once you have logged that brand as pitched in Pitch Butler, so the table always reflects who you have already reached out to, without you tracking it twice.
+
+Filtering is built around a Min score slider plus four checkboxes: Only CC active, Only SPCC active, Has Brand Store, Lightning Deal only, and a separate Pitched/Not pitched dropdown. Filters and your column layout both auto-save and come back the next time you open the workspace. Each row also has a Send to Content Butler button, which queues that ASIN as an unassigned content task without you leaving the table.
+
+## What to actually do with a high score
+
+The help doc is blunt about this, and it maps cleanly onto the rest of the app. If the score is driven by deal urgency, Lightning or Prime-exclusive, schedule it in Deals Butler while the urgency is still real. If the score is driven by brand-search density or a brand store, pitch that brand through Pitch Butler, because a brand spending on its own ad space has a budget for influencers too. Any high-score ASIN is also fair game for Content Butler or for a script in Video Reload Butler or Voiceover Butler. The score does not do the pitching for you, it just tells you which 20 rows out of 400 deserve the effort.
+
+## A realistic example
+
+Say cc-check has handed you a CC catalog with 380 ASINs across maybe 60 brands, most of them sitting at the same flat commission rate with no other distinguishing detail. You open Ads Goldmine, click Refresh Now, and wait the few minutes a cold first pass takes. The catalog summary settles at something like 380 scored, 24 high score. You drag the Min score slider to 50 and sort by Score.
+
+The top row is a kitchen-gadget brand at 78: it is in your Creator Connections catalog with a commission rate worth noting (15 points), it has its own brand store (20 points), and the PDP probe found a sponsored carousel on its product page (25 points), plus a couple of brand-search slots (6 points). The Reason column reads something close to "In your Creator Connections catalog. Up to 8% commission. Has a brand store." That is a Pitch Butler candidate, a brand clearly paying to be found, not just a brand that happens to be in your catalog. Three rows down sits a different ASIN at 23, Lightning Deal plus 40% claimed, nothing else. That one goes to Deals Butler today, before the deal expires, not to a pitch email next week. The rest, sitting in the teens, are catalog-only brands with no other signal yet, exactly the "lots of rows scoring 15" case the help doc calls out, worth refreshing again later rather than acting on now.
+
+## Costs and limits, briefly
+
+There is nothing extra to pay here beyond a Creators API key you likely already have for other Amazon workspaces. The workspace itself has no runner and no scheduled job, so there is no autopilot cost and no background job eating API calls while you are not looking. Refresh is manual only, and the help doc recommends about once a week as the right cadence, since deal signals refresh every 6 hours but brand-search and PDP data only matter on a 7-to-14-day cycle anyway. The underlying cache files, one for per-ASIN and per-brand probe results, one for the candidate set itself, live under your user-data runtime folder and stay bounded in size because of those same freshness windows.
+
+That's a wrap on this batch. Thirty shipped features later, Ads Goldmine Butler is a fitting place to end it: a small, honest piece of the app that does not harvest anything new, it just makes the pile you already built easier to act on.

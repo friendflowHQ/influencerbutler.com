@@ -3014,6 +3014,21 @@
       "imageAlt": "Illustration of rows flowing from a post card and a deal tag into a spreadsheet grid, representing data auto-syncing into Google Sheets",
       "imagePrompt": "Editorial flat illustration of a clean spreadsheet grid with rows of soft rounded cells, two small source icons (a rounded card shape and a tag shape) feeding curved lines of tiny dots into the top of the grid, a sense of live data flowing in, modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
       "order": 1
+    },
+    {
+      "id": "ads-goldmine-butler-explained",
+      "title": "Ads Goldmine Butler, Explained: Score the Products Amazon Is Already Paying to Promote",
+      "category": "Amazon",
+      "tags": "Amazon, Growth",
+      "summary": "Ads Goldmine Butler doesn't harvest new products. It re-scores everything already sitting in your ledger, Lightning Deals, brand stores, sponsored carousels, Creator Connections and SPCC campaigns, into a single 0-100 score so you know which brands are worth a pitch today instead of guessing.",
+      "date": "2026-11-25",
+      "author": "Liz Dean",
+      "readingTime": "7 min read",
+      "keywords": "ads goldmine butler, amazon sponsored products research, amazon creator connections scoring, find brands running amazon ads, amazon affiliate pitch targets, amazon lightning deals for creators, amazon spcc catalog, pitch butler amazon brands",
+      "image": "/assets/blog/ads-goldmine-butler-explained.png",
+      "imageAlt": "Illustration of a funnel sorting product icons by an ad badge, scoring which ones Amazon is actively promoting",
+      "imagePrompt": "Editorial flat illustration of a funnel or sieve with small geometric product-box icons falling through it, a few icons glowing with a small badge shape to represent an ad or deal signal, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
+      "order": 1
     }
   ]
 }
