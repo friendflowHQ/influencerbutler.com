@@ -1,0 +1,72 @@
+---
+title: "Community Share Butler, Explained: Find Facebook Groups, Read Their Rules, and Share Without Getting Banned"
+summary: "It matches your Benable lists or Walmart collections to real Facebook groups, reads each group's rules before joining, and places your link wherever that group actually allows it. Here is exactly how Community Share Butler finds groups, scores them, learns from removals, and keeps you inside Facebook's own rate limits."
+category: Growth
+tags: Facebook, Growth
+date: 2026-11-05
+author: Liz Dean
+readingTime: 7 min read
+keywords: community share butler, facebook group marketing automation, auto join facebook groups, facebook group rules compliance, affiliate marketing facebook groups, facebook group link policy, benable list facebook groups, walmart collection facebook groups
+image: /assets/blog/community-share-butler-explained.png
+imageAlt: Illustration of a cluster of community group icons with a magnifying glass reading a rules document, one group circled in green as a safe, compliant match
+imagePrompt: Editorial flat illustration of several small rounded group/people icon clusters arranged around a document shape covered in short text lines, a magnifying glass hovering over the document, one group icon circled in a soft green ring to mark it as an approved match, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos
+---
+
+Facebook groups are still one of the best places to put a shopping list in front of people who actually want it, if you can find the right groups, if you read their rules before you post, and if you remember which ones allow links at all. Do that by hand across even a dozen groups and it turns into a part-time job. Get it wrong once, drop a link in a "no links" group, miss an admin-approval requirement, post to the same group twice in one day, and you can lose the group entirely, sometimes with your account flagged along with it. Community Share Butler exists to do that homework for you, every time, before anything gets posted.
+
+It is not a blaster that joins everything it can find and drops the same link everywhere. It matches your own lists to groups that are actually relevant, reads each group's own rules before it ever posts there, and remembers which groups have already removed your posts so it never wastes a share on them again.
+
+## Matching a list to the right groups
+
+It starts with something you already have: a Benable list or a Walmart collection. Those get auto-tagged with topic, audience, and place tags, with the option to let AI help with the tagging instead of doing it by hand. A "pet supplies" list might come out tagged with topics like pet care and small-space living, an audience tag, and a place tag if the list is local to a city or region.
+
+From those tags, the "find groups" pass plans out search phrases, runs each one through Facebook's own group search, scrolls through the result cards, and scrapes what comes back. It then filters that raw list down by group size and visibility, so you are not left sorting through a pile of dead groups with nine members or groups set up for something unrelated that happened to share a keyword.
+
+Every surviving candidate gets a numeric fit score, based on how well it actually matches your list's topics and place. That score is what separates "this group showed up in search" from "this group is worth joining," and it is visible right in the UI next to each candidate, not hidden behind a black-box ranking.
+
+## The rules-reading step is the part that protects you
+
+This is the step that matters most, and it is not a formality bolted on for appearances. For every new candidate group, the app reads that group's About page and rules text, and classifies the excerpt into one of four buckets you can see directly in the UI:
+
+- **Links allowed** - post the link in the body, no issue.
+- **Links in comments** - the group wants links kept out of the main post.
+- **Links discouraged** - links are tolerated but frowned on, handled more cautiously.
+- **No links** - no shopping link anywhere in the post, full stop.
+
+On top of that classification, it flags anything that needs a human: groups that require admin approval before a post goes live, and groups with membership-screening questions. The classification itself can use AI to read and judge the rules excerpt, or fall back to simple keyword-based rules if AI is turned off or its monthly budget has hit zero. Either way, a group never gets treated as "links allowed" just because nobody checked. The check always happens, AI-assisted or not.
+
+## It actually learns from mistakes
+
+Here is the proof that this is not just a one-time filter: a day after each share goes out, the app checks whether that post is still standing. If it was removed, that specific group gets permanently blacklisted from future sharing. Not a cooldown, not a lower score, blacklisted. The app never revisits it. That is a meaningfully different design from a tool that just keeps trying the same groups and hoping the removal was a fluke. One bad outcome and that group is done, which means the system's track record only gets cleaner over time instead of repeating the same mistake against the same admins.
+
+## How a share actually goes out
+
+Once a group has been joined, Community Share Butler waits out a 3-day warm-up period before it shares anything there. That gap is deliberate: showing up and dropping a link the same day you join is exactly the pattern group admins watch for, and showing up as a real member first is part of what keeps an account in good standing.
+
+When the warm-up period ends, the app picks one list per group, matched by topic and place, and queues the resulting post through the same posting pipeline as the app's Deals Butler. That matters more than it sounds: Deals Butler's own posting-hours and rate limits still apply on top of whatever caps Community Share Butler sets for itself, so you are never stacking two features' worth of posting frequency onto one Facebook account.
+
+The shopping link itself goes wherever that specific group's rule classification says it is allowed. A "Links allowed" group gets the link right in the post. A "No links" or "Links in comments" group gets the link automatically moved out of the main post and into the first comment instead, or left out of the post entirely where the rules call for that. You are not deciding this case by case, and you are not relying on memory of which group said what three weeks ago.
+
+## The limits, and what they protect
+
+Every default here is adjustable, but the defaults themselves are conservative on purpose:
+
+- 5 joins per day
+- 6 shares per day
+- 45 minutes minimum between shares
+- 7 days before re-sharing to the same group
+- 3-day warm-up period after joining, before the first share
+
+Public groups get joined directly. Private groups get a join request like anyone else, and membership-screening questions are never answered automatically, those get flagged "Needs your answers" so a real person fills them in. There is also a "Fully automatic mode," off by default, that self-manages joining and sharing on a weekly rhythm within the same caps, but even in that mode it still never auto-answers a membership question. That one line does not move, no matter how much autonomy you hand the feature.
+
+AI usage across all of this (tagging, phrase planning, rules classification) is capped by a monthly AI budget setting that defaults to $3. At $0, it falls back entirely to rule-based matching and tagging, and the help content says so plainly: everything still works with simple rules, even at zero AI spend. You are not paying a hidden tax to get the safety behavior, the rules-reading and the blacklist logic run either way.
+
+If Facebook ever shows a rate-limit warning or a checkpoint, the whole feature halts and pauses posting everywhere, sharing that halt logic with Deals Butler. One warning stops both features at once rather than letting one keep posting while the other backs off.
+
+## A realistic run-through
+
+Say you tag a pet supplies Benable list and run the "find groups" pass. It comes back with 40 candidate groups. The rules-reading step classifies 12 of those as "Links allowed," others land in "Links in comments" or "No links," and a handful get flagged for admin approval or membership questions you will need to answer yourself. The daily join cap of 5 means you are not joining all 40, or even all 12, at once, the app works through them a handful at a time, spread across days.
+
+Three days after the first of those joins, the first share goes out, respecting whichever rule that particular group set, link in the post, link in the comment, or no link at all. A day later, the app checks whether that post survived. If a group removed it, that group is permanently off the list going forward. The next day's share picks up with the groups that are left, still inside the daily cap, still 45 minutes apart at minimum, still never touching a group twice inside 7 days.
+
+That is the whole point of Community Share Butler: not posting faster, but posting in a way that will not get you removed, built around the actual rule text of each actual group instead of a single policy applied everywhere.

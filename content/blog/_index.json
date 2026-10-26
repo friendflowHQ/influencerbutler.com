@@ -2714,6 +2714,21 @@
       "imageAlt": "Illustration of a video frame icon with an upward boost arrow next to a magnifying glass, representing diagnosing and fixing Amazon content that is not showing",
       "imagePrompt": "Editorial flat illustration of a video-frame icon with a small upward arrow or boost glyph beside it, and a small magnifying-glass icon nearby suggesting diagnosis, clean modern vector style, soft rounded geometric shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream background, generous negative space, no text, no logos",
       "order": 1
+    },
+    {
+      "id": "community-share-butler-explained",
+      "title": "Community Share Butler, Explained: Find Facebook Groups, Read Their Rules, and Share Without Getting Banned",
+      "category": "Growth",
+      "tags": "Facebook, Growth",
+      "summary": "It matches your Benable lists or Walmart collections to real Facebook groups, reads each group's rules before joining, and places your link wherever that group actually allows it. Here is exactly how Community Share Butler finds groups, scores them, learns from removals, and keeps you inside Facebook's own rate limits.",
+      "date": "2026-11-05",
+      "author": "Liz Dean",
+      "readingTime": "7 min read",
+      "keywords": "community share butler, facebook group marketing automation, auto join facebook groups, facebook group rules compliance, affiliate marketing facebook groups, facebook group link policy, benable list facebook groups, walmart collection facebook groups",
+      "image": "/assets/blog/community-share-butler-explained.png",
+      "imageAlt": "Illustration of a cluster of community group icons with a magnifying glass reading a rules document, one group circled in green as a safe, compliant match",
+      "imagePrompt": "Editorial flat illustration of several small rounded group/people icon clusters arranged around a document shape covered in short text lines, a magnifying glass hovering over the document, one group icon circled in a soft green ring to mark it as an approved match, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
+      "order": 1
     }
   ]
 }
