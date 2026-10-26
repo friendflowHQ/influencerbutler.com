@@ -2699,6 +2699,21 @@
       "imageAlt": "Illustration of a dashboard panel with bar charts, one bar highlighted green and another flagged with a small warning dot, and a magnifying glass over a line chart",
       "imagePrompt": "Editorial flat illustration of an abstract analytics dashboard panel made of soft geometric shapes, one bar chart column glowing warm orange as a highlight and a neighboring column marked with a small warning dot, a magnifying glass hovering over a simple line chart, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
       "order": 1
+    },
+    {
+      "id": "reach-booster-explained",
+      "title": "Reach Booster, Explained: Find the Amazon Content That's Being Held Back, and Fix It",
+      "category": "Amazon",
+      "tags": "Amazon, Instagram",
+      "summary": "Amazon sometimes holds your videos and photos back from top placement for quality reasons it barely explains, and most creators never even know it's happening. Reach Booster finds those flagged items, two different ways, diagnoses exactly what's wrong with specific codes, and walks you through a real fix-and-reupload pipeline with a deliberate, typed confirmation before anything irreversible happens.",
+      "date": "2026-11-04",
+      "author": "Liz Dean",
+      "readingTime": "7 min read",
+      "keywords": "amazon reach booster, improve reach amazon, amazon content not showing, amazon quality bar video, amazon creator hub diagnose, fix vertical video amazon, amazon reupload content, amazon influencer content visibility",
+      "image": "/assets/blog/reach-booster-explained.png",
+      "imageAlt": "Illustration of a video frame icon with an upward boost arrow next to a magnifying glass, representing diagnosing and fixing Amazon content that is not showing",
+      "imagePrompt": "Editorial flat illustration of a video-frame icon with a small upward arrow or boost glyph beside it, and a small magnifying-glass icon nearby suggesting diagnosis, clean modern vector style, soft rounded geometric shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream background, generous negative space, no text, no logos",
+      "order": 1
     }
   ]
 }
