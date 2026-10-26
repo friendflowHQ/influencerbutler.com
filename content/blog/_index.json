@@ -2894,6 +2894,21 @@
       "imageAlt": "Illustration of a chat bubble with rotating message cards and a small clock, representing automated TikTok DMs with scheduled follow-ups",
       "imagePrompt": "Editorial flat illustration of a speech bubble icon with 2-3 stacked message cards fanned out inside it and a small clock badge in the corner, clean modern vector style, soft rounded geometric shapes, brand accent warm orange (#F59E0B) with deep navy (#1E2A4A) and soft cream background, generous negative space, no text, no logos",
       "order": 1
+    },
+    {
+      "id": "egress-ip-monitor-explained",
+      "title": "The Chip That Watches Its Own Connection: How Egress IP Monitoring Works",
+      "category": "Amazon",
+      "tags": "Instagram, Facebook, Proxy",
+      "summary": "The desktop app checks its own outgoing connection in real time and tells you, in plain color, whether it looks like a real home IP or a data-center one. Here is how the chip, the banner, the guided fix, and the disconnect-and-email backstop actually work.",
+      "date": "2026-11-17",
+      "author": "Liz Dean",
+      "readingTime": "7 min read",
+      "keywords": "egress ip monitor, connection status chip influencer butler, datacenter ip warning, residential proxy test connection, vpn proxy detection amazon influencer, guided proxy setup coachmark, proxy disconnect email alert, how to check if my ip is residential",
+      "image": "/assets/blog/egress-ip-monitor-explained.png",
+      "imageAlt": "Illustration of a status chip with a colored dot next to a small shield icon, representing a desktop app checking its own outgoing connection",
+      "imagePrompt": "Editorial flat illustration of a rounded pill-shaped status chip with a glowing colored dot inside it, a small shield icon beside it, a thin signal line connecting it to a tiny house shape on one side and a distant server rack shape on the other, a calm at-a-glance safety mood, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
+      "order": 1
     }
   ]
 }
