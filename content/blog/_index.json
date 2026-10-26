@@ -2744,6 +2744,21 @@
       "imageAlt": "Illustration of a price tag crashing downward with a percent-off badge and a radar scan sweep, representing an automated extreme-discount catch",
       "imagePrompt": "Editorial flat illustration of a large price tag shape tilted and falling with a dramatic downward arrow motion, a circular percent-off badge beside it, and a thin radar scan sweep arc suggesting continuous monitoring, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
       "order": 1
+    },
+    {
+      "id": "expired-butler-explained",
+      "title": "Expired Butler, Explained: Stop Dead Deal Links From Sitting on Your Page",
+      "category": "Deals",
+      "tags": "Deals, Growth",
+      "summary": "A deal goes off sale and the post stays up, promo code and all, looking sloppy to anyone who clicks through. Here is exactly how Expired Butler scans your deal post history, deletes the ones that do not need to survive, edits the ones that do, and paces its own cleanup so it never fires off a burst of changes at once.",
+      "date": "2026-11-07",
+      "author": "Liz Dean",
+      "readingTime": "7 min read",
+      "keywords": "expired butler, expired deal posts, clean up dead deal links, deals butler cleanup, campaign post expiration, remove promo code from post, facebook group cleanup, reddit deal cleanup, post again redraft",
+      "image": "/assets/blog/expired-butler-explained.png",
+      "imageAlt": "Illustration of a social post card with a faded expired stamp and a sweeping broom glyph, representing automatic cleanup of old deal posts",
+      "imagePrompt": "Editorial flat illustration of a rounded social post card shape with a soft wilted tag hanging off one corner and a stylized broom sweeping past it, small dust motes trailing behind, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
+      "order": 1
     }
   ]
 }

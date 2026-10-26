@@ -1,0 +1,79 @@
+---
+title: "Expired Butler, Explained: Stop Dead Deal Links From Sitting on Your Page"
+summary: "A deal goes off sale and the post stays up, promo code and all, looking sloppy to anyone who clicks through. Here is exactly how Expired Butler scans your deal post history, deletes the ones that do not need to survive, edits the ones that do, and paces its own cleanup so it never fires off a burst of changes at once."
+category: Deals
+tags: Deals, Growth
+date: 2026-11-07
+author: Liz Dean
+readingTime: 7 min read
+keywords: expired butler, expired deal posts, clean up dead deal links, deals butler cleanup, campaign post expiration, remove promo code from post, facebook group cleanup, reddit deal cleanup, post again redraft
+image: /assets/blog/expired-butler-explained.png
+imageAlt: Illustration of a social post card with a faded expired stamp and a sweeping broom glyph, representing automatic cleanup of old deal posts
+imagePrompt: Editorial flat illustration of a rounded social post card shape with a soft wilted tag hanging off one corner and a stylized broom sweeping past it, small dust motes trailing behind, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos
+---
+
+A deal post does not know it has expired. It just sits there, on your Facebook Page, in a Group, on Telegram, on Reddit, with the same "40% off" caption and the same promo code, long after the price has reverted or the item sold out. Somebody finds it through search, through a share, through your own post history, clicks through expecting a deal, and lands on a full-price listing instead. At best that is a little embarrassing. At worst, if there is a promo code sitting in the caption, it looks like you are still actively running an offer that does not work anymore, which is a worse look when a brand's campaign is attached to the post. Expired Butler exists to go find those posts before someone else does and deal with them, either by deleting them or by editing them, depending on what kind of post they are.
+
+It is not a separate posting tool. It works off of Deals Butler's own history, which already knows what you posted, when, and what deal it was tied to. Expired Butler reads that history, checks which posts are actually expired, and cleans them up on a schedule instead of leaving that judgment call to whoever happens to notice first.
+
+## How a post gets flagged as expired
+
+There are two ways a post ends up marked expired, and either one is enough on its own.
+
+- **The deal's listed end time has passed.** If the deal had a stated window and that window closed, the post is expired, no further checking needed.
+- **A fresh check shows the product is no longer on sale.** Even without a stated end date, Expired Butler can re-check the product and see that the price has reverted or the listing is gone. That catches the deals that just quietly end without ever posting a cutoff time.
+
+Either signal is enough to flag the post. You do not have to guess which deals had a hard end date and which did not.
+
+## Delete, or edit: it depends on whether a brand is attached
+
+This is the part of Expired Butler that actually takes some judgment, and it is built around one distinction: does the post have a brand campaign attached to it or not.
+
+**No campaign attached: the post gets deleted outright.** A plain deal post you put up on your own has no reason to keep existing once the deal is gone. Nobody is relying on it, there is no sponsor whose name is attached to it, and leaving it up only adds to the pile of dead links on your page. Expired Butler just removes it.
+
+**Campaign attached: the post gets edited instead.** A sponsored post is different. A brand paid for that placement, and quietly deleting it can look worse than leaving it up with an honest label, especially if the brand or their team ever goes back to check what was posted. So instead of deleting, Expired Butler edits the post, and by default it does two things at once:
+
+- Adds an **EXPIRED banner**, either worked into the caption itself or added as a new comment on the post, depending on the platform.
+- **Strips the promo code and dates** out of the post, so nobody who reads it this week tries to use a code that stopped working weeks ago.
+
+Both of those are the default behavior, and you can rely on them happening together unless you have changed the per-platform settings. The logic is straightforward once you see it: a plain post has nothing left to protect, so it goes away; a campaign post still needs to exist as a record that the placement happened, it just needs to stop pretending the deal is live.
+
+## Per-platform overrides
+
+Deals Butler posts to Facebook Groups, Facebook Pages, Telegram, and Reddit, and those four platforms do not all behave the same way when you go back and touch an old post. A Reddit comment thread reacts differently to an edited post than a Facebook Group does, and some communities are stricter about edited or deleted content than others. Expired Butler gives you a separate override for each of those four platforms, so you can, for example, let Facebook Pages follow the default edit-with-banner behavior while telling Reddit to always delete, or the reverse. You are not locked into one global rule across every place you post.
+
+## The actual workflow: scan, review, clean up
+
+Running Expired Butler is a deliberate three-step motion, not something that silently happens in the background without you seeing it first.
+
+1. **Click "Scan for expired."** This checks your deal post history against the two expiration signals above and builds a list of candidates.
+2. **Review the results in a filterable, searchable table.** You can see what is about to be touched before anything happens to it, search for a specific product or post, and filter down to the ones you actually want to act on.
+3. **Tick the rows you want, then click "Clean up selected."** Everything in the table is selected by default, so if you trust the scan you can just hit clean up and move on. If you want to pull one or two rows out first, that is a click away.
+
+That review step matters. A scan is a judgment call by the system, not a guarantee, and having the table in front of you before anything gets deleted or edited means you get to catch the occasional miss instead of finding out after the fact.
+
+## Running it on a schedule, paced on purpose
+
+You do not have to remember to click "Scan for expired" yourself. There is a schedule card with presets for every 6 hours, every 12 hours, once a day, every 3 days, or once a week, so you can match the cadence to how fast your deals typically turn over.
+
+But a schedule that runs cleanup automatically also means something could, in theory, pile up a long list of expired posts and then try to edit or delete all of them in one burst. Expired Butler is built to not do that:
+
+- **Warm-up ramp.** This caps how many cleanup actions can happen per day, and raises that cap gradually over time rather than letting a freshly turned-on schedule immediately process a huge backlog in one pass.
+- **Shared quiet-hours sleep window.** The same quiet hours used by the app's other Facebook-posting Butlers apply here too, so cleanup actions do not fire off at odd hours just because a scheduled scan happened to land at 3am.
+
+Put together, those two settings are the tell that cleanup is meant to be paced the same way posting is, not treated as a lower-stakes action that can run however fast it wants. Editing or deleting a dozen posts in one minute looks exactly as unnatural to a platform as posting a dozen times in one minute does, so Expired Butler is held to the same kind of pacing.
+
+## "Post again" when a deal comes back
+
+Deals are not always gone for good. A product that sold out can restock, a time-limited discount can come back around for the next sales event, and when that happens you do not want to rebuild the post from scratch. The history log has a **"Post again"** button next to each entry, which takes the old post and redrafts it as a new one, so you are editing something that already exists instead of starting over on a deal you have already written up once.
+
+## A realistic weekly scan
+
+Say you have Expired Butler set to scan once a week. This week's scan comes back with a dozen expired posts.
+
+- **Eight of them have no campaign attached.** Plain deal posts, nobody sponsoring them. You leave all eight checked in the results table, click "Clean up selected," and they are deleted.
+- **Four of them have a brand campaign attached.** Those get edited instead: each one picks up an EXPIRED banner (caption or comment, depending on the platform) and loses its promo code and dates, so the post stays up as a record of the placement without quietly pointing people at a code that no longer works.
+
+A month later, one of those eight deleted products goes back on sale. Instead of rebuilding the post from zero, you open the history log, find that old entry, and click "Post again" to redraft it. Same deal, a few clicks instead of starting cold.
+
+That is the whole point of Expired Butler: it is not trying to make a judgment call about whether a deal was good, only about whether a post still matches reality. A dead link with a working-looking promo code is worse than no post at all, and a sponsored post deserves a label instead of a disappearance. Scan, review, clean up, on a schedule paced the same way your posting already is.
