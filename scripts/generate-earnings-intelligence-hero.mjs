@@ -76,41 +76,55 @@ function scene() {
     <path d="M0 -22 L6 -6 L22 0 L6 6 L0 22 L-6 6 L-22 0 L-6 -6 Z"/>
   </g>`;
 
-  // The dashboard card itself.
-  const panel = rr(310, 100, 916, 790, 28, WHITE, `stroke="${SLATE_L}" stroke-width="3" filter="url(#soft)"`);
+  // The dashboard card itself, sized to clear the wordmark top-left.
+  const panel = rr(430, 90, 676, 780, 28, WHITE, `stroke="${SLATE_L}" stroke-width="3" filter="url(#soft)"`);
 
   // Header bar: window dots on the left, filter "pills" on the right.
   const header = `
-  <g transform="translate(340,130)">
-    ${rr(0, 0, 856, 64, 14, NAVY)}
+  <g transform="translate(460,120)">
+    ${rr(0, 0, 616, 64, 14, NAVY)}
     ${circle(28, 32, 9, ORANGE)}
     ${circle(56, 32, 9, "#F2D3B8")}
     ${circle(84, 32, 9, SLATE_L)}
-    ${bar(620, 18, 180, 12, SLATE_L)}
-    ${bar(620, 36, 120, 10, "#5A6B91")}
+    ${bar(430, 18, 150, 12, SLATE_L)}
+    ${bar(430, 36, 100, 10, "#5A6B91")}
   </g>`;
 
   // Three summary tiles (total commission / units / ASIN count).
   const tiles = [0, 1, 2]
     .map((i) => {
-      const x = 340 + i * 292;
+      const x = 460 + i * 213;
       return `
-      <g transform="translate(${x},214)">
-        ${rr(0, 0, 266, 96, 16, "#FBE9CF")}
-        ${circle(34, 48, 20, i === 0 ? GREEN : ORANGE)}
-        ${bar(70, 30, 160, 14, NAVY_L)}
-        ${bar(70, 54, 110, 10, SLATE_L)}
+      <g transform="translate(${x},200)">
+        ${rr(0, 0, 189, 86, 16, "#FBE9CF")}
+        ${circle(30, 43, 17, i === 0 ? GREEN : ORANGE)}
+        ${bar(58, 26, 110, 12, NAVY_L)}
+        ${bar(58, 48, 78, 9, SLATE_L)}
       </g>`;
     })
     .join("");
 
+  // Mini line chart card, tucked above the right side of the bar chart,
+  // with a magnifying glass resting over its trend line.
+  const lineCard = `
+  <g transform="translate(790,316)">
+    ${rr(0, 0, 286, 150, 18, "#FBE9CF")}
+    <polyline points="20,116 64,82 108,98 152,48 196,68 248,26" fill="none" stroke="${NAVY}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    ${circle(248, 26, 8, GREEN)}
+  </g>
+  <g transform="translate(900,366)">
+    <circle cx="0" cy="0" r="44" fill="none" stroke="${NAVY}" stroke-width="11"/>
+    <circle cx="0" cy="0" r="44" fill="none" stroke="${ORANGE}" stroke-width="4" stroke-dasharray="5 10"/>
+    <line x1="31" y1="31" x2="74" y2="74" stroke="${NAVY}" stroke-width="13" stroke-linecap="round"/>
+  </g>`;
+
   // Bar chart: six ASIN bars, one highlighted green (high EPC), one flagged
   // with a small warning dot (a post that went dead and stopped earning).
-  const baseline = 760;
-  const chartX = 340;
-  const barW = 96;
-  const gap = 36;
-  const heights = [120, 210, 80, 255, 95, 165];
+  const baseline = 780;
+  const chartX = 483;
+  const barW = 70;
+  const gap = 30;
+  const heights = [90, 170, 55, 230, 75, 130];
   const colors = [SLATE_L, NAVY_L, SLATE_L, GREEN, SLATE_L, NAVY_L];
   const flaggedIndex = 2;
   const bars = heights
@@ -120,29 +134,16 @@ function scene() {
       let flag = "";
       if (i === flaggedIndex) {
         flag = `
-        ${circle(x + barW / 2, y - 28, 15, ORANGE)}
-        ${rr(x + barW / 2 - 2.5, y - 35, 5, 13, 2.5, WHITE)}
-        ${circle(x + barW / 2, y - 15, 2.6, WHITE)}`;
+        ${circle(x + barW / 2, y - 24, 13, ORANGE)}
+        ${rr(x + barW / 2 - 2.2, y - 30, 4.4, 11, 2.2, WHITE)}
+        ${circle(x + barW / 2, y - 13, 2.2, WHITE)}`;
       }
-      return `${rr(x, y, barW, h, 14, colors[i])}${flag}`;
+      return `${rr(x, y, barW, h, 12, colors[i])}${flag}`;
     })
     .join("");
   const baselineRule = bar(chartX - 10, baseline + 2, heights.length * (barW + gap) - gap + 20, 4, "#DCE3EC");
 
-  // Mini line chart card, with a magnifying glass resting over it.
-  const lineCard = `
-  <g transform="translate(730,558)">
-    ${rr(0, 0, 330, 176, 18, "#FBE9CF")}
-    <polyline points="22,136 74,96 126,116 178,58 230,80 288,32" fill="none" stroke="${NAVY}" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-    ${circle(288, 32, 8, GREEN)}
-  </g>
-  <g transform="translate(958,618)">
-    <circle cx="0" cy="0" r="52" fill="none" stroke="${NAVY}" stroke-width="12"/>
-    <circle cx="0" cy="0" r="52" fill="none" stroke="${ORANGE}" stroke-width="4" stroke-dasharray="5 11"/>
-    <line x1="37" y1="37" x2="86" y2="86" stroke="${NAVY}" stroke-width="15" stroke-linecap="round"/>
-  </g>`;
-
-  return `${panel}${header}${tiles}${baselineRule}${bars}${lineCard}${sparkle(1180, 150, 0.8)}${sparkle(260, 860, 0.6)}${sparkle(1230, 900, 0.55)}`;
+  return `${panel}${header}${tiles}${baselineRule}${bars}${lineCard}${sparkle(768, 110, 0.8)}${sparkle(1150, 860, 0.7)}${sparkle(380, 860, 0.6)}`;
 }
 
 function frame(inner) {
