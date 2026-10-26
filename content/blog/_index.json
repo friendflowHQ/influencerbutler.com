@@ -2864,6 +2864,21 @@
       "imageAlt": "Illustration of a dashboard card with an order-count tile and two small commission tiles, one dashed to suggest pending and one solid to suggest settled",
       "imagePrompt": "Editorial flat illustration of an abstract dashboard card made of soft geometric shapes, one tile showing a stack of small bars for an order count, two smaller tiles beside it, one with a dashed outline and one with a solid filled outline, suggesting pending versus finalized, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
       "order": 1
+    },
+    {
+      "id": "tiktok-goldmine-explained",
+      "title": "TikTok Goldmine, Explained: Harvest Creators Who Are Already Taking Paid Deals",
+      "category": "Growth",
+      "tags": "TikTok, Growth",
+      "summary": "Seed it with a few known accounts or a hashtag, pick a run mode, and TikTok Goldmine finds creators in your niche who already carry #ad or Paid partnership content, filters out everyone else, and exports a CSV of qualified prospects with emails ready for outreach.",
+      "date": "2026-11-15",
+      "author": "Liz Dean",
+      "readingTime": "7 min read",
+      "keywords": "tiktok creator outreach tool, find tiktok influencers for brand deals, tiktok sponsored content scraper, tiktok paid partnership finder, creator prospecting csv export, tiktok hashtag harvest, tiktok goldmine, find micro influencers tiktok",
+      "image": "/assets/blog/tiktok-goldmine-explained.png",
+      "imageAlt": "Illustration of a funnel filtering a cluster of profile icons down to a few highlighted, verified creator accounts",
+      "imagePrompt": "Editorial flat illustration of a simple geometric funnel or sieve shape filtering a loose cluster of small circular profile icons down into a tidy row of a few highlighted circles, one wearing a tiny checkmark badge, a sense of sorting and qualifying rather than scraping, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
+      "order": 1
     }
   ]
 }
