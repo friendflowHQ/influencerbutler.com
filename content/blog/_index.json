@@ -2999,6 +2999,21 @@
       "imageAlt": "Illustration of a phone displaying a QR code connected by a dashed line to a desktop computer, with a share arrow between them",
       "imagePrompt": "Editorial flat illustration of a simplified phone outline showing a QR code glyph on its screen, connected by a soft dashed line to a small geometric laptop icon, with a curved share arrow between them, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
       "order": 1
+    },
+    {
+      "id": "sheetsyncer-butler-explained",
+      "title": "Sheetsyncer Butler, Explained: Your Deals and Posts, Auto-Synced Into a Live Google Sheet",
+      "category": "Growth",
+      "tags": "Growth, Content",
+      "summary": "Sheetsyncer Butler sends your Facebook Group Builder posts and your Amazon, Walmart, and TikTok Shop deals straight into a Google Sheet as they happen, no copy-pasting, no manual export. Here is how the per-source auto-send toggles work, how Amazon and Walmart can share one sheet and alternate rows, and how the embedded live view lets you check it without leaving the app.",
+      "date": "2026-11-24",
+      "author": "Liz Dean",
+      "readingTime": "7 min read",
+      "keywords": "sheetsyncer butler, google sheets export, auto sync deals to google sheets, amazon deals spreadsheet, walmart deals spreadsheet, facebook group builder planning sheet, tiktok shop deals export, live google sheet view",
+      "image": "/assets/blog/sheetsyncer-butler-explained.png",
+      "imageAlt": "Illustration of rows flowing from a post card and a deal tag into a spreadsheet grid, representing data auto-syncing into Google Sheets",
+      "imagePrompt": "Editorial flat illustration of a clean spreadsheet grid with rows of soft rounded cells, two small source icons (a rounded card shape and a tag shape) feeding curved lines of tiny dots into the top of the grid, a sense of live data flowing in, modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
+      "order": 1
     }
   ]
 }

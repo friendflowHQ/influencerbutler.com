@@ -1,0 +1,59 @@
+---
+title: "Sheetsyncer Butler, Explained: Your Deals and Posts, Auto-Synced Into a Live Google Sheet"
+summary: "Sheetsyncer Butler sends your Facebook Group Builder posts and your Amazon, Walmart, and TikTok Shop deals straight into a Google Sheet as they happen, no copy-pasting, no manual export. Here is how the per-source auto-send toggles work, how Amazon and Walmart can share one sheet and alternate rows, and how the embedded live view lets you check it without leaving the app."
+category: Growth
+tags: Growth, Content
+date: 2026-11-24
+author: Liz Dean
+readingTime: 7 min read
+keywords: sheetsyncer butler, google sheets export, auto sync deals to google sheets, amazon deals spreadsheet, walmart deals spreadsheet, facebook group builder planning sheet, tiktok shop deals export, live google sheet view
+image: /assets/blog/sheetsyncer-butler-explained.png
+imageAlt: Illustration of rows flowing from a post card and a deal tag into a spreadsheet grid, representing data auto-syncing into Google Sheets
+imagePrompt: Editorial flat illustration of a clean spreadsheet grid with rows of soft rounded cells, two small source icons (a rounded card shape and a tag shape) feeding curved lines of tiny dots into the top of the grid, a sense of live data flowing in, modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos
+---
+
+At some point almost everyone running deals or planning content wants the data in a spreadsheet. Maybe you are handing a list of deals to a VA so they can work through it without touching the app. Maybe you are planning a week of Facebook Group posts and it is just easier to look at a grid than scroll through cards. Maybe a spreadsheet is simply the right tool for the job, and no amount of in-app UI changes that.
+
+The problem is keeping that spreadsheet current. Export it once and it is stale the moment you run another search or publish another post. Copy-paste it by hand and you are now doing a second job on top of the first one. Sheetsyncer Butler exists to close that gap: it watches two live sources inside Influencer Butler and sends new rows into a Google Sheet as they are created, so the spreadsheet stays current without you doing anything after the initial setup.
+
+## Two sources, two different jobs
+
+Sheetsyncer Butler is not one generic "export everything" switch. It has two separate data sources, and they serve different purposes.
+
+**Facebook Group Builder posts** go in for planning. Each post becomes one row, tagged by type, welcome, engagement, or viral, with the caption and an image-idea column next to it. There are no actual images in the sheet, just the planning data: what the post says, what type it is, and what image you had in mind for it. That is deliberate. The sheet is meant for someone (you, a teammate, a VA) to scan a week of planned content at a glance, not to be a media library.
+
+**Deals Butler** goes in for the live feed itself. Amazon Deals, Walmart Deals, and TikTok Shop Deals each get their own separate sheet or tab, so you are not scrolling through one giant mixed list trying to tell which store a row came from. New rows get sent automatically after each search, but only if "auto send" is turned on in that specific workspace's Search Deals tab.
+
+## Opt-in per source, not a blanket sync
+
+That last point is worth sitting with, because it is the core design decision behind the whole feature. Nothing auto-sends by default. You decide, source by source, what actually flows into the sheet.
+
+Say you run Amazon Deals, Walmart Deals, and TikTok Shop Deals, but you only ever share Amazon finds with your VA. You turn on auto-send for Amazon Deals and leave the other two off. Walmart and TikTok keep running searches exactly as before, nothing changes about how they work, they just do not write anything into a sheet. Only Amazon rows show up. If you later decide you want Walmart in there too, you flip one toggle in that workspace's Search Deals tab and it starts flowing from that point forward.
+
+This matters because a spreadsheet that fills up with everything, whether you wanted it there or not, stops being useful fast. Nobody wants to open a sheet and filter out three sources to find the one they actually care about. By making auto-send a per-source choice, Sheetsyncer Butler keeps the sheet matched to what you actually asked for, not what happens to be running in the background.
+
+The same logic applies to Facebook Group Builder posts. It syncs because you want a planning view, not because every feature in the app is quietly reporting into a spreadsheet somewhere.
+
+## Running Amazon and Walmart out of one sheet
+
+If you run both Amazon Deals and Walmart Deals, there is a specific pair of settings worth knowing about, because managing two separate spreadsheets for two stores gets old fast.
+
+The first is a toggle: "Use the same Google Sheet as Amazon Deals." Turn it on under Walmart Deals and its rows land in the same spreadsheet as Amazon, instead of a second file you have to open separately. If you only ever look at deals in one place anyway, there is no real reason to keep them split.
+
+The second is "Alternate Amazon and Walmart deals in the sheet," and it only makes sense once the first toggle is on. Instead of grouping all the Amazon rows together and all the Walmart rows together, it interleaves them, one row per store, so the sheet reads as a single mixed timeline of deals as they came in rather than two blocks stacked on top of each other.
+
+The detail that makes this actually work in practice: when alternating is on, the sheet waits up to 45 minutes for the other store's next result before writing. Amazon and Walmart searches do not run in perfect lockstep, one store can turn up results faster than the other on any given pass, and without that wait, the interleave would get lopsided fast, five Amazon rows in a row because Walmart was slow, then a clump of Walmart once it catches up. The 45-minute wait keeps the back-and-forth pattern intact even when one store is dragging its feet on a particular search.
+
+## Checking it without leaving the app
+
+The last piece is "Your live sheet," an embedded view of the actual spreadsheet inside Influencer Butler. You can look at it, and edit it, without tabbing out to a browser and opening Google Sheets separately. If you just want to glance at what came in today, you do not have to break your flow in the app to go check.
+
+It sounds like a small convenience, and it is, but it adds up. If auto-send is doing its job, you should not need to think about the sheet much at all. Having it embedded means the one time you do want to look, whether that's to sanity-check that rows are landing the way you expect or to hand-edit something before sharing the file, it is one click away instead of a context switch to another tab.
+
+## A realistic first run
+
+Say you are running both Amazon Deals and Walmart Deals and you want one combined feed to hand off to a VA. You turn on auto-send for Amazon Deals, then turn on auto-send for Walmart Deals, enable "Use the same Google Sheet as Amazon Deals" so there is only one file, and turn on "Alternate Amazon and Walmart deals in the sheet" so it reads as one timeline instead of two blocks.
+
+You let searches run through the day as usual. Later on, you open "Your live sheet" right inside the app and scroll down: Amazon and Walmart rows interleaved, each tagged by store, each with the deal data from whichever search produced it, landing roughly in the order the searches actually ran. No export, no copy-paste, nothing you had to remember to do partway through the day. You hand the sheet link to your VA and the next searches just keep writing into the same file.
+
+That is really the whole pitch for Sheetsyncer Butler: pick what should flow into a spreadsheet, and let it keep flowing, instead of treating "get this into a sheet" as a chore you repeat every time someone asks for the data.
