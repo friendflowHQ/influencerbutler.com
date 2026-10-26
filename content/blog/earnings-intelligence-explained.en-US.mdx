@@ -1,0 +1,63 @@
+---
+title: "Earnings Intelligence, Explained: The Pro Dashboard That Tells You What Actually Made Money"
+summary: "Clicks feel like success, but they do not always turn into commission. Earnings Intelligence is a Pro, read-only dashboard with six tabs over your harvested Amazon data, built to show you which products actually earned, which ones quietly died after you posted them, and how much of your activity the dashboard simply cannot see."
+category: Amazon
+tags: Amazon, Growth
+date: 2026-11-03
+author: Liz Dean
+readingTime: 7 min read
+keywords: amazon affiliate earnings dashboard, epc earnings per click, creator connections commission tracking, conversion leak dead links, amazon asin explorer, attribution gap affiliate links, influencer butler earnings intelligence
+image: /assets/blog/earnings-intelligence-explained.png
+imageAlt: Illustration of a dashboard panel with bar charts, one bar highlighted green and another flagged with a small warning dot, and a magnifying glass over a line chart
+imagePrompt: Editorial flat illustration of an abstract analytics dashboard panel made of soft geometric shapes, one bar chart column glowing warm orange as a highlight and a neighboring column marked with a small warning dot, a magnifying glass hovering over a simple line chart, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos
+---
+
+Clicks feel like success. A link gets shared, the click count climbs, and it is easy to read that as the product working for you. Most of the time it is not that simple. A post can pull in plenty of traffic and still earn you nothing, because the product sold out, the deal expired, or the click landed on a page that quietly stopped converting days ago. Meanwhile a different post with a fraction of the clicks might be the one actually paying your bills. Without a way to see commission next to clicks, side by side, you end up promoting whatever looks popular instead of whatever actually works.
+
+Earnings Intelligence is built for that exact gap. It is a Pro-gated, read-only dashboard, six tabs over one filtered dataset pulled from the harvests you are already running, that separates what drove traffic from what drove commission. It never touches or modifies anything on Amazon. It just reads what your other butlers have already collected and lays it out so the difference is visible.
+
+## One dataset, filtered the same way everywhere
+
+Every tab reads from the same underlying data, and every tab respects the same filter bar: source type, marketplace (an ISO code like US or UK), storefront (a Creator Connections storefront slug), tag (your Amazon affiliate tag), and a date range. The date range can be a quick chip (Today, This week, Last week, This month, Last month, Year to date, All time) or a manual date-from and date-to. Filters only take effect once you click Refresh, which is worth knowing the first time a change does not seem to do anything.
+
+"All time" is not a marketing phrase here. It really does mean no hard lookback cap. The only limit is how far back your own harvests go, so a brand-new account will have a short "all time" and an account running for a year will have a long one.
+
+"Source" is concrete, not a vague label. Every daily fact in the dataset carries a `sourceType` field set to `dailycommission`, `storefront`, or `orders`, fed respectively by Daily Commission Butler, Storefront Butler, and Orders Butler, with CC Check contributing campaign and offer status. None of it comes from ad platforms. If a number shows up in Earnings Intelligence, it came from your own Amazon account activity, not from a pixel or an ad network's self-reported numbers.
+
+## ASIN Explorer and the summary bar
+
+ASIN Explorer is the home base: a row per product, showing commission, units, active days, last seen, which marketplaces it is live in, and two small badges, CC and SPCC, flagging whether that product currently has an active Creator Connections campaign or a sponsored offer running on it. Above the table sits a summary bar with three numbers: total commission, total units, and ASIN count, for whatever filter you currently have applied. It is the fastest way to answer "how many products am I actually earning from right now" without scrolling a spreadsheet.
+
+## Top Performers and Recovered Winners
+
+Top Performers is simpler: your lifetime top 50 products by commission, regardless of filter window, so you always have a quick answer to "what are my best products, full stop."
+
+Recovered Winners is more specific and more interesting. It surfaces products that used to earn, dropped out of the Creator Connections catalog at some point, and then came back. If a brand pulled a product from CC for a few months and then re-added it, this tab is where you would notice, rather than assuming it was gone for good and never checking again.
+
+## Harvest Funnel
+
+Harvest Funnel answers a question that is easy to lose track of once you have dozens of harvests running: where do products actually fall out of your pipeline? It shows counts at each stage, harvested, source-tagged, and earning, so you can see the attrition. If a storefront harvest pulls in 400 products but only 60 of them ever get source-tagged and only 20 of those ever earn a cent, that funnel is telling you something about where your time is better spent.
+
+## Monthly Breakdown
+
+Monthly Breakdown lays out commission by month, crossed with revenue source, so you can see whether a given month's earnings came mostly from on-site Creator Connections activity, storefront traffic, or somewhere else, and whether that mix is shifting over time. It has its own CSV and Excel export, separate from anything else in the dashboard, which matters if you are the kind of creator who reconciles your own numbers at tax time or hands a spreadsheet to an accountant.
+
+## Conversion Leak, and the honesty behind "modeled" versus "exact"
+
+Before getting into Conversion Leak, it is worth explaining the EPC metric that the whole tab depends on. EPC, earnings-per-click, is commission divided by clicks. The honest complication is that Amazon only reports ASIN-level aggregates, not per-click order data, so when multiple links point at the same ASIN, the dashboard has to statistically split clicks and EPC across them rather than knowing exactly which link produced which sale. The app does not hide this. Every EPC figure carries an attribution flag of either "modeled" or "exact," so you know at a glance whether you are looking at a real one-to-one number or a reasonable estimate built from aggregated data.
+
+Conversion Leak uses that same honesty to go after a specific, costly problem: deals that quietly die after you post them. It cross-references posted deals against a post-publish availability check and your click data, flags any deal that went dead after you published it, counts the clicks that landed after that dead timestamp, and estimates the commission lost as those lost clicks multiplied by the average EPC of your still-live attributed deals. That estimate is labeled a modeled figure, explicitly, not a guarantee. It is a best estimate of what a dead link cost you, built from your own real EPC data, not a promise of exact dollars.
+
+There is a second, separate number worth paying attention to on this tab: the attribution gap. That covers deals posted without a tracked link at all, clicks that are effectively invisible to the dashboard because there was never a trackable link to measure in the first place. It is counted on its own rather than folded into the lost-commission estimate, because it represents a different kind of blind spot, not lost conversion, just no visibility.
+
+## A realistic walkthrough
+
+Say you have been running Daily Commission Butler and Storefront Butler for a couple of months. You open Earnings Intelligence, set the date filter to "Last month," and click Refresh. In ASIN Explorer, sorted by clicks, you spot a product sitting near the top of the list with a healthy click count and a commission column that reads zero. Right below it is a product with a fraction of the clicks but a visibly higher EPC, flagged "exact." That pairing alone is the entire thesis of the dashboard: traffic and earnings are not the same thing, and the table makes the gap impossible to miss.
+
+Curious why the first product is earning nothing despite the clicks, you switch to Conversion Leak. It shows a handful of deals you posted that went dead sometime after publishing, each with a lost-click count attached and an estimated commission lost, calculated against your live deals' average EPC. A few hundred clicks landed on pages that could no longer convert, and the estimate puts a real, if modeled, dollar figure on what that cost you. You also notice a couple of deals in the attribution gap, posted without a tracked link, clicks you cannot account for at all. Between the two, you have a concrete list of what to fix: repost or swap the dead links, and make sure future deals always go out with a tracked link attached.
+
+## Checking it from your phone
+
+A "Sync to web" button pushes your monthly totals, broken out by on-site, Creator Connections, off-site, brand deals, international, and bonuses, plus your top ASINs both all-time and over the last 12 months, to a companion read-only view on your influencerbutler.com Dashboard under Earnings. It works from any device, including your phone, and the web view has its own CSV downloads. It auto-syncs after every Daily Commission harvest unless you turn that off, so the numbers on your phone are not something you have to remember to update by hand.
+
+Earnings Intelligence will not post anything, change anything, or touch your Amazon account in any way. It is a Pro feature that exists purely to answer one question honestly: of everything you posted, what actually made money, and what just looked like it did.

@@ -2684,6 +2684,21 @@
       "imageAlt": "Illustration of a bell icon with a checkmark auto-accepting a campaign card, next to a small schedule clock glyph",
       "imagePrompt": "Editorial flat illustration of a bell/alert shape with a checkmark badge above a stack of simple campaign cards, a small clock glyph nearby implying a schedule, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
       "order": 1
+    },
+    {
+      "id": "earnings-intelligence-explained",
+      "title": "Earnings Intelligence, Explained: The Pro Dashboard That Tells You What Actually Made Money",
+      "category": "Amazon",
+      "tags": "Amazon, Growth",
+      "summary": "Clicks feel like success, but they do not always turn into commission. Earnings Intelligence is a Pro, read-only dashboard with six tabs over your harvested Amazon data, built to show you which products actually earned, which ones quietly died after you posted them, and how much of your activity the dashboard simply cannot see.",
+      "date": "2026-11-03",
+      "author": "Liz Dean",
+      "readingTime": "7 min read",
+      "keywords": "amazon affiliate earnings dashboard, epc earnings per click, creator connections commission tracking, conversion leak dead links, amazon asin explorer, attribution gap affiliate links, influencer butler earnings intelligence",
+      "image": "/assets/blog/earnings-intelligence-explained.png",
+      "imageAlt": "Illustration of a dashboard panel with bar charts, one bar highlighted green and another flagged with a small warning dot, and a magnifying glass over a line chart",
+      "imagePrompt": "Editorial flat illustration of an abstract analytics dashboard panel made of soft geometric shapes, one bar chart column glowing warm orange as a highlight and a neighboring column marked with a small warning dot, a magnifying glass hovering over a simple line chart, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
+      "order": 1
     }
   ]
 }
