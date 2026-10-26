@@ -2984,6 +2984,21 @@
       "imageAlt": "Illustration of a ranked leaderboard of product thumbnails beside a trophy ribbon, representing engagement scoring that promotes winners into an always-post list",
       "imagePrompt": "Editorial flat illustration of a trophy ribbon beside a vertical ranked list of simple geometric product thumbnails, a sense of scoring and promotion rather than a literal dashboard, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
       "order": 1
+    },
+    {
+      "id": "mobile-companion-explained",
+      "title": "Mobile Companion, Explained: Pair Your Phone, Share Links From Anywhere",
+      "category": "Growth",
+      "tags": "Growth, Content",
+      "summary": "Pair your phone to the desktop app with a QR code, then check on your Butlers, pause everything at once, and share a product straight from Amazon's own app into Make My Link or Deals Butler. Here is exactly how the mobile companion works, what its four tabs actually do, and why it ships as an installable web app today instead of waiting on an app-store release.",
+      "date": "2026-11-23",
+      "author": "Liz Dean",
+      "readingTime": "7 min read",
+      "keywords": "mobile companion app, pair phone to desktop app, qr code pairing, share sheet affiliate link, make my link mobile, deals butler on the go, progressive web app creator tools, check butler status from phone",
+      "image": "/assets/blog/mobile-companion-explained.png",
+      "imageAlt": "Illustration of a phone displaying a QR code connected by a dashed line to a desktop computer, with a share arrow between them",
+      "imagePrompt": "Editorial flat illustration of a simplified phone outline showing a QR code glyph on its screen, connected by a soft dashed line to a small geometric laptop icon, with a curved share arrow between them, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
+      "order": 1
     }
   ]
 }
