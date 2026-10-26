@@ -1,0 +1,69 @@
+---
+title: "Best Seller Butler, Explained: Read Your Facebook Engagement to Find What to Post Again"
+summary: "Best Seller Butler reads the reactions, comments, and shares on your posted deals, figures out which Amazon product each post was pushing, and scores every product over a rolling window. The winners get promoted into Deals Butler's Always-Post pool automatically. Here is exactly how the scoring works, what it takes to set up, and what it still cannot do."
+category: Amazon
+tags: Amazon, Facebook, Deals
+date: 2026-11-22
+author: Liz Dean
+readingTime: 8 min read
+keywords: best seller butler, facebook engagement scoring, amazon asin attribution, always-post evergreen products, deals butler automation, social proof product promotion, facebook group scanning, influencer butler best sellers
+image: /assets/blog/best-seller-butler-explained.png
+imageAlt: Illustration of a ranked leaderboard of product thumbnails beside a trophy ribbon, representing engagement scoring that promotes winners into an always-post list
+imagePrompt: Editorial flat illustration of a trophy ribbon beside a vertical ranked list of simple geometric product thumbnails, a sense of scoring and promotion rather than a literal dashboard, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos
+---
+
+Every deal poster accumulates a graveyard of links that did nothing, and a handful that quietly keep converting. The problem is nobody has time to scroll back through weeks of Facebook posts and tally up which ones actually got likes, comments, and shares. Best Seller Butler does that tallying for you, on a schedule, and then does something more useful than just telling you the answer: it automatically slots the winners back into your posting rotation.
+
+It lives as a sub-workspace under Deals Butler, and it is not a content generator. It does not write anything or post anything new on its own. It reads engagement data you already created, scores it, and promotes the products that prove themselves. Here is exactly how that pipeline works, what it needs from you to run, and where its current limits actually are.
+
+## What it is actually reading
+
+Best Seller Butler scans posts on **Facebook groups and pages** (the panel also lists Telegram, Instagram, and Threads, but all three are marked "Coming soon", so today this is Facebook only). For each post it finds, it pulls the reaction count, comment count, and share count, and it needs to know which Amazon product that post was about.
+
+For your own posts this is trivial: Deals Butler already knows the ASIN behind every link it posted, so your own posting history comes pre-attributed. For other people's posts in a shared group or page, the app has to recover the ASIN from the post text itself. It looks for a direct Amazon link first (a `/dp/` or `/gp/product/` URL), and if the link is shortened or branded (`amzn.to`, `geni.us`, `linktw.in`, a Mavely link, `posttap.com`, `shrsl.com`, and a handful of others) it follows the redirect to find the real destination. It also knows to unwrap Facebook's own link wrapper (`l.facebook.com/l.php?u=...`), since every outbound link in a Facebook post gets rewritten that way and would otherwise look like a facebook.com link and get silently dropped. If none of that resolves to a real ASIN, the post is skipped rather than guessed at.
+
+One more wrinkle worth knowing: a lot of deal posters, including Deals Butler itself, put the actual affiliate link in the **first comment** rather than the post body, because Meta caps how links in the post itself get treated. So for posts with no link up front, Best Seller Butler can open the permalink and read the top comment for a link, up to a limit you set.
+
+## Setting it up
+
+In the left menu, under Deals Butler, open Best Seller Butler. The whole panel auto-saves, there is no save button, every toggle and pasted list is restored next launch.
+
+- **Turn on Best Seller Butler** runs it on a schedule. You can also leave it off and just click **Run scan now** whenever you want a one-off read.
+- **Watch it run**, the toggle in the top right of the app, decides whether the scan opens a visible browser window or runs quietly in the background. It is shared with the rest of the app, so turning it off here also means other background scans stop popping a window.
+- **How often** gives you four presets (6 hours, 12 hours, 24 hours, 2 days), or you can set a custom interval with **Or every**. **Start at** lets you delay the first scan to a specific time, or leave it blank to start immediately.
+- Under **Where to look**, Facebook groups and pages is the only checkbox that does anything right now.
+- Under **Facebook**, you choose whether to read engagement on **my own posts**, **other people's posts**, or both, paste in **Group IDs or URLs to scan** and **Page names or IDs to scan** (one per line each), and set **Most posts to read per group or page** (defaults to 30) and **Most posts to open per group or page to find a link in the first comment** (defaults to 15).
+
+Before any of this works, three things have to already be true. You need a Pro subscription (it is available during your free trial, so you do not need to pay to try it). You need to be signed in to Facebook from **Social Destinations** in Deals Butler, since the scan reuses that same posting profile rather than asking you to sign in twice. And you need genuine Google Chrome installed on your machine; the Facebook scan runs on real Chrome specifically, and if it cannot find one, it skips Facebook and tells you why instead of failing silently. Obviously you also need some posting history for there to be anything to measure.
+
+## How a product actually gets a score
+
+This is the part worth understanding if you want the thresholds to make sense. Under **Scoring and promotion**, you set five numbers:
+
+- **Only count engagement from the last (days)**, defaulting to 14. Anything older than this window is excluded entirely, so a product's score reflects whether it is converting now, not whether it had one good week in the spring.
+- **Promote a product when its score reaches**, defaulting to 25.
+- **Most products to promote per scan**, defaulting to 5.
+- **Post promoted products every (days)**, defaulting to 3. This becomes the repost cadence once a product is promoted.
+- **Weight for my own posts** (default 1.0) and **Weight for other people's posts** (default 0.5), so you can decide how much to trust engagement on posts you did not control.
+
+Under the hood, each engagement sample gets turned into a raw number first: the higher of likes or reactions (the app takes the max rather than adding them, since Facebook often reports both for the same tap), plus twice the comment count, plus three times the share count. Comments and shares count for more than a passive like, on the logic that they are a stronger signal someone actually cared enough to act. That raw number then runs through a log dampener, so one freak viral post cannot single-handedly carry a product's whole score, gets multiplied by the surface weight (Facebook is 1.0; the still-dormant Telegram, Instagram, and Threads weights are already configured at 0.5, 0.7, and 0.6 respectively, ready for whenever those surfaces ship), multiplied by your own-versus-others weight, and multiplied by a recency decay that halves every 7 days. So a comment from yesterday counts for noticeably more than an identical comment from three weeks ago, even within the scan window.
+
+Every sample for a product gets summed this way into one score, and that score is what gets compared against your promotion threshold.
+
+## What promotion actually does
+
+Once a product's score clears your threshold, Best Seller Butler adds it to Deals Butler's **Always-Post pool**, the same evergreen list Deals Butler already cycles through on its own posting cadence. It is marked with its source as "best-seller" so you can tell it apart from products you added by hand, and it is set to repost on whatever cadence you configured in "Post promoted products every (days)."
+
+Two safeguards keep this from running away on you. It will never promote more than your **Most products to promote per scan** cap in a single run, even if twenty products all clear the threshold at once. And it is idempotent: a product already sitting in the Always-Post pool, or one that got promoted in an earlier scan, is skipped rather than re-added, so the pool does not balloon run after run.
+
+The **Best sellers by engagement** table at the bottom of the panel shows you this happening in real time. Each row is a product, with its Score, how many Posts it showed up in, a split between your own posts (Mine) and other people's (Others), and a Promoted badge once it crosses into the Always-Post pool.
+
+## A realistic run
+
+Say you post deals into two Facebook groups you admin and also watch a third group run by someone else. Over two weeks, one particular kitchen gadget gets posted three times: once by you to your own page, and twice by other members in the group you do not control. Your own post picked up a modest number of reactions and a couple of comments; the other two posts, scanned with your "other people's posts" weight of 0.5, performed well but count for less per sample. Summed and decayed for recency, the product's score comes out to 31, past your threshold of 25. On the next scheduled scan, Best Seller Butler promotes it into Deals Butler's Always-Post pool with a 3-day repost cadence, and it starts showing up in your feed again on its own, no further action from you.
+
+## What it is not, yet
+
+Be clear-eyed about today's scope. This only reads Facebook groups and pages; if your engagement lives on Telegram, Instagram, or Threads, there is nothing here for it yet, though the surface weights for all three are already sitting in the config waiting. It also shares your Facebook session with Deals Butler, so if a Deals post happens to be mid-publish when a scan is supposed to start, the scan simply waits its turn rather than colliding with it. And it can only score what it can attribute to a real ASIN, so a post with a dead link, a screenshot instead of a URL, or a shortener it cannot resolve gets quietly dropped from the count rather than guessed at.
+
+None of that makes it a toy. For anyone running more than a couple of deal pages, it replaces a spreadsheet nobody was actually going to maintain with a scan that runs on its own and reports back in a table you can glance at once a day.

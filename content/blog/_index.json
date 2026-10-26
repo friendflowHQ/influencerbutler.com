@@ -2969,6 +2969,21 @@
       "imageAlt": "Illustration of a video frame with a small celebratory burst icon and a loading ring, representing a milestone celebration clip rendering as a background job",
       "imagePrompt": "Editorial flat illustration of a simple video-frame glyph with a soft progress ring around it and a small confetti or bottle-pop burst beside it, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
       "order": 1
+    },
+    {
+      "id": "best-seller-butler-explained",
+      "title": "Best Seller Butler, Explained: Read Your Facebook Engagement to Find What to Post Again",
+      "category": "Amazon",
+      "tags": "Amazon, Facebook, Deals",
+      "summary": "Best Seller Butler reads the reactions, comments, and shares on your posted deals, figures out which Amazon product each post was pushing, and scores every product over a rolling window. The winners get promoted into Deals Butler's Always-Post pool automatically. Here is exactly how the scoring works, what it takes to set up, and what it still cannot do.",
+      "date": "2026-11-22",
+      "author": "Liz Dean",
+      "readingTime": "8 min read",
+      "keywords": "best seller butler, facebook engagement scoring, amazon asin attribution, always-post evergreen products, deals butler automation, social proof product promotion, facebook group scanning, influencer butler best sellers",
+      "image": "/assets/blog/best-seller-butler-explained.png",
+      "imageAlt": "Illustration of a ranked leaderboard of product thumbnails beside a trophy ribbon, representing engagement scoring that promotes winners into an always-post list",
+      "imagePrompt": "Editorial flat illustration of a trophy ribbon beside a vertical ranked list of simple geometric product thumbnails, a sense of scoring and promotion rather than a literal dashboard, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
+      "order": 1
     }
   ]
 }
