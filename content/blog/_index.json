@@ -2654,6 +2654,21 @@
       "imageAlt": "Illustration of a Kanban-style board with columns of collab cards, one card showing a dollar-sign payout chip",
       "imagePrompt": "Editorial flat illustration of a simple Kanban board with three to four columns and a handful of rounded rectangle cards, one card has a small dollar-sign chip, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
       "order": 1
+    },
+    {
+      "id": "brand-release-butler-explained",
+      "title": "Brand Release Butler, Explained: Get Alerted the Moment a Brand You Follow Lists Something New",
+      "category": "Growth",
+      "tags": "Amazon, Growth",
+      "summary": "Follow the Amazon brands you consistently earn well with, and Brand Release Butler watches their catalog for you. The moment a new product shows up, you get an alert and a one-click \"Build a post\" that drafts it into Deals Butler, real image, real ASIN, auto-attached promo code, before anyone else posts it.",
+      "date": "2026-11-01",
+      "author": "Liz Dean",
+      "readingTime": "7 min read",
+      "keywords": "brand release butler, amazon new release alerts, follow amazon brands, amazon brand monitoring for creators, new product alerts amazon, deals butler draft post, creator connections promo code, amazon affiliate new releases",
+      "image": "/assets/blog/brand-release-butler-explained.png",
+      "imageAlt": "Illustration of a bell alert above a brand tag chip with a small new product thumbnail popping out, representing a brand release alert",
+      "imagePrompt": "Editorial flat illustration of a bell icon in a soft rounded badge sitting above a pill-shaped brand tag chip, with a small square product thumbnail breaking out of the chip's corner like a notification, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
+      "order": 1
     }
   ]
 }
