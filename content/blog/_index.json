@@ -2789,6 +2789,21 @@
       "imageAlt": "Illustration of a faded out-of-stock product box connected by a plus-tag glyph to a fresh in-stock product box, representing an added replacement tag rather than a deletion",
       "imagePrompt": "Editorial flat illustration of two product box icons side by side, the left one grayed out and faded with a small X mark showing it is out of stock, the right one solid and warm colored showing it is in stock, connected by a small plus or tag glyph in between representing an added second tag, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
       "order": 1
+    },
+    {
+      "id": "voiceover-butler-explained",
+      "title": "Voiceover Butler, Explained: It Writes the Script, Not Your Voice",
+      "category": "Growth",
+      "tags": "Amazon, Content, TikTok, Instagram",
+      "summary": "Voiceover Butler does not record audio. It writes the words you read out loud for Amazon Shoppable and Live Shoppable videos, pulls real product details from the Creators API, and checks every script against Amazon's rules and FTC disclosure rules before handing it back. Here is exactly how it works, what it costs, and the one gotcha that catches people filming a batch of products at once.",
+      "date": "2026-11-10",
+      "author": "Liz Dean",
+      "readingTime": "7 min read",
+      "keywords": "voiceover script generator, amazon shoppable video script, amazon live shoppable compliance, ftc disclosure script, ai video script writer for creators, amazon asin to script, creator voiceover tool",
+      "image": "/assets/blog/voiceover-butler-explained.png",
+      "imageAlt": "Illustration of a sound wave flowing into a simple video frame icon, representing a script generator that writes words for a creator to read on camera",
+      "imagePrompt": "Editorial flat illustration of an abstract sound wave made of soft rounded bars flowing toward a simple geometric video frame icon, a small play triangle inside the frame, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
+      "order": 1
     }
   ]
 }

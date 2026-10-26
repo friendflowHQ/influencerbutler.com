@@ -1,0 +1,75 @@
+---
+title: "Voiceover Butler, Explained: It Writes the Script, Not Your Voice"
+summary: "Voiceover Butler does not record audio. It writes the words you read out loud for Amazon Shoppable and Live Shoppable videos, pulls real product details from the Creators API, and checks every script against Amazon's rules and FTC disclosure rules before handing it back. Here is exactly how it works, what it costs, and the one gotcha that catches people filming a batch of products at once."
+category: Growth
+tags: Amazon, Content, TikTok, Instagram
+date: 2026-11-10
+author: Liz Dean
+readingTime: 7 min read
+keywords: voiceover script generator, amazon shoppable video script, amazon live shoppable compliance, ftc disclosure script, ai video script writer for creators, amazon asin to script, creator voiceover tool
+image: /assets/blog/voiceover-butler-explained.png
+imageAlt: Illustration of a sound wave flowing into a simple video frame icon, representing a script generator that writes words for a creator to read on camera
+imagePrompt: Editorial flat illustration of an abstract sound wave made of soft rounded bars flowing toward a simple geometric video frame icon, a small play triangle inside the frame, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos
+---
+
+You have got the product in your hand, the camera propped up, and thirty seconds to fill. That blank-page moment before you hit record is the problem Voiceover Butler was built to solve. But the name is a little misleading, so let's clear that up first.
+
+## It writes words, not audio
+
+Voiceover Butler does not generate a voice. Nothing in it records, clones, or synthesizes audio. What it produces is a script, plain text on a page, written to be read out loud by you. If you were expecting an AI narrator, that is not this tool. If you were expecting to stop staring at a blinking cursor trying to figure out what to say for an unboxing video, that is exactly this tool.
+
+It writes scripts for Amazon Shoppable videos and Amazon Live Shoppable videos specifically, though it has an off-Amazon mode too (more on that below). You give it a product and a handful of parameters, it pulls real details about that product, and it writes a script shaped to fit the video type, length, and tone you asked for, then checks its own work against Amazon's video rules and FTC disclosure rules before showing it to you.
+
+## What it needs before you start
+
+Two API keys, both yours, both set up once in **API Integrations**:
+
+- A **Creators API key**, so Voiceover Butler can read the actual title, price, and feature bullets of the product you are scripting instead of guessing.
+- An **OpenAI API key**. This is the part that costs money, and it is worth being direct about it: you pay OpenAI directly, usually pennies per script, and a regular ChatGPT subscription does not work here. No key, no generation.
+
+Before you queue your first product, open **Creator profile & defaults** inside Voiceover Butler and fill in three things: your **tone** (a few words, like "warm + chatty" or "punchy + practical"), your **niche** (what you cover, in five to ten words), and your **audience** (who you are talking to). You also pick a **default FTC disclosure** style, paid partnership or affiliate, so it does not have to be set per script. Everything you fill in here becomes the baseline every script adapts to, so it is worth spending two minutes on before you generate anything.
+
+If you make fashion or beauty content, there is a second section worth filling in: **About Me**, where you can enter your height, clothing sizes, shoe size, hair and eye color, and skin tone. Every field is optional, and Voiceover Butler only pulls the relevant ones per product, a top pulls your height and bust size, shoes pull your shoe size, a beauty product pulls your hair and eye color. The payoff is a script that says "I'm 5'6\" and this fits true to size in a medium" instead of something generic. The same fields double as outreach tokens elsewhere in the app: typing `{HEIGHT}` or `{SHOESIZE}` into a brand outreach template pulls straight from this profile.
+
+## Queuing a script
+
+In **Add products**, you paste one to five ASINs, one per line. Per ASIN (or really, per batch, since the queue applies one set of settings to everything in it, see below) you choose:
+
+- **Length**: 15 seconds (Shorts-fit), 30 seconds, or 60 seconds (the max Amazon allows for Live Shoppable).
+- **Video type**: Shoppable or Live Shoppable. Live Shoppable gets the stricter rule set.
+- **Opening hook**: pick a style or write your own first line. This is the sentence that decides whether anyone keeps watching.
+- **Pacing**: snappy, natural, or deliberate, which is really just how fast you talk and how many words fit in the time you have.
+- **Disclosure**: override your default if this particular product needs different treatment (say, one is sponsored and the rest are affiliate links).
+- **Angle** (optional): a one-line nudge, like "lean into the one-rinse cleanup," that steers what the script emphasizes. This one line matters more than people expect, since the same product with a different angle produces a noticeably different script.
+
+You can also paste an on-screen shot timeline if you already know your shots, so the words line up with what the camera is doing, and paste or upload brand guidelines if a brand sent you a rules PDF, which the writer then treats as mandatory constraints.
+
+Clicking **Add to queue** costs nothing and writes nothing yet. **Generate** is the button that actually spends money, one paid OpenAI call per script.
+
+## The gotcha: the queue does not remember per-product settings
+
+Here is the part that catches people filming several products in one sitting: the queue does not keep separate settings per item. Whatever the form shows when you click Generate is what every queued item gets, even if you set up ten products with ten different lengths and hooks. The fix is to work in groups: set the form for your unboxings, generate all of them, then change the form and run your tutorial scripts as a separate batch.
+
+## What the validator checks, and why a rejected script still costs you
+
+Every script generated gets checked against two things before it reaches you:
+
+- **Amazon's video rules**, no pricing or time-sensitive discounts, no external links, no restricted subjects (firearms, tobacco, vape, cannabis, prescription drugs, gambling), no comparative claims ("better than X"), no superlative health claims, and for Live Shoppable specifically, no mentions of other platforms or watermarks either.
+- **FTC disclosure rules**, the paid-partnership or affiliate line has to actually be in the script, placed early and clearly, "clear and conspicuous" is the bar it is held to.
+- **A length-times-pacing word budget**: 15 seconds at normal pace is roughly 38-50 words, 30 seconds is 80-95, 60 seconds is 165-180. A script that runs long or short on word count gets rejected on that basis alone.
+
+If a script trips any of these, it gets thrown out and the job turns red in the queue, and you still paid for that generation. The help documentation is upfront about this rather than hiding it: fix your angle or notes and regenerate, since the model is non-deterministic and often succeeds on the second try. Worth noting too: the tool prompts the model to include the disclosure line, but nothing double-checks that it landed in the right spot beyond the automated rule check, so read your script before you film instead of trusting the green badge blindly.
+
+## Scripting something that is not on Amazon
+
+Not everything you film has an ASIN. The **Product source** toggle at the top of Add products switches to **Off-Amazon product (no ASIN)**, where you type the product name, a generic product type (like "glass cleaner" or "yoga mat"), and a description or feature list by hand instead of pulling from the Creators API. Everything else, length, hook, pacing, disclosure, angle, works the same way.
+
+There is also a checkbox worth understanding: **"You may say this product's name in the script."** On, the default, lets the script actually say the product's name, which is right for anything posted off Amazon (TikTok, Instagram, your own channel). Off treats the product like a real Amazon listing: the name is never spoken, only its generic type is described, which is the setting to use if the video is headed to Amazon, where naming the exact product is not allowed. Off-Amazon jobs show a **manual** tag in the jobs table where an ASIN would normally sit.
+
+## Where the scripts end up
+
+Finished scripts live per-ASIN in a preseed cache with **Copy** and **Export** buttons, and a **View** button opens the full script where you can edit any line that does not sound like you before you film. They also surface in **Orders Butler**: tick "include voiceover scripts" on the content checklist there, and each script prints next to the matching product, so your scripts travel with the rest of your order workflow instead of living in a separate silo. Deleting a job deletes its scripts with it, and there is no trash can to recover from, so that one is worth a second thought before you click it.
+
+## A realistic run
+
+Say you are filming five kitchen gadgets for Amazon Shoppable, all unboxings, all 30 seconds, snappy pacing, affiliate disclosure. You paste all five ASINs, set the form once, add each to the queue, and click Generate. Five scripts come back, each one pulling the real product title and feature bullets from the Creators API, each one carrying your tone and niche from the creator profile, each one checked against the Shoppable rule set and the FTC disclosure requirement. You read through them, fix one that reads a little stiff by sharpening its angle and regenerating, and you are filming within the hour instead of staring at the blank page it was built to replace.
