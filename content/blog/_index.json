@@ -2759,6 +2759,21 @@
       "imageAlt": "Illustration of a social post card with a faded expired stamp and a sweeping broom glyph, representing automatic cleanup of old deal posts",
       "imagePrompt": "Editorial flat illustration of a rounded social post card shape with a soft wilted tag hanging off one corner and a stylized broom sweeping past it, small dust motes trailing behind, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
       "order": 1
+    },
+    {
+      "id": "relink-butler-explained",
+      "title": "Relink Butler, Explained: Rewrite Years of Old Affiliate Links Without Touching One by Hand",
+      "category": "Growth",
+      "tags": "Growth, Amazon",
+      "summary": "Your affiliate setup changes, you switch tag services or a provider shuts down, and suddenly years of posts, videos, and lists are pointing at the wrong kind of link. Relink Butler finds every one of them, shows you a diff before it touches anything, and only rewrites what you approve. Here is exactly how it works, and why it is still labeled beta.",
+      "date": "2026-11-08",
+      "author": "Liz Dean",
+      "readingTime": "7 min read",
+      "keywords": "relink butler, rewrite affiliate links, amazon tag migration, link cloaking migration, geniuslink migration, levanta remint links, bulk affiliate link rewrite, affiliate link find and replace tool",
+      "image": "/assets/blog/relink-butler-explained.png",
+      "imageAlt": "Illustration of a broken chain link being reconnected into a new link shape, with a small diff checklist beside it, representing an old affiliate link being rewritten to a new one",
+      "imagePrompt": "Editorial flat illustration of a broken chain-link icon mid-reconnect into a fresh geometric link shape, a small diff-table or checklist glyph floating beside it, clean modern vector style, soft rounded shapes, warm orange (#F59E0B) and deep navy (#1E2A4A) on a soft cream background, generous negative space, no text, no logos",
+      "order": 1
     }
   ]
 }
