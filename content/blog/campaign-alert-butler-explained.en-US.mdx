@@ -1,0 +1,70 @@
+---
+title: "Campaign Alert Butler, Explained: Follow Your Best Brands and Let New Campaigns Accept Themselves"
+summary: "Follow the Creator Connections brands you care about, set an auto-accept scope and a schedule, and Campaign Alert Butler grabs new campaigns the moment they post, even from brands you have not followed yet if they match your keywords. Here is exactly how following, baselining, auto-accept, and the schedule work together."
+category: Amazon
+tags: Amazon, Growth
+date: 2026-11-02
+author: Liz Dean
+readingTime: 7 min read
+keywords: campaign alert butler, creator connections auto accept, amazon creator connections alerts, follow brands amazon influencer, auto accept campaigns amazon, cc check vs campaign alert butler, creator connections keyword monitor
+image: /assets/blog/campaign-alert-butler-explained.png
+imageAlt: Illustration of a bell icon with a checkmark auto-accepting a campaign card, next to a small schedule clock glyph
+imagePrompt: Editorial flat illustration of a bell/alert shape with a checkmark badge above a stack of simple campaign cards, a small clock glyph nearby implying a schedule, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos
+---
+
+The good Creator Connections campaigns, the ones from brands that actually pay out and actually ship product, fill up fast. Sometimes within hours of posting. If you are not refreshing the catalog at the right moment, you miss them, and the only brands left with open campaigns by the time you check are the ones nobody else wanted either. Checking manually, brand by brand, every day, is exactly the kind of chore that gets skipped the first time you are busy, which is also the day a great campaign goes live and fills without you.
+
+Campaign Alert Butler is built around a simple idea: you tell it which brands matter to you, and it watches those brands for brand-new campaigns so you do not have to. It can stop at just alerting you, or it can go all the way to accepting the campaign the moment it appears, before you have even opened the app.
+
+## Following brands
+
+You follow a brand the same way you would search for anything else: type the name, find it, add it. That works fine one brand at a time, but most creators already have a working relationship with a dozen or more brands, and typing each one in by hand is its own chore. So there is a one-click shortcut: "Follow all brands I have content for," which backfills your follow list from every Creator Connections brand you already have content for, pulled from your Storefront, from Deals Butler, and from YouTube. Run that once and you are typically following most of the brands that matter to you without having searched for a single one.
+
+There is also a "Follow automatically when you accept" toggle. Turn it on and any brand whose campaign you accept, anywhere in the app, gets added to your follow list automatically. The idea is that your follow list should track your actual relationships without you having to maintain it by hand. Accept a campaign from a new brand today, and Campaign Alert Butler is already watching that brand for the next one tomorrow.
+
+## The first check is silent, on purpose
+
+Here is a detail that matters the first time you follow a brand: nothing happens. The first check per followed brand is a baseline, not an alert. It records whatever campaigns that brand currently has open and treats all of them as already known. Only campaigns that show up after that baseline count as new, and only new campaigns trigger an alert or an auto-accept.
+
+This is the same pattern the app's other alert Butlers use, and it exists for an obvious reason: follow fifty brands on day one and you do not want fifty alerts (or fifty auto-accepts) firing immediately for campaigns that have been sitting there for weeks. The baseline check means following a brand is a quiet, low-risk action. You only hear from Campaign Alert Butler once something is actually new.
+
+## Turning on auto-accept is the review step
+
+Auto-accept is off by default, and the app frames that deliberately as "off until you turn it on." Accepting a campaign is a real commitment, not a cosmetic setting, so the toggle itself is treated as the moment you approve the whole idea. Once it is on, there is no manual per-campaign review afterward and no confirm dialog popping up for each campaign as it gets accepted. Turning the toggle on is the review gate. Everything after that runs on its own.
+
+Two settings shape what "on" actually means:
+
+- **Auto-accept scope**, either "all" (every new campaign from a brand you follow, matching content or not) or "content-matched" (only products you already have content for).
+- **Auto-accept max**, a cap on how many campaigns a single pass will accept, defaulting to 200 if you leave it blank.
+
+The "all" scope is worth sitting with for a second. It explicitly does not require you to already have matching content, so if a brand you follow posts a campaign for a product you have never touched, Campaign Alert Butler will still accept it under that scope. That is a feature if you are trying to build a relationship broadly with a brand's whole catalog, and a reason to pick "content-matched" instead if you only want campaigns for products you can realistically post about right away.
+
+## The schedule, and the catalog refresh honesty
+
+Alongside auto-accept there is a "Run auto-accept on a schedule" toggle with an every-N-hours interval picker, so you can let it run checks on its own instead of triggering them by hand. The app is upfront about a real limit here: the central Creator Connections catalog itself only refreshes a few times a day. Setting your interval to something very short, say every 15 minutes, will not actually surface new campaigns any sooner, because there is nothing new to find between the catalog's own refreshes. An interval of a few hours gets you essentially the same coverage as a much tighter one, with far less unnecessary checking. It is a small thing, but it is the kind of detail that saves you from over-tightening a setting expecting a result it cannot deliver.
+
+## Keyword mode: campaigns from brands you have not followed yet
+
+Following brands covers the relationships you already have, but a separate, independent setting catches campaigns you would otherwise never see coming: "Also auto-accept new campaigns matching keywords, from any brand." You type free-text keywords, comma or newline separated, something like "prime day, kitchen," and the app matches them against campaign titles and brand names across the entire Creator Connections catalog, regardless of whether you follow that brand at all.
+
+This runs additively on top of brand-based auto-accept, not instead of it. You might follow fifteen brands you already work with on the "all" scope, while keyword mode quietly watches for anything matching "holiday gift guide" or "skincare" from brands you have never heard of. It is the net that catches campaigns your follow list was never going to find.
+
+## The guardrails underneath both modes
+
+Both brand-based auto-accept and keyword mode share the same safety behavior underneath. The same campaign never gets accepted twice. If an accept attempt fails, say Amazon reports the campaign is already full, the app automatically retries on the next check until it lands or the campaign ends, so a brief timing miss does not mean a permanent miss. Everything also respects the app's global automation pause: if you have paused automation, scheduled auto-accept passes stop too, though a manual check still works whenever you want to run one yourself.
+
+There is also a "Watch it run" toggle, which opens a visible browser window using your own signed-in Amazon session instead of running the check headless in the background. If you want to literally see it click through and accept a campaign in real time, at least once, this is how.
+
+## Three ways to hear about it
+
+Whether or not auto-accept is on, Campaign Alert Butler can tell you what it found through the same three channels the app's other alert Butlers use: a popup (on by default), a "needs attention" card on the Dashboard, and email. Turn auto-accept off and keep alerts on, and you get a heads-up every time a followed brand posts something new, with the accepting left entirely to you.
+
+## How this differs from CC Check
+
+The app has a related but distinctly different tool called CC Check, and it is worth being clear about which one does what. CC Check is manual and bulk: you supply ASINs yourself, from a storefront harvest, a CSV, or pasted codes, and it checks those specific products against the live campaign catalog and accepts matches for them. It is reactive to a list you hand it.
+
+Campaign Alert Butler is the opposite direction entirely. It is brand-driven and proactive. It does not wait for you to supply any ASINs at all. It watches the brands you follow, or the keywords you set across the whole catalog, for brand-new campaign listings, and it can auto-accept the moment one appears, independent of whether you already have content for that product.
+
+## A realistic overnight example
+
+Say you follow two brands you already work with regularly, set the scope to "all," and schedule a check every 6 hours. One of those brands posts a new campaign at 2am. You are asleep, and nobody checked anything. The next scheduled pass runs at 6am, finds the new campaign past the baseline, and accepts it on the spot since the scope is "all" and it does not need to match existing content. By the time you check your phone, there is already a notification waiting telling you the campaign was accepted, with no manual click required anywhere in the process.

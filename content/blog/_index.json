@@ -2669,6 +2669,21 @@
       "imageAlt": "Illustration of a bell alert above a brand tag chip with a small new product thumbnail popping out, representing a brand release alert",
       "imagePrompt": "Editorial flat illustration of a bell icon in a soft rounded badge sitting above a pill-shaped brand tag chip, with a small square product thumbnail breaking out of the chip's corner like a notification, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
       "order": 1
+    },
+    {
+      "id": "campaign-alert-butler-explained",
+      "title": "Campaign Alert Butler, Explained: Follow Your Best Brands and Let New Campaigns Accept Themselves",
+      "category": "Amazon",
+      "tags": "Amazon, Growth",
+      "summary": "Follow the Creator Connections brands you care about, set an auto-accept scope and a schedule, and Campaign Alert Butler grabs new campaigns the moment they post, even from brands you have not followed yet if they match your keywords. Here is exactly how following, baselining, auto-accept, and the schedule work together.",
+      "date": "2026-11-02",
+      "author": "Liz Dean",
+      "readingTime": "7 min read",
+      "keywords": "campaign alert butler, creator connections auto accept, amazon creator connections alerts, follow brands amazon influencer, auto accept campaigns amazon, cc check vs campaign alert butler, creator connections keyword monitor",
+      "image": "/assets/blog/campaign-alert-butler-explained.png",
+      "imageAlt": "Illustration of a bell icon with a checkmark auto-accepting a campaign card, next to a small schedule clock glyph",
+      "imagePrompt": "Editorial flat illustration of a bell/alert shape with a checkmark badge above a stack of simple campaign cards, a small clock glyph nearby implying a schedule, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
+      "order": 1
     }
   ]
 }
