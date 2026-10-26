@@ -2579,6 +2579,36 @@
       "pinImage": "/assets/blog/pins/walmart-creator-sales-vs-commission-explained.png",
       "pinDescription": "Sales, commissionable sales and commission on Walmart Creator are three different numbers. What each counts and which products actually pay. Save this pin so you can come back to it. #WalmartCreator #CreatorEarnings #AffiliateMarketing #WalmartButler",
       "order": 235
+    },
+    {
+      "id": "ai-influencer-butler-explained",
+      "title": "AI Influencer Butler, Explained: Build an AI Model and Let It Wear Your Products",
+      "category": "Growth",
+      "tags": "Instagram, Facebook, Pinterest, TikTok, Amazon, Walmart",
+      "summary": "You pick a face (yours, a clone of yours, or a generic AI model), it finds real products from your Amazon and Walmart stores, and it generates a branded outfit post wearing them. Here is exactly how AI Influencer Butler works, what a look actually costs, and how its autopilot keeps itself inside a spending cap.",
+      "date": "2026-10-27",
+      "author": "Liz Dean",
+      "readingTime": "8 min read",
+      "keywords": "ai influencer butler, ai model generator for creators, auto generate outfit posts, ai fashion content amazon affiliate, ai influencer autopilot, virtual model affiliate marketing, ai generated collage posts, fal.ai creator tools",
+      "image": "/assets/blog/ai-influencer-butler-explained.png",
+      "imageAlt": "Illustration of an AI-generated model wearing real products pulled from storefronts, arranged into a branded collage with a title band",
+      "imagePrompt": "Editorial flat illustration of a stylized mannequin-like model figure made of soft geometric shapes, standing in a branded picture frame with small product thumbnails floating around it, a sense of curated assembly rather than a photograph, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
+      "order": 1
+    },
+    {
+      "id": "ai-clone-butler-explained",
+      "title": "AI Clone Butler, Explained: Composite Yourself Into Real Product Photos, No Training Step Required",
+      "category": "Growth",
+      "tags": "Instagram, Facebook, Pinterest, Amazon, Walmart",
+      "summary": "Add a handful of reference photos of yourself, describe a scene, look up a real product by ASIN or item ID, and get back a photo of you with that actual product, no photoshoot and no training job. Here is exactly how AI Clone Butler's reference-photo flow works, what it costs, and why it never posts anything on its own.",
+      "date": "2026-10-28",
+      "author": "Liz Dean",
+      "readingTime": "7 min read",
+      "keywords": "ai clone butler, ai likeness composite, product photos with your face, ai influencer clone, no training ai photo generator, virtual model product photos, ai image compositing creators, ai product photography yourself",
+      "image": "/assets/blog/ai-clone-butler-explained.png",
+      "imageAlt": "Illustration of a camera frame compositing a simple geometric figure next to a real product icon, representing an AI likeness placed into a product photo",
+      "imagePrompt": "Editorial flat illustration of a camera or picture-frame shape compositing a soft geometric human silhouette alongside a simple product box icon, a sense of two real elements being combined rather than one invented from scratch, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
+      "order": 1
     }
   ]
 }
