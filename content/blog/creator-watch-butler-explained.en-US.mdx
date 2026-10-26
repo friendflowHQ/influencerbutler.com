@@ -1,0 +1,74 @@
+---
+title: "Creator Watch Butler, Explained: Know the Second a Creator You Follow Adds a New Product"
+summary: "Watch up to 25 other creators' Amazon storefronts and get a toast, a feed entry, and a badge the moment one of them adds a product you could also earn commission on. Here is how adding a creator works, why the first check stays silent, and a real example of the alert landing a few days after you start watching someone."
+category: Growth
+tags: Amazon, Growth
+date: 2026-10-30
+author: Liz Dean
+readingTime: 7 min read
+keywords: creator watch butler, watch amazon storefronts, track competitor creators, amazon storefront alerts, creator connections product alerts, storefronts plus commission tracking, amazon influencer competitive research
+image: /assets/blog/creator-watch-butler-explained.png
+imageAlt: Illustration of an eye watching a row of storefront icons, with one lighting up with an orange notification badge
+imagePrompt: Editorial flat illustration of a simple geometric eye or a pair of binoculars shapes watching a row of small storefront icon cards, one of the cards glowing with an orange notification badge and a small spark, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos
+---
+
+You already know who you are up against. A handful of creators post the same kind of products you do, to the same kind of audience, and when one of them finds something good first, it is already stale by the time you notice it on your own. Creator Watch Butler is built for that one problem: you tell it whose storefront to keep an eye on, and it tells you the moment they add something new, before the window closes.
+
+It is not a general Amazon research tool and it does not try to summarize anyone's whole catalog for you. It watches a short list of storefronts you choose, remembers what was already there, and only speaks up when something changes. Here is exactly how adding a creator works, why the first check on purpose does nothing, and what a real alert looks like a few days in.
+
+## Adding a creator to watch
+
+The field is a single "Watch a creator" input, and it accepts either a full storefront URL (something like `amazon.com/shop/handle`) or just the bare handle. You do not need to go find the exact link if you already know who you are looking for.
+
+Behind that one field, the app does a bit of cleanup so you cannot easily add a broken entry:
+
+- It lowercases whatever you type and strips a leading `@`, so `@SomeCreator`, `somecreator`, and `SOMECREATOR` all resolve to the same watch.
+- It defaults the marketplace to US, but if you paste a URL from a different marketplace (an `amazon.co.uk` link, for example), it detects that and keeps the watch set to UK instead of silently forcing it back to US.
+- It rejects empty input outright.
+- It rejects a non-storefront Amazon URL, so pasting a link to a single product detail page gets turned away rather than quietly watching the wrong thing.
+- It rejects handles with illegal characters, instead of accepting something that will just fail silently later.
+
+None of this is exciting on its own, but it means the list you build actually works. There is nothing worse than a watch list with three entries silently not watching anything because a URL was malformed on the way in.
+
+## Why there is a 25-creator limit
+
+You can watch up to 25 creators at once. Try to add a 26th and the app blocks it with a clear limit message rather than letting the list balloon.
+
+Twenty-five sounds like a small number if you think of this as "everyone worth knowing about in my niche." It is not meant to be that. It is meant to be the small group whose moves actually matter to you, the ones who post in your exact category, chase the same kind of deals you do, or seem to find products before everyone else does. A watch list with 80 creators on it is just noise with extra steps. A watch list with the right 10 to 15 is a genuine edge. The limit is a forcing function to be honest with yourself about who is actually worth watching, not a technical ceiling you are meant to fight against.
+
+## The first check is silent, on purpose
+
+This is the detail that makes the whole feature usable instead of annoying. The very first check Creator Watch Butler runs after you add a creator does not alert you on anything. It just records their current storefront picks as a baseline: here is everything they have right now, today.
+
+If it worked the other way, every creator you added would instantly dump their entire existing catalog into your feed as "new," which is not new information at all, it is just their back catalog landing on you all at once. You would spend your first five minutes with the feature clearing out a wall of alerts for products that have been live on their storefront for months.
+
+Instead, nothing happens on that first pass. Only a product that appears on their storefront *after* that baseline was recorded counts as new, and only that triggers an alert. From the moment you add someone, you are watching for what they do next, not reviewing what they already did.
+
+One more detail worth knowing: when a new product does show up, products you could also personally earn commission on, through Creator Connections or Storefronts Plus Commission, are ranked above other new adds in the feed. A new product from a watched creator that you cannot monetize yourself still shows up, it is just not the thing pushed to the top. The feed is trying to answer "what should I act on first," not just "what changed."
+
+## Checking on your own schedule, or letting it run
+
+There are two ways a check happens. You can hit "Check now" any time you want a fresh read on everyone you are watching. Or you can leave an auto-check toggle on, which it is by default, and let the app run checks on an interval you pick: every 3, 6, 12, or 24 hours.
+
+Six hours is called out as the recommended setting, and it is a genuinely reasonable default rather than a throwaway suggestion. Checking every 3 hours gets you alerts faster, but it also means hitting Amazon more often for not much practical gain, since most creators are not adding new storefront products every few hours anyway. Checking once a day is fine if you are not chasing anything time-sensitive, but it means you could be the last to know about something that has already been live for most of a day. Six hours splits the difference: close enough to real time that you are not routinely missing a window, without hammering Amazon on a schedule no one actually needs.
+
+One practical catch: auto-check requires the app to be open to run. If the app is closed, checks are not quietly happening in the background somewhere, they resume once you open it again.
+
+## Where you actually see an alert
+
+An alert is not just one notification you can miss. It shows up in four places, two on by default, two off:
+
+- A popup toast, on by default, the kind of thing you will actually notice in the moment.
+- An optional Dashboard card, off by default, if you want a persistent summary sitting on your dashboard rather than relying on catching a toast.
+- A "New picks" feed section, which is the actual list you go read when you want detail rather than just a glance.
+- A count badge on the left-nav icon, so even if you miss the toast, you can see at a glance that something is waiting for you.
+
+The feed itself is capped at 60 items and the alert list at 50, so it stays a short list of recent, relevant changes rather than an ever-growing archive you have to scroll through. If you have not checked in for a while and a watched creator has been busy, older items roll off rather than piling up indefinitely.
+
+## A realistic example
+
+Say you add a creator by their handle, someone who consistently posts the same category of home goods you do. The first check runs and records their current storefront, maybe 40 products, and nothing shows up in your feed. That is expected. You leave auto-check on at the recommended 6-hour interval and move on with your week.
+
+Three days later, that creator adds a new product to their storefront under Creator Connections, one you also happen to have access to promote. On your next auto-check cycle, the app notices the new listing was not in the baseline, matches it against your own commission access, and fires an alert: the toast pops up, the item lands at the top of the New picks feed because you can personally earn on it too, and the badge on the left-nav icon ticks up by one.
+
+You open the feed, see the product, and you are looking at something that is at most a few hours old instead of something you might have stumbled onto a week later after it had already been posted everywhere. That gap, between a product going live somewhere else and you finding out about it, is the entire reason to keep a short, deliberate watch list instead of trying to track everyone.

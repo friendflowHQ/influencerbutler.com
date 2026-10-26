@@ -2624,6 +2624,21 @@
       "imageAlt": "Illustration of a friendly abstract chat helper with a headset icon and a spotlight ring guiding a click, in the brand's warm orange and navy style",
       "imagePrompt": "Editorial flat illustration of a soft geometric chat-bubble character with a small headset shape, next to a spotlight ring highlighting a button, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
       "order": 1
+    },
+    {
+      "id": "creator-watch-butler-explained",
+      "title": "Creator Watch Butler, Explained: Know the Second a Creator You Follow Adds a New Product",
+      "category": "Growth",
+      "tags": "Amazon, Growth",
+      "summary": "Watch up to 25 other creators' Amazon storefronts and get a toast, a feed entry, and a badge the moment one of them adds a product you could also earn commission on. Here is how adding a creator works, why the first check stays silent, and a real example of the alert landing a few days after you start watching someone.",
+      "date": "2026-10-30",
+      "author": "Liz Dean",
+      "readingTime": "7 min read",
+      "keywords": "creator watch butler, watch amazon storefronts, track competitor creators, amazon storefront alerts, creator connections product alerts, storefronts plus commission tracking, amazon influencer competitive research",
+      "image": "/assets/blog/creator-watch-butler-explained.png",
+      "imageAlt": "Illustration of an eye watching a row of storefront icons, with one lighting up with an orange notification badge",
+      "imagePrompt": "Editorial flat illustration of a simple geometric eye or a pair of binoculars shapes watching a row of small storefront icon cards, one of the cards glowing with an orange notification badge and a small spark, clean modern vector style, soft rounded shapes, brand accent warm orange (#f59e0b) with deep navy and soft cream, generous negative space, no text, no logos",
+      "order": 1
     }
   ]
 }
