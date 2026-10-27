@@ -2,7 +2,6 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { COUNTRIES } from "@/lib/countries";
 import NegotiateTermsNote from "@/components/NegotiateTermsNote";
@@ -45,8 +44,11 @@ function sanitizeSocials(input: SocialHandles): Record<string, string> {
   return out;
 }
 
-export default function AffiliateApplyInline() {
-  const router = useRouter();
+export default function AffiliateApplyInline({
+  onSubmitted,
+}: {
+  onSubmitted?: () => void;
+}) {
   const [userId, setUserId] = useState<string | null>(null);
   const [email, setEmail] = useState<string>("");
   const [fullName, setFullName] = useState<string>("");
@@ -162,7 +164,10 @@ export default function AffiliateApplyInline() {
         body: JSON.stringify({ userId, fullName: fullName.trim(), email: normalizedEmail }),
       }).catch(() => undefined);
 
-      router.refresh();
+      // Parent owns the "none" vs "pending" state (loaded client-side, not via
+      // RSC), so ask it to re-fetch rather than calling router.refresh() - a
+      // refresh here was a no-op and left the button stuck on "Submitting...".
+      onSubmitted?.();
     } catch (err) {
       console.error("Inline affiliate apply failed", err);
       setLoading(false);

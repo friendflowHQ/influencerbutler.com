@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import AffiliateApplyInline from "./AffiliateApplyInline";
 import SelfHostedAffiliateDashboard from "./SelfHostedAffiliateDashboard";
@@ -38,66 +38,59 @@ export default function AffiliatesPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const load = useCallback(async (opts?: { silent?: boolean }) => {
+    if (!opts?.silent) setLoading(true);
+    try {
+      const supabase = createClient();
 
-    const load = async () => {
-      try {
-        const supabase = createClient();
-
-        const { data: userData } = await supabase.auth.getUser();
-        const user = userData.user;
-        if (!user) {
-          if (!cancelled) setLoadError("Please sign in to view affiliates.");
-          return;
-        }
-
-        // Match the application on user_id OR email - a recreated account may
-        // have an application row whose user_id no longer matches auth.uid()
-        // but the email still does. RLS covers both.
-        const userEmail = (user.email ?? "").toLowerCase();
-        const [profileResult, applicationResult] = await Promise.all([
-          supabase
-            .from("profiles")
-            .select("is_affiliate,affiliate_code")
-            .eq("id", user.id)
-            .maybeSingle(),
-          supabase
-            .from("affiliate_applications")
-            .select("status,full_name,email,created_at")
-            .or(userEmail ? `user_id.eq.${user.id},email.eq.${userEmail}` : `user_id.eq.${user.id}`)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle(),
-        ]);
-
-        const profile = (profileResult.data ?? null) as ProfileRow | null;
-        const application = (applicationResult.data ?? null) as ApplicationRow | null;
-
-        if (cancelled) return;
-
-        if (profile?.is_affiliate === true) {
-          const displayName = application?.full_name?.split(" ")[0] || user.email?.split("@")[0] || "there";
-          setData({ state: "active", displayName });
-        } else if (application) {
-          setData({ state: "pending", application });
-        } else {
-          setData({ state: "none" });
-        }
-      } catch (err) {
-        console.error("affiliates page load failed", err);
-        if (!cancelled) setLoadError("Network error. Please refresh to try again.");
-      } finally {
-        if (!cancelled) setLoading(false);
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData.user;
+      if (!user) {
+        setLoadError("Please sign in to view affiliates.");
+        return;
       }
-    };
 
-    void load();
+      // Match the application on user_id OR email - a recreated account may
+      // have an application row whose user_id no longer matches auth.uid()
+      // but the email still does. RLS covers both.
+      const userEmail = (user.email ?? "").toLowerCase();
+      const [profileResult, applicationResult] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("is_affiliate,affiliate_code")
+          .eq("id", user.id)
+          .maybeSingle(),
+        supabase
+          .from("affiliate_applications")
+          .select("status,full_name,email,created_at")
+          .or(userEmail ? `user_id.eq.${user.id},email.eq.${userEmail}` : `user_id.eq.${user.id}`)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
 
-    return () => {
-      cancelled = true;
-    };
+      const profile = (profileResult.data ?? null) as ProfileRow | null;
+      const application = (applicationResult.data ?? null) as ApplicationRow | null;
+
+      if (profile?.is_affiliate === true) {
+        const displayName = application?.full_name?.split(" ")[0] || user.email?.split("@")[0] || "there";
+        setData({ state: "active", displayName });
+      } else if (application) {
+        setData({ state: "pending", application });
+      } else {
+        setData({ state: "none" });
+      }
+    } catch (err) {
+      console.error("affiliates page load failed", err);
+      setLoadError("Network error. Please refresh to try again.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   if (loading) {
     return <LoadingSkeleton />;
@@ -115,7 +108,7 @@ export default function AffiliatesPage() {
   }
 
   if (data.state === "none") {
-    return <AffiliateApplyInline />;
+    return <AffiliateApplyInline onSubmitted={() => load({ silent: true })} />;
   }
 
   if (data.state === "pending") {
