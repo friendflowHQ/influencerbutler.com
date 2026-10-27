@@ -27,6 +27,10 @@ import type {
   FeedbackThreadsResult,
   PostReplyResult,
   AuthStatus,
+  KnownIssue,
+  KnownIssuesListResult,
+  KnownIssueUpvoteResult,
+  KnownIssueLogsResult,
 } from "../../shared/messages";
 import {
   validateScreenshot,
@@ -39,7 +43,7 @@ import {
 
 const HOST_ID = `${UI_PREFIX}-chat-bubble-host`;
 
-type View = "chat" | "report" | "thread";
+type View = "chat" | "report" | "thread" | "known-issues";
 type ReportTab = "form" | "history";
 
 type Strings = {
@@ -95,6 +99,31 @@ type Strings = {
   replySending: string;
   replySent: string;
   replyFailed: string;
+  kiHeading: string;
+  kiSubheading: string;
+  kiSearchPlaceholder: string;
+  kiLoading: string;
+  kiEmptyNoQuery: string;
+  kiEmptyWithQuery: string;
+  kiLoadError: string;
+  kiStatusInvestigating: string;
+  kiStatusConfirmed: string;
+  kiStatusFixedNext: string;
+  kiStatusFixedNextVersioned: string;
+  kiStatusFixedShipped: string;
+  kiFirstReported: string;
+  kiUpvoteCta: string;
+  kiUpvoteAriaLabel: string;
+  kiLogsNote: string;
+  kiLogsCta: string;
+  kiLogsConfirmTitle: string;
+  kiLogsConfirmSend: string;
+  kiLogsConfirmCancel: string;
+  kiLogsSending: string;
+  kiLogsSent: string;
+  kiLogsFailed: string;
+  kiReportNewLead: string;
+  kiReportNewCta: string;
 };
 
 const STRINGS: Record<Locale, Strings> = {
@@ -151,6 +180,31 @@ const STRINGS: Record<Locale, Strings> = {
     replySending: "Sending...",
     replySent: "Sent",
     replyFailed: "Could not send your reply.",
+    kiHeading: "Known issues",
+    kiSubheading: "See what we're already working on",
+    kiSearchPlaceholder: "Search known issues...",
+    kiLoading: "Loading known issues...",
+    kiEmptyNoQuery: "No known issues reported right now.",
+    kiEmptyWithQuery: "No known issues match \"{query}\".",
+    kiLoadError: "Could not load known issues.",
+    kiStatusInvestigating: "Investigating",
+    kiStatusConfirmed: "Confirmed, working on it",
+    kiStatusFixedNext: "Fixed, coming in the next release",
+    kiStatusFixedNextVersioned: "Fixed, coming in v{version}",
+    kiStatusFixedShipped: "Fixed in v{version}",
+    kiFirstReported: "First reported {date}",
+    kiUpvoteCta: "+1",
+    kiUpvoteAriaLabel: "Mark this as affecting you too",
+    kiLogsNote: "We're looking into this one. If you're seeing it too and can send logs, it helps us fix it faster.",
+    kiLogsCta: "I'm seeing this too, send my logs",
+    kiLogsConfirmTitle: "Send a diagnostic log bundle for this issue?",
+    kiLogsConfirmSend: "Send",
+    kiLogsConfirmCancel: "Cancel",
+    kiLogsSending: "Sending logs...",
+    kiLogsSent: "Sent, thank you!",
+    kiLogsFailed: "Could not send logs. Try again.",
+    kiReportNewLead: "Don't see your issue?",
+    kiReportNewCta: "Report something new",
   },
   es: {
     launcher: "Pregunta al asistente",
@@ -205,6 +259,31 @@ const STRINGS: Record<Locale, Strings> = {
     replySending: "Enviando...",
     replySent: "Enviado",
     replyFailed: "No se pudo enviar tu respuesta.",
+    kiHeading: "Problemas conocidos",
+    kiSubheading: "Mira en qué ya estamos trabajando",
+    kiSearchPlaceholder: "Buscar problemas conocidos...",
+    kiLoading: "Cargando problemas conocidos...",
+    kiEmptyNoQuery: "No hay problemas conocidos reportados ahora mismo.",
+    kiEmptyWithQuery: "Ningún problema conocido coincide con \"{query}\".",
+    kiLoadError: "No se pudieron cargar los problemas conocidos.",
+    kiStatusInvestigating: "Investigando",
+    kiStatusConfirmed: "Confirmado, trabajando en ello",
+    kiStatusFixedNext: "Solucionado, llega en la próxima versión",
+    kiStatusFixedNextVersioned: "Solucionado, llega en la v{version}",
+    kiStatusFixedShipped: "Solucionado en la v{version}",
+    kiFirstReported: "Reportado por primera vez el {date}",
+    kiUpvoteCta: "+1",
+    kiUpvoteAriaLabel: "Marcar que esto también te afecta",
+    kiLogsNote: "Estamos investigando esto. Si también te está pasando y puedes enviar los registros, nos ayuda a solucionarlo más rápido.",
+    kiLogsCta: "A mí también me pasa, enviar mis registros",
+    kiLogsConfirmTitle: "¿Enviar un paquete de registros de diagnóstico para este problema?",
+    kiLogsConfirmSend: "Enviar",
+    kiLogsConfirmCancel: "Cancelar",
+    kiLogsSending: "Enviando registros...",
+    kiLogsSent: "¡Enviado, gracias!",
+    kiLogsFailed: "No se pudieron enviar los registros. Inténtalo de nuevo.",
+    kiReportNewLead: "¿No ves tu problema?",
+    kiReportNewCta: "Informar de algo nuevo",
   },
   fr: {
     launcher: "Poser une question à l'assistant",
@@ -259,6 +338,31 @@ const STRINGS: Record<Locale, Strings> = {
     replySending: "Envoi...",
     replySent: "Envoyé",
     replyFailed: "Impossible d'envoyer votre réponse.",
+    kiHeading: "Problèmes connus",
+    kiSubheading: "Découvrez ce que nous traitons déjà",
+    kiSearchPlaceholder: "Rechercher un problème connu...",
+    kiLoading: "Chargement des problèmes connus...",
+    kiEmptyNoQuery: "Aucun problème connu signalé pour le moment.",
+    kiEmptyWithQuery: "Aucun problème connu ne correspond à \"{query}\".",
+    kiLoadError: "Impossible de charger les problèmes connus.",
+    kiStatusInvestigating: "En cours d'investigation",
+    kiStatusConfirmed: "Confirmé, nous y travaillons",
+    kiStatusFixedNext: "Corrigé, arrive dans la prochaine version",
+    kiStatusFixedNextVersioned: "Corrigé, arrive dans la v{version}",
+    kiStatusFixedShipped: "Corrigé dans la v{version}",
+    kiFirstReported: "Signalé pour la première fois le {date}",
+    kiUpvoteCta: "+1",
+    kiUpvoteAriaLabel: "Indiquer que cela vous concerne aussi",
+    kiLogsNote: "Nous enquêtons sur ce problème. Si cela vous arrive aussi et que vous pouvez envoyer vos journaux, cela nous aide à le corriger plus vite.",
+    kiLogsCta: "Cela m'arrive aussi, envoyer mes journaux",
+    kiLogsConfirmTitle: "Envoyer un rapport de diagnostic pour ce problème ?",
+    kiLogsConfirmSend: "Envoyer",
+    kiLogsConfirmCancel: "Annuler",
+    kiLogsSending: "Envoi des journaux...",
+    kiLogsSent: "Envoyé, merci !",
+    kiLogsFailed: "Impossible d'envoyer les journaux. Réessayez.",
+    kiReportNewLead: "Vous ne voyez pas votre problème ?",
+    kiReportNewCta: "Signaler quelque chose de nouveau",
   },
 };
 
@@ -422,6 +526,55 @@ const CSS = `
 .msg .attchip { font-size: 11px; border-radius: 999px; padding: 2px 8px;
   background: rgba(0,0,0,.06); color: #6b7280; }
 .msg.user .attchip { background: rgba(255,255,255,.25); color: #fff; }
+
+/* Known issues ("live support" board, desktop parity). */
+.known-issues { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+.known-issues[hidden] { display: none; }
+.ki-search { flex: 0 0 auto; padding: 10px 14px 0; }
+.ki-search input { width: 100%; box-sizing: border-box; border: 1px solid #e2e5ea;
+  border-radius: 8px; padding: 7px 10px; font-size: 12.5px; font-family: inherit; }
+.ki-search input:focus { border-color: #f59e0b; }
+.ki-status { font-size: 12.5px; color: #6b7280; line-height: 1.5; padding: 10px 14px; }
+.ki-status[hidden] { display: none; }
+.ki-list { flex: 1 1 auto; overflow-y: auto; padding: 10px 14px; display: flex;
+  flex-direction: column; gap: 8px; min-height: 0; }
+.ki-list[hidden] { display: none; }
+.ki-item { border: 1px solid #eceef1; border-radius: 10px; padding: 9px 11px;
+  display: flex; flex-direction: column; gap: 6px; }
+.ki-top { display: flex; align-items: center; gap: 7px; }
+.ki-pill { flex: 0 0 auto; font-size: 10px; font-weight: 800; text-transform: uppercase;
+  border-radius: 999px; padding: 2px 7px; background: rgba(107,114,128,.14); color: #6b7280; }
+.ki-pill.confirmed { background: rgba(234,88,12,.14); color: #ea580c; }
+.ki-pill.fixed_next_release { background: rgba(99,102,241,.14); color: #6366f1; }
+.ki-pill.fixed_shipped { background: rgba(16,163,74,.14); color: #16a34a; }
+.ki-title { flex: 1 1 auto; min-width: 0; font-size: 12.5px; font-weight: 700;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ki-cause { font-size: 12px; line-height: 1.45; }
+.ki-meta { display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; font-size: 11px; color: #6b7280; }
+.ki-upvote { flex: 0 0 auto; border: 1px solid #e2e5ea; background: #fff; color: #111827;
+  cursor: pointer; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 3px 10px; }
+.ki-upvote.voted { border-color: rgba(234,88,12,.4); background: rgba(234,88,12,.1); color: #ea580c; }
+.ki-upvote:disabled { cursor: default; opacity: .85; }
+.ki-logs { border-top: 1px dashed #eceef1; padding-top: 7px; display: flex;
+  flex-direction: column; gap: 6px; }
+.ki-logs-note { margin: 0; font-size: 11.5px; line-height: 1.4; color: #6b7280; }
+.ki-logs-send { align-self: flex-start; border: 1px solid rgba(234,88,12,.4);
+  background: rgba(234,88,12,.08); color: #ea580c; cursor: pointer; font-size: 11.5px;
+  font-weight: 700; border-radius: 8px; padding: 5px 10px; }
+.ki-logs-send:disabled { cursor: default; opacity: .85; }
+.ki-logs-confirm { display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+  font-size: 11.5px; }
+.ki-logs-confirm button { border: 1px solid #e2e5ea; background: #fff; color: #111827;
+  cursor: pointer; font-size: 11px; font-weight: 700; border-radius: 7px; padding: 3px 9px; }
+.ki-logs-confirm button.primary { border-color: rgba(234,88,12,.4); background: #ea580c; color: #fff; }
+.ki-inline-error { font-size: 11.5px; color: #dc2626; }
+.ki-inline-error[hidden] { display: none; }
+.ki-foot { flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  gap: 6px; padding: 10px 14px; font-size: 12px; color: #6b7280; border-top: 1px solid #eef0f2; }
+.ki-foot button { border: 0; background: transparent; color: #ea580c; cursor: pointer;
+  font-size: 12px; font-weight: 700; }
+.ki-foot button:hover { text-decoration: underline; }
 `;
 
 let mounted = false;
@@ -531,6 +684,20 @@ class ChatBubble {
   private autoOpened = new Set<string>();
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   private emailPrefillToken = 0;
+  // Known issues ("live support" board) -- see openReport()/openKnownIssues().
+  private kiWrap!: HTMLElement;
+  private kiSearchInput!: HTMLInputElement;
+  private kiStatusEl!: HTMLElement;
+  private kiListEl!: HTMLElement;
+  private kiFootLead!: HTMLElement;
+  private kiReportNewBtn!: HTMLButtonElement;
+  private kiIssues: KnownIssue[] = [];
+  private kiLoading = false;
+  private kiError = false;
+  private kiUpvoteBusy = new Set<string>();
+  private kiLogsBusy = new Set<string>();
+  private reportEnteredFrom: "known-issues" | "direct" = "direct";
+  private kiDebounce: ReturnType<typeof setTimeout> | null = null;
 
   constructor(private readonly inPopup = false) {
     this.s = STRINGS[getLocale()] || STRINGS.en;
@@ -622,6 +789,9 @@ class ChatBubble {
     // Report view
     this.report = this.buildReport();
 
+    // Known issues ("live support" board)
+    this.kiWrap = this.buildKnownIssues();
+
     // Support-conversation (thread) view
     this.threadWrap = el("div", "thread");
     this.threadWrap.hidden = true;
@@ -640,7 +810,7 @@ class ChatBubble {
     this.threadStatus = el("div", "tstatus");
     this.threadWrap.append(this.threadTranscript, tComposer, this.threadStatus);
 
-    this.panel.append(head, this.transcript, this.reportCta, this.composer, this.report, this.threadWrap);
+    this.panel.append(head, this.transcript, this.reportCta, this.composer, this.report, this.threadWrap, this.kiWrap);
     wrap.append(this.panel, this.launcher);
     this.root.append(wrap);
     if (!this.inPopup) wrapRef = wrap;
@@ -770,6 +940,36 @@ class ChatBubble {
     return report;
   }
 
+  private buildKnownIssues(): HTMLElement {
+    const s = this.s;
+    const wrap = el("div", "known-issues");
+    wrap.hidden = true;
+
+    const searchRow = el("div", "ki-search");
+    this.kiSearchInput = el("input", undefined);
+    this.kiSearchInput.type = "search";
+    this.kiSearchInput.placeholder = s.kiSearchPlaceholder;
+    this.kiSearchInput.addEventListener("input", () => {
+      if (this.kiDebounce) clearTimeout(this.kiDebounce);
+      this.kiDebounce = setTimeout(() => void this.loadKnownIssues(), 250);
+    });
+    searchRow.append(this.kiSearchInput);
+
+    this.kiStatusEl = el("div", "ki-status");
+    this.kiStatusEl.hidden = true;
+    this.kiListEl = el("div", "ki-list");
+
+    const foot = el("div", "ki-foot");
+    this.kiFootLead = el("span", undefined, s.kiReportNewLead);
+    this.kiReportNewBtn = el("button", undefined, s.kiReportNewCta);
+    this.kiReportNewBtn.type = "button";
+    this.kiReportNewBtn.addEventListener("click", () => this.openReportForm());
+    foot.append(this.kiFootLead, this.kiReportNewBtn);
+
+    wrap.append(searchRow, this.kiStatusEl, this.kiListEl, foot);
+    return wrap;
+  }
+
   // ---- open / close / view ----
   private toggle(): void {
     this.open ? this.close() : this.show(this.inPopup ? "report" : "chat");
@@ -786,7 +986,8 @@ class ChatBubble {
     this.setView(view);
     setTimeout(() => {
       try {
-        (view === "report" ? this.titleInput : this.input).focus();
+        const target = view === "report" ? this.titleInput : view === "known-issues" ? this.kiSearchInput : this.input;
+        target.focus();
       } catch {
         /* ignore */
       }
@@ -798,8 +999,27 @@ class ChatBubble {
     this.open = false;
   }
 
+  // Lands on Known Issues first (search by keyword, +1, see what's already
+  // known) rather than jumping straight to the form -- desktop parity. The
+  // panel has only this one entry point into reporting (the plain "Report a
+  // bug" CTA), so unlike the desktop bubble there is no app-detected-bug
+  // handoff that needs to skip this view.
   openReport(): void {
+    this.show("known-issues");
+    void this.loadKnownIssues();
+  }
+
+  // Always reachable, independent of reporting a bug.
+  openKnownIssues(): void {
+    this.show("known-issues");
+    void this.loadKnownIssues();
+  }
+
+  // The actual report-form opening logic (what openReport() used to do
+  // directly). Target of Known Issues' "Report something new" CTA.
+  private openReportForm(): void {
     this.resetForm();
+    this.reportEnteredFrom = this.view === "known-issues" ? "known-issues" : "direct";
     this.show("report");
     void this.prefillEmailFromAuth();
   }
@@ -829,9 +1049,11 @@ class ChatBubble {
     this.view = view;
     const isReport = view === "report";
     const isThread = view === "thread";
+    const isKnown = view === "known-issues";
     const isChat = view === "chat";
     this.report.hidden = !isReport;
     this.threadWrap.hidden = !isThread;
+    this.kiWrap.hidden = !isKnown;
     this.transcript.hidden = !isChat;
     this.composer.hidden = !isChat;
     this.reportCta.hidden = !isChat;
@@ -840,6 +1062,9 @@ class ChatBubble {
     if (isReport) {
       this.nameEl.textContent = this.s.reportHeading;
       this.roleEl.textContent = this.s.reportSub;
+    } else if (isKnown) {
+      this.nameEl.textContent = this.s.kiHeading;
+      this.roleEl.textContent = this.s.kiSubheading;
     } else if (isChat) {
       this.nameEl.textContent = this.s.title;
       this.roleEl.textContent = this.s.role;
@@ -847,9 +1072,11 @@ class ChatBubble {
     // Thread header text is set by openThread (ticket title + role).
   }
 
-  // Back arrow: thread -> reports list, report -> chat.
+  // Back arrow: thread -> reports list, report -> known issues (when that's
+  // where the user came from) or chat, known-issues -> chat.
   private goBack(): void {
     if (this.view === "thread") { this.setView("report"); this.setReportTab("history"); return; }
+    if (this.view === "report" && this.reportEnteredFrom === "known-issues") { this.setView("known-issues"); return; }
     this.setView("chat");
   }
 
@@ -881,6 +1108,188 @@ class ChatBubble {
     this.historyFilter = filter;
     this.renderFilterTabs();
     void this.loadHistory();
+  }
+
+  // ---- known issues ----
+
+  private async loadKnownIssues(): Promise<void> {
+    this.kiLoading = true;
+    this.kiError = false;
+    this.renderKnownIssuesStatus();
+    const q = this.kiSearchInput.value.trim();
+    try {
+      const res = await sendToBackground<KnownIssuesListResult>({ kind: "KNOWN_ISSUES_LIST", q: q || undefined });
+      this.kiIssues = res && res.ok && Array.isArray(res.issues) ? res.issues : [];
+      this.kiError = !res || !res.ok;
+    } catch {
+      this.kiIssues = [];
+      this.kiError = true;
+    }
+    this.kiLoading = false;
+    this.renderKnownIssuesList();
+  }
+
+  private renderKnownIssuesStatus(): void {
+    if (this.kiLoading) {
+      this.kiStatusEl.textContent = this.s.kiLoading;
+      this.kiStatusEl.hidden = false;
+      this.kiListEl.hidden = true;
+      return;
+    }
+    this.kiStatusEl.hidden = true;
+    this.kiListEl.hidden = false;
+  }
+
+  private statusLabelForIssue(issue: KnownIssue): string {
+    const s = this.s;
+    switch (issue.status) {
+      case "confirmed":
+        return s.kiStatusConfirmed;
+      case "fixed_next_release":
+        return issue.targetVersion
+          ? s.kiStatusFixedNextVersioned.replace("{version}", issue.targetVersion)
+          : s.kiStatusFixedNext;
+      case "fixed_shipped":
+        return s.kiStatusFixedShipped.replace("{version}", issue.resolvedVersion || "");
+      default:
+        return s.kiStatusInvestigating;
+    }
+  }
+
+  private renderKnownIssuesList(): void {
+    this.renderKnownIssuesStatus();
+    this.kiListEl.textContent = "";
+    if (this.kiLoading) return;
+
+    if (this.kiError) {
+      this.kiStatusEl.hidden = false;
+      this.kiStatusEl.textContent = this.s.kiLoadError;
+      return;
+    }
+    if (!this.kiIssues.length) {
+      this.kiStatusEl.hidden = false;
+      const q = this.kiSearchInput.value.trim();
+      this.kiStatusEl.textContent = q ? this.s.kiEmptyWithQuery.replace("{query}", q) : this.s.kiEmptyNoQuery;
+      return;
+    }
+    for (const issue of this.kiIssues) this.kiListEl.append(this.buildKnownIssueCard(issue));
+  }
+
+  private buildKnownIssueCard(issue: KnownIssue): HTMLElement {
+    const s = this.s;
+    const card = el("div", "ki-item");
+
+    const top = el("div", "ki-top");
+    const pill = el("span", `ki-pill ${issue.status}`, this.statusLabelForIssue(issue));
+    const title = el("span", "ki-title", issue.title);
+    title.title = issue.title;
+    top.append(pill, title);
+
+    const cause = issue.cause ? el("div", "ki-cause", issue.cause) : null;
+
+    const meta = el("div", "ki-meta");
+    let dateStr = "";
+    try { dateStr = issue.firstReportedAt ? new Date(issue.firstReportedAt).toLocaleDateString() : ""; } catch { /* ignore */ }
+    const reported = el("span", undefined, dateStr ? s.kiFirstReported.replace("{date}", dateStr) : "");
+
+    const upvoteBtn = el("button", "ki-upvote");
+    upvoteBtn.type = "button";
+    const renderUpvote = () => {
+      upvoteBtn.classList.toggle("voted", !!issue.viewerHasVoted);
+      upvoteBtn.disabled = !!issue.viewerHasVoted || this.kiUpvoteBusy.has(issue.id);
+      upvoteBtn.setAttribute("aria-label", s.kiUpvoteAriaLabel);
+      upvoteBtn.textContent = issue.viewerHasVoted ? `✓ ${issue.upvoteCount || 0}` : `${s.kiUpvoteCta} ${issue.upvoteCount || 0}`;
+    };
+    renderUpvote();
+    upvoteBtn.addEventListener("click", () => void this.upvoteKnownIssue(issue, renderUpvote));
+    meta.append(reported, upvoteBtn);
+
+    card.append(top);
+    if (cause) card.append(cause);
+    card.append(meta);
+
+    const inlineError = el("div", "ki-inline-error");
+    inlineError.hidden = true;
+
+    if (issue.needsLogs) {
+      const logsBlock = el("div", "ki-logs");
+      const note = el("p", "ki-logs-note", issue.needsLogsNote || s.kiLogsNote);
+      const sendBtn = el("button", "ki-logs-send", s.kiLogsCta);
+      sendBtn.type = "button";
+      let confirmRow: HTMLElement | null = null;
+      sendBtn.addEventListener("click", () => {
+        if (issue.loggedByMe || confirmRow) return;
+        confirmRow = el("div", "ki-logs-confirm");
+        const confirmText = el("span", undefined, s.kiLogsConfirmTitle);
+        const sendConfirmBtn = el("button", "primary", s.kiLogsConfirmSend);
+        sendConfirmBtn.type = "button";
+        const cancelBtn = el("button", undefined, s.kiLogsConfirmCancel);
+        cancelBtn.type = "button";
+        sendConfirmBtn.addEventListener("click", () => {
+          confirmRow?.remove();
+          confirmRow = null;
+          void this.volunteerLogs(issue, sendBtn, inlineError);
+        });
+        cancelBtn.addEventListener("click", () => { confirmRow?.remove(); confirmRow = null; });
+        confirmRow.append(confirmText, sendConfirmBtn, cancelBtn);
+        logsBlock.append(confirmRow);
+      });
+      logsBlock.append(note, sendBtn);
+      card.append(logsBlock);
+    }
+
+    card.append(inlineError);
+    return card;
+  }
+
+  private async upvoteKnownIssue(issue: KnownIssue, renderUpvote: () => void): Promise<void> {
+    const id = issue.id;
+    if (this.kiUpvoteBusy.has(id)) return;
+    this.kiUpvoteBusy.add(id);
+    renderUpvote();
+    try {
+      const res = await sendToBackground<KnownIssueUpvoteResult>({ kind: "KNOWN_ISSUES_UPVOTE", id });
+      if (res && res.ok) {
+        issue.upvoteCount = res.upvoteCount ?? issue.upvoteCount;
+        issue.viewerHasVoted = true;
+      }
+    } catch {
+      /* leave the card as-is; the button re-enables below so the user can retry */
+    }
+    this.kiUpvoteBusy.delete(id);
+    renderUpvote();
+  }
+
+  private async volunteerLogs(issue: KnownIssue, sendBtn: HTMLButtonElement, inlineError: HTMLElement): Promise<void> {
+    const id = issue.id;
+    const s = this.s;
+    if (this.kiLogsBusy.has(id)) return;
+    this.kiLogsBusy.add(id);
+    inlineError.hidden = true;
+    sendBtn.disabled = true;
+    sendBtn.textContent = s.kiLogsSending;
+    try {
+      const res = await sendToBackground<KnownIssueLogsResult>({
+        kind: "KNOWN_ISSUES_VOLUNTEER_LOGS",
+        id,
+        pageUrl: location.href,
+      });
+      if (res && res.ok) {
+        issue.loggedByMe = true;
+        sendBtn.textContent = s.kiLogsSent;
+      } else {
+        sendBtn.disabled = false;
+        sendBtn.textContent = s.kiLogsCta;
+        inlineError.hidden = false;
+        inlineError.textContent = s.kiLogsFailed;
+      }
+    } catch {
+      sendBtn.disabled = false;
+      sendBtn.textContent = s.kiLogsCta;
+      inlineError.hidden = false;
+      inlineError.textContent = s.kiLogsFailed;
+    }
+    this.kiLogsBusy.delete(id);
   }
 
   // ---- chat ----

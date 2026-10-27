@@ -15,6 +15,9 @@ import type {
   FeedbackThreadsResult,
   PostReplyResult,
   MarkThreadReadResult,
+  KnownIssuesListResult,
+  KnownIssueUpvoteResult,
+  KnownIssueLogsResult,
 } from "../shared/messages";
 
 // Sends a single feedback submission to the site. Attaches the license key as
@@ -316,4 +319,100 @@ export async function submitFeedbackRich(input: RichFeedbackInput): Promise<Rich
   await writeLocalFeedback(rows);
 
   return { ok: true, id };
+}
+
+// ---- Known issues ("live support" board, desktop parity) -------------------
+
+const VOTER_ID_KEY = "ib-known-issue-voter-id";
+
+// A client-generated anonymous id for "+1"-ing / volunteering logs when no
+// license key is connected (signed-out browsing). Generated once and
+// persisted in chrome.storage.local -- not a Lemon Squeezy key, just a
+// random id the Worker hashes server-side (see
+// workers/feedback/src/routes/knownIssues.js in the InfluencerButler repo).
+async function getOrCreateVoterId(): Promise<string> {
+  try {
+    const got = await chrome.storage.local.get(VOTER_ID_KEY);
+    const existing = got?.[VOTER_ID_KEY];
+    if (typeof existing === "string" && existing) return existing;
+  } catch {
+    /* fall through to generate one */
+  }
+  const id = crypto.randomUUID();
+  try {
+    await chrome.storage.local.set({ [VOTER_ID_KEY]: id });
+  } catch {
+    /* best effort -- a fresh id next time just means a fresh vote */
+  }
+  return id;
+}
+
+// Identity for a known-issues write (upvote / logs): a license Bearer first,
+// else the anonymous voter id. Mirrors resolveVoterIdentity() in the Worker.
+async function knownIssueIdentityHeaders(): Promise<Record<string, string>> {
+  const state = await getState();
+  if (state.auth.licenseKey) return { Authorization: `Bearer ${state.auth.licenseKey}` };
+  return { "X-Ib-Voter-Id": await getOrCreateVoterId() };
+}
+
+export async function listKnownIssues(q?: string): Promise<KnownIssuesListResult> {
+  const url = new URL(ENDPOINTS.knownIssues);
+  if (q) url.searchParams.set("q", q);
+  try {
+    const response = await fetch(url.toString());
+    const data = (await response.json().catch(() => null)) as KnownIssuesListResult | null;
+    if (!response.ok || !data?.ok) {
+      return { ok: false, issues: [], error: data?.error || "Could not load known issues." };
+    }
+    return { ok: true, issues: Array.isArray(data.issues) ? data.issues : [] };
+  } catch {
+    return { ok: false, issues: [], error: "Network error. Are you online?" };
+  }
+}
+
+export async function upvoteKnownIssue(id: string): Promise<KnownIssueUpvoteResult> {
+  if (!id) return { ok: false, error: "Invalid id" };
+  const headers = await knownIssueIdentityHeaders();
+  try {
+    const response = await fetch(`${ENDPOINTS.knownIssues}/${encodeURIComponent(id)}/upvote`, {
+      method: "POST",
+      headers,
+    });
+    const data = (await response.json().catch(() => null)) as KnownIssueUpvoteResult | null;
+    if (!response.ok || !data?.ok) return { ok: false, error: data?.error || "Could not record your vote." };
+    return { ok: true, alreadyVoted: data.alreadyVoted, upvoteCount: data.upvoteCount };
+  } catch {
+    return { ok: false, error: "Network error. Are you online?" };
+  }
+}
+
+// One-click "I'm seeing this too, send my logs". Builds the SAME diagnostic
+// text submitFeedbackRich() attaches, entirely in the background -- the
+// content script only ever passes an id, keeping the bubble's button a true
+// one-click action with no bundle text crossing a runtime message.
+export async function volunteerLogsForKnownIssue(id: string, ticketId?: string, pageUrl?: string): Promise<KnownIssueLogsResult> {
+  if (!id) return { ok: false, error: "Invalid id" };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(await knownIssueIdentityHeaders()),
+  };
+  const logText = await collectLogs(pageUrl);
+  try {
+    const response = await fetch(`${ENDPOINTS.knownIssues}/${encodeURIComponent(id)}/logs`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        source: "extension",
+        logText,
+        appVersion: extensionVersion(),
+        platform: "chrome",
+        ...(ticketId ? { ticketId } : {}),
+      }),
+    });
+    const data = (await response.json().catch(() => null)) as KnownIssueLogsResult | null;
+    if (!response.ok || !data?.ok) return { ok: false, error: data?.error || "Could not send logs." };
+    return { ok: true, ticketAdvanced: data.ticketAdvanced };
+  } catch {
+    return { ok: false, error: "Network error. Are you online?" };
+  }
 }

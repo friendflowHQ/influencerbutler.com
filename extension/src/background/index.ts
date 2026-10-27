@@ -33,6 +33,9 @@ import {
   listFeedbackThreads,
   postFeedbackReply,
   markFeedbackThreadRead,
+  listKnownIssues,
+  upvoteKnownIssue,
+  volunteerLogsForKnownIssue,
 } from "./feedback";
 import { refreshCatalogues } from "./catalogue";
 import { refreshRateCard, refreshTargetRateCard, refreshWalmartRateCard } from "./rate-card";
@@ -689,6 +692,15 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "MARK_FEEDBACK_THREAD_READ":
       void markFeedbackThreadRead(message.ticketId).then(sendResponse);
+      return true;
+    case "KNOWN_ISSUES_LIST":
+      void listKnownIssues(message.q).then(sendResponse);
+      return true;
+    case "KNOWN_ISSUES_UPVOTE":
+      void upvoteKnownIssue(message.id).then(sendResponse);
+      return true;
+    case "KNOWN_ISSUES_VOLUNTEER_LOGS":
+      void volunteerLogsForKnownIssue(message.id, message.ticketId, message.pageUrl).then(sendResponse);
       return true;
     case "FETCH_MARKET_AVAILABILITY":
       void fetchMarketAvailability(message.asin, message.markets).then(sendResponse);

@@ -22,6 +22,11 @@ export const ENDPOINTS = {
   // Support-reply threads: the signed-in user's own answered tickets (GET) and
   // replying back to one (POST .../<ticketId>). License Bearer required.
   feedbackReplies: `${API_BASE}/api/extension/feedback/replies`,
+  // Known issues: the chat bubble's "live support" board (list, upvote,
+  // volunteer-logs), proxied to the feedback Worker's public routes. No auth
+  // required to list; upvote/logs forward whichever identity is present
+  // (license Bearer or the anonymous x-ib-voter-id) and let the Worker decide.
+  knownIssues: `${API_BASE}/api/extension/known-issues`,
   // Creator API (PA-API) credential vault + product enrichment. The vault only
   // ever stores the secret encrypted server-side; the extension never keeps it.
   creatorApi: `${API_BASE}/api/extension/creator-api`,

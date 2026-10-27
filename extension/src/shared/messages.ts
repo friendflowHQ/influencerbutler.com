@@ -241,6 +241,15 @@ export type RuntimeMessage =
   | { kind: "LIST_FEEDBACK_THREADS" }
   | { kind: "POST_FEEDBACK_REPLY"; ticketId: string; body: string }
   | { kind: "MARK_FEEDBACK_THREAD_READ"; ticketId: string }
+  // Known issues: the chat bubble's "live support" board, shown before a
+  // customer can file a new bug report. Proxied through
+  // /api/extension/known-issues (which forwards to the feedback Worker's
+  // public routes), scoped to scope=extension. LOGS reuses the same
+  // pre-redacted diagnostic text collectLogs() already builds for
+  // SUBMIT_FEEDBACK_RICH -- the content script never touches bundle text.
+  | { kind: "KNOWN_ISSUES_LIST"; q?: string }
+  | { kind: "KNOWN_ISSUES_UPVOTE"; id: string }
+  | { kind: "KNOWN_ISSUES_VOLUNTEER_LOGS"; id: string; ticketId?: string; pageUrl?: string }
   | { kind: "OPEN_URL"; url: string }
   // Opens the extension's options/settings page. Content scripts cannot call
   // chrome.runtime.openOptionsPage directly, so the on-page gear routes here.
@@ -791,6 +800,29 @@ export type FeedbackThreadsResult = {
 export type PostReplyResult = { ok: boolean; reply?: FeedbackThreadReply | null; error?: string };
 
 export type MarkThreadReadResult = { ok: boolean; unread?: number };
+
+// Known issues: the chat bubble's "live support" board (desktop parity, see
+// workers/feedback/src/routes/knownIssues.js in the InfluencerButler repo).
+export type KnownIssueStatus = "investigating" | "confirmed" | "fixed_next_release" | "fixed_shipped";
+export type KnownIssue = {
+  id: string;
+  title: string;
+  cause: string;
+  status: KnownIssueStatus;
+  fixed: boolean;
+  firstReportedAt: number;
+  needsLogs: boolean;
+  needsLogsNote: string | null;
+  targetVersion: string | null;
+  resolvedVersion: string | null;
+  upvoteCount: number;
+  viewerHasVoted: boolean;
+  /** Client-only: set after this browser's own volunteer-logs call succeeds. */
+  loggedByMe?: boolean;
+};
+export type KnownIssuesListResult = { ok: boolean; issues: KnownIssue[]; error?: string };
+export type KnownIssueUpvoteResult = { ok: boolean; alreadyVoted?: boolean; upvoteCount?: number; error?: string };
+export type KnownIssueLogsResult = { ok: boolean; ticketAdvanced?: boolean; error?: string };
 
 export type CaptureScreenshotResult = { ok: boolean; dataUrl?: string; error?: string };
 
