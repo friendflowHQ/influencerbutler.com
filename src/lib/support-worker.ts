@@ -17,9 +17,15 @@ const DEFAULT_WORKER_URL = "https://feedback.influencerbutler.com";
  */
 const FB_TICKET_ID_RE = /^fb-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const TF_TICKET_ID_RE = /^tf-(?:crash|screenshot)-[A-Za-z0-9_-]{1,100}$/;
+// Mirrors the Worker's own KI_ID_RE (workers/feedback/src/routes/knownIssues.js).
+const KI_ID_RE = /^ki-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function isSupportTicketId(id: unknown): id is string {
   return typeof id === "string" && (FB_TICKET_ID_RE.test(id) || TF_TICKET_ID_RE.test(id));
+}
+
+export function isKnownIssueId(id: unknown): id is string {
+  return typeof id === "string" && KI_ID_RE.test(id);
 }
 
 export type SupportWorkerResult<T = unknown> =
@@ -111,6 +117,59 @@ export async function callFeedbackWorkerAsUser<T = unknown>(
     });
   } catch (err) {
     console.error("callFeedbackWorkerAsUser fetch failed", err);
+    return { ok: false, status: 502, error: "Support worker unreachable" };
+  }
+
+  let payload: unknown = null;
+  try {
+    payload = await res.json();
+  } catch {
+    payload = null;
+  }
+
+  if (!res.ok || (payload && typeof payload === "object" && (payload as { ok?: boolean }).ok === false)) {
+    const error =
+      (payload && typeof payload === "object" && (payload as { error?: string }).error) ||
+      `Worker HTTP ${res.status}`;
+    return { ok: false, status: res.ok ? 502 : res.status, error: String(error) };
+  }
+
+  return { ok: true, status: res.status, data: (payload ?? {}) as T };
+}
+
+/**
+ * Proxy a call to the feedback Worker's PUBLIC `/known-issues` routes (no bot
+ * token, no required auth: matches the Worker's own anonymous-GET /
+ * either-bearer-or-voter-id-write design, see
+ * workers/feedback/src/routes/knownIssues.js). Forwards an arbitrary header
+ * set as-is (the extension's `/api/extension/known-issues/*` routes decide
+ * whether to forward `authorization` or `x-ib-voter-id`), plus an optional
+ * query string for GET. Used instead of callFeedbackWorkerAsUser because that
+ * helper only ever forwards `authorization`.
+ */
+export async function callFeedbackWorkerPublic<T = unknown>(
+  path: string,
+  init?: { method?: "GET" | "POST"; headers?: Record<string, string>; body?: unknown; query?: Record<string, string> },
+): Promise<SupportWorkerResult<T>> {
+  const method = init?.method || "GET";
+  let url = `${workerBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
+  if (init?.query) {
+    const qs = new URLSearchParams(init.query).toString();
+    if (qs) url += `?${qs}`;
+  }
+  const headers: Record<string, string> = { ...(init?.headers || {}) };
+  if (init?.body !== undefined) headers["content-type"] = "application/json";
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method,
+      headers,
+      body: init?.body !== undefined ? JSON.stringify(init.body) : undefined,
+      cache: "no-store",
+    });
+  } catch (err) {
+    console.error("callFeedbackWorkerPublic fetch failed", err);
     return { ok: false, status: 502, error: "Support worker unreachable" };
   }
 
