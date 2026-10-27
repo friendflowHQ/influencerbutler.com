@@ -8,6 +8,20 @@
 
 const DEFAULT_WORKER_URL = "https://feedback.influencerbutler.com";
 
+/**
+ * Ticket ids the admin Support routes accept: app/website reports are
+ * `fb-<uuid>`; tickets the feedback Worker files from TestFlight feedback are
+ * `tf-crash-<appleId>` / `tf-screenshot-<appleId>`. Mirrors the Worker's own
+ * TICKET_ID_RE (workers/feedback/src/routes/agent.js) so a TestFlight escalation
+ * email's "Open ticket" link opens the ticket instead of a 400.
+ */
+const FB_TICKET_ID_RE = /^fb-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const TF_TICKET_ID_RE = /^tf-(?:crash|screenshot)-[A-Za-z0-9_-]{1,100}$/;
+
+export function isSupportTicketId(id: unknown): id is string {
+  return typeof id === "string" && (FB_TICKET_ID_RE.test(id) || TF_TICKET_ID_RE.test(id));
+}
+
 export type SupportWorkerResult<T = unknown> =
   | { ok: true; status: number; data: T }
   | { ok: false; status: number; error: string };

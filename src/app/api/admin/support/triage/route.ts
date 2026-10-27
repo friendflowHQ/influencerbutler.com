@@ -10,12 +10,11 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { logAdminAction } from "@/lib/admin-audit";
-import { callSupportWorker } from "@/lib/support-worker";
+import { callSupportWorker, isSupportTicketId } from "@/lib/support-worker";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const FB_ID_RE = /^fb-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PRIORITY_RE = /^P[0-3]$/;
 const ALLOWED_STATUSES = new Set([
   "sent", "acked", "clarifying", "waiting_on_user", "user_replied",
@@ -45,7 +44,7 @@ export async function POST(request: Request) {
   }
 
   const id = (body.id || "").trim();
-  if (!FB_ID_RE.test(id)) return NextResponse.json({ error: "Bad id" }, { status: 400 });
+  if (!isSupportTicketId(id)) return NextResponse.json({ error: "Bad id" }, { status: 400 });
 
   const patch: Record<string, unknown> = {};
   if (typeof body.status === "string") {

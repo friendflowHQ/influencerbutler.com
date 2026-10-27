@@ -10,14 +10,13 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { logAdminAction } from "@/lib/admin-audit";
-import { callSupportWorker } from "@/lib/support-worker";
+import { callSupportWorker, isSupportTicketId } from "@/lib/support-worker";
 import { draftReplyForTicket, type WorkerTicket } from "@/lib/support-sweep";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const FB_ID_RE = /^fb-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function POST(request: Request) {
   const actor = await requirePermission("support.respond", request);
@@ -31,7 +30,7 @@ export async function POST(request: Request) {
   }
 
   const id = (body.id || "").trim();
-  if (!FB_ID_RE.test(id)) return NextResponse.json({ error: "Bad id" }, { status: 400 });
+  if (!isSupportTicketId(id)) return NextResponse.json({ error: "Bad id" }, { status: 400 });
 
   const ticketRes = await callSupportWorker<{ ticket?: WorkerTicket } & WorkerTicket>(
     `/agent/tickets/${encodeURIComponent(id)}`,
