@@ -450,6 +450,7 @@ const CSS = `
 .report { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
 .report[hidden] { display: none; }
 .tabs { flex: 0 0 auto; display: flex; gap: 6px; padding: 10px 14px 0; }
+.tabs[hidden] { display: none; }
 .tabs button { flex: 1 1 auto; border: 1px solid #e2e5ea; background: #fff; color: #6b7280;
   cursor: pointer; font-size: 12px; font-weight: 700; border-radius: 8px; padding: 6px 10px; }
 .tabs button.active { color: #ea580c; border-color: rgba(234,88,12,.4); background: rgba(234,88,12,.08); }
@@ -672,8 +673,10 @@ class ChatBubble {
   private roleEl!: HTMLElement;
   private full!: HTMLButtonElement;
   private report!: HTMLElement;
+  private reportTabs!: HTMLElement;
   private tabFormBtn!: HTMLButtonElement;
   private tabHistoryBtn!: HTMLButtonElement;
+  private tabKnownIssuesBtn!: HTMLButtonElement;
   private rbody!: HTMLElement;
   private rfoot!: HTMLElement;
   private historyWrap!: HTMLElement;
@@ -807,7 +810,8 @@ class ChatBubble {
     });
     this.composer.append(this.input, this.sendBtn);
 
-    // Report view
+    // Report tabs + view
+    this.reportTabs = this.buildReportTabs();
     this.report = this.buildReport();
 
     // Known issues ("live support" board)
@@ -831,25 +835,45 @@ class ChatBubble {
     this.threadStatus = el("div", "tstatus");
     this.threadWrap.append(this.threadTranscript, tComposer, this.threadStatus);
 
-    this.panel.append(head, this.transcript, this.reportCta, this.composer, this.report, this.threadWrap, this.kiWrap);
+    this.panel.append(head, this.transcript, this.reportCta, this.composer, this.reportTabs, this.report, this.threadWrap, this.kiWrap);
     wrap.append(this.panel, this.launcher);
     this.root.append(wrap);
     if (!this.inPopup) wrapRef = wrap;
+  }
+
+  // Persistent tab row (New report / My reports / Known issues), shown
+  // across both the Report and Known Issues views so all three are one
+  // click from each other -- not nested inside Report.
+  private buildReportTabs(): HTMLElement {
+    const s = this.s;
+    const tabs = el("div", "tabs");
+    tabs.hidden = true;
+    this.tabFormBtn = el("button", "active", s.tabNew);
+    this.tabFormBtn.type = "button";
+    this.tabFormBtn.addEventListener("click", () => {
+      if (this.view !== "report") this.setView("report");
+      this.setReportTab("form");
+    });
+    this.tabHistoryBtn = el("button", undefined, s.tabHistory);
+    this.tabHistoryBtn.type = "button";
+    this.tabHistoryBtn.addEventListener("click", () => {
+      if (this.view !== "report") this.setView("report");
+      this.setReportTab("history");
+    });
+    this.tabKnownIssuesBtn = el("button", undefined, s.kiHeading);
+    this.tabKnownIssuesBtn.type = "button";
+    this.tabKnownIssuesBtn.addEventListener("click", () => {
+      this.setView("known-issues");
+      void this.loadKnownIssues();
+    });
+    tabs.append(this.tabFormBtn, this.tabHistoryBtn, this.tabKnownIssuesBtn);
+    return tabs;
   }
 
   private buildReport(): HTMLElement {
     const s = this.s;
     const report = el("div", "report");
     report.hidden = true;
-
-    const tabs = el("div", "tabs");
-    this.tabFormBtn = el("button", "active", s.tabNew);
-    this.tabFormBtn.type = "button";
-    this.tabFormBtn.addEventListener("click", () => this.setReportTab("form"));
-    this.tabHistoryBtn = el("button", undefined, s.tabHistory);
-    this.tabHistoryBtn.type = "button";
-    this.tabHistoryBtn.addEventListener("click", () => this.setReportTab("history"));
-    tabs.append(this.tabFormBtn, this.tabHistoryBtn);
 
     this.rbody = el("div", "rbody");
 
@@ -957,7 +981,7 @@ class ChatBubble {
     // Paste screenshots anywhere in the report view.
     report.addEventListener("paste", (e) => void this.onPaste(e as ClipboardEvent));
 
-    report.append(tabs, this.rbody, this.historyWrap, this.rfoot);
+    report.append(this.rbody, this.historyWrap, this.rfoot);
     return report;
   }
 
@@ -1088,6 +1112,15 @@ class ChatBubble {
     this.transcript.hidden = !isChat;
     this.composer.hidden = !isChat;
     this.reportCta.hidden = !isChat;
+    // The tab row (New report / My reports / Known issues) is persistent
+    // across both Report and Known Issues -- all three are one click from
+    // each other -- and hidden everywhere else.
+    this.reportTabs.hidden = !(isReport || isKnown);
+    if (isKnown) {
+      this.tabFormBtn.classList.remove("active");
+      this.tabHistoryBtn.classList.remove("active");
+      this.tabKnownIssuesBtn.classList.add("active");
+    }
     this.back.hidden = isChat;
     this.full.textContent = "×";
     if (isReport) {
@@ -1111,11 +1144,14 @@ class ChatBubble {
     this.setView("chat");
   }
 
+  // Always called while the report view is active, so the Known Issues tab
+  // (a sibling in the same persistent tab row) is never the active one here.
   private setReportTab(tab: ReportTab): void {
     this.reportTab = tab;
     const isHistory = tab === "history";
     this.tabFormBtn.classList.toggle("active", !isHistory);
     this.tabHistoryBtn.classList.toggle("active", isHistory);
+    this.tabKnownIssuesBtn.classList.remove("active");
     this.rbody.hidden = isHistory;
     this.rfoot.hidden = isHistory;
     this.historyWrap.hidden = !isHistory;
