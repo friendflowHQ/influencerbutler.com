@@ -1164,6 +1164,7 @@ footer { padding: 3.5rem 0 2rem; background: #fafafa; border-top: 1px solid var(
 .footer-links h3, .footer-links h4 { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text); margin-bottom: 1rem; }
 .footer-links a { display: block; font-size: 0.9rem; color: var(--muted); margin-bottom: 0.6rem; transition: color var(--transition); }
 .footer-links a:hover { color: var(--brand); }
+.footer-links p { font-size: 0.9rem; color: var(--muted); margin-bottom: 0.6rem; line-height: 1.5; }
 .footer-bottom { border-top: 1px solid var(--border); padding-top: 1.5rem; }
 .footer-bottom p { font-size: 0.8rem; color: var(--muted); text-align: center; }
 

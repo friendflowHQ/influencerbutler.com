@@ -5,6 +5,7 @@ import { useState } from "react";
 import NewsletterSignup from "@/components/NewsletterSignup";
 import FacebookGroupIconLink from "@/components/FacebookGroupIconLink";
 import SiteSearch from "@/components/SiteSearch";
+import { SUPPORT_HOURS_LINE } from "@/lib/support-hours";
 
 /**
  * Header and footer for the /blog pages. These mirror the markup and styling of
@@ -264,6 +265,7 @@ export function SiteFooter() {
               <Link href="/dashboard" className="block text-slate-500 hover:text-orange-700">
                 My Account
               </Link>
+              <p className="text-slate-500">{SUPPORT_HOURS_LINE}</p>
             </div>
           </div>
         </div>

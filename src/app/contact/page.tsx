@@ -1,5 +1,6 @@
 import { SiteHeader, SiteFooter } from "@/components/blog/SiteChrome";
 import ContactForm from "./ContactForm";
+import { SUPPORT_HOURS_LINE } from "@/lib/support-hours";
 
 export const metadata = {
   title: "Contact Us - Influencer Butler",
@@ -25,6 +26,7 @@ export default function ContactPage() {
           <strong>Feedback</strong> in the left menu, which attaches diagnostic
           details automatically.
         </p>
+        <p className="mt-2 text-sm text-slate-500">{SUPPORT_HOURS_LINE}</p>
 
         <ContactForm />
       </section>

@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { SUPPORT_HOURS } from "@/lib/support-hours";
 
 type Role = "you" | "butler";
 type ReplyImage = { url: string; alt: string };
@@ -55,6 +56,32 @@ function starterQuestions(): string[] {
     mac ? "How do I move to a new Mac?" : "How do I move to a new computer?",
     "I'm seeing an error. Can you help?",
   ];
+}
+
+function SupportHoursTip() {
+  const [shown, setShown] = useState(false);
+  return (
+    <span className="relative inline-flex items-center">
+      <button
+        type="button"
+        onClick={() => setShown((v) => !v)}
+        aria-label="Support hours"
+        aria-expanded={shown}
+        className="flex h-5 w-5 items-center justify-center rounded-full border border-slate-300 bg-white text-[11px] font-extrabold text-slate-500 hover:border-orange-400 hover:text-orange-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"
+      >
+        ?
+      </button>
+      {shown && (
+        <span
+          role="note"
+          className="absolute bottom-full left-1/2 z-10 mb-2 w-56 -translate-x-1/2 rounded-xl border border-orange-200 border-t-[3px] border-t-orange-700 bg-white px-3 py-2 text-left text-xs text-slate-700 shadow-lg"
+        >
+          <span className="mb-0.5 block font-extrabold text-slate-900">Support hours</span>
+          {SUPPORT_HOURS}
+        </span>
+      )}
+    </span>
+  );
 }
 
 export default function ConciergeBubble() {
@@ -388,9 +415,12 @@ export default function ConciergeBubble() {
                 Send
               </button>
             </div>
-            <a href={BOOK_URL} className="mt-2 inline-block text-xs text-orange-700 underline hover:text-orange-800">
-              Book a human call instead
-            </a>
+            <span className="mt-2 inline-flex items-center gap-2">
+              <a href={BOOK_URL} className="text-xs text-orange-700 underline hover:text-orange-800">
+                Book a human call instead
+              </a>
+              <SupportHoursTip />
+            </span>
           </form>
         </div>
       )}
