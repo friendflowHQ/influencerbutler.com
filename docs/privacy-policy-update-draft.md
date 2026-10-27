@@ -339,3 +339,45 @@ Also: add a sentence to terms.html that customers are responsible for lawful con
 - Extension 0.1.34 Target parity / "Who buys this" card: audience profile is read from the paired desktop app locally; Target rate-card lookups remain the open item already flagged on 2026-10-19.
 - Retention cleanup jobs and mobile app: already tracked above; still awaiting deployment and sign-off.
 - Appendix B extension page gaps remain open (Creator API vault, Vercel/Supabase, relay).
+
+---
+
+## Update 2026-10-27: weekly audit (nothing mechanical; four items need a human)
+
+**Not mechanical. Do not publish without sign-off.** Not legal advice; have counsel review. No live legal file was touched this week. Live privacy.html is dated October 19, 2026 and terms.html June 7, 2026.
+
+### Still open from earlier updates (unchanged)
+
+- Mobile companion app (2026-10-19 section above): `privacy.html` and `terms.html` still contain zero mentions of the mobile app, Firebase push tokens, or phone sign-in credentials. Mobile work kept shipping this week (`bdbe842` Instagram account switching and resume-halt commands from the phone), so the gap is widening. Blocks L to P remain ready to paste once the [CONFIRM] items are decided.
+- Foyer newsletter subscribers (2026-10-20 section): still undisclosed.
+- Extension privacy page already covers the shared Creator API key lease, so the lease expansion below does not create new extension drift.
+
+### New this week
+
+1. **TikTok Pixel and Google Ads conversion tags on the website (website repo `90495dd`, 2026-10-22).** Consent-gated and dark until IDs are configured, mirroring the Meta Pixel pattern. `privacy.html` §2.3 and §3 name Meta and GA4 but not TikTok or Google Ads conversion tracking, and `cookies.html` has the same gap. Not mechanical: new advertising processors and a new "sharing" characterization under CCPA/CPRA. Only matters once the IDs are set, so decide before turning them on. Draft bullet for §2.3 (and a matching line in §3 and cookies.html):
+
+```html
+<li><strong>TikTok (TikTok Pixel)</strong> and <strong>Google (Google Ads conversion tag)</strong>: only on the <code>influencerbutler.com</code> website, and only after you choose "Accept all". They measure whether our ads led to a sign-up or purchase. [CONFIRM: data each tag receives, retention, and whether the CCPA/CPRA "sharing" language in §6 needs to name them.] [CONFIRM: the TikTok and Google privacy policy URLs to cite.] Not loaded when you reject non-essential cookies or send a Global Privacy Control signal.</li>
+```
+
+2. **AI Concierge transcripts now auto-file support tickets (website repo `90495dd`).** §2.6 says call summaries may be filed as tickets, but not that AI Assistant/Concierge transcripts are mined into tickets (new use of existing data, requires a Supabase migration applied by hand). Not mechanical: a new use of a data category. Proposed sentence for the AI Assistant bullet in §2.6:
+
+```html
+<li>If you report a bug or request a feature while using the AI Assistant, we may file a support ticket from the relevant part of the conversation so our team can follow up.</li>
+```
+
+   [CONFIRM: ticket retention matches the 3-year support ticket period in §7, and that the ticket stores the account email.]
+
+3. **TestFlight beta feedback sync (desktop repo `27ede94`, feedback Worker, hourly).** Pulls iOS beta tester feedback from the Apple App Store Connect API (comment, tester-reported email, device model, OS version, screenshots up to 10 MB, crash submissions) and files each as a support ticket. Apple (App Store Connect/TestFlight) is a new data source and the mobile app is undisclosed (see above), so this belongs with the mobile section. Not mechanical: a new data category plus a first disclosure of a mobile capability. Proposed addition to §2.8 (Support):
+
+```html
+<li><strong>Beta feedback from the iOS app</strong>: if you test a pre-release build through Apple TestFlight and send feedback or a crash report, Apple passes us the comment, screenshot, email address you gave, device model and OS version, and we file it as a support ticket. [CONFIRM: wording, and whether the iOS app should be listed as a Software surface in the legal-notice paragraph.]</li>
+```
+
+4. **Creator API shared key lease now open to trial signups (desktop repo `d6c90ed`, reminder `e56f032`).** Already covered: privacy.html §2.3 and §7 describe the leased copy of the Company's credentials, and the extension page covers it. Minor check: confirm §7 retention wording ("until you remove or switch") still holds for trial accounts that never convert. [CONFIRM: whether expired trial leases are cleaned up.]
+
+### Checked, no action needed
+
+- Retention enforcement: no new cleanup jobs this week; Appendix D status unchanged (crons built, not confirmed deployed).
+- Instagram account switching, PostTap/API health fixes, imagegen provider ordering (OpenAI preferred over Fal; user-supplied keys, local-only), magic-link fix `89b47a4`: no new data or vendors. (If Fal.ai is listed as a user-key provider in §2.3, nothing changes.)
+- Terms: nothing in the week's diffs changes obligations.
