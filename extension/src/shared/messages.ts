@@ -811,6 +811,8 @@ export type KnownIssue = {
   status: KnownIssueStatus;
   fixed: boolean;
   firstReportedAt: number;
+  /** When the team worked out the problem actually started; null when unknown. */
+  brokenSinceAt: number | null;
   needsLogs: boolean;
   needsLogsNote: string | null;
   targetVersion: string | null;

@@ -115,6 +115,7 @@ type Strings = {
   kiStatusFixedNextVersioned: string;
   kiStatusFixedShipped: string;
   kiFirstReported: string;
+  kiBrokenSince: string;
   kiUpvoteCta: string;
   kiUpvoteAriaLabel: string;
   kiLogsNote: string;
@@ -202,6 +203,7 @@ const STRINGS: Record<Locale, Strings> = {
     kiStatusFixedNextVersioned: "Fixed, coming in v{version}",
     kiStatusFixedShipped: "Fixed in v{version}",
     kiFirstReported: "First reported {date}",
+    kiBrokenSince: "Broken since {date}",
     kiUpvoteCta: "+1",
     kiUpvoteAriaLabel: "Mark this as affecting you too",
     kiLogsNote: "We're looking into this one. If you're seeing it too and can send logs, it helps us fix it faster.",
@@ -287,6 +289,7 @@ const STRINGS: Record<Locale, Strings> = {
     kiStatusFixedNextVersioned: "Solucionado, llega en la v{version}",
     kiStatusFixedShipped: "Solucionado en la v{version}",
     kiFirstReported: "Reportado por primera vez el {date}",
+    kiBrokenSince: "Con el problema desde el {date}",
     kiUpvoteCta: "+1",
     kiUpvoteAriaLabel: "Marcar que esto también te afecta",
     kiLogsNote: "Estamos investigando esto. Si también te está pasando y puedes enviar los registros, nos ayuda a solucionarlo más rápido.",
@@ -372,6 +375,7 @@ const STRINGS: Record<Locale, Strings> = {
     kiStatusFixedNextVersioned: "Corrigé, arrive dans la v{version}",
     kiStatusFixedShipped: "Corrigé dans la v{version}",
     kiFirstReported: "Signalé pour la première fois le {date}",
+    kiBrokenSince: "Problème présent depuis le {date}",
     kiUpvoteCta: "+1",
     kiUpvoteAriaLabel: "Indiquer que cela vous concerne aussi",
     kiLogsNote: "Nous enquêtons sur ce problème. Si cela vous arrive aussi et que vous pouvez envoyer vos journaux, cela nous aide à le corriger plus vite.",
@@ -582,15 +586,16 @@ const CSS = `
 .ki-list[hidden] { display: none; }
 .ki-item { border: 1px solid #eceef1; border-radius: 10px; padding: 9px 11px;
   display: flex; flex-direction: column; gap: 6px; }
-.ki-top { display: flex; align-items: center; gap: 7px; }
+.ki-top { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
 .ki-pill { flex: 0 0 auto; font-size: 10px; font-weight: 800; text-transform: uppercase;
   border-radius: 999px; padding: 2px 7px; background: rgba(107,114,128,.14); color: #6b7280; }
 .ki-pill.confirmed { background: rgba(234,88,12,.14); color: #ea580c; }
 .ki-pill.fixed_next_release { background: rgba(99,102,241,.14); color: #6366f1; }
 .ki-pill.fixed_shipped { background: rgba(16,163,74,.14); color: #16a34a; }
-.ki-title { flex: 1 1 auto; min-width: 0; font-size: 12.5px; font-weight: 700;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ki-title { min-width: 0; font-size: 12.5px; font-weight: 700; line-height: 1.35;
+  white-space: normal; overflow-wrap: anywhere; }
 .ki-cause { font-size: 12px; line-height: 1.45; }
+.ki-dates { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .ki-meta { display: flex; align-items: center; justify-content: space-between;
   gap: 8px; font-size: 11px; color: #6b7280; }
 .ki-upvote { flex: 0 0 auto; border: 1px solid #e2e5ea; background: #fff; color: #111827;
@@ -1305,9 +1310,14 @@ class ChatBubble {
     const cause = issue.cause ? el("div", "ki-cause", issue.cause) : null;
 
     const meta = el("div", "ki-meta");
-    let dateStr = "";
-    try { dateStr = issue.firstReportedAt ? new Date(issue.firstReportedAt).toLocaleDateString() : ""; } catch { /* ignore */ }
-    const reported = el("span", undefined, dateStr ? s.kiFirstReported.replace("{date}", dateStr) : "");
+    const fmtDate = (ms: number | null | undefined): string => {
+      try { return ms ? new Date(ms).toLocaleDateString() : ""; } catch { return ""; }
+    };
+    const reported = el("div", "ki-dates");
+    const dateStr = fmtDate(issue.firstReportedAt);
+    if (dateStr) reported.append(el("span", undefined, s.kiFirstReported.replace("{date}", dateStr)));
+    const sinceStr = fmtDate(issue.brokenSinceAt);
+    if (sinceStr) reported.append(el("span", undefined, s.kiBrokenSince.replace("{date}", sinceStr)));
 
     const upvoteBtn = el("button", "ki-upvote");
     upvoteBtn.type = "button";
