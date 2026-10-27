@@ -124,6 +124,9 @@ type Strings = {
   kiLogsFailed: string;
   kiReportNewLead: string;
   kiReportNewCta: string;
+  kiRefresh: string;
+  kiRefreshing: string;
+  kiLastUpdated: string;
 };
 
 const STRINGS: Record<Locale, Strings> = {
@@ -205,6 +208,9 @@ const STRINGS: Record<Locale, Strings> = {
     kiLogsFailed: "Could not send logs. Try again.",
     kiReportNewLead: "Don't see your issue?",
     kiReportNewCta: "Report something new",
+    kiRefresh: "Refresh",
+    kiRefreshing: "Refreshing...",
+    kiLastUpdated: "Updated {time}",
   },
   es: {
     launcher: "Pregunta al asistente",
@@ -284,6 +290,9 @@ const STRINGS: Record<Locale, Strings> = {
     kiLogsFailed: "No se pudieron enviar los registros. Inténtalo de nuevo.",
     kiReportNewLead: "¿No ves tu problema?",
     kiReportNewCta: "Informar de algo nuevo",
+    kiRefresh: "Actualizar",
+    kiRefreshing: "Actualizando...",
+    kiLastUpdated: "Actualizado {time}",
   },
   fr: {
     launcher: "Poser une question à l'assistant",
@@ -363,6 +372,9 @@ const STRINGS: Record<Locale, Strings> = {
     kiLogsFailed: "Impossible d'envoyer les journaux. Réessayez.",
     kiReportNewLead: "Vous ne voyez pas votre problème ?",
     kiReportNewCta: "Signaler quelque chose de nouveau",
+    kiRefresh: "Actualiser",
+    kiRefreshing: "Actualisation...",
+    kiLastUpdated: "Mis à jour {time}",
   },
 };
 
@@ -530,10 +542,16 @@ const CSS = `
 /* Known issues ("live support" board, desktop parity). */
 .known-issues { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
 .known-issues[hidden] { display: none; }
-.ki-search { flex: 0 0 auto; padding: 10px 14px 0; }
-.ki-search input { width: 100%; box-sizing: border-box; border: 1px solid #e2e5ea;
+.ki-search { flex: 0 0 auto; padding: 10px 14px 0; display: flex; align-items: center; gap: 6px; }
+.ki-search input { flex: 1 1 auto; min-width: 0; box-sizing: border-box; border: 1px solid #e2e5ea;
   border-radius: 8px; padding: 7px 10px; font-size: 12.5px; font-family: inherit; }
 .ki-search input:focus { border-color: #f59e0b; }
+.ki-refresh { flex: 0 0 auto; width: 30px; height: 30px; border: 1px solid #e2e5ea;
+  border-radius: 8px; background: #fff; color: #6b7280; cursor: pointer; font-size: 15px; line-height: 1; }
+.ki-refresh:hover { color: #ea580c; border-color: rgba(234,88,12,.4); }
+.ki-refresh:disabled { cursor: default; opacity: .6; }
+.ki-updated { flex: 0 0 auto; padding: 5px 14px 0; font-size: 11px; color: #6b7280; }
+.ki-updated[hidden] { display: none; }
 .ki-status { font-size: 12.5px; color: #6b7280; line-height: 1.5; padding: 10px 14px; }
 .ki-status[hidden] { display: none; }
 .ki-list { flex: 1 1 auto; overflow-y: auto; padding: 10px 14px; display: flex;
@@ -687,6 +705,8 @@ class ChatBubble {
   // Known issues ("live support" board) -- see openReport()/openKnownIssues().
   private kiWrap!: HTMLElement;
   private kiSearchInput!: HTMLInputElement;
+  private kiRefreshBtn!: HTMLButtonElement;
+  private kiUpdatedEl!: HTMLElement;
   private kiStatusEl!: HTMLElement;
   private kiListEl!: HTMLElement;
   private kiFootLead!: HTMLElement;
@@ -694,6 +714,7 @@ class ChatBubble {
   private kiIssues: KnownIssue[] = [];
   private kiLoading = false;
   private kiError = false;
+  private kiUpdatedAt = 0; // epoch ms of the last successful list load
   private kiUpvoteBusy = new Set<string>();
   private kiLogsBusy = new Set<string>();
   private reportEnteredFrom: "known-issues" | "direct" = "direct";
@@ -953,7 +974,17 @@ class ChatBubble {
       if (this.kiDebounce) clearTimeout(this.kiDebounce);
       this.kiDebounce = setTimeout(() => void this.loadKnownIssues(), 250);
     });
-    searchRow.append(this.kiSearchInput);
+    this.kiRefreshBtn = el("button", "ki-refresh", "↻");
+    this.kiRefreshBtn.type = "button";
+    this.kiRefreshBtn.setAttribute("aria-label", s.kiRefresh);
+    this.kiRefreshBtn.addEventListener("click", () => {
+      if (this.kiDebounce) clearTimeout(this.kiDebounce);
+      void this.loadKnownIssues();
+    });
+    searchRow.append(this.kiSearchInput, this.kiRefreshBtn);
+
+    this.kiUpdatedEl = el("div", "ki-updated");
+    this.kiUpdatedEl.hidden = true;
 
     this.kiStatusEl = el("div", "ki-status");
     this.kiStatusEl.hidden = true;
@@ -966,7 +997,7 @@ class ChatBubble {
     this.kiReportNewBtn.addEventListener("click", () => this.openReportForm());
     foot.append(this.kiFootLead, this.kiReportNewBtn);
 
-    wrap.append(searchRow, this.kiStatusEl, this.kiListEl, foot);
+    wrap.append(searchRow, this.kiUpdatedEl, this.kiStatusEl, this.kiListEl, foot);
     return wrap;
   }
 
@@ -1112,20 +1143,34 @@ class ChatBubble {
 
   // ---- known issues ----
 
+  private renderKnownIssuesUpdated(): void {
+    if (!this.kiUpdatedAt) { this.kiUpdatedEl.hidden = true; return; }
+    let time = "";
+    try { time = new Date(this.kiUpdatedAt).toLocaleTimeString(); } catch { /* ignore */ }
+    this.kiUpdatedEl.textContent = this.s.kiLastUpdated.replace("{time}", time);
+    this.kiUpdatedEl.hidden = false;
+  }
+
   private async loadKnownIssues(): Promise<void> {
     this.kiLoading = true;
     this.kiError = false;
+    this.kiRefreshBtn.disabled = true;
+    this.kiRefreshBtn.setAttribute("aria-label", this.s.kiRefreshing);
     this.renderKnownIssuesStatus();
     const q = this.kiSearchInput.value.trim();
     try {
       const res = await sendToBackground<KnownIssuesListResult>({ kind: "KNOWN_ISSUES_LIST", q: q || undefined });
       this.kiIssues = res && res.ok && Array.isArray(res.issues) ? res.issues : [];
       this.kiError = !res || !res.ok;
+      if (!this.kiError) this.kiUpdatedAt = Date.now();
     } catch {
       this.kiIssues = [];
       this.kiError = true;
     }
     this.kiLoading = false;
+    this.kiRefreshBtn.disabled = false;
+    this.kiRefreshBtn.setAttribute("aria-label", this.s.kiRefresh);
+    this.renderKnownIssuesUpdated();
     this.renderKnownIssuesList();
   }
 
