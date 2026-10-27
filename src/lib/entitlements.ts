@@ -159,9 +159,11 @@ export function tierForSubscriptionStatus(
   status: string | null | undefined,
 ): EntitlementTier {
   if (status === "on_trial") return "trial";
-  if (status === "active" || status === "past_due" || status === "paused") {
-    // past_due / paused still count as Pro until the subscription is fully
-    // cancelled; billing recovery is handled separately by the LS webhook.
+  if (status === "active" || status === "past_due") {
+    // past_due still counts as Pro until the subscription is fully cancelled;
+    // billing recovery is handled separately by the LS webhook. "paused" is a
+    // deliberate no-charge/no-access break the user chose themselves (see
+    // /api/subscription/pause) and falls through to free, same as cancelled.
     return "pro";
   }
   return "free";

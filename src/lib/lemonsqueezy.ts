@@ -575,6 +575,73 @@ export async function setLicenseKeyActivationLimit(
 }
 
 /**
+ * Pauses billing on a Lemon Squeezy subscription ("void" mode: no charge, no
+ * access - entitlements.ts drops the status to free tier the moment this
+ * lands). resumesAtIso is required so a pause always has an end date; LS
+ * fires subscription_resumed automatically when that date arrives, and the
+ * user can also resume early via resumeSubscription.
+ */
+export async function pauseSubscription(
+  lsSubscriptionId: string,
+  resumesAtIso: string,
+): Promise<boolean> {
+  try {
+    const response = await lsApi(`/subscriptions/${lsSubscriptionId}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        data: {
+          type: "subscriptions",
+          id: lsSubscriptionId,
+          attributes: { pause: { mode: "void", resumes_at: resumesAtIso } },
+        },
+      }),
+    });
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      console.error("lemonsqueezy: subscription pause failed", {
+        status: response.status,
+        lsSubscriptionId,
+        text: text.slice(0, 500),
+      });
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error("lemonsqueezy: subscription pause threw", error);
+    return false;
+  }
+}
+
+/** Clears a subscription's pause early, resuming billing immediately. */
+export async function resumeSubscription(lsSubscriptionId: string): Promise<boolean> {
+  try {
+    const response = await lsApi(`/subscriptions/${lsSubscriptionId}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        data: {
+          type: "subscriptions",
+          id: lsSubscriptionId,
+          attributes: { pause: null },
+        },
+      }),
+    });
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      console.error("lemonsqueezy: subscription resume failed", {
+        status: response.status,
+        lsSubscriptionId,
+        text: text.slice(0, 500),
+      });
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error("lemonsqueezy: subscription resume threw", error);
+    return false;
+  }
+}
+
+/**
  * Given a subscription's current variant id, returns the same tier's annual
  * variant id, or null when the current variant is not a known monthly variant
  * (i.e. it is already annual, is the add-on, or is unconfigured). Callers use

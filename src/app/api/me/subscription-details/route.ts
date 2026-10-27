@@ -8,6 +8,7 @@ import {
   planForVariantId,
 } from "@/lib/lemonsqueezy";
 import { hashLicenseKey } from "@/lib/license-auth";
+import { hasRedeemedDiscount } from "@/lib/discount-eligibility";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,7 +24,7 @@ export const dynamic = "force-dynamic";
  *   - the subscription_created webhook not having landed a row yet.
  */
 
-const VISIBLE_STATUSES = ["active", "on_trial", "past_due", "cancelled"];
+const VISIBLE_STATUSES = ["active", "on_trial", "past_due", "cancelled", "paused"];
 
 type Subscription = {
   id: string | null;
@@ -33,6 +34,9 @@ type Subscription = {
   plan_name: string | null;
   renews_at: string | null;
   ends_at: string | null;
+  pause_resumes_at: string | null;
+  scheduled_plan: string | null;
+  scheduled_plan_effective_at: string | null;
 };
 
 type SubscriptionRow = {
@@ -43,6 +47,9 @@ type SubscriptionRow = {
   plan_name?: string | null;
   renews_at?: string | null;
   ends_at?: string | null;
+  pause_resumes_at?: string | null;
+  scheduled_plan?: string | null;
+  scheduled_plan_effective_at?: string | null;
 };
 
 type LicenseKey = {
@@ -78,6 +85,7 @@ type LsSubscriptionAttributes = {
   renews_at?: string | null;
   ends_at?: string | null;
   created_at?: string | null;
+  pause?: { resumes_at?: string | null } | null;
 };
 
 type LsSubscription = {
@@ -95,8 +103,10 @@ function rankStatus(status: string | null | undefined): number {
       return 2;
     case "cancelled":
       return 3;
-    default:
+    case "paused":
       return 4;
+    default:
+      return 5;
   }
 }
 
@@ -137,6 +147,9 @@ function mapLsSubscription(sub: LsSubscription): Subscription | null {
     plan_name: a.product_name ?? a.variant_name ?? null,
     renews_at: a.renews_at ?? null,
     ends_at: a.ends_at ?? null,
+    pause_resumes_at: a.pause?.resumes_at ?? null,
+    scheduled_plan: null,
+    scheduled_plan_effective_at: null,
   };
 }
 
@@ -318,6 +331,7 @@ type SubscriptionEntry = {
   canUpgradeToAnnual: boolean;
   currentPlan: string | null;
   canSwitchPlan: boolean;
+  discountIneligible: boolean;
 };
 
 /**
@@ -349,12 +363,20 @@ export async function GET() {
   const user = userData.user;
   const admin = createAdminClient();
 
+  // Whether this account has any discount/referral signal - gates the
+  // self-serve "downgrade to Beginner" option, since it's unverified whether a
+  // Lemon Squeezy variant swap preserves an active discount. Computed once
+  // (user-level, not per-subscription).
+  const discountIneligible = await hasRedeemedDiscount(admin, user.id);
+
   // Primary: service-role read by user_id (bypasses RLS). A user can own several
   // subscriptions (a Pro plan plus one or more Daily Deals Workspace add-ons),
   // so we return all of them, ordered active/on_trial first then newest.
   const { data: subs } = await admin
     .from("subscriptions")
-    .select("id,ls_subscription_id,ls_variant_id,status,plan_name,renews_at,ends_at")
+    .select(
+      "id,ls_subscription_id,ls_variant_id,status,plan_name,renews_at,ends_at,pause_resumes_at,scheduled_plan,scheduled_plan_effective_at",
+    )
     .eq("user_id", user.id)
     .in("status", VISIBLE_STATUSES)
     .order("created_at", { ascending: false });
@@ -373,6 +395,9 @@ export async function GET() {
         plan_name: row.plan_name ?? null,
         renews_at: row.renews_at ?? null,
         ends_at: row.ends_at ?? null,
+        pause_resumes_at: row.pause_resumes_at ?? null,
+        scheduled_plan: row.scheduled_plan ?? null,
+        scheduled_plan_effective_at: row.scheduled_plan_effective_at ?? null,
       }))
       // created_at desc from the query; re-order active/on_trial ahead of
       // past_due/cancelled for display without another round trip.
@@ -401,6 +426,7 @@ export async function GET() {
         hasLicenseKey: Boolean(licenseKey),
         canUpgradeToAnnual: canUpgradeToAnnual(subscription),
         ...switchMeta(subscription),
+        discountIneligible,
       });
     }
 
@@ -431,6 +457,7 @@ export async function GET() {
       hasLicenseKey: Boolean(licenseKey),
       canUpgradeToAnnual: canUpgradeToAnnual(subscription),
       ...switchMeta(subscription),
+      discountIneligible,
     };
   });
 

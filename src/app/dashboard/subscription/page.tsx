@@ -51,6 +51,11 @@ function priceChangeLine(level: PlanLevel, tier: Tier, cadence: Interval): strin
   return `From November 28: ${formatPrice(future)}${cadence === "monthly" ? "/month" : "/year"}. Subscribe before then and keep today's price.`;
 }
 
+function formatDate(iso: string | null): string | null {
+  if (!iso) return null;
+  return new Date(iso).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+}
+
 function formatPrice(cents: number): string {
   const dollars = cents / 100;
   const opts: Intl.NumberFormatOptions = Number.isInteger(dollars)
@@ -77,6 +82,9 @@ type Subscription = {
   plan_name: string | null;
   renews_at: string | null;
   ends_at: string | null;
+  pause_resumes_at: string | null;
+  scheduled_plan: string | null;
+  scheduled_plan_effective_at: string | null;
 };
 
 type SubscriptionEntry = {
@@ -88,6 +96,9 @@ type SubscriptionEntry = {
   currentPlan?: string | null;
   /** True when this subscription can self-serve switch tiers/cadence. */
   canSwitchPlan?: boolean;
+  /** True when this account has a discount/referral signal - gates the
+   * self-serve "downgrade to Beginner" option. */
+  discountIneligible?: boolean;
 };
 
 export default function SubscriptionPage() {
@@ -323,6 +334,7 @@ export default function SubscriptionPage() {
           licenseKey={entry.licenseKey}
           currentPlan={entry.currentPlan ?? null}
           canSwitchPlan={Boolean(entry.canSwitchPlan)}
+          discountIneligible={Boolean(entry.discountIneligible)}
         />
       ))}
     </div>
@@ -334,6 +346,7 @@ type SubscriptionCardProps = {
   licenseKey: LicenseKey | null;
   currentPlan: string | null;
   canSwitchPlan: boolean;
+  discountIneligible: boolean;
 };
 
 /**
@@ -342,8 +355,16 @@ type SubscriptionCardProps = {
  * cancel funnel visibility) is local so multiple cards don't share flags, and
  * the switch + cancel calls key off this card's ls_subscription_id.
  */
-function SubscriptionCard({ subscription, licenseKey, currentPlan, canSwitchPlan }: SubscriptionCardProps) {
+function SubscriptionCard({
+  subscription,
+  licenseKey,
+  currentPlan,
+  canSwitchPlan,
+  discountIneligible,
+}: SubscriptionCardProps) {
   const [showCancelFunnel, setShowCancelFunnel] = useState(false);
+  const [resuming, setResuming] = useState(false);
+  const [resumeError, setResumeError] = useState<string | null>(null);
 
   const statusBadge = getStatusBadge(subscription.status);
   const renewalDate = subscription.renews_at
@@ -360,6 +381,33 @@ function SubscriptionCard({ subscription, licenseKey, currentPlan, canSwitchPlan
         day: "numeric",
       })
     : null;
+  const resumesAt = subscription.pause_resumes_at
+    ? new Date(subscription.pause_resumes_at).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : null;
+
+  const handleResume = async () => {
+    setResuming(true);
+    setResumeError(null);
+    try {
+      const res = await fetch("/api/subscription/resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subscriptionId: subscription.ls_subscription_id }),
+      });
+      const payload = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        throw new Error(payload.error || "Could not resume subscription");
+      }
+      window.location.reload();
+    } catch (err) {
+      setResumeError(err instanceof Error ? err.message : "Could not resume subscription");
+      setResuming(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -395,6 +443,10 @@ function SubscriptionCard({ subscription, licenseKey, currentPlan, canSwitchPlan
           subscriptionId={subscription.ls_subscription_id}
           currentPlan={currentPlan}
           status={subscription.status}
+          renewsAt={subscription.renews_at}
+          scheduledPlan={subscription.scheduled_plan}
+          scheduledPlanEffectiveAt={subscription.scheduled_plan_effective_at}
+          discountIneligible={discountIneligible}
         />
       ) : null}
 
@@ -410,6 +462,31 @@ function SubscriptionCard({ subscription, licenseKey, currentPlan, canSwitchPlan
             className="mt-4 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50"
           >
             Cancel subscription
+          </button>
+        </section>
+      ) : null}
+
+      {subscription.status === "paused" ? (
+        <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-6 shadow-sm">
+          <h2 className="text-lg font-semibold tracking-tight">Subscription paused</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            You&apos;re not being charged, and Pro access is on hold.{" "}
+            {resumesAt
+              ? `Billing resumes automatically on ${resumesAt}, or you can resume early below.`
+              : "You can resume anytime below."}
+          </p>
+          {resumeError ? (
+            <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {resumeError}
+            </div>
+          ) : null}
+          <button
+            type="button"
+            onClick={handleResume}
+            disabled={resuming}
+            className="mt-4 rounded-lg bg-[#f97316] px-4 py-2 text-sm font-medium text-white hover:bg-[#ea580c] disabled:opacity-60"
+          >
+            {resuming ? "Resuming…" : "Resume subscription now"}
           </button>
         </section>
       ) : null}
@@ -431,6 +508,9 @@ function SubscriptionCard({ subscription, licenseKey, currentPlan, canSwitchPlan
           onOfferAccepted={() => {
             setTimeout(() => window.location.reload(), 1500);
           }}
+          onPaused={() => {
+            setTimeout(() => window.location.reload(), 1500);
+          }}
         />
       ) : null}
     </div>
@@ -441,6 +521,10 @@ type SwitchPlanSectionProps = {
   subscriptionId: string;
   currentPlan: string;
   status: string;
+  renewsAt: string | null;
+  scheduledPlan: string | null;
+  scheduledPlanEffectiveAt: string | null;
+  discountIneligible: boolean;
 };
 
 /**
@@ -450,7 +534,15 @@ type SwitchPlanSectionProps = {
  * (same license key, same devices): upgrades invoice the prorated difference
  * immediately, downgrades leave the proration credit on the account.
  */
-function SwitchPlanSection({ subscriptionId, currentPlan, status }: SwitchPlanSectionProps) {
+function SwitchPlanSection({
+  subscriptionId,
+  currentPlan,
+  status,
+  renewsAt,
+  scheduledPlan,
+  scheduledPlanEffectiveAt,
+  discountIneligible,
+}: SwitchPlanSectionProps) {
   const currentTier = tierForPlan(currentPlan);
   const currentCadence: Interval = currentPlan.endsWith("-annual") ? "annual" : "monthly";
   const [cadence, setCadence] = useState<Interval>(currentCadence);
@@ -461,6 +553,14 @@ function SwitchPlanSection({ subscriptionId, currentPlan, status }: SwitchPlanSe
   const isLevelPlan = parseLevelPlan(currentPlan) != null;
   const [switchingPlan, setSwitchingPlan] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // A legacy (pre-split) seat tier with a Beginner price can be scheduled to
+  // downgrade to Beginner, effective at the next renewal - not an instant
+  // prorated swap like the grid above. Beginner isn't sold on Team.
+  const beginnerDowngradeTarget =
+    !isLevelPlan && currentTier && levelTiers("beginner").includes(currentTier)
+      ? levelPlanString("beginner", currentTier, cadence)
+      : null;
 
   const handleSwitch = async (tier: Tier) => {
     const targetPlan = isLevelPlan ? levelPlanString(level, tier, cadence) : planStringFor(tier, cadence);
@@ -487,6 +587,52 @@ function SwitchPlanSection({ subscriptionId, currentPlan, status }: SwitchPlanSe
       console.error(err);
       setError(err instanceof Error ? err.message : "Plan switch failed");
       setSwitchingPlan(null);
+    }
+  };
+
+  const [scheduling, setScheduling] = useState(false);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
+
+  const handleScheduleDowngrade = async () => {
+    if (!beginnerDowngradeTarget) return;
+    setScheduling(true);
+    setScheduleError(null);
+    try {
+      const response = await fetch("/api/subscription/schedule-downgrade", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subscriptionId, targetPlan: beginnerDowngradeTarget }),
+      });
+      const payload = (await response.json()) as { ok?: boolean; error?: string };
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || "Could not schedule the downgrade");
+      }
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (err) {
+      console.error(err);
+      setScheduleError(err instanceof Error ? err.message : "Could not schedule the downgrade");
+      setScheduling(false);
+    }
+  };
+
+  const handleCancelScheduledDowngrade = async () => {
+    setScheduling(true);
+    setScheduleError(null);
+    try {
+      const response = await fetch("/api/subscription/schedule-downgrade", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subscriptionId }),
+      });
+      const payload = (await response.json()) as { ok?: boolean; error?: string };
+      if (!response.ok || !payload.ok) {
+        throw new Error(payload.error || "Could not cancel the scheduled downgrade");
+      }
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (err) {
+      console.error(err);
+      setScheduleError(err instanceof Error ? err.message : "Could not cancel the scheduled downgrade");
+      setScheduling(false);
     }
   };
 
@@ -554,6 +700,62 @@ function SwitchPlanSection({ subscriptionId, currentPlan, status }: SwitchPlanSe
           );
         })}
       </div>
+
+      {scheduledPlan ? (
+        <div className="mt-6 rounded-xl border border-[#f97316]/30 bg-[#f97316]/5 p-4 sm:p-6">
+          <h3 className="text-base font-semibold text-slate-900">Downgrade scheduled</h3>
+          <p className="mt-1 text-sm text-slate-600">
+            Switching to {levelCardName("beginner", tierForPlan(scheduledPlan) ?? "solo")} on{" "}
+            {formatDate(scheduledPlanEffectiveAt) ?? "your next renewal"}. You&apos;ll keep today&apos;s plan
+            and price until then - nothing changes now.
+          </p>
+          {scheduleError ? (
+            <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {scheduleError}
+            </div>
+          ) : null}
+          <button
+            type="button"
+            onClick={handleCancelScheduledDowngrade}
+            disabled={scheduling}
+            className="mt-4 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50 disabled:opacity-60"
+          >
+            {scheduling ? "Cancelling…" : "Cancel scheduled downgrade"}
+          </button>
+        </div>
+      ) : discountIneligible && beginnerDowngradeTarget ? (
+        <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:p-6">
+          <h3 className="text-base font-semibold text-slate-900">Looking for a lower-priced plan?</h3>
+          <p className="mt-1 text-sm text-slate-600">
+            This account has a discount or referral code on file, so the Beginner downgrade isn&apos;t
+            available here yet. Contact support and we&apos;ll switch it for you.
+          </p>
+        </div>
+      ) : beginnerDowngradeTarget ? (
+        <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:p-6">
+          <h3 className="text-base font-semibold text-slate-900">Looking for a lower-priced plan?</h3>
+          <p className="mt-1 text-sm text-slate-600">
+            Beginner {TIER_NAME[currentTier as Tier].replace(/^Pro /, "")} covers the starter butlers
+            with AI included, at {formatPrice(levelPriceCents("beginner", currentTier as Tier, cadence) ?? 0)}
+            {cadence === "monthly" ? "/month" : "/year"}. It takes effect on your next renewal
+            {renewsAt ? ` (${formatDate(renewsAt)})` : ""} - you keep today&apos;s plan and price until
+            then, no charge or credit today.
+          </p>
+          {scheduleError ? (
+            <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {scheduleError}
+            </div>
+          ) : null}
+          <button
+            type="button"
+            onClick={handleScheduleDowngrade}
+            disabled={scheduling}
+            className="mt-4 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50 disabled:opacity-60"
+          >
+            {scheduling ? "Scheduling…" : "Switch to Beginner at renewal"}
+          </button>
+        </div>
+      ) : null}
     </section>
   );
 }

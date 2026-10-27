@@ -126,6 +126,15 @@ function getIdString(value: unknown): string | null {
   return null;
 }
 
+/** Pulls resumes_at out of a subscription payload's nested `pause` attribute. */
+function getPauseResumesAt(attrs: Record<string, unknown>): string | null {
+  const pause = attrs.pause;
+  if (pause && typeof pause === "object" && "resumes_at" in pause) {
+    return getString((pause as { resumes_at?: unknown }).resumes_at);
+  }
+  return null;
+}
+
 /**
  * Awaits a Supabase mutation and throws on error with the DB-reported reason.
  * Silent write failures were masking RLS/FK/column-missing issues that made
@@ -1196,7 +1205,7 @@ export async function POST(request: Request) {
         "subscriptions.update(subscription_paused)",
         supabase
           .from("subscriptions")
-          .update({ status: "paused" })
+          .update({ status: "paused", pause_resumes_at: getPauseResumesAt(attrs) })
           .eq("ls_subscription_id", recordId),
       );
     },
@@ -1207,7 +1216,7 @@ export async function POST(request: Request) {
         "subscriptions.update(subscription_resumed)",
         supabase
           .from("subscriptions")
-          .update({ status: "active" })
+          .update({ status: "active", pause_resumes_at: null })
           .eq("ls_subscription_id", recordId),
       );
     },

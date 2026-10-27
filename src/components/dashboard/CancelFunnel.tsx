@@ -53,10 +53,12 @@ type CancelFunnelProps = {
   onClose: () => void;
   onCancelled: () => void;
   onOfferAccepted: () => void;
+  onPaused: () => void;
 };
 
-type Step = 1 | 2 | 3 | 4 | 5;
-type Terminal = "cancelled" | "offer_accepted" | "feature_offer_accepted";
+type Step = 1 | 2 | 3 | 4 | 5 | "pause";
+type Terminal = "cancelled" | "offer_accepted" | "feature_offer_accepted" | "paused";
+type PauseMonths = 1 | 2 | 3;
 
 // Step 4 (percent-off retention discount) is intentionally skipped in the user
 // flow: active paying subscribers should not be shown competing promo
@@ -87,6 +89,7 @@ export default function CancelFunnel({
   onClose,
   onCancelled,
   onOfferAccepted,
+  onPaused,
 }: CancelFunnelProps) {
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<Step>(1);
@@ -95,6 +98,11 @@ export default function CancelFunnel({
   const [intendedOutcome, setIntendedOutcome] = useState("");
   const [wouldReturn, setWouldReturn] = useState<WouldReturn | null>(null);
   const [featureAsk, setFeatureAsk] = useState("");
+  const [pauseMonths, setPauseMonths] = useState<PauseMonths>(1);
+  const [pauseResumesAt, setPauseResumesAt] = useState<string | null>(null);
+  // Remembers which screen to go "Back" to from the pause picker, since it can
+  // be opened from either the intro or the final-confirm screen.
+  const [pauseOpenedFrom, setPauseOpenedFrom] = useState<Step>(1);
 
   const [priceLoading, setPriceLoading] = useState(false);
   const [priceError, setPriceError] = useState<string | null>(null);
@@ -223,6 +231,32 @@ export default function CancelFunnel({
     }
   };
 
+  const handlePause = async () => {
+    setActionLoading(true);
+    setActionError(null);
+
+    try {
+      const res = await fetch("/api/subscription/pause", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ subscriptionId, months: pauseMonths }),
+      });
+
+      const payload = (await res.json()) as { resumesAt?: string; error?: string };
+      if (!res.ok) {
+        throw new Error(payload.error || "Could not pause subscription");
+      }
+
+      setPauseResumesAt(payload.resumesAt ?? null);
+      setTerminal("paused");
+      onPaused();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Could not pause subscription");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleConfirmCancel = async () => {
     setActionLoading(true);
     setActionError(null);
@@ -260,8 +294,11 @@ export default function CancelFunnel({
 
   // Internal step state still uses the original 1-5 numbering so the dead
   // Step4Offer branch can be re-wired without renumbering. Visually, step 5
-  // (final confirm) maps to position 4 of 4.
-  const progressValue = terminal ? TOTAL_STEPS : step === 5 ? 4 : step;
+  // (final confirm) maps to position 4 of 4. The pause picker is a side trip,
+  // not part of this numbering, so it has no progress value of its own.
+  const progressValue =
+    terminal && terminal !== "paused" ? TOTAL_STEPS : step === 5 ? 4 : step === "pause" ? 1 : step;
+  const showProgress = !terminal && step !== "pause";
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -285,9 +322,13 @@ export default function CancelFunnel({
                 ? "Discount applied"
                 : terminal === "feature_offer_accepted"
                 ? "You're all set"
+                : terminal === "paused"
+                ? "Subscription paused"
+                : step === "pause"
+                ? "Pause subscription"
                 : "Cancel subscription"}
             </h2>
-            {!terminal ? (
+            {showProgress ? (
               <span className="text-xs font-medium text-slate-400">
                 Step {progressValue} of {TOTAL_STEPS}
               </span>
@@ -316,7 +357,7 @@ export default function CancelFunnel({
         </div>
 
         {/* Progress bar */}
-        {!terminal ? (
+        {showProgress ? (
           <div className="h-1 w-full bg-slate-100">
             <div
               className="h-1 bg-[#f97316] transition-all"
@@ -333,8 +374,26 @@ export default function CancelFunnel({
             <TerminalOfferAccepted result={offerResult} onDone={onClose} />
           ) : terminal === "feature_offer_accepted" ? (
             <TerminalFeatureOfferAccepted result={featureOfferResult} onDone={onClose} />
+          ) : terminal === "paused" ? (
+            <TerminalPaused resumesAt={pauseResumesAt} onDone={onClose} />
+          ) : step === "pause" ? (
+            <StepPause
+              months={pauseMonths}
+              onMonthsChange={setPauseMonths}
+              actionLoading={actionLoading}
+              actionError={actionError}
+              onBack={() => setStep(pauseOpenedFrom)}
+              onConfirm={handlePause}
+            />
           ) : step === 1 ? (
-            <Step1Intro onContinue={() => setStep(2)} onKeep={onClose} />
+            <Step1Intro
+              onContinue={() => setStep(2)}
+              onKeep={onClose}
+              onPause={() => {
+                setPauseOpenedFrom(1);
+                setStep("pause");
+              }}
+            />
           ) : step === 2 ? (
             <Step2Reason
               reason={reason}
@@ -385,6 +444,10 @@ export default function CancelFunnel({
               onBack={() => setStep(3)}
               onKeep={onClose}
               onConfirm={handleConfirmCancel}
+              onPause={() => {
+                setPauseOpenedFrom(5);
+                setStep("pause");
+              }}
             />
           )}
         </div>
@@ -394,7 +457,15 @@ export default function CancelFunnel({
   );
 }
 
-function Step1Intro({ onContinue, onKeep }: { onContinue: () => void; onKeep: () => void }) {
+function Step1Intro({
+  onContinue,
+  onKeep,
+  onPause,
+}: {
+  onContinue: () => void;
+  onKeep: () => void;
+  onPause: () => void;
+}) {
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-semibold tracking-tight text-slate-900">
@@ -404,6 +475,19 @@ function Step1Intro({ onContinue, onKeep }: { onContinue: () => void; onKeep: ()
         Before you cancel, we&apos;d love to understand what&apos;s not working and see if
         there&apos;s anything we can do to help. This will take about a minute.
       </p>
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <p className="text-sm text-slate-700">
+          <strong>Just need a break?</strong> Pause your subscription for 1-3 months instead -
+          no charge while paused, and it picks back up automatically when you&apos;re ready.
+        </p>
+        <button
+          type="button"
+          onClick={onPause}
+          className="mt-3 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          Pause my subscription instead
+        </button>
+      </div>
       <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
         <button
           type="button"
@@ -418,6 +502,86 @@ function Step1Intro({ onContinue, onKeep }: { onContinue: () => void; onKeep: ()
           className="rounded-lg bg-[#f97316] px-4 py-2 text-sm font-medium text-white hover:bg-[#ea580c]"
         >
           Keep my subscription
+        </button>
+      </div>
+    </div>
+  );
+}
+
+type StepPauseProps = {
+  months: PauseMonths;
+  onMonthsChange: (months: PauseMonths) => void;
+  actionLoading: boolean;
+  actionError: string | null;
+  onBack: () => void;
+  onConfirm: () => void;
+};
+
+function StepPause({
+  months,
+  onMonthsChange,
+  actionLoading,
+  actionError,
+  onBack,
+  onConfirm,
+}: StepPauseProps) {
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold tracking-tight text-slate-900">
+        How long do you need?
+      </h3>
+      <p className="text-sm text-slate-600">
+        While paused, you won&apos;t be charged and Pro access is on hold. Billing and access
+        resume automatically on the date you pick - no action needed, and you can also resume
+        early anytime from this page.
+      </p>
+      <fieldset className="space-y-2">
+        {([1, 2, 3] as PauseMonths[]).map((m) => (
+          <label
+            key={m}
+            className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 text-sm transition ${
+              months === m
+                ? "border-[#f97316] bg-[#f97316]/5"
+                : "border-slate-200 bg-white hover:bg-slate-50"
+            }`}
+          >
+            <input
+              type="radio"
+              name="pause-months"
+              value={m}
+              checked={months === m}
+              onChange={() => onMonthsChange(m)}
+              className="h-4 w-4 accent-[#f97316]"
+            />
+            <span className="text-slate-700">
+              {m} month{m > 1 ? "s" : ""}
+            </span>
+          </label>
+        ))}
+      </fieldset>
+
+      {actionError ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {actionError}
+        </div>
+      ) : null}
+
+      <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-between">
+        <button
+          type="button"
+          onClick={onBack}
+          disabled={actionLoading}
+          className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+        >
+          Back
+        </button>
+        <button
+          type="button"
+          onClick={onConfirm}
+          disabled={actionLoading}
+          className="rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white hover:bg-[#ea580c] disabled:opacity-60"
+        >
+          {actionLoading ? "Pausing…" : `Pause for ${months} month${months > 1 ? "s" : ""}`}
         </button>
       </div>
     </div>
@@ -978,6 +1142,7 @@ type Step5Props = {
   onBack: () => void;
   onKeep: () => void;
   onConfirm: () => void;
+  onPause: () => void;
 };
 
 function Step5FinalConfirm({
@@ -987,6 +1152,7 @@ function Step5FinalConfirm({
   onBack,
   onKeep,
   onConfirm,
+  onPause,
 }: Step5Props) {
   return (
     <div className="space-y-4">
@@ -999,6 +1165,21 @@ function Step5FinalConfirm({
           <strong>{formatDate(renewsAt)}</strong>, after which you&apos;ll lose access to
           all 50+ automation tools, brand outreach, and commission harvesting.
         </p>
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <p className="text-sm text-slate-700">
+          Not ready to lose everything? <strong>Pause instead</strong> - no charge for 1-3
+          months, then it picks back up automatically.
+        </p>
+        <button
+          type="button"
+          onClick={onPause}
+          disabled={actionLoading}
+          className="mt-3 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+        >
+          Pause my subscription instead
+        </button>
       </div>
 
       {actionError ? (
@@ -1063,6 +1244,35 @@ function TerminalCancelled({
           className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
           Close
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function TerminalPaused({
+  resumesAt,
+  onDone,
+}: {
+  resumesAt: string | null;
+  onDone: () => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-slate-600">
+        Your subscription is paused. You won&apos;t be charged, and billing and Pro access
+        resume automatically on <strong>{formatDate(resumesAt)}</strong>.
+      </p>
+      <p className="text-sm text-slate-600">
+        Changed your mind? You can resume early anytime from this page.
+      </p>
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={onDone}
+          className="rounded-lg bg-[#f97316] px-4 py-2 text-sm font-medium text-white hover:bg-[#ea580c]"
+        >
+          Done
         </button>
       </div>
     </div>

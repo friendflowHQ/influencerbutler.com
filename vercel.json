@@ -57,6 +57,10 @@
       "schedule": "0 14 * * *"
     },
     {
+      "path": "/api/cron/apply-scheduled-downgrades",
+      "schedule": "30 14 * * *"
+    },
+    {
       "path": "/api/cron/payout-status",
       "schedule": "0 */4 * * *"
     },

@@ -24,7 +24,7 @@ import { safeEqual } from "@/lib/auth-secret";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const LIVE_STATUSES = ["active", "on_trial", "past_due", "paused"];
+const LIVE_STATUSES = ["active", "on_trial", "past_due"];
 // "revoked" is the only status our own flows write as a deliberate kill switch
 // (the admin licenses.revoke route). Every other dead-looking value
 // (disabled, inactive, expired, cancelled) is a Lemon Squeezy mirror: LS keeps
@@ -32,6 +32,8 @@ const LIVE_STATUSES = ["active", "on_trial", "past_due", "paused"];
 // legitimate on_trial customer's key can carry one. Those keys are judged
 // instead by the live-subscription check below, which is the real entitlement
 // gate: a genuinely churned customer has no live subscription and still fails.
+// "paused" is deliberately excluded: a self-serve pause (/api/subscription/pause)
+// stops billing AND access until it resumes, same as a cancellation.
 const DEAD_KEY_STATUSES = new Set(["revoked"]);
 
 export async function POST(request: Request) {
