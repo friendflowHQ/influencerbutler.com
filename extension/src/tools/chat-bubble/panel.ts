@@ -57,6 +57,9 @@ type Strings = {
   thinking: string;
   intro: string;
   reportCta: string;
+  hoursAriaLabel: string;
+  hoursLabel: string;
+  hoursText: string;
   reportHeading: string;
   reportSub: string;
   tabNew: string;
@@ -141,6 +144,9 @@ const STRINGS: Record<Locale, Strings> = {
     thinking: "Thinking...",
     intro: "Ask anything about setting up or using Influencer Butler.",
     reportCta: "🐛 Report a bug",
+    hoursAriaLabel: "Support hours",
+    hoursLabel: "Support hours",
+    hoursText: "Mon-Fri 6 AM-11 PM ET, weekends 10 AM-6 PM ET.",
     reportHeading: "Report a bug or idea",
     reportSub: "Goes straight to the team",
     tabNew: "New report",
@@ -223,6 +229,9 @@ const STRINGS: Record<Locale, Strings> = {
     thinking: "Pensando...",
     intro: "Pregunta lo que quieras sobre cómo configurar o usar Influencer Butler.",
     reportCta: "🐛 Informar de un error",
+    hoursAriaLabel: "Horario de soporte",
+    hoursLabel: "Horario de soporte",
+    hoursText: "De lunes a viernes de 6:00 a 23:00 ET, fines de semana de 10:00 a 18:00 ET.",
     reportHeading: "Informar de un error o idea",
     reportSub: "Va directo al equipo",
     tabNew: "Nuevo informe",
@@ -305,6 +314,9 @@ const STRINGS: Record<Locale, Strings> = {
     thinking: "Réflexion...",
     intro: "Posez une question sur la configuration ou l'utilisation d'Influencer Butler.",
     reportCta: "🐛 Signaler un bug",
+    hoursAriaLabel: "Horaires d'assistance",
+    hoursLabel: "Horaires d'assistance",
+    hoursText: "Du lundi au vendredi de 6h à 23h ET, le week-end de 10h à 18h ET.",
     reportHeading: "Signaler un bug ou une idée",
     reportSub: "Va directement à l'équipe",
     tabNew: "Nouveau signalement",
@@ -433,11 +445,21 @@ const CSS = `
   border: 1px solid rgba(220,38,38,.25); }
 .msg.thinking { opacity: .7; font-style: italic; }
 .msg img { max-width: 100%; border-radius: 8px; margin-top: 6px; display: block; }
-.reportcta { flex: 0 0 auto; display: flex; justify-content: center; padding: 0 12px 8px;
-  background: #fafafa; }
+.reportcta { flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  gap: 6px; padding: 0 12px 8px; background: #fafafa; }
 .reportcta button { border: 1px solid #e2e5ea; background: #fff; color: #6b7280;
   cursor: pointer; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 6px 12px; }
 .reportcta button:hover { color: #ea580c; border-color: rgba(234,88,12,.4); }
+.hours-tip { position: relative; display: inline-flex; align-items: center; }
+.reportcta .hours-trigger { width: 20px; height: 20px; padding: 0; font-size: 11px;
+  font-weight: 800; line-height: 1; border-radius: 999px; }
+.hours-pop { position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%);
+  width: 220px; max-width: calc(100vw - 48px); z-index: 5; background: #fff;
+  border: 1px solid rgba(234,88,12,.25); border-top: 3px solid #ea580c; border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(15,23,42,.18); padding: 10px 12px; text-align: left; }
+.hours-pop[hidden] { display: none; }
+.hours-pop-label { font-size: 12px; font-weight: 800; color: #111827; margin-bottom: 3px; }
+.hours-pop p { margin: 0; font-size: 12px; line-height: 1.45; color: #374151; }
 .composer { flex: 0 0 auto; display: flex; align-items: flex-end; gap: 8px;
   padding: 10px 12px 12px; border-top: 1px solid #eef0f2; background: #fafafa; }
 .composer input { flex: 1 1 auto; padding: 9px 11px; border: 1px solid #d9dce1;
@@ -797,7 +819,21 @@ class ChatBubble {
     const reportOpen = el("button", undefined, s.reportCta);
     reportOpen.type = "button";
     reportOpen.addEventListener("click", () => this.openReport());
-    this.reportCta.append(reportOpen);
+    const hoursTip = el("span", "hours-tip");
+    const hoursBtn = el("button", "hours-trigger", "?");
+    hoursBtn.type = "button";
+    hoursBtn.setAttribute("aria-label", s.hoursAriaLabel);
+    hoursBtn.setAttribute("aria-expanded", "false");
+    const hoursPop = el("div", "hours-pop");
+    hoursPop.setAttribute("role", "note");
+    hoursPop.hidden = true;
+    hoursPop.append(el("div", "hours-pop-label", s.hoursLabel), el("p", undefined, s.hoursText));
+    hoursBtn.addEventListener("click", () => {
+      hoursPop.hidden = !hoursPop.hidden;
+      hoursBtn.setAttribute("aria-expanded", hoursPop.hidden ? "false" : "true");
+    });
+    hoursTip.append(hoursBtn, hoursPop);
+    this.reportCta.append(reportOpen, hoursTip);
     this.composer = el("div", "composer");
     this.input = el("input", undefined);
     this.input.type = "text";
