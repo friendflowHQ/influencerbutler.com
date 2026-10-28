@@ -616,6 +616,8 @@ export interface Dict {
   ccmAccepting: string;
   ccmOpenCampaign: string;
   ccmCopyBrand: string;
+  ccmCardShow: string;
+  ccmCardHide: string;
   ccmCopied: string;
   ccmCopyFailed: string;
   ccmNote: string;
@@ -1904,6 +1906,8 @@ const en: Dict = {
   ccmAccepting: "Accepting...",
   ccmOpenCampaign: "Open campaign",
   ccmCopyBrand: "Copy brand name",
+  ccmCardShow: "Brand details",
+  ccmCardHide: "Hide details",
   ccmCopied: "Copied",
   ccmCopyFailed: "Could not copy",
   ccmNote: "Note",
@@ -3226,6 +3230,8 @@ const es: Dict = {
   ccmAccepting: "Aceptando...",
   ccmOpenCampaign: "Abrir campaña",
   ccmCopyBrand: "Copiar nombre de la marca",
+  ccmCardShow: "Detalles de la marca",
+  ccmCardHide: "Ocultar detalles",
   ccmCopied: "Copiado",
   ccmCopyFailed: "No se pudo copiar",
   ccmNote: "Nota",
@@ -4552,6 +4558,8 @@ const fr: Dict = {
   ccmAccepting: "Acceptation...",
   ccmOpenCampaign: "Ouvrir la campagne",
   ccmCopyBrand: "Copier le nom de la marque",
+  ccmCardShow: "Détails de la marque",
+  ccmCardHide: "Masquer les détails",
   ccmCopied: "Copié",
   ccmCopyFailed: "Copie impossible",
   ccmNote: "Note",

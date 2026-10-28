@@ -52,6 +52,27 @@ export function cardSignature(model: CardModel): string {
   ].join("~");
 }
 
+const COLLAPSED_KEY = "ib.ccm.cardCollapsed";
+
+function loadCollapsed(): boolean {
+  try {
+    return localStorage.getItem(COLLAPSED_KEY) !== "0";
+  } catch {
+    return true;
+  }
+}
+
+function saveCollapsed(value: boolean): void {
+  try {
+    localStorage.setItem(COLLAPSED_KEY, value ? "1" : "0");
+  } catch {
+    // Storage can be blocked; the choice then lasts until the page reloads.
+  }
+}
+
+// Shared across rebuilds so a sweep does not re-collapse a card the creator opened.
+let detailsCollapsed = loadCollapsed();
+
 export function buildCard(model: CardModel, handlers: CardHandlers): HTMLElement {
   const strings = t();
   const { host, root } = createInlineShadow(CARD_HOST_CLASS);
@@ -75,7 +96,27 @@ export function buildCard(model: CardModel, handlers: CardHandlers): HTMLElement
     kw.title = strings.ccmCardPitchedTip;
     head.append(kw);
   }
-  if (head.childElementCount > 0) card.append(head);
+
+  // Everything below the headline lives in a body that starts collapsed: Amazon's
+  // drawer is short, and an open card squeezes the conversation to a line or two.
+  const body = el("div", "ccm-card-body");
+  const toggle = el("button", "ccm-btn ccm-card-toggle");
+  toggle.type = "button";
+  const sync = () => {
+    body.hidden = detailsCollapsed;
+    toggle.textContent = detailsCollapsed ? strings.ccmCardShow : strings.ccmCardHide;
+    toggle.setAttribute("aria-expanded", String(!detailsCollapsed));
+  };
+  toggle.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    detailsCollapsed = !detailsCollapsed;
+    saveCollapsed(detailsCollapsed);
+    sync();
+  });
+  sync();
+  head.append(toggle);
+  card.append(head, body);
 
   // Facts: days left, slots meter.
   if (s) {
@@ -90,7 +131,7 @@ export function buildCard(model: CardModel, handlers: CardHandlers): HTMLElement
     }
     if (s.liveCampaigns > 1) facts.append(el("span", "ccm-fact", strings.ccmLiveCampaigns(s.liveCampaigns)));
     if (s.spccCampaigns > 0) facts.append(el("span", "ccm-fact", strings.ccmSpccCampaign));
-    if (facts.childElementCount > 0) card.append(facts);
+    if (facts.childElementCount > 0) body.append(facts);
 
     if (typeof s.slotsTaken === "number" && typeof s.slotsTotal === "number" && s.slotsTotal > 0) {
       const pct = Math.min(100, Math.round((s.slotsTaken / s.slotsTotal) * 100));
@@ -100,10 +141,10 @@ export function buildCard(model: CardModel, handlers: CardHandlers): HTMLElement
       const bar = el("div", "ccm-meter-fill");
       bar.style.width = `${pct}%`;
       meter.append(bar);
-      card.append(meter);
+      body.append(meter);
     }
   } else {
-    card.append(el("p", "ccm-hint", strings.ccmNoCampaignData));
+    body.append(el("p", "ccm-hint", strings.ccmNoCampaignData));
   }
 
   // Links from the brand's message.
@@ -118,7 +159,7 @@ export function buildCard(model: CardModel, handlers: CardHandlers): HTMLElement
       a.title = link.display;
       row.append(a);
     }
-    card.append(row);
+    body.append(row);
   }
 
   // Actions.
@@ -166,7 +207,7 @@ export function buildCard(model: CardModel, handlers: CardHandlers): HTMLElement
     }
   });
   actions.append(copy, status);
-  card.append(actions);
+  body.append(actions);
 
   // Note: a real labelled input, saved on Enter or when focus leaves.
   const noteRow = el("label", "ccm-note");
@@ -191,7 +232,7 @@ export function buildCard(model: CardModel, handlers: CardHandlers): HTMLElement
     }
   });
   noteRow.append(input);
-  card.append(noteRow);
+  body.append(noteRow);
 
   root.append(card);
   return host;

@@ -1165,6 +1165,10 @@ a.tile-chip:hover { filter: brightness(0.97); }
   gap: 8px;
 }
 .ccm-card-head, .ccm-facts, .ccm-links, .ccm-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ccm-card { padding: 6px 10px; gap: 6px; }
+.ccm-card-body { display: flex; flex-direction: column; gap: 8px; }
+.ccm-card-body[hidden] { display: none; }
+.ccm-card-toggle { margin-left: auto; padding: 2px 8px; font-size: 11px; }
 .ccm-fact { font-weight: 600; color: #334155; }
 .ccm-fact + .ccm-fact::before { content: "\00b7"; margin-right: 6px; color: #94a3b8; }
 .ccm-hint { margin: 0; color: #475569; }
