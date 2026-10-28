@@ -86,7 +86,9 @@ export async function POST(request: Request) {
       .from("subscriptions")
       .select("status,ls_variant_id")
       .eq("user_id", result.auth.userId)
-      .in("status", ["active", "on_trial", "past_due", "paused"])
+      // "paused" excluded deliberately: a self-serve pause drops Pro access, so
+      // a paused account should read as legacy here same as a lapsed one.
+      .in("status", ["active", "on_trial", "past_due"])
       .order("created_at", { ascending: false })
       .limit(1);
     const row = subs && subs.length > 0 ? (subs[0] as { ls_variant_id?: string | number | null }) : null;

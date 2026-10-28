@@ -2079,6 +2079,14 @@ function RosterTab({
                           ) : email.kind === "error" ? (
                             <span className="text-xs text-red-700">{email.message}</span>
                           ) : null}
+                          {r.email ? (
+                            <a
+                              href={`/dashboard/admin/emails?recipient=${encodeURIComponent(r.email)}`}
+                              className="w-fit whitespace-nowrap rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:border-[#f97316] hover:bg-orange-50 hover:text-[#c2410c]"
+                            >
+                              Email history
+                            </a>
+                          ) : null}
                           {state.kind === "success" ? (
                             <span className="text-xs text-emerald-700">{state.message}</span>
                           ) : state.kind === "error" ? (
