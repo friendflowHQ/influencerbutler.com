@@ -79,6 +79,8 @@ export type ActiveBanner = {
   ctaUrl: string;
   startsAt: string;
   endsAt: string | null;
+  /** Human date/time of the event itself, e.g. "Thu, Oct 29 at 11:00 AM MDT". */
+  whenLabel: string;
 };
 
 type Admin = SupabaseClient;
@@ -355,7 +357,7 @@ export async function activeBanners(
   const { data, error } = await admin
     .from("events")
     .select(
-      "id,title,starts_at,ends_at,banner_enabled,banner_text,banner_cta_label,banner_starts_at,banner_ends_at,banner_surfaces,status",
+      "id,title,starts_at,ends_at,timezone,banner_enabled,banner_text,banner_cta_label,banner_starts_at,banner_ends_at,banner_surfaces,status",
     )
     .eq("banner_enabled", true)
     .eq("status", "scheduled")
@@ -388,7 +390,29 @@ export async function activeBanners(
       ctaUrl: `${SITE}/events/${String(r.id)}`,
       startsAt: (r.starts_at as string) ?? "",
       endsAt: (r.ends_at as string | null) ?? null,
+      whenLabel: formatEventWhen((r.starts_at as string) ?? "", (r.timezone as string) ?? "America/Denver"),
     });
   }
   return out;
+}
+
+/** "Thu, Oct 29 at 11:00 AM MDT" in the event's own timezone; "" if unparseable. */
+export function formatEventWhen(startsAt: string, timezone: string): string {
+  const ms = Date.parse(startsAt);
+  if (!Number.isFinite(ms)) return "";
+  const opts: Intl.DateTimeFormatOptions = {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  };
+  try {
+    return new Date(ms)
+      .toLocaleString("en-US", { ...opts, timeZone: timezone })
+      .replace(/, (\d{1,2}:\d{2})/, " at $1");
+  } catch {
+    return new Date(ms).toLocaleString("en-US", { ...opts, timeZone: "America/Denver" });
+  }
 }
