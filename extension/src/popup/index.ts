@@ -1550,6 +1550,16 @@ async function renderSettings(): Promise<void> {
     "brandKeywords",
     "messageTemplates",
     "benableBadge",
+    "ownership",
+    "myVideoPlacement",
+    "enrolledBadge",
+    "lastCallButler",
+    "campaignButler",
+    "campaignDetail",
+    "videoMoney",
+    "youtubeStatus",
+    "shopperGeneration",
+    "aiPost",
   ] as const) {
     const box = byId<HTMLInputElement>(`tool-${tool}`);
     box.checked = settings.tools[tool];
