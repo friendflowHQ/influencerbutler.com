@@ -108,6 +108,7 @@ import { getSettings, patchState } from "../storage/store";
 import type { Settings } from "../storage/schema";
 import { removeHost } from "../ui/host";
 import { toggleHudVisibility } from "../ui/components";
+import { maybeOfferTour, removeTourOffer, runTourForPage } from "../tools/tour";
 import {
   sendToBackground,
   type AcceptOutcome,
@@ -181,6 +182,11 @@ async function main(): Promise<void> {
     // background has identified as HUD-capable, so there is no page-type check
     // to make here; the reply says whether a panel was there to toggle (search
     // and home pages have none), so the background can open the settings popup.
+    if (message.kind === "START_TOUR") {
+      removeTourOffer();
+      sendResponse({ handled: runTourForPage(lastStatus.pageType as PageType) });
+      return true;
+    }
     if (message.kind === "TOGGLE_HUD_PANEL") {
       sendResponse({ handled: toggleHudVisibility() });
       return true;
@@ -1142,6 +1148,9 @@ async function runForPage(): Promise<void> {
       if (settings.tools.brandConversations || settings.tools.messageCards) void handleOpenHash();
     });
   }
+  // Offer the guided tour once per page type, after the tools had time to mount.
+  removeTourOffer();
+  setTimeout(() => void maybeOfferTour(pageType), 2500);
 }
 
 // The connect-hook delivers fills asynchronously (after the grid's own

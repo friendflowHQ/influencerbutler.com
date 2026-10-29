@@ -118,6 +118,9 @@ export type RuntimeMessage =
   // tabs where the popup has been cleared for a HUD-capable page) to show/hide
   // the floating panel. The panel otherwise never shows itself.
   | { kind: "TOGGLE_HUD_PANEL" }
+  // Popup "Take a tour of this page": the content script runs the guided tour
+  // for its current page type; the reply says whether this page has one.
+  | { kind: "START_TOUR" }
   | { kind: "GET_HUD_STATUS"; force?: boolean }
   | { kind: "SEND_HUD_COMMAND"; command: HudCommand }
   // Ask the running desktop app what the creator earned on a batch of ASINs, so

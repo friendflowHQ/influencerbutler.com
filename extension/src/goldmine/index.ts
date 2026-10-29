@@ -441,13 +441,13 @@ async function sendToDesktop(target: "pitch" | "group-invite"): Promise<void> {
       command: { type: "creator.push.batch", target, creators: chunk },
     });
     if (!result.ok) {
-      lastMessage = result.message ?? "The app is not connected.";
+      lastMessage = result.message ?? "The Influencer Butler app is not connected. Open it and pair the extension in the popup.";
       break;
     }
     sent += chunk.length;
   }
   const dest = target === "pitch" ? "Pitch Butler" : "Group Invite Butler";
-  setStatus(sent > 0 ? `Sent ${sent} to ${dest}.` : lastMessage || "The app is not connected.");
+  setStatus(sent > 0 ? `Sent ${sent} to ${dest}.` : lastMessage || "The Influencer Butler app is not connected. Open it and pair the extension in the popup.");
 }
 
 function toCreatorRef(row: GoldmineRow): CreatorRef {

@@ -96,6 +96,15 @@ export function getPanel(title: string): HTMLElement {
 // TOGGLE_HUD_PANEL message in content/index.ts). A no-op if nothing has
 // rendered a panel on this page yet; returns whether there was a panel to toggle
 // so the toolbar click can fall back to the settings popup when there was not.
+// Used by the guided tour: reveal the HUD (without toggling it off if it is
+// already open) and report its on-screen box so a step can spotlight it.
+export function showHudPanel(): DOMRect | null {
+  if (!panel || !panel.isConnected) return null;
+  hudVisible = true;
+  panel.classList.remove("hud-hidden", "collapsed");
+  return panel.getBoundingClientRect();
+}
+
 export function toggleHudVisibility(): boolean {
   if (!panel || !panel.isConnected) return false;
   hudVisible = !hudVisible;

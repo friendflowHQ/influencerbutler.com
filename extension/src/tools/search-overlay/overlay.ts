@@ -1,6 +1,7 @@
 import { createInlineShadow } from "../../ui/host";
 import { el } from "../../ui/components";
 import { t } from "../../i18n";
+import { legend } from "./legend";
 import { log } from "../../shared/log";
 import { queryAll } from "../../amazon/selectors";
 import { type SearchTile } from "../../amazon/search-results";
@@ -1007,7 +1008,9 @@ function resolveConvo(row: Row): void {
 function renderBadge(row: Row, settings: Settings): void {
   const body = row.badgeBody;
   body.replaceChildren();
-  body.append(el("span", `tile-score ${row.score.band}`, String(row.score.score)));
+  const scoreChip = el("span", `tile-score ${row.score.band}`, String(row.score.score));
+  scoreChip.title = legend().tips.score;
+  body.append(scoreChip);
   // Verdict first: the yes/no is what the creator scans for.
   if (row.verdict.state === "approved") {
     const chip = el("span", "tile-chip good", t().tileApproved);
@@ -1023,13 +1026,13 @@ function renderBadge(row: Row, settings: Settings): void {
   if (row.earnings) body.append(earnedChip(row));
   // You already own / already posted this: stops a duplicate buy or a repeat
   // promotion right from the grid.
-  if (row.owned) body.append(el("span", "tile-chip good", t().ownedGridOwned));
-  if (row.posted) body.append(el("span", "tile-chip warn", t().ownedGridPosted));
+  if (row.owned) body.append(tipped(el("span", "tile-chip good", t().ownedGridOwned), legend().tips.owned));
+  if (row.posted) body.append(tipped(el("span", "tile-chip warn", t().ownedGridPosted), legend().tips.posted));
   // You already talked to this product's brand: one click opens the conversation.
   if (row.convo) body.append(buildConversationChip(row.convo));
   if (row.commissionCents !== null) {
     body.append(
-      el("span", "tile-chip", t().tileCommission(formatCents(row.commissionCents, row.tile.currency))),
+      tipped(el("span", "tile-chip", t().tileCommission(formatCents(row.commissionCents, row.tile.currency))), legend().tips.commission),
     );
   }
   // Estimated monthly units + revenue: the "is this product actually big?"
@@ -1052,7 +1055,7 @@ function renderBadge(row: Row, settings: Settings): void {
   const bsrRank = row.market?.bsrRank ?? row.dp?.bestsellerRank?.rank ?? null;
   const bsrCategory = row.market?.bsrCategory ?? row.dp?.bestsellerRank?.category ?? null;
   if (bsrRank != null) {
-    body.append(el("span", "tile-chip", t().tileBsr(bsrRank.toLocaleString(), bsrCategory)));
+    body.append(tipped(el("span", "tile-chip", t().tileBsr(bsrRank.toLocaleString(), bsrCategory)), legend().tips.bsr));
   }
   if (row.flags.cc || row.flags.spcc) {
     // A guaranteed CC commission rate always wins over the SPCC forecast when
@@ -1070,9 +1073,9 @@ function renderBadge(row: Row, settings: Settings): void {
     if (accept) body.append(accept);
   } else if (row.flags.deals) {
     // Only when no campaign chip is up: two green chips in a row read as noise.
-    body.append(el("span", "tile-chip good", t().tileDeal));
+    body.append(tipped(el("span", "tile-chip good", t().tileDeal), legend().tips.deal));
   }
-  if (row.tile.hasCoupon) body.append(el("span", "tile-chip", t().tileCoupon));
+  if (row.tile.hasCoupon) body.append(tipped(el("span", "tile-chip", t().tileCoupon), legend().tips.coupon));
   // Reduced-price signal: a deal pill and how deep the cut is (from the
   // strikethrough "was" price). Walmart sets its own Rollback / Clearance /
   // Reduced markers via dealBadge; Amazon sets dealKind (Prime Day / Lightning /
@@ -1207,4 +1210,10 @@ function mountToolbar(slot: Element | null, host: HTMLElement): void {
   } else if (slot) {
     slot.prepend(host);
   }
+}
+
+// Attach a hover/screen-reader explanation to a chip.
+function tipped(chip: HTMLElement, tip: string): HTMLElement {
+  chip.title = tip;
+  return chip;
 }

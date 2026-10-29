@@ -215,7 +215,7 @@ export async function sendHudCommand(command: HudCommand): Promise<HudCommandRes
   if (!token) {
     // No pairing yet: the panel should prompt the user to connect the app
     // rather than show a "not running" error.
-    return { ok: false, needsPairing: true, message: "Connect the app to the extension first." };
+    return { ok: false, needsPairing: true, message: "Open the Influencer Butler desktop app on this computer, then pair it in the extension popup. Need the app? Download it at influencerbutler.com/download." };
   }
   let sawApp = false;
   let sawBusy = false;
@@ -237,7 +237,7 @@ export async function sendHudCommand(command: HudCommand): Promise<HudCommandRes
   // as absent and re-send the deal to another computer. This wording must stay
   // clear of /not running/ for that reason.
   if (sawBusy) return { ok: false, message: BUSY_MESSAGE };
-  return { ok: false, message: "The Influencer Butler app is not running." };
+  return { ok: false, message: "The Influencer Butler app is not running. Open it on this computer, then try again. Need the app? Download it at influencerbutler.com/download." };
 }
 
 // Reply for "the app opened the socket but never answered the command".
@@ -1590,7 +1590,7 @@ export async function requestPairing(): Promise<PairResult> {
     }
   }
   recordActivity({ dir: "connection", action: "pairing.request", outcome: "failed", route: "local", message: "The app is not running" });
-  return { ok: false, stage: "error", message: "The Influencer Butler app is not running." };
+  return { ok: false, stage: "error", message: "The Influencer Butler app is not running. Open it on this computer, then try again. Need the app? Download it at influencerbutler.com/download." };
 }
 
 export async function submitPairingCode(code: string): Promise<PairResult> {
@@ -1604,7 +1604,7 @@ export async function submitPairingCode(code: string): Promise<PairResult> {
     }
   }
   recordActivity({ dir: "connection", action: "pairing.code", outcome: "failed", route: "local", message: "The app is not running" });
-  return { ok: false, stage: "error", message: "The Influencer Butler app is not running." };
+  return { ok: false, stage: "error", message: "The Influencer Butler app is not running. Open it on this computer, then try again. Need the app? Download it at influencerbutler.com/download." };
 }
 
 // One pairing exchange on a single port. Resolves null when nothing answers on

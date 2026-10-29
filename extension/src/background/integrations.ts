@@ -350,7 +350,7 @@ async function desktopConnectionFor(id: string): Promise<SessionConnection | nul
 
 export async function testIntegration(id: string): Promise<IntegrationTestOutcome> {
   const adapter = getAdapter(id);
-  if (!adapter) return { ok: false, message: "Unknown integration." };
+  if (!adapter) return { ok: false, message: "That connection is not available in this version." };
   const integrations = await getIntegrations();
   const creds = await credsFor(id, integrations);
   let outcome: IntegrationTestOutcome;

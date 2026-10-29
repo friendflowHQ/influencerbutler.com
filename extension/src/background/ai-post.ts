@@ -8,7 +8,7 @@ import type { AiPostRequest, GenAiPostResult } from "../shared/messages";
 // origin (same split as social-schedule.ts).
 export async function generateAiPost(input: AiPostRequest): Promise<GenAiPostResult> {
   const key = (await getState()).auth.licenseKey;
-  if (!key) return { ok: false, error: "Connect your license key first (open the extension popup)." };
+  if (!key) return { ok: false, error: "Sign in from the extension popup with your license key." };
   try {
     const res = await fetch(ENDPOINTS.aiPost, {
       method: "POST",

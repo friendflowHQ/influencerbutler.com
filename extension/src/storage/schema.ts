@@ -630,11 +630,15 @@ export type HintsState = {
   // own Creator Hub, so the "Detected your storefront" toast shows at most once
   // even though the auto-fill itself re-runs whenever the field is empty.
   storefrontAutofill: number | null;
+  // Guided page tours (tools/tour): page-type key -> timestamp the tour was
+  // offered or finished, so the "Take a quick tour?" card shows once per page type.
+  tours: Record<string, number>;
 };
 
 export const DEFAULT_HINTS_STATE: HintsState = {
   brandedLinks: null,
   storefrontAutofill: null,
+  tours: {},
 };
 
 // First-run walkthrough progress. Mirrors the desktop app's walkthroughComplete

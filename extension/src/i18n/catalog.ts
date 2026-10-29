@@ -1246,6 +1246,9 @@ export interface Dict {
 
   // First-run walkthrough (the onboarding page) + the "replay" launcher.
   obReplayLink: string;
+  takeTour: string;
+  toolsPausedRemote: string;
+  toolsHitProblem: (n: number) => string;
   obTitle: string;
   obProgress: (current: number, total: number) => string;
   obBack: string;
@@ -1484,8 +1487,8 @@ const en: Dict = {
   footerGuide: "PDF guide",
   footerDashboard: "My dashboard",
 
-  openAmazonToStart: "Open an Amazon or Walmart product page, your orders, or your storefront to get started.",
-  noToolsOnPage: "This Amazon page has no butler tools. Try a product page.",
+  openAmazonToStart: "Butler works on Amazon, Walmart and Target product and search pages, your orders, your storefront and Creator Connections. Open one of those to get started.",
+  noToolsOnPage: "This page has no butler tools yet. Try a product page, a search results page, or your storefront.",
   productToolsActive: "Product page tools are active.",
   orderScanReady: "Order history scan is ready.",
   storefrontCheckupReady: "Storefront checkup is ready.",
@@ -2562,6 +2565,9 @@ const en: Dict = {
     `We found your storefront (${handle}) and saved it in Settings. You can change it there anytime.`,
 
   obReplayLink: "Setup guide",
+  takeTour: "Take a quick tour of this page",
+  toolsPausedRemote: "Some tools are paused by Influencer Butler while we fix an issue. They will come back on their own.",
+  toolsHitProblem: (n) => `${n} tool${n === 1 ? "" : "s"} hit a problem on this page and turned off until you reload. If it keeps happening, send feedback from the popup.`,
   obTitle: "Set up Influencer Butler",
   obProgress: (current, total) => `Step ${current} of ${total}`,
   obBack: "Back",
@@ -2807,8 +2813,8 @@ const es: Dict = {
   footerGuide: "Guía PDF",
   footerDashboard: "Mi panel",
 
-  openAmazonToStart: "Abre una página de producto de Amazon o Walmart, tus pedidos o tu storefront para empezar.",
-  noToolsOnPage: "Esta página de Amazon no tiene herramientas del butler. Prueba una página de producto.",
+  openAmazonToStart: "Butler funciona en páginas de producto y búsqueda de Amazon, Walmart y Target, tus pedidos, tu storefront y Creator Connections. Abre una de ellas para empezar.",
+  noToolsOnPage: "Esta página aún no tiene herramientas del butler. Prueba una página de producto, de búsqueda o tu storefront.",
   productToolsActive: "Las herramientas de la página de producto están activas.",
   orderScanReady: "El escaneo del historial de pedidos está listo.",
   storefrontCheckupReady: "El chequeo del storefront está listo.",
@@ -3889,6 +3895,9 @@ const es: Dict = {
     `Encontramos tu tienda (${handle}) y la guardamos en Ajustes. Puedes cambiarla allí cuando quieras.`,
 
   obReplayLink: "Guía de configuración",
+  takeTour: "Haz un tour rápido de esta página",
+  toolsPausedRemote: "Influencer Butler pausó algunas herramientas mientras corregimos un problema. Volverán solas.",
+  toolsHitProblem: (n) => `${n} herramienta${n === 1 ? "" : "s"} tuvo un problema en esta página y se desactivó hasta que recargues. Si sigue pasando, envía comentarios desde el popup.`,
   obTitle: "Configura Influencer Butler",
   obProgress: (current, total) => `Paso ${current} de ${total}`,
   obBack: "Atrás",
@@ -4135,8 +4144,8 @@ const fr: Dict = {
   footerGuide: "Guide PDF",
   footerDashboard: "Mon tableau de bord",
 
-  openAmazonToStart: "Ouvrez une page produit Amazon ou Walmart, vos commandes ou votre storefront pour commencer.",
-  noToolsOnPage: "Cette page Amazon n'a pas d'outils butler. Essayez une page produit.",
+  openAmazonToStart: "Butler fonctionne sur les pages produit et recherche d'Amazon, Walmart et Target, vos commandes, votre storefront et Creator Connections. Ouvrez-en une pour commencer.",
+  noToolsOnPage: "Cette page n'a pas encore d'outils butler. Essayez une page produit, une recherche ou votre storefront.",
   productToolsActive: "Les outils de la page produit sont actifs.",
   orderScanReady: "L'analyse de l'historique de commandes est prête.",
   storefrontCheckupReady: "Le bilan du storefront est prêt.",
@@ -5217,6 +5226,9 @@ const fr: Dict = {
     `Nous avons trouvé votre boutique (${handle}) et l'avons enregistrée dans les Réglages. Vous pouvez la modifier à tout moment.`,
 
   obReplayLink: "Guide de configuration",
+  takeTour: "Faire un tour rapide de cette page",
+  toolsPausedRemote: "Influencer Butler a mis certains outils en pause le temps de corriger un problème. Ils reviendront seuls.",
+  toolsHitProblem: (n) => `${n} outil${n === 1 ? "" : "s"} a rencontré un problème sur cette page et s'est désactivé jusqu'au rechargement. Si cela continue, envoyez un retour depuis le popup.`,
   obTitle: "Configurer Influencer Butler",
   obProgress: (current, total) => `Étape ${current} sur ${total}`,
   obBack: "Retour",

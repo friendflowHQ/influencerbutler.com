@@ -57,7 +57,7 @@ function friendly(code: unknown): string {
 // device, so later /relay/send calls to it are accepted.
 export async function relayClaimLink(code: string, label?: string): Promise<RelayClaimResult> {
   const key = await licenseKey();
-  if (!key) return { ok: false, error: "Sign in with your license key in the extension first." };
+  if (!key) return { ok: false, error: "Sign in from the extension popup with your license key." };
   const trimmed = String(code || "").trim();
   if (!/^\d{6}$/.test(trimmed)) return { ok: false, error: "Enter the 6-digit code shown in the app." };
   const senderId = await getClientId();
@@ -108,7 +108,7 @@ export async function relayListTargets(): Promise<RelayTargetsResult> {
 // message id). The desktop reports the real result back separately.
 export async function relaySend(command: HudCommand, targetInstanceId: string): Promise<RelaySendResult> {
   const key = await licenseKey();
-  if (!key) return { ok: false, error: "Sign in with your license key in the extension first." };
+  if (!key) return { ok: false, error: "Sign in from the extension popup with your license key." };
   const target = String(targetInstanceId || "").trim();
   if (!target) return { ok: false, error: "No remote device selected." };
   const senderId = await getClientId();

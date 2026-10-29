@@ -2201,3 +2201,17 @@ a.tile-chip:hover { filter: brightness(0.97); }
   .aip-grid { flex-direction: column; }
   .aip-image { flex-basis: auto; width: 100%; min-height: 0; }
 }
+
+/* Chip key opened by the "?" button on the search toolbar. */
+.search-legend {
+  margin: -6px 0 14px;
+  padding: 10px 14px;
+  border: 1px solid #f5e6cf;
+  border-radius: 12px;
+  background: #fff;
+  font: 12.5px/1.5 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #334155;
+}
+.search-legend ul { margin: 6px 0 0; padding-left: 18px; }
+.search-legend li { margin: 3px 0; }
+.search-legend[hidden] { display: none; }

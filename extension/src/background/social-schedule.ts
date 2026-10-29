@@ -21,7 +21,7 @@ async function licenseKey(): Promise<string | null> {
 
 export async function scheduleSocialPost(post: SocialPostInput): Promise<ScheduleSocialPostResult> {
   const key = await licenseKey();
-  if (!key) return { ok: false, error: "Connect your license key first (open the extension popup)." };
+  if (!key) return { ok: false, error: "Sign in from the extension popup with your license key." };
   try {
     const res = await fetch(ENDPOINTS.socialPosts, {
       method: "POST",
@@ -45,7 +45,7 @@ export async function scheduleSocialPost(post: SocialPostInput): Promise<Schedul
 
 export async function listSocialPosts(status?: string, limit?: number): Promise<ListSocialPostsResult> {
   const key = await licenseKey();
-  if (!key) return { ok: false, posts: [], error: "Connect your license key first." };
+  if (!key) return { ok: false, posts: [], error: "Sign in from the extension popup with your license key." };
   try {
     const url = new URL(ENDPOINTS.socialPosts);
     if (status) url.searchParams.set("status", status);
@@ -64,7 +64,7 @@ export async function listSocialPosts(status?: string, limit?: number): Promise<
 
 export async function cancelSocialPost(id: string): Promise<CancelSocialPostResult> {
   const key = await licenseKey();
-  if (!key) return { ok: false, error: "Connect your license key first." };
+  if (!key) return { ok: false, error: "Sign in from the extension popup with your license key." };
   try {
     const res = await fetch(`${ENDPOINTS.socialPosts}/${encodeURIComponent(id)}`, {
       method: "PATCH",
@@ -110,7 +110,7 @@ export async function generateSocialCaption(input: SocialCaptionInput): Promise<
 
   // The free ("Influencer Butler AI") path: the server route drafts it.
   const key = await licenseKey();
-  if (!key) return { ok: false, error: "Connect your license key first." };
+  if (!key) return { ok: false, error: "Sign in from the extension popup with your license key." };
   try {
     const res = await fetch(ENDPOINTS.socialCaption, {
       method: "POST",
@@ -162,7 +162,7 @@ function dataUrlToBlob(dataUrl: string): { blob: Blob; ext: string } | null {
 
 export async function uploadSocialImage(dataUrl: string): Promise<UploadSocialImageResult> {
   const key = await licenseKey();
-  if (!key) return { ok: false, error: "Connect your license key first." };
+  if (!key) return { ok: false, error: "Sign in from the extension popup with your license key." };
   const parsed = dataUrlToBlob(dataUrl);
   if (!parsed) return { ok: false, error: "That image could not be read." };
   try {

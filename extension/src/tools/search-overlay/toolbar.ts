@@ -2,6 +2,7 @@ import { flashSent, resetSent } from "../../ui/sent-state";
 import { createInlineShadow } from "../../ui/host";
 import { el } from "../../ui/components";
 import { t } from "../../i18n";
+import { legend } from "./legend";
 import logoUrl from "../../../static/icons/icon-48.png";
 
 // The bar the overlay drops above the search grid: sort the results by Butler
@@ -187,7 +188,29 @@ export function renderToolbar(cb: ToolbarCallbacks): SearchToolbar {
   if (cb.showSendDeals && cb.onSendDeals) bar.append(sendWrap);
   if (cb.onAcceptAll) bar.append(acceptWrap);
   bar.append(enrichStatus);
-  root.append(bar);
+
+  // "?" key to the chips: a toggled panel under the bar, keyboard reachable.
+  const lg = legend();
+  const keyBtn = el("button", "btn secondary small") as HTMLButtonElement;
+  keyBtn.type = "button";
+  keyBtn.textContent = `? ${lg.button}`;
+  keyBtn.setAttribute("aria-expanded", "false");
+  const keyPanel = el("div", "search-legend");
+  keyPanel.hidden = true;
+  keyPanel.append(el("strong", "", lg.title));
+  const keyList = el("ul");
+  for (const row of lg.rows) {
+    const li = el("li");
+    li.append(el("b", "", `${row.chip}: `), document.createTextNode(row.text));
+    keyList.append(li);
+  }
+  keyPanel.append(keyList);
+  keyBtn.addEventListener("click", () => {
+    keyPanel.hidden = !keyPanel.hidden;
+    keyBtn.setAttribute("aria-expanded", String(!keyPanel.hidden));
+  });
+  bar.append(keyBtn);
+  root.append(bar, keyPanel);
   return {
     host,
     setEnrichStatus: (text: string) => {

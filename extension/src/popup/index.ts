@@ -1232,6 +1232,10 @@ async function renderPageStatus(): Promise<void> {
     if (flags?.notice && !duplicatesBanner) {
       notice.textContent = flags.notice;
       notice.hidden = false;
+    } else if (flags?.disableAll) {
+      // Hard kill switch with no admin text: say why the page went quiet.
+      notice.textContent = t().toolsPausedRemote;
+      notice.hidden = false;
     } else {
       notice.hidden = true;
     }
@@ -1243,10 +1247,10 @@ async function renderPageStatus(): Promise<void> {
     const tab = await activePageTab();
     // Amazon, Walmart and Target are supported; the content script answers
     // GET_PAGE_STATUS on either. Any other host has no tools to report.
-    const onSupportedSite =
-      tab?.url?.includes("amazon.com") ||
-      tab?.url?.includes("walmart.com") ||
-      tab?.url?.includes("target.com");
+    // detectRetailerForUrl covers every Amazon marketplace (amazon.ca, .co.uk, ...).
+    const onSupportedSite = Boolean(tab?.url && detectRetailerForUrl(tab.url));
+    const tourBtn = byId<HTMLButtonElement>("take-tour");
+    tourBtn.hidden = true;
     if (!tab?.id || !onSupportedSite) {
       text.textContent = t().openAmazonToStart;
       return;
@@ -1256,6 +1260,32 @@ async function renderPageStatus(): Promise<void> {
       text.textContent = t().noToolsOnPage;
       return;
     }
+    // guard() records tools that threw on a page (chrome.storage.local
+    // "ib-breakage"); surface a recent one so a vanished overlay has a reason.
+    try {
+      const raw = await chrome.storage.local.get("ib-breakage");
+      const map = (raw?.["ib-breakage"] ?? {}) as Record<string, { lastAt?: number }>;
+      const recent = Object.values(map).filter((e) => Date.now() - (e.lastAt ?? 0) < 10 * 60 * 1000).length;
+      if (recent > 0) {
+        notice.textContent = t().toolsHitProblem(recent);
+        notice.hidden = false;
+      }
+    } catch {
+      // storage unavailable: skip the note
+    }
+    // Offer the guided tour; the content script replies handled:false when this
+    // page type has none, in which case we just hide the button again.
+    const tabId = tab.id;
+    tourBtn.hidden = false;
+    tourBtn.onclick = async () => {
+      try {
+        const reply = (await chrome.tabs.sendMessage(tabId, { kind: "START_TOUR" })) as { handled?: boolean } | undefined;
+        if (reply?.handled) window.close();
+        else tourBtn.hidden = true;
+      } catch {
+        tourBtn.hidden = true;
+      }
+    };
     text.textContent = {
       product: t().productToolsActive,
       "order-history": t().orderScanReady,
