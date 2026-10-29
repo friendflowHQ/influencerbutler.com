@@ -1,7 +1,7 @@
 import { createInlineShadow } from "../../ui/host";
 import { el } from "../../ui/components";
 import { t } from "../../i18n";
-import { parseStorefrontTiles, type StorefrontTile } from "../../amazon/storefront-tiles";
+import { parseStorefrontTiles, parseTrendingTiles, type TrendingTile } from "../../amazon/storefront-tiles";
 import { marketplaceFromUrl } from "../../amazon/product-signals";
 import { getCache, loadFilters, membership } from "../../catalogue/cache";
 import {
@@ -46,7 +46,12 @@ const RESCAN_MS = 600;
 const FLOAT_KEY = "ib-sfmoney-float";
 
 type Card = {
-  tile: StorefrontTile;
+  // A content card or a Trending picks product tile; only content cards float.
+  tile: TrendingTile;
+  floats: boolean;
+  // Product tiles are small: the chips sit at the top-left corner instead of
+  // under the video heart.
+  compact: boolean;
   host: HTMLElement | null;
   body: HTMLElement | null;
   // floatRank() of the last render: 0 means the card keeps its natural position.
@@ -135,7 +140,12 @@ async function start(signal: AbortSignal, options: StorefrontMoneyOptions): Prom
   };
 
   const pass = async (): Promise<void> => {
-    const fresh = parseStorefrontTiles(document).filter((tile) => !tile.el.getAttribute(DONE_ATTR));
+    const found = [
+      ...parseStorefrontTiles(document).map((tile) => ({ tile, product: false })),
+      ...parseTrendingTiles(document).map((tile) => ({ tile, product: true })),
+    ].filter(({ tile }) => !tile.el.getAttribute(DONE_ATTR));
+    const fresh = found.map((f) => f.tile);
+    const productEls = new Set(found.filter((f) => f.product).map((f) => f.tile.el));
     if (fresh.length === 0) return;
     const wantCc: string[] = [];
     const wantSpcc: string[] = [];
@@ -160,7 +170,10 @@ async function start(signal: AbortSignal, options: StorefrontMoneyOptions): Prom
           hit = true;
         }
       }
-      if (hit) cards.push({ tile, host: null, body: null, rank: 0 });
+      if (hit) {
+        const product = productEls.has(tile.el);
+        cards.push({ tile, floats: !product, compact: product, host: null, body: null, rank: 0 });
+      }
     }
     // Paint the plain "Campaign" chips right away, then upgrade them with terms.
     renderAll();
@@ -312,7 +325,7 @@ function mount(card: Card): void {
   if (getComputedStyle(cardEl).position === "static") cardEl.style.position = "relative";
   host.style.position = "absolute";
   host.style.left = "6px";
-  host.style.top = "36px";
+  host.style.top = card.compact ? "4px" : "36px";
   host.style.right = "6px";
   host.style.width = "auto";
   host.style.zIndex = "5";
@@ -340,7 +353,7 @@ function applyFloat(
   onToggle: (next: boolean) => void,
 ): void {
   const live = cards
-    .filter((c) => c.tile.el.isConnected)
+    .filter((c) => c.floats && c.tile.el.isConnected)
     .sort((a, b) =>
       a.tile.el.compareDocumentPosition(b.tile.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1,
     );

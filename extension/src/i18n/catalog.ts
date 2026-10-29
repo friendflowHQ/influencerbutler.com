@@ -475,6 +475,22 @@ export interface Dict {
   // ahead of the rest of the grid, with how many cards it moved.
   sfFloatLabel: string;
   sfFloatCount: (n: number) => string;
+  sfPlannerTitle: string;
+  sfPlannerNote: string;
+  sfPlannerRun: string;
+  sfPlannerScanning: string;
+  sfPlannerNone: string;
+  sfPlannerEvent: (name: string) => string;
+  sfPlannerCsv: string;
+  sfPlannerVideos: (n: number) => string;
+  sfPlannerSummary: (products: number, scanned: number) => string;
+  sfBarLabel: string;
+  sfBarCheck: string;
+  sfBarPlanner: string;
+  sfBarConnections: string;
+  sfBarManage: string;
+  sfBarOrders: string;
+  sfSearchCounts: (total: number, videos: number, lists: number, pics: number, mediaLists: number, more: boolean) => string;
   // Sale / deal signals section on the product panel: the section title and the
   // "List <was>, now <now>" line under it.
   dealSignalsTitle: string;
@@ -1780,6 +1796,23 @@ const en: Dict = {
   tileDealLightning: "Lightning",
   sfFloatLabel: "Campaigns and deals first",
   sfFloatCount: (n) => `${n} moved to the top`,
+  sfSearchCounts: (total, videos, lists, pics, mediaLists, more) =>
+    `Search all ${total}${more ? "+" : ""} posts/${videos} videos/${lists} idea lists/${pics} pics${mediaLists > 0 ? `/${mediaLists} media lists` : ""}`,
+  sfPlannerTitle: "Campaign and deal planner",
+  sfPlannerNote: "Scans your storefront and lists every product you already feature that has a campaign or a deal, best first.",
+  sfPlannerRun: "Plan my campaigns and deals",
+  sfPlannerScanning: "Scanning your storefront...",
+  sfPlannerNone: "None of your featured products are in a campaign or on a deal right now.",
+  sfPlannerEvent: (name) => `${name} is on: lead with these.`,
+  sfPlannerCsv: "Download CSV",
+  sfPlannerVideos: (n) => `${n} ${n === 1 ? "video" : "videos"}`,
+  sfPlannerSummary: (products, scanned) => `${products} of ${scanned} featured products have a campaign or deal`,
+  sfBarLabel: "Storefront tools",
+  sfBarCheck: "Storefront Check",
+  sfBarPlanner: "Campaign Planner",
+  sfBarConnections: "Creator Connections",
+  sfBarManage: "Manage Content",
+  sfBarOrders: "My Orders",
   dealSignalsTitle: "On sale",
   dealSignalsWasNow: (was, now) => `List ${was}, now ${now}`,
   crossTitle: (store) => `Also on ${store}`,
@@ -3107,6 +3140,23 @@ const es: Dict = {
   tileDealLightning: "Oferta flash",
   sfFloatLabel: "Campañas y ofertas primero",
   sfFloatCount: (n) => `${n} al principio`,
+  sfSearchCounts: (total, videos, lists, pics, mediaLists, more) =>
+    `Buscar en todas las ${total}${more ? "+" : ""} publicaciones/${videos} videos/${lists} listas de ideas/${pics} fotos${mediaLists > 0 ? `/${mediaLists} listas de medios` : ""}`,
+  sfPlannerTitle: "Planificador de campañas y ofertas",
+  sfPlannerNote: "Analiza tu tienda y lista cada producto que ya muestras con campaña u oferta, los mejores primero.",
+  sfPlannerRun: "Planificar mis campañas y ofertas",
+  sfPlannerScanning: "Analizando tu tienda...",
+  sfPlannerNone: "Ninguno de tus productos destacados tiene campaña u oferta ahora.",
+  sfPlannerEvent: (name) => `${name} está activo: empieza con estos.`,
+  sfPlannerCsv: "Descargar CSV",
+  sfPlannerVideos: (n) => `${n} ${n === 1 ? "video" : "videos"}`,
+  sfPlannerSummary: (products, scanned) => `${products} de ${scanned} productos destacados tienen campaña u oferta`,
+  sfBarLabel: "Herramientas de la tienda",
+  sfBarCheck: "Revisión de tienda",
+  sfBarPlanner: "Planificador de campañas",
+  sfBarConnections: "Creator Connections",
+  sfBarManage: "Gestionar contenido",
+  sfBarOrders: "Mis pedidos",
   dealSignalsTitle: "En oferta",
   dealSignalsWasNow: (was, now) => `Precio de lista ${was}, ahora ${now}`,
   crossTitle: (store) => `También en ${store}`,
@@ -4439,6 +4489,23 @@ const fr: Dict = {
   tileDealLightning: "Vente flash",
   sfFloatLabel: "Campagnes et offres en premier",
   sfFloatCount: (n) => `${n} en haut`,
+  sfSearchCounts: (total, videos, lists, pics, mediaLists, more) =>
+    `Rechercher dans les ${total}${more ? "+" : ""} publications/${videos} vidéos/${lists} listes d'idées/${pics} photos${mediaLists > 0 ? `/${mediaLists} listes de médias` : ""}`,
+  sfPlannerTitle: "Planificateur de campagnes et d'offres",
+  sfPlannerNote: "Analyse votre vitrine et liste chaque produit déjà présenté avec une campagne ou une offre, les meilleurs d'abord.",
+  sfPlannerRun: "Planifier mes campagnes et offres",
+  sfPlannerScanning: "Analyse de votre vitrine...",
+  sfPlannerNone: "Aucun de vos produits présentés n'a de campagne ou d'offre pour le moment.",
+  sfPlannerEvent: (name) => `${name} est en cours : commencez par ceux-ci.`,
+  sfPlannerCsv: "Télécharger le CSV",
+  sfPlannerVideos: (n) => `${n} ${n === 1 ? "vidéo" : "vidéos"}`,
+  sfPlannerSummary: (products, scanned) => `${products} produits présentés sur ${scanned} ont une campagne ou une offre`,
+  sfBarLabel: "Outils de la vitrine",
+  sfBarCheck: "Contrôle de la vitrine",
+  sfBarPlanner: "Planificateur de campagnes",
+  sfBarConnections: "Creator Connections",
+  sfBarManage: "Gérer le contenu",
+  sfBarOrders: "Mes commandes",
   dealSignalsTitle: "En promo",
   dealSignalsWasNow: (was, now) => `Prix de liste ${was}, maintenant ${now}`,
   crossTitle: (store) => `Aussi chez ${store}`,

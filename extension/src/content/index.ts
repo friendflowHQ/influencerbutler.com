@@ -68,6 +68,9 @@ import { initTrendRadar } from "../tools/trend-radar/overlay";
 import { initDealsOverlay } from "../tools/deals-overlay/overlay";
 import { initIdeaListOverlay } from "../tools/idea-list/overlay";
 import { initStorefrontMoney } from "../tools/storefront-money/overlay";
+import { initStorefrontCounts } from "../tools/storefront-counts/overlay";
+import { initStorefrontPlanner } from "../tools/storefront-planner/panel";
+import { initStorefrontToolbar } from "../tools/storefront-toolbar/overlay";
 import { initCampaignMatcher } from "../tools/campaign-matcher/panel";
 import { hasUndecoratedCampaignCards, initCampaignRadar } from "../tools/campaign-radar/overlay";
 import { initCampaignDetail } from "../tools/campaign-radar/detail-overlay";
@@ -919,6 +922,11 @@ async function runForPage(): Promise<void> {
       // the dealSignals switch.
       if (settings.tools.ideaListOverlay) {
         guard("storefront-money", () => initStorefrontMoney({ deals: settings.tools.dealSignals }));
+        // Search box placeholder split by content type (posts/videos/idea lists/pics).
+        guard("storefront-counts", () => initStorefrontCounts());
+        // Campaign and deal planner (HUD section) and the toolbar above the pills.
+        guard("storefront-planner", () => initStorefrontPlanner());
+        guard("storefront-toolbar", () => initStorefrontToolbar());
       }
       // Orange like-count heart badge on each content card, read from Amazon's own
       // rendered .heart-count. The storefront is where Amazon exposes these counts,
