@@ -7,6 +7,11 @@ import type { Locale } from "../../i18n/catalog";
 
 type LegendDict = {
   button: string;
+  hideBadges: string;
+  showBadges: string;
+  less: string;
+  more: (n: number) => string;
+  scanFailed: (n: number) => string;
   title: string;
   rows: Array<{ chip: string; text: string }>;
   tips: { score: string; commission: string; bsr: string; owned: string; posted: string; coupon: string; deal: string };
@@ -14,6 +19,11 @@ type LegendDict = {
 
 const EN: LegendDict = {
   button: "Legend",
+  hideBadges: "Hide badges",
+  showBadges: "Show badges",
+  less: "Less",
+  more: (n) => `Show ${n} more`,
+  scanFailed: (n) => `${n} video scan${n === 1 ? "" : "s"} failed. Click Scan again to retry.`,
   title: "What the chips mean",
   rows: [
     { chip: "Score (orange, amber, gray)", text: "Butler score for how promising the product is for you. Orange is hot, amber is warm, gray is cool." },
@@ -35,6 +45,11 @@ const EN: LegendDict = {
 
 const ES: LegendDict = {
   button: "Leyenda",
+  hideBadges: "Ocultar chips",
+  showBadges: "Mostrar chips",
+  less: "Menos",
+  more: (n) => `Mostrar ${n} mas`,
+  scanFailed: (n) => `Fallaron ${n} escaneo${n === 1 ? "" : "s"} de video. Haz clic en Escanear de nuevo.`,
   title: "Que significan los chips",
   rows: [
     { chip: "Puntuacion (naranja, ambar, gris)", text: "Puntuacion Butler de lo prometedor que es el producto para ti. Naranja es caliente, ambar tibio, gris frio." },
@@ -56,6 +71,11 @@ const ES: LegendDict = {
 
 const FR: LegendDict = {
   button: "Legende",
+  hideBadges: "Masquer les pastilles",
+  showBadges: "Afficher les pastilles",
+  less: "Moins",
+  more: (n) => `Afficher ${n} de plus`,
+  scanFailed: (n) => `${n} analyse${n === 1 ? "" : "s"} video en echec. Cliquez de nouveau sur Analyser.`,
   title: "Signification des pastilles",
   rows: [
     { chip: "Score (orange, ambre, gris)", text: "Score Butler du potentiel du produit pour vous. Orange chaud, ambre tiede, gris froid." },

@@ -66,6 +66,20 @@ export function guard(toolId: string, fn: () => void | Promise<unknown>): void {
   }
 }
 
+// For a tool whose entrypoint is fire-and-forget (the grid overlays start async
+// work and return at once): run the work under the same protection guard() gives
+// a throwing tool, and report whether it later failed so the popup status does
+// not claim "Ready" for a tool that died after starting. `onFail` runs once, on
+// the first rejection.
+export function trackAsync(toolId: string, work: Promise<unknown>, onFail: () => void): void {
+  work.catch((error) => {
+    disabled.add(toolId);
+    warn(toolId, "disabled for this page after async error", error);
+    recordBreakage(toolId, error);
+    onFail();
+  });
+}
+
 export function isDisabled(toolId: string): boolean {
   return disabled.has(toolId);
 }

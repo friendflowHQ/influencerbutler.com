@@ -100,7 +100,7 @@ import {
   resetBenableFeed,
   type BenableRec,
 } from "../tools/benable-badge/feed";
-import { guard } from "../shared/guard";
+import { guard, trackAsync } from "../shared/guard";
 import { channelAllowed } from "../shared/creator-mode";
 import { setDebug, log } from "../shared/log";
 import { setLocale, t } from "../i18n";
@@ -1019,8 +1019,11 @@ async function runForPage(): Promise<void> {
   } else if (pageType === "search") {
     guard("search-overlay", () => {
       if (settings.tools.searchOverlay) {
-        void initSearchOverlay(settings);
-        lastStatus.toolSummaries.push({ label: t().sumSearchOverlay, value: t().ready });
+        const entry = { label: t().sumSearchOverlay, value: t().ready };
+        lastStatus.toolSummaries.push(entry);
+        trackAsync("search-overlay", Promise.resolve(initSearchOverlay(settings)), () => {
+          entry.value = t().toolFailed;
+        });
       }
     });
   } else if (pageType === "brand-store") {
@@ -1028,8 +1031,11 @@ async function runForPage(): Promise<void> {
     // search overlay: it scores products, it does not post anywhere.
     guard("store-overlay", () => {
       if (settings.tools.storeOverlay) {
-        void initStoreOverlay(settings);
-        lastStatus.toolSummaries.push({ label: t().sumStoreOverlay, value: t().ready });
+        const entry = { label: t().sumStoreOverlay, value: t().ready };
+        lastStatus.toolSummaries.push(entry);
+        trackAsync("store-overlay", Promise.resolve(initStoreOverlay(settings)), () => {
+          entry.value = t().toolFailed;
+        });
       }
     });
   } else if (pageType === "discovery") {
@@ -1038,8 +1044,11 @@ async function runForPage(): Promise<void> {
     // ranks products, it does not post anywhere.
     guard("trend-radar", () => {
       if (settings.tools.trendRadar) {
-        void initTrendRadar(settings);
-        lastStatus.toolSummaries.push({ label: t().sumTrendRadar, value: t().ready });
+        const entry = { label: t().sumTrendRadar, value: t().ready };
+        lastStatus.toolSummaries.push(entry);
+        trackAsync("trend-radar", Promise.resolve(initTrendRadar(settings)), () => {
+          entry.value = t().toolFailed;
+        });
       }
     });
   } else if (pageType === "deals") {
@@ -1049,8 +1058,11 @@ async function runForPage(): Promise<void> {
     // when the ib-ext-deals-feed listener re-runs the page.
     guard("deals-overlay", () => {
       if (settings.tools.dealsOverlay) {
-        void initDealsOverlay(settings);
-        lastStatus.toolSummaries.push({ label: t().sumDealsOverlay, value: t().ready });
+        const entry = { label: t().sumDealsOverlay, value: t().ready };
+        lastStatus.toolSummaries.push(entry);
+        trackAsync("deals-overlay", Promise.resolve(initDealsOverlay(settings)), () => {
+          entry.value = t().toolFailed;
+        });
       }
     });
   } else if (pageType === "idea-list") {
@@ -1059,8 +1071,11 @@ async function runForPage(): Promise<void> {
     // anywhere.
     guard("idea-list-overlay", () => {
       if (settings.tools.ideaListOverlay) {
-        void initIdeaListOverlay(settings);
-        lastStatus.toolSummaries.push({ label: t().sumIdeaList, value: t().ready });
+        const entry = { label: t().sumIdeaList, value: t().ready };
+        lastStatus.toolSummaries.push(entry);
+        trackAsync("idea-list-overlay", Promise.resolve(initIdeaListOverlay(settings)), () => {
+          entry.value = t().toolFailed;
+        });
       }
     });
   } else if (pageType === "campaign-grid") {

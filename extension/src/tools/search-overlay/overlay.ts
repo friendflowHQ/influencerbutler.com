@@ -560,6 +560,7 @@ export async function initSearchOverlay(
       .sort(comparator("score"));
     const targets = pending.slice(0, SCAN_CAP);
     let done = 0;
+    let failed = 0;
     for (const row of targets) {
       if (stopScan || epoch !== initEpoch) break;
       setStatus(t().searchScanning(done + 1, targets.length));
@@ -581,6 +582,9 @@ export async function initSearchOverlay(
         }
       } catch (error) {
         log("search-overlay", `scan failed for ${row.tile.asin}`, error);
+        // Let the next Scan click retry this tile.
+        row.scanned = false;
+        failed += 1;
       }
       done += 1;
     }
@@ -589,7 +593,13 @@ export async function initSearchOverlay(
     const remaining = rows.filter(
       (r) => r.tile.el.style.display !== "none" && !r.scanned,
     ).length;
-    setStatus(remaining > 0 ? t().searchScanMore(done, remaining) : t().searchScanDone(done));
+    setStatus(
+      failed > 0
+        ? legend().scanFailed(failed)
+        : remaining > 0
+          ? t().searchScanMore(done, remaining)
+          : t().searchScanDone(done),
+    );
   };
 
   // "Send deals to app": batch the page's discounted tiles (a rollback /
@@ -675,6 +685,7 @@ export async function initSearchOverlay(
     onScanStop: () => {
       stopScan = true;
     },
+    onToggleBadges: setBadgesHidden,
     showScan: caps.videoScan,
     showCampaignFilter: caps.campaignFilter,
     // Walmart search / rollback / deals grids can hand-picked-batch to the
@@ -906,8 +917,45 @@ function videoChip(row: Row): HTMLElement | null {
   return chip;
 }
 
+// A tile can collect a dozen chips; show the first few and fold the rest behind
+// a "+N" chip that expands in place (state kept on the body so a re-render of the
+// same tile does not collapse it again).
+const MAX_VISIBLE_CHIPS = 7;
+
+function capChips(body: HTMLElement): void {
+  const chips = Array.from(body.children).filter((c) => c.classList.contains("tile-chip")) as HTMLElement[];
+  if (chips.length <= MAX_VISIBLE_CHIPS + 1) return;
+  const extra = chips.slice(MAX_VISIBLE_CHIPS);
+  const expanded = body.dataset.chipsExpanded === "1";
+  for (const c of extra) c.hidden = !expanded;
+  const more = el("button", "tile-chip more", expanded ? legend().less : `+${extra.length}`) as HTMLButtonElement;
+  more.type = "button";
+  more.title = expanded ? legend().less : legend().more(extra.length);
+  more.setAttribute("aria-expanded", String(expanded));
+  more.addEventListener("click", () => {
+    const now = body.dataset.chipsExpanded !== "1";
+    body.dataset.chipsExpanded = now ? "1" : "0";
+    for (const c of extra) c.hidden = !now;
+    more.textContent = now ? legend().less : `+${extra.length}`;
+    more.setAttribute("aria-expanded", String(now));
+  });
+  extra[0]?.before(more);
+}
+
+// Toolbar "Hide badges": per page, not persisted. Remembered here so tiles that
+// mount later (infinite scroll) honor it.
+let badgesHidden = false;
+
+function setBadgesHidden(hidden: boolean): void {
+  badgesHidden = hidden;
+  for (const h of Array.from(document.querySelectorAll<HTMLElement>(".tile-badge-host"))) {
+    h.style.display = hidden ? "none" : "";
+  }
+}
+
 function mountBadge(tile: SearchTile, body: HTMLElement, module: RetailerModule): void {
   const { host, root } = createInlineShadow("tile-badge-host");
+  if (badgesHidden) host.style.display = "none";
   const wrap = el("div", "tile-badge");
   wrap.append(body);
   root.append(wrap);
@@ -1101,6 +1149,7 @@ function renderBadge(row: Row, settings: Settings): void {
   }
   const video = videoChip(row);
   if (video) body.append(video);
+  capChips(body);
   if (row.showWatch) body.append(watchControl(row, settings));
   // The "..." action menu: Add to list / Copy link / Open page always, plus the
   // desktop-bridge actions when the app is paired (else an upsell). Mounted last

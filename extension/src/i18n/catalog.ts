@@ -222,6 +222,7 @@ export interface Dict {
   no: string;
   sumOrderScan: string;
   ready: string;
+  toolFailed: string;
   sumStorefrontCheckup: string;
   sumUploadHelper: string;
 
@@ -1528,6 +1529,7 @@ const en: Dict = {
   no: "No",
   sumOrderScan: "Order scan",
   ready: "Ready",
+  toolFailed: "Problem, reload the page",
   sumStorefrontCheckup: "Storefront checkup",
   sumUploadHelper: "Upload helper",
 
@@ -2854,6 +2856,7 @@ const es: Dict = {
   no: "No",
   sumOrderScan: "Escaneo de pedidos",
   ready: "Listo",
+  toolFailed: "Problema, recarga la página",
   sumStorefrontCheckup: "Chequeo del storefront",
   sumUploadHelper: "Asistente de subida",
 
@@ -4185,6 +4188,7 @@ const fr: Dict = {
   no: "Non",
   sumOrderScan: "Analyse des commandes",
   ready: "Prêt",
+  toolFailed: "Problème, rechargez la page",
   sumStorefrontCheckup: "Bilan du storefront",
   sumUploadHelper: "Assistant de mise en ligne",
 

@@ -2215,3 +2215,7 @@ a.tile-chip:hover { filter: brightness(0.97); }
 .search-legend ul { margin: 6px 0 0; padding-left: 18px; }
 .search-legend li { margin: 3px 0; }
 .search-legend[hidden] { display: none; }
+
+.tile-chip[hidden] { display: none; }
+button.tile-chip.more { font: inherit; cursor: pointer; }
+button.tile-chip.more:focus-visible { outline: 3px solid #1d4ed8; outline-offset: 2px; }

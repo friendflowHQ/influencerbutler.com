@@ -21,6 +21,8 @@ export type ToolbarCallbacks = {
   // resolves when done or stopped.
   onScanStart: (setStatus: (text: string) => void) => Promise<void>;
   onScanStop: () => void;
+  // "Hide badges" toggle: hides every tile's chip row on this page.
+  onToggleBadges?: (hidden: boolean) => void;
   // Controls that only apply to a retailer with the underlying feature. Default
   // true (Amazon); Walmart passes false to hide the video Scan and the
   // campaign-eligible filter, which it has no data for.
@@ -210,6 +212,20 @@ export function renderToolbar(cb: ToolbarCallbacks): SearchToolbar {
     keyBtn.setAttribute("aria-expanded", String(!keyPanel.hidden));
   });
   bar.append(keyBtn);
+  if (cb.onToggleBadges) {
+    const hideBtn = el("button", "btn secondary small") as HTMLButtonElement;
+    hideBtn.type = "button";
+    hideBtn.textContent = lg.hideBadges;
+    hideBtn.setAttribute("aria-pressed", "false");
+    let hidden = false;
+    hideBtn.addEventListener("click", () => {
+      hidden = !hidden;
+      cb.onToggleBadges?.(hidden);
+      hideBtn.textContent = hidden ? lg.showBadges : lg.hideBadges;
+      hideBtn.setAttribute("aria-pressed", String(hidden));
+    });
+    bar.append(hideBtn);
+  }
   root.append(bar, keyPanel);
   return {
     host,
