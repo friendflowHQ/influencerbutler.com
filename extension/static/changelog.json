@@ -11,7 +11,11 @@
             "Guided tours: a short walkthrough for product pages, search results, your storefront and Creator Connections, offered once per page type. Replay it any time from the popup with Take a quick tour of this page",
             "Search results get a Legend button that explains the score colors, chip colors and estimates, plus hover tips on the score, commission, sales rank, owned, posted, coupon and deal chips",
             "Search tiles show their first seven chips and fold the rest behind a +N button, and a new Hide badges button clears the chips from the page when you want a clean view",
-            "Ten tools that had no switch now have one in the popup under More tools, including owned and posted badges, Last Call, Video Money and the YouTube status chip"
+            "Ten tools that had no switch now have one in the popup under More tools, including owned and posted badges, Last Call, Video Money and the YouTube status chip",
+            "Your storefront shows how many posts, videos, idea lists and pics you have, in the search box and on the filter pills",
+            "A Campaign and Deal Planner on your storefront lists campaigns and deals in one place, with a CSV export",
+            "A storefront toolbar puts the check, planner, Connections, Manage and Orders shortcuts above your filter pills",
+            "Trending picks tiles now show campaign and deal chips"
           ]
         },
         {
