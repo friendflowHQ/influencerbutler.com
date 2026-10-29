@@ -9,11 +9,11 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Deals Butler Workspace Add-on - $24.99/mo · Influencer Butler",
   description:
-    "Add a second Deals Butler workspace for a different niche. Own filters, schedules, and queues - managed alongside your main workspace. No promo or affiliate codes apply.",
+    "Add a second Deal Posting workspace for a different niche. Own filters, schedules, and queues - managed alongside your main workspace. No promo or affiliate codes apply.",
   openGraph: {
     title: "Deals Butler Workspace Add-on - $24.99/mo",
     description:
-      "Add a second Deals Butler workspace for a different niche.",
+      "Add a second Deal Posting workspace for a different niche.",
     type: "website",
   },
 };
@@ -75,10 +75,10 @@ export default async function DailyDealsWorkspacePage() {
             Add-on
           </p>
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
-            One Deals Butler per niche
+            One Deal Posting per niche
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base text-slate-600 sm:text-lg">
-            Run a separate Deals Butler workspace for each niche you
+            Run a separate Deal Posting workspace for each niche you
             promote - Gardening, Sports, Cooking, whatever. Own filters,
             schedules, post queues, and tallies. Stacks cleanly with your
             Pro plan, no extra setup.
@@ -106,7 +106,7 @@ export default async function DailyDealsWorkspacePage() {
               </h3>
               <p className="mt-2 text-sm text-slate-600">
                 You post Gardening deals on one storefront and Sports deals on
-                another. One Deals Butler doesn&apos;t cut it because the
+                another. One Deal Posting doesn&apos;t cut it because the
                 filters, schedules, and post queues need to be different per
                 niche.
               </p>
@@ -117,9 +117,9 @@ export default async function DailyDealsWorkspacePage() {
                 Different posting cadences
               </h3>
               <p className="mt-2 text-sm text-slate-600">
-                Your Cooking Deals Butler posts at 10am ET. Your Sports one
-                fires every game-day Saturday. Each added Deals Butler is its
-                own Amazon Deals and Walmart Deals workspaces plus its own
+                Your Cooking Deal Posting posts at 10am ET. Your Sports one
+                fires every game-day Saturday. Each added Deal Posting is its
+                own AMZ Deals Finder and WAL Deals Finder workspaces plus its own
                 scheduler and destinations - they don&apos;t step on each
                 other or on your main one.
               </p>
@@ -168,12 +168,12 @@ export default async function DailyDealsWorkspacePage() {
               </h3>
               <p className="mt-1 text-sm text-slate-600">
                 Next time you sign in, the new workspace is already credited.
-                Open Deals Butler in the nav and click{" "}
+                Open Deal Posting in the nav and click{" "}
                 <span className="font-mono text-[13px]">+ Add Workspace</span>.
                 Name it whatever you want - &ldquo;Gardening&rdquo;,
                 &ldquo;Sports&rdquo;, &ldquo;Cooking&rdquo;. You get a
-                &ldquo;Gardening Butler&rdquo; hub in the Deals Butler group and
-                &ldquo;Gardening Amazon Deals&rdquo; / &ldquo;Gardening Walmart
+                &ldquo;Gardening Butler&rdquo; hub in the Deal Posting group and
+                &ldquo;Gardening AMZ Deals Finder&rdquo; / &ldquo;Gardening Walmart
                 Deals&rdquo; next to your main stores under Amazon Butler and
                 Walmart Butler.
               </p>
@@ -190,7 +190,7 @@ export default async function DailyDealsWorkspacePage() {
               <p className="mt-1 text-sm text-slate-600">
                 Optionally clone your existing filters / presets / schedules
                 with one click (fresh queues + tallies), or start from the
-                Deals Butler defaults. Your existing workspace stays
+                Deal Posting defaults. Your existing workspace stays
                 untouched.
               </p>
             </div>
@@ -205,7 +205,7 @@ export default async function DailyDealsWorkspacePage() {
             <div className="bg-slate-900 px-6 py-4 text-white">
               <h3 className="text-lg font-semibold">Deals Butler Workspace</h3>
               <p className="text-sm text-slate-300">
-                One extra Deals Butler workspace per subscription
+                One extra Deal Posting workspace per subscription
               </p>
             </div>
             <div className="px-6 py-8 sm:px-10">
@@ -225,7 +225,7 @@ export default async function DailyDealsWorkspacePage() {
                   <span className="text-[#f97316]" aria-hidden>
                     ✓
                   </span>
-                  One additional Deals Butler workspace
+                  One additional Deal Posting workspace
                 </li>
                 <li className="flex gap-2">
                   <span className="text-[#f97316]" aria-hidden>
@@ -330,7 +330,7 @@ export default async function DailyDealsWorkspacePage() {
             <dd className="mt-2 text-sm text-slate-600">
               Absolutely. Each $24.99/month subscription unlocks exactly one
               extra workspace. If you have four niches, buy four. They show up
-              as separate Butlers under Deals Butler in the nav.
+              as separate Butlers under Deal Posting in the nav.
             </dd>
           </div>
         </dl>

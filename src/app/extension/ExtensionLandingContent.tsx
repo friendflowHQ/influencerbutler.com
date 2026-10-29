@@ -78,7 +78,7 @@ const APP_VS_EXTENSION: Array<{ feature: string; ext: boolean | string; app: boo
   { feature: "Localized links for 12 marketplaces (Global Maximizer)", ext: true, app: false },
   { feature: "Deal Sites Harvester (turn deal lists into deals)", ext: true, app: true },
   {
-    feature: "Walmart, Target, and Benable overlays (Walmart products can be sent to your Deals Butler)",
+    feature: "Walmart, Target, and Benable overlays (Walmart products can be sent to your Deal Posting)",
     ext: true,
     app: "Receives and posts the deals",
   },

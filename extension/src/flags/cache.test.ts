@@ -11,6 +11,7 @@ describe("sanitizeFlags", () => {
       events: [],
       selectorOverrides: {},
       notice: null,
+      eventBanner: null,
     });
     expect(sanitizeFlags(null)).toEqual(empty);
     expect(sanitizeFlags("garbage")).toEqual(empty);

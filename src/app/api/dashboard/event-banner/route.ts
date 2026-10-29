@@ -26,7 +26,7 @@ export async function GET() {
     const b = banners[0];
     if (!b) return NextResponse.json({ banner: null });
     return NextResponse.json({
-      banner: { id: b.id, text: b.text, ctaLabel: b.ctaLabel, ctaUrl: b.ctaUrl },
+      banner: { id: b.id, text: b.text, ctaLabel: b.ctaLabel, ctaUrl: b.ctaUrl, whenLabel: b.whenLabel },
     });
   } catch (e) {
     console.error("[event-banner] failed", e);

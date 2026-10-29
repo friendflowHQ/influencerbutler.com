@@ -16,7 +16,7 @@ const PAGE_URL = `${SITE_ORIGIN}/videos`;
 export const metadata: Metadata = {
   title: "Walkthrough Videos: Every Influencer Butler Tool in Two Minutes",
   description:
-    "Short screen recordings of Influencer Butler, narrated start to finish: getting started, Deals Butler, Creator Connections, Walmart, Benable, Levanta and more. Every video has a transcript.",
+    "Short screen recordings of Influencer Butler, narrated start to finish: getting started, Deal Posting, Creator Connections, Walmart, Benable, Levanta and more. Every video has a transcript.",
   alternates: { canonical: PAGE_URL },
   openGraph: {
     title: "Influencer Butler walkthrough videos",

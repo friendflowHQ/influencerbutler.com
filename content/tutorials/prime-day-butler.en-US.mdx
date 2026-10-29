@@ -8,7 +8,7 @@ category: Other
 
 Prime Day Butler is a seasonal radar that surfaces deal-worthy Amazon products from four sources at once: content you've already posted to your storefront, products you've actually bought (from Orders Butler), fresh discoveries pulled from the Creators API, and the **Amazon Associates Deals Hub** (the curated deals catalogue, including upcoming deals that haven't started yet). Every row is ranked by **estimated earnings** (biggest first) and tagged with a bucket so you know whether it's upcoming, a quick win, or a last-minute pick. You filter by keyword, minimum % off, and max price; the table updates and you export the candidates to CSV.
 
-The table works like Orders Butler: a product thumbnail on every row, columns you can drag to reorder, resize, or hide (the layout is remembered), click-to-sort headers, and a live keyword or ASIN filter box. Tick the rows you want and send them straight to Deals Butler in one click, with the video or photo you already made attached to the post.
+The table works like Orders Butler: a product thumbnail on every row, columns you can drag to reorder, resize, or hide (the layout is remembered), click-to-sort headers, and a live keyword or ASIN filter box. Tick the rows you want and send them straight to Deal Posting in one click, with the video or photo you already made attached to the post.
 
 ## The Deals Hub source (and upcoming deals)
 
@@ -16,7 +16,7 @@ The Deals Hub is Amazon's own curated list of deals for creators. It is the only
 
 Each Deals Hub row carries a **Status** of Upcoming or Live, the deal schedule, and the deal tags Amazon applies (Best Deal, Prime Exclusive, Creator Favorite).
 
-> Upcoming deal prices and Prime Day dates are confidential until Amazon publishes them. Prime Day Butler marks upcoming rows and asks you to confirm before you queue one to Deals Butler, so you don't post embargoed pricing early.
+> Upcoming deal prices and Prime Day dates are confidential until Amazon publishes them. Prime Day Butler marks upcoming rows and asks you to confirm before you queue one to Deal Posting, so you don't post embargoed pricing early.
 
 ## Lowest price all year
 
@@ -65,21 +65,21 @@ If any source is missing, the workspace still runs. It just shows fewer rows.
    - **Lowest all year only**: filter to deals that beat the year's lowest price.
 5. Click **Run now**. The status line shows the count, split by upcoming, quick wins, and last-minute.
 6. Use the bucket tabs to focus, sort by **Est. earnings** to post the biggest earners first, or by **vs YTD low** to lead with the best-price-all-year deals. Type in the **Filter by keyword or ASIN** box to narrow the visible rows, or use the **Deal status** and **Has created content only** filters.
-7. Per row: **Open** the product, open the links in the **Content** column or **Download** the file you already made, or **Add to Deals Butler** to queue a single post. **Export CSV** dumps the whole filtered list, including the earnings columns.
-8. **Print content list** gives you a printable checklist of live or upcoming deals you have no content for yet, and **Print repost list** gives you the deals you already have content or a post for. Both show the top 60 ranked by estimated earnings. Under **Send deals to**, pick which Deals Butler workspace the picks go to. During a Prime event it defaults to your Prime Day queue.
+7. Per row: **Open** the product, open the links in the **Content** column or **Download** the file you already made, or **Add to Deal Posting** to queue a single post. **Export CSV** dumps the whole filtered list, including the earnings columns.
+8. **Print content list** gives you a printable checklist of live or upcoming deals you have no content for yet, and **Print repost list** gives you the deals you already have content or a post for. Both show the top 60 ranked by estimated earnings. Under **Send deals to**, pick which Deal Posting workspace the picks go to. During a Prime event it defaults to your Prime Day queue.
 
 ## Grab and post in a couple of clicks
 
 You don't have to queue deals one at a time. Tick the checkbox on each row you want (or **Select visible** to grab the whole filtered list), then pick how ready they should be under **Send as**:
 
-- **Drafts to review**: the deals land in the Deals Butler queue as drafts. You review them and choose destinations there before anything posts.
+- **Drafts to review**: the deals land in the Deal Posting queue as drafts. You review them and choose destinations there before anything posts.
 - **Ready to post**: the deals arrive already targeting your enabled Social Destinations, so they're one click from going out.
 
-Click **Send selected to Deals Butler**. Each deal carries its affiliate or deep link (built from your API Integrations link routing) and the caption, and **the video or photo you already made for that product is attached automatically**, looked up by ASIN from Video Reload Butler and Photo Reload Butler. If no local copy exists but the source is known, it's downloaded on demand. Your created video posts to Facebook groups and pages; other destinations use the product image. Upcoming (embargoed) deals are confirmed once before they're queued.
+Click **Send selected to Deal Posting**. Each deal carries its affiliate or deep link (built from your API Integrations link routing) and the caption, and **the video or photo you already made for that product is attached automatically**, looked up by ASIN from Video Reload Butler and Photo Reload Butler. If no local copy exists but the source is known, it's downloaded on demand. Your created video posts to Facebook groups and pages; other destinations use the product image. Upcoming (embargoed) deals are confirmed once before they're queued.
 
 ## Hands-off with Deals Hub Auto-Pilot
 
-If you'd rather not tick rows at all, expand **Deals Hub Auto-Pilot** (it's the same engine shared with Deals Butler) and let it add deals on a schedule. Three independent rules cover deals above a minimum percent off, deals with a **Creator Connections** opportunity, and deals with an **SPCC** opportunity. Each rule has its own cadence (every so many minutes, hours, or days), a live-only option, a per-run cap, and a "skip if posted within X days" guard, and you choose whether matches land as drafts to review or scheduled straight into the auto-post queue. Whatever you set here drives the same Deals Butler queue your manual sends feed.
+If you'd rather not tick rows at all, expand **Deals Hub Auto-Pilot** (it's the same engine shared with Deal Posting) and let it add deals on a schedule. Three independent rules cover deals above a minimum percent off, deals with a **Creator Connections** opportunity, and deals with an **SPCC** opportunity. Each rule has its own cadence (every so many minutes, hours, or days), a live-only option, a per-run cap, and a "skip if posted within X days" guard, and you choose whether matches land as drafts to review or scheduled straight into the auto-post queue. Whatever you set here drives the same Deal Posting queue your manual sends feed.
 
 ## Customize the table
 
@@ -94,28 +94,28 @@ Click **Find trending** to pull current Prime Day deals from the Creators API (a
 
 ## The Prime Day Deals workspace
 
-**Prime Day Deals** is a Deals Butler workspace with its own queue, so your event deals never mix with your everyday ones. Everything you know from Deals Butler works the same: Build Your Post, the Scheduler, Social Destinations.
+**Prime Day Deals** is a Deal Posting workspace with its own queue, so your event deals never mix with your everyday ones. Everything you know from Deal Posting works the same: Build Your Post, the Scheduler, Social Destinations.
 
 - **Search Deals** returns only Prime Big Deal Days deals from the Deals Hub catalogue. Keywords narrow it, and price, percent off, exclusions, **Max deals harvested**, **Result priority** and **Top up** still apply.
 - In **Promo Code Hub**, the **Prime Day Deals Catalogue** tab opens with Prime Big Deal Days pre-ticked. Use **Refresh from Amazon**, then filter with **Live only**, **Upcoming only**, **Lowest all year only**, **Prime Exclusive only**, **Creator Favorite only**, **Creator Connections only**, **SPCC only** and **Hide sent**.
 - Promo codes, promotion cards and coupon searches are hidden here because they do not apply to event deals.
-- The first time you open it, your Deals Butler schedule is copied in with auto-post **off**. Check how often it posts and your start time before you turn Prime Day mode on.
-- **Walmart Deals** has an **Event Deals** tab (the Walmart Fall Deals Event) where you pick deals and add them to your queue.
+- The first time you open it, your Deal Posting schedule is copied in with auto-post **off**. Check how often it posts and your start time before you turn Prime Day mode on.
+- **WAL Deals Finder** has an **Event Deals** tab (the Walmart Fall Deals Event) where you pick deals and add them to your queue.
 
 ## Post your Prime Day deals: turn Prime Day mode on and off
 
-Prime Day Butler finds the deals. To actually post them, you switch the Deals Butler into **Prime Day mode**.
+Prime Day Butler finds the deals. To actually post them, you switch the Deal Posting into **Prime Day mode**.
 
 **Turn it on (the day before):**
 
-1. Open **Deals Butler** in the left nav, then the **Scheduler** tab.
+1. Open **Deal Posting** in the left nav, then the **Scheduler** tab.
 2. Find the **Prime Day mode** card and tick **Post my Prime Day deals instead**.
 
-While it is on, your Prime Day deals post and your regular Deals Butler posting pauses, so the two never compete. You can keep prepping deals in your **Prime Day Deals** workspace whether the mode is on or off.
+While it is on, your Prime Day deals post and your regular Deal Posting posting pauses, so the two never compete. You can keep prepping deals in your **Prime Day Deals** workspace whether the mode is on or off.
 
 **Turn it off (when the event ends):**
 
-1. Open **Deals Butler**. A banner at the top says Prime Day mode is on.
+1. Open **Deal Posting**. A banner at the top says Prime Day mode is on.
 2. Click **Turn off Prime Day mode** in that banner. Your regular deals start posting again.
 
 **You do not have to remember the dates.** The day before Prime Day or Prime Big Deal Days, a banner appears at the top of the app telling you to turn Prime Day mode on, and **Show me where** points straight at the switch. When the event is over and the mode is still on, a banner tells you to turn it off, and **Show me how** points at the button. The banners disappear on their own once you flip the mode, and the x hides one for that event.
@@ -134,7 +134,7 @@ The **Call to action** pill uses Prime lines in these workspaces (for example "P
 
 ## Send to both butlers on event days
 
-While Prime Day, Prime Big Deal Days or a Walmart Deals event is running, the Influencer Butler extension can send a deal to the Prime Day Deals workspace as well as your usual Deals Butler workspace. Open the extension Settings, then Deals, and pick what you want under "On event days":
+While Prime Day, Prime Big Deal Days or a WAL Deals Finder event is running, the Influencer Butler extension can send a deal to the Prime Day Deals workspace as well as your usual Deal Posting workspace. Open the extension Settings, then Deals, and pick what you want under "On event days":
 
 - **Only send to my chosen workspace**: nothing changes.
 - **Offer an extra button** (the default): the product page bar gets an "Also send to Prime Day Deals" checkbox, and the Send to Deals button on deal sites gets a "+ Prime Day Deals" button beside it.
@@ -146,14 +146,14 @@ The extra option only appears during an event, and only when the Prime Day Deals
 
 These are the questions creators ask most during Prime Day and Prime Big Deal Days. The chat bubble in the bottom right corner of the app answers them too, and while an event is on it shows them as quick questions at the top. Ask it for a walkthrough and it highlights each control on screen.
 
-**Is my Prime Day mode on right now?** Open **Deals Butler**, then the **Scheduler** tab. The **Prime Day mode** card shows the switch, and a banner at the top of Deals Butler says when it is on. Every Deals Butler clone has its own switch.
+**Is my Prime Day mode on right now?** Open **Deal Posting**, then the **Scheduler** tab. The **Prime Day mode** card shows the switch, and a banner at the top of Deal Posting says when it is on. Every Deal Posting clone has its own switch.
 
 **My Prime Day deals are not posting. What do I check?**
 
-1. Prime Day mode is on for that Deals Butler.
-2. Auto-post is on in that Deals Butler's **Scheduler**.
+1. Prime Day mode is on for that Deal Posting.
+2. Auto-post is on in that Deal Posting's **Scheduler**.
 3. Your **Prime Day Deals** queue actually has deals in it. Run **Search Deals** there, or send picks from **Deal Finder**.
-4. Your **Social Destinations** are connected. Prime Day Deals posts through your Deals Butler's destinations, so fix them there.
+4. Your **Social Destinations** are connected. Prime Day Deals posts through your Deal Posting's destinations, so fix them there.
 5. Nothing is paused. If a platform limited your account, the app shows the restart time and posts again on its own.
 
 **Why did my regular deals stop?** Prime Day mode pauses them on purpose so the two never compete. They start again when the mode turns off.
@@ -166,7 +166,7 @@ These are the questions creators ask most during Prime Day and Prime Big Deal Da
 
 **Deal Finder is missing products I just bought.** Orders Butler is out of date. Run it first, or take the Prime Big Deal Days walkthrough from the chat bubble, which refreshes stale orders for you before it builds your list.
 
-**Can my Foyer page show Prime Day deals?** In newer versions, yes. Open **Foyer Butler**, find **Prime Day deals on this page** under the Today's Deals storefront, and choose **Ask me when Prime Day mode starts**, **Yes, show Prime Day deals during the event** or **No, keep my regular deals**. With the Yes choice the page shows only that Deals Butler's Prime Day deals during the event and goes back to your regular deals by itself when it ends. If you do not see the setting, update the app.
+**Can my Foyer page show Prime Day deals?** In newer versions, yes. Open **Foyer Butler**, find **Prime Day deals on this page** under the Today's Deals storefront, and choose **Ask me when Prime Day mode starts**, **Yes, show Prime Day deals during the event** or **No, keep my regular deals**. With the Yes choice the page shows only that Deal Posting's Prime Day deals during the event and goes back to your regular deals by itself when it ends. If you do not see the setting, update the app.
 
 **Does Black Friday Butler cover Prime Day?** No. Black Friday Butler is the separate radar for the Black Friday and Cyber Monday window.
 
@@ -182,6 +182,6 @@ These are the questions creators ask most during Prime Day and Prime Big Deal Da
 
 ## Related
 
-- [Deals Butler tutorial](/help/tutorials/deals): where most users send the picks next.
+- [Deal Posting tutorial](/help/tutorials/deals): where most users send the picks next.
 - [Black Friday Butler tutorial](/help/tutorials/black-friday): same seasonal-radar shape for the BFCM window.
 - [Storefront Butler tutorial](/help/tutorials/storefrontbutler): keeps the "content I already made" source fresh.

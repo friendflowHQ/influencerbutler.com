@@ -23,7 +23,7 @@ import { detectRetailerForUrl } from "../content/page-type";
 import { retailerModule } from "../retailers/module";
 import { copyButton } from "../ui/components";
 import { getSettings, patchSettings } from "../storage/store";
-import { getFlags } from "../flags/cache";
+import { getFlags, type EventBanner } from "../flags/cache";
 import type { Settings, WatchCondition } from "../storage/schema";
 import {
   AVAILABILITY_MARKETS,
@@ -1196,6 +1196,24 @@ function wirePopupZoom(): void {
   });
 }
 
+// The scheduled group-event announcement: title carries the date, and the
+// Register button opens the event page in a new tab.
+function renderEventBanner(banner: EventBanner | null): void {
+  const card = byId("event-banner");
+  if (!banner) {
+    card.hidden = true;
+    return;
+  }
+  byId("event-banner-title").textContent = banner.whenLabel
+    ? `Upcoming event: ${banner.whenLabel}`
+    : "Upcoming event";
+  byId("event-banner-text").textContent = banner.text;
+  const cta = byId("event-banner-cta");
+  cta.textContent = banner.ctaLabel;
+  cta.onclick = () => void chrome.tabs.create({ url: banner.ctaUrl });
+  card.hidden = false;
+}
+
 async function renderPageStatus(): Promise<void> {
   const text = byId("page-status-text");
   const list = byId("page-status-list");
@@ -1205,7 +1223,13 @@ async function renderPageStatus(): Promise<void> {
   const notice = byId("page-status-notice");
   try {
     const flags = await getFlags();
-    if (flags?.notice) {
+    const banner = flags?.eventBanner ?? null;
+    renderEventBanner(banner);
+    // Older servers mirrored the event text into `notice`; when the dated card
+    // is showing, hide that duplicate (a real admin notice still shows).
+    const duplicatesBanner =
+      !!banner && !!flags?.notice && flags.notice.startsWith(banner.text.slice(0, 60));
+    if (flags?.notice && !duplicatesBanner) {
       notice.textContent = flags.notice;
       notice.hidden = false;
     } else {
@@ -1213,6 +1237,7 @@ async function renderPageStatus(): Promise<void> {
     }
   } catch {
     notice.hidden = true;
+    renderEventBanner(null);
   }
   try {
     const tab = await activePageTab();

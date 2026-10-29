@@ -14,8 +14,8 @@ Une suppression sur Facebook est définitive, donc l'outil fonctionne en mode ap
 
 ## Avant de commencer
 
-- Une session Facebook dans Influencer Butler (les mêmes comptes que ceux utilisés par Deals Butler pour publier, y compris ceux d'un clone Deals).
-- Rien d'autre. La liste des destinations est copiée directement depuis vos groupes et pages Deals Butler, regroupée par compte qui y publie.
+- Une session Facebook dans Influencer Butler (les mêmes comptes que ceux utilisés par Deal Posting pour publier, y compris ceux d'un clone Deals).
+- Rien d'autre. La liste des destinations est copiée directement depuis vos groupes et pages Deal Posting, regroupée par compte qui y publie.
 - **Facultatif : une clé API OpenAI** dans API Integrations, uniquement pour l'option qui analyse aussi les images. Tout le reste fonctionne sans elle. [Comment obtenir une clé](/help/tutorials/openai-api-setup).
 
 ## Choisir quoi nettoyer
@@ -25,7 +25,7 @@ Deux menus déroulants déterminent la cible :
 - **Où nettoyer** : **Mon journal** correspond à votre profil Facebook personnel. **Groupes ou pages Facebook** couvre les destinations où partent réellement vos bons plans. Vos publications Influencer Butler vont dans des groupes et des pages : choisissez cette option pour nettoyer les offres.
 - **Contenu de qui** : **Mon propre contenu** est le choix sûr par défaut. **Uniquement les publications d'Influencer Butler** limite le nettoyage à ce que l'app a créé. **Une personne précise** et **N'importe qui, par mot-clé** sont des outils de modération pour administrateurs : ils retirent les publications d'autres membres, exigent les droits d'administrateur du groupe et ne s'appliquent qu'aux groupes.
 
-Avec les groupes sélectionnés, cochez les groupes et pages à nettoyer dans la liste (copiée depuis Deals Butler) ou collez d'autres URL de groupes ou de pages, une par ligne.
+Avec les groupes sélectionnés, cochez les groupes et pages à nettoyer dans la liste (copiée depuis Deal Posting) ou collez d'autres URL de groupes ou de pages, une par ligne.
 
 Quand **Contenu de qui** est réglé sur **N'importe qui, par mot-clé**, une option **Comment trouver les publications** apparaît :
 
@@ -41,10 +41,10 @@ Choisissez un seul compte quand vous voulez nettoyer uniquement avec cette sessi
 
 À chaque passe, deux choses se font automatiquement :
 
-- Une publication que Deals Butler a créée en tant que page Facebook (une destination page, ou un groupe réglé pour publier en tant que votre page) est supprimée en agissant comme cette page, la seule façon autorisée par Facebook.
-- Un compte que Facebook limite en ce moment, ou qui est en dehors des heures de publication fixées dans Deals Butler, est ignoré pour cette exécution, avec la raison dans le journal. Supprimer avec un compte limité comporte le même risque que publier avec lui.
+- Une publication que Deal Posting a créée en tant que page Facebook (une destination page, ou un groupe réglé pour publier en tant que votre page) est supprimée en agissant comme cette page, la seule façon autorisée par Facebook.
+- Un compte que Facebook limite en ce moment, ou qui est en dehors des heures de publication fixées dans Deal Posting, est ignoré pour cette exécution, avec la raison dans le journal. Supprimer avec un compte limité comporte le même risque que publier avec lui.
 
-Après un nettoyage, chaque publication d'Influencer Butler supprimée est marquée **Supprimée** dans l'Archive de Deals Butler, pour que rien ne la traite encore comme active.
+Après un nettoyage, chaque publication d'Influencer Butler supprimée est marquée **Supprimée** dans l'Archive de Deal Posting, pour que rien ne la traite encore comme active.
 
 ## Filtres
 

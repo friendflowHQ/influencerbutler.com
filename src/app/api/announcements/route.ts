@@ -29,7 +29,7 @@ export async function GET(request: Request) {
   const surface = parseSurface(new URL(request.url).searchParams.get("surface"));
 
   const admin = getAdmin();
-  let banners: Array<{ id: string; text: string; ctaLabel: string | null; ctaUrl: string; startsAt: string; endsAt: string | null }> = [];
+  let banners: Array<{ id: string; text: string; ctaLabel: string | null; ctaUrl: string; startsAt: string; endsAt: string | null; whenLabel: string }> = [];
   if (admin) {
     try {
       banners = await activeBanners(admin, surface);

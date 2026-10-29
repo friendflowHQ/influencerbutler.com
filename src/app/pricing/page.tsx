@@ -213,7 +213,7 @@ export default async function PricingPage({
                   Deals Butler Workspace
                 </h3>
                 <p className="text-sm text-slate-600">
-                  One additional Deals Butler workspace per subscription.
+                  One additional Deal Posting workspace per subscription.
                 </p>
               </div>
               <div className="text-right">

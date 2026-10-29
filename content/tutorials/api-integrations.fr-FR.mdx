@@ -19,7 +19,7 @@ Il gère aussi le **routage d'affiliation** - la logique qui décide via quel fo
 Rien d'obligatoire - mais chaque intégration est indépendante, vous pouvez donc les ajouter une par une au fur et à mesure que vous connectez de nouveaux espaces. Premières intégrations habituelles :
 
 - **Amazon Creators API**: nécessaire à Storefront Butler, Daily Commission Butler, Voiceover Butler, tout ce qui lit les détails produit.
-- **OpenAI**: nécessaire aux butlers IA : Générateur de mots-clés par IA, Voiceover Butler, Benable Butler, Benable Comment Butler, Benable List Optimize, Facebook Group Builder, et les fonctions IA facultatives de Deals Butler, Social Posting Butler, YouTube Butler, Video Reload Butler, Orders Butler et Supprimer publications et commentaires. Vous payez OpenAI directement pour ce que vous utilisez (généralement quelques centimes), pas Influencer Butler, et un abonnement ChatGPT ne fonctionne pas. Voyez [Configurer l'API OpenAI (ce n'est pas ChatGPT)](/help/tutorials/openai-api-setup) pour la liste complète des outils qui ont besoin d'une clé et ce qui est inclus sans (l'AI Assistant n'a pas besoin de clé).
+- **OpenAI**: nécessaire aux butlers IA : Générateur de mots-clés par IA, Voiceover Butler, Benable Butler, Benable Comment Butler, Benable List Optimize, Facebook Group Builder, et les fonctions IA facultatives de Deal Posting, Social Posting Butler, YouTube Butler, Video Reload Butler, Orders Butler et Supprimer publications et commentaires. Vous payez OpenAI directement pour ce que vous utilisez (généralement quelques centimes), pas Influencer Butler, et un abonnement ChatGPT ne fonctionne pas. Voyez [Configurer l'API OpenAI (ce n'est pas ChatGPT)](/help/tutorials/openai-api-setup) pour la liste complète des outils qui ont besoin d'une clé et ce qui est inclus sans (l'AI Assistant n'a pas besoin de clé).
 - **Autres clés IA et données**: le style de titre par IA de Photo Reload et Video Reload utilise une clé Anthropic, et Keepa, Fal.ai et Ideogram utilisent chacun leur propre clé, toutes ajoutées dans ce panneau.
 - **Votre fournisseur de deeplinks**: nécessaire dès que vous voulez des liens d'affiliation raccourcis/trackés plutôt que des URLs Amazon brutes.
 
@@ -141,7 +141,7 @@ En haut de **DeepLink Routing** se trouve l'interrupteur **Lien profond natif Am
 
 Sous **DeepLink Routing** se trouve une liste dépliable **Balises d'affiliation par pays**. La plupart se remplissent toutes seules : lorsque vous lancez la vérification de l'identifiant de boutique dans les **Paramètres**, elle lit les balises d'affiliation de votre compte Amazon et remplit automatiquement les pays correspondants. Relancez la vérification à tout moment pour les actualiser. Vous pouvez saisir une balise à la main dans n'importe quel pays pour la remplacer, et une balise que vous saisissez est conservée. Votre balise américaine reprend par défaut votre identifiant de boutique CC ; laissez un pays vide pour l'ignorer.
 
-Ces balises alimentent les options **Liens par pays** dans Deals Butler. La balise est ce qui permet le suivi de la commission dans ce pays ; un lien étranger n'est donc publié que lorsque vous avez ajouté sa balise.
+Ces balises alimentent les options **Liens par pays** dans Deal Posting. La balise est ce qui permet le suivi de la commission dans ce pays ; un lien étranger n'est donc publié que lorsque vous avez ajouté sa balise.
 
 ## Tableau de bord Performance des liens
 

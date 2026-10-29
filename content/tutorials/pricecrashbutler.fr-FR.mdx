@@ -1,6 +1,6 @@
 ---
 title: Pricecrash Butler: repérez les erreurs de tarification Amazon
-summary: Scannez Amazon selon un planning à la recherche de produits remisés ≥99 % et transférez les trouvailles à Deals Butler en brouillon ou en publication automatique.
+summary: Scannez Amazon selon un planning à la recherche de produits remisés ≥99 % et transférez les trouvailles à Deal Posting en brouillon ou en publication automatique.
 category: Amazon
 ---
 
@@ -10,7 +10,7 @@ category: Amazon
 
 Un vendeur oublie parfois une virgule décimale. L'équipe catalogue passe parfois à côté d'une alerte. Quand ça arrive, un aspirateur à 400 $ apparaît à 4 $ et un créateur réactif peut publier l'offre avant qu'Amazon ne corrige le prix.
 
-Pricecrash Butler est ce radar. Il tourne selon un planning, interroge l'Amazon Creators API sur les catégories que vous suivez, filtre chaque résultat par pourcentage de remise et, dès qu'un produit affiche ≥99 % de remise, l'envoie à **Deals Butler** soit en **brouillon pour relecture**, soit en **publication automatiquement planifiée** qui se publie tout de suite (ou à votre prochaine heure de publication programmée, au choix).
+Pricecrash Butler est ce radar. Il tourne selon un planning, interroge l'Amazon Creators API sur les catégories que vous suivez, filtre chaque résultat par pourcentage de remise et, dès qu'un produit affiche ≥99 % de remise, l'envoie à **Deal Posting** soit en **brouillon pour relecture**, soit en **publication automatiquement planifiée** qui se publie tout de suite (ou à votre prochaine heure de publication programmée, au choix).
 
 Le seuil vous appartient : 99 % par défaut parce que c'est là que vivent les vraies erreurs de prix. Baissez-le à 75–85 % pour élargir le filet aux liquidations et surstocks.
 
@@ -20,7 +20,7 @@ Le seuil vous appartient : 99 % par défaut parce que c'est là que vivent les v
 2. Sélectionnez au moins une **catégorie** à scanner. « All » couvre tous les rayons.
 3. (Facultatif) Sous **Marchés à analyser**, cochez les régions Amazon à parcourir (UK, DE, FR et plus). Laissez tout décoché pour n'analyser que votre marché principal. Une case se débloque une fois que vous connectez les identifiants de l'API Creators de cette région dans les Réglages : US et CA utilisent vos identifiants par défaut ; UK, DE, FR, IT et ES utilisent vos identifiants EU ; et JP, AU et IN utilisent vos identifiants FE.
 4. Choisissez le comportement à la détection : **Brouillon pour relecture**, **Planifier automatiquement** (choisissez le moment en dessous : **Publier tout de suite** ou **À la prochaine heure de publication programmée**) ou **Sans transfert**.
-5. Choisissez quels espaces d'offres reçoivent les trouvailles dans **Envoyer les trouvailles à**. Cochez votre Deals Butler de base et tout espace d'offres supplémentaire que vous avez ajouté. Chaque espace coché livre la trouvaille sur ses propres canaux. Le texte provient toujours de votre composeur **Composez votre publication** de Pricecrash Butler (plus bas), ainsi une même erreur de prix peut toucher plusieurs audiences à la fois d'une seule voix cohérente. Cette ligne est masquée si vous choisissez Sans transfert.
+5. Choisissez quels espaces d'offres reçoivent les trouvailles dans **Envoyer les trouvailles à**. Cochez votre Deal Posting de base et tout espace d'offres supplémentaire que vous avez ajouté. Chaque espace coché livre la trouvaille sur ses propres canaux. Le texte provient toujours de votre composeur **Composez votre publication** de Pricecrash Butler (plus bas), ainsi une même erreur de prix peut toucher plusieurs audiences à la fois d'une seule voix cohérente. Cette ligne est masquée si vous choisissez Sans transfert.
 6. Cliquez sur **Lancer**. Avec le champ **Mots-clés appâts** vide, le runner parcourt chaque catégorie sélectionnée par son nœud racine Amazon trié par prix croissant - aucun filtre sur le titre, donc il attrape les articles mal tarifés même si le vendeur n'a jamais écrit « clearance » dans la fiche.
 
 ## Mots-clés appâts
@@ -41,13 +41,13 @@ La Creators API n'expose pas de filtre « remise minimale » côté serveur. Pri
 
 ## Composez votre publication
 
-Pricecrash Butler a son propre composeur **Composez votre publication**, directement dans le panneau, pour que chaque prise se publie d'une seule voix cohérente, quels que soient les espaces d'offres qui la reçoivent. Il est organisé exactement comme celui de Deals Butler, avec trois pages : **Texte**, **Premier commentaire** et **Options**.
+Pricecrash Butler a son propre composeur **Composez votre publication**, directement dans le panneau, pour que chaque prise se publie d'une seule voix cohérente, quels que soient les espaces d'offres qui la reçoivent. Il est organisé exactement comme celui de Deal Posting, avec trois pages : **Texte**, **Premier commentaire** et **Options**.
 
 - **Choisissez un style.** La première étape de la page Texte propose des mises en page prêtes à l'emploi (Bases d'une publication d'offre, Telegram et Lâchers d'offres). Cliquez sur l'une d'elles pour remplir votre texte et votre premier commentaire, puis modifiez ce que vous voulez. Vous pouvez aussi glisser un style sur n'importe quel éditeur et enregistrer votre publication actuelle comme formule avec **Enregistrer comme formule**.
 - **Puces Insérer.** Le panneau **Insérer** à droite contient les puces : champs de l'offre (Image, Titre, ASIN, Lien, Prix soldé, Ancien prix, % de réduction, Boutique, Avis, Étoiles, Se termine dans), lignes rotatives (Accroche, Appel à l'action, Hashtags, Urgence) et la puce rouge **Urgence d'erreur de prix**. Il commence par l'essentiel ; cliquez sur **Plus de puces** pour tout voir et chercher par nom. Cliquez sur une puce pour l'ajouter là où se trouve votre curseur, ou glissez-la. Les puces déposées peuvent être déplacées ou retirées d'un clic. Il n'y a pas de puce de code promo ici : une erreur de prix ne vient jamais avec un code ni un coupon.
 - **La puce Image.** Déposez la puce violette **Image**, puis cliquez dessus pour choisir ce qui se publie avec chaque publication : la photo **Amazon** de l'offre capturée (par défaut), une image que vous **Importez**, ou **Aucune** pour une publication sans image.
 - **Une photo sous votre premier commentaire.** Sur la page Premier commentaire, utilisez le contrôle **Photo** pour publier une image sous le commentaire épinglé : **Photo du bon plan** utilise l'image Amazon du produit capturé, ou **Importer** pour ajouter la vôtre. Laissez-le sur **Aucune** pour garder le commentaire en texte seul.
-- **Un deuxième commentaire.** Sous le premier commentaire, **Commentaire 2 (facultatif)** est publié en dessous sur Facebook. Tapez ce que vous voulez, ou cliquez sur **Utiliser « voir toutes mes offres »** pour un commentaire tout prêt avec l'étiquette **Page Foyer**, qui renvoie vers votre page Foyer (sur votre propre domaine si vous en avez connecté un). Le commentaire 1 est épinglé en haut sur Facebook ; désactivez-le dans les **Paramètres** de Deals Butler avec **Épingler le premier commentaire des publications Facebook**.
+- **Un deuxième commentaire.** Sous le premier commentaire, **Commentaire 2 (facultatif)** est publié en dessous sur Facebook. Tapez ce que vous voulez, ou cliquez sur **Utiliser « voir toutes mes offres »** pour un commentaire tout prêt avec l'étiquette **Page Foyer**, qui renvoie vers votre page Foyer (sur votre propre domaine si vous en avez connecté un). Le commentaire 1 est épinglé en haut sur Facebook ; désactivez-le dans les **Paramètres** de Deal Posting avec **Épingler le premier commentaire des publications Facebook**.
 - **Urgence d'erreur de prix.** La puce rouge insère une phrase d'urgence construite autour du pourcentage de réduction de l'offre, comme « VITE ! LE VENDEUR NE SAVAIT PAS QU'IL AVAIT FAIT 91% DE RÉDUCTION ! ». Lorsqu'elle est dans votre texte, elle porte la publication. Cliquez sur la puce (notez sa petite flèche vers le bas) pour ouvrir l'éditeur de lignes : consultez toutes les lignes intégrées, désactivez-les, supprimez-les, ajoutez les vôtres et choisissez si les publications alternent entre les lignes activées ou utilisent toujours une seule ligne de votre choix. Toutes les lignes sont basées sur le pourcentage (écrivez `{percent}` là où la réduction doit apparaître) ; aucun prix n'est jamais affiché, ce qui garde chaque publication conforme à la politique d'Amazon et d'Influencer contre l'affichage de prix exacts.
 - **Options avancées du texte.** Ouvrez cette section sous le texte pour **Plus de variantes de texte** (des textes alternatifs qui tournent dans l'ordre ou au hasard pour que votre fil ne se répète pas), **Texte par boutique** (activez Amazon ou Walmart pour formuler différemment les trouvailles de cette boutique ; les boutiques laissées éteintes utilisent votre texte principal) et **Ma voix de légende** (collez 2 à 5 publications que vous avez écrites et l'IA ajoute des variantes dans votre voix ; nécessite votre clé OpenAI). Le badge de la section indique combien de ces options sont actives.
 - **Options.** La page Options contient **Où va votre lien d'affiliation** (premier commentaire, texte, ou en alternance, avec l'ordre) et **Raccourcir les titres avec l'IA**.
@@ -64,7 +64,7 @@ Un gros passage peut trouver des dizaines d'offres d'un coup. La carte **Limites
 
 Avec un classement choisi (le défaut est **Meilleure offre**) ou une limite quelconque, Pricecrash attend la fin du passage avant de transmettre les offres, pour choisir les meilleures dans l'ensemble. Avec **Première trouvée** et sans limite, les offres sont transmises une par une au fur et à mesure.
 
-La ligne sous les limites indique le maximum de publications supplémentaires par jour que vos réglages peuvent ajouter. Seule la **Planification automatique** avec **Publier tout de suite** publie en dehors du calendrier de Deals Butler, c'est donc la seule combinaison qui s'ajoute. Deals Butler le compte aussi : dans l'onglet Planification, le total de publications par jour liste Pricecrash Butler (comme « jusqu'à » le nombre que vos limites permettent) et l'ajoute à l'avertissement de publication Facebook, et la carte **À quelle fréquence** affiche le même supplément.
+La ligne sous les limites indique le maximum de publications supplémentaires par jour que vos réglages peuvent ajouter. Seule la **Planification automatique** avec **Publier tout de suite** publie en dehors du calendrier de Deal Posting, c'est donc la seule combinaison qui s'ajoute. Deal Posting le compte aussi : dans l'onglet Planification, le total de publications par jour liste Pricecrash Butler (comme « jusqu'à » le nombre que vos limites permettent) et l'ajoute à l'avertissement de publication Facebook, et la carte **À quelle fréquence** affiche le même supplément.
 
 ## Pièges fréquents
 
@@ -75,5 +75,5 @@ La ligne sous les limites indique le maximum de publications supplémentaires pa
 
 ## En lien
 
-- [Tutoriel Deals Butler](/help/tutorials/deals)
+- [Tutoriel Deal Posting](/help/tutorials/deals)
 - [Tutoriel Orders Butler](/help/tutorials/ordersbutler)

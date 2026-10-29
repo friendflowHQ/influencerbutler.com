@@ -8,7 +8,7 @@ category: Other
 
 Prime Day Butler est un radar saisonnier qui fait remonter des produits Amazon en promotion depuis quatre sources à la fois : le contenu que tu as déjà publié sur ta boutique, les produits que tu as réellement achetés (depuis Orders Butler), les nouvelles découvertes tirées de l'API Creators et le **Deals Hub d'Amazon Associates** (le catalogue d'offres organisé, y compris les offres à venir qui n'ont pas encore commencé). Chaque ligne est classée par **gains estimés** (les plus élevés en premier) et étiquetée avec un groupe pour que tu saches s'il s'agit d'une offre à venir, d'un gain rapide ou d'une opportunité de dernière minute. Tu filtres par mot-clé, % de réduction minimum et prix maximum ; le tableau se met à jour et tu exportes les candidats en CSV.
 
-Le tableau fonctionne comme Orders Butler : une miniature du produit sur chaque ligne, des colonnes que tu peux glisser pour réordonner, redimensionner ou masquer (la disposition est mémorisée), des en-têtes triables au clic et un champ de filtre par mot-clé ou ASIN en direct. Coche les lignes voulues et envoie-les directement vers Deals Butler en un clic, avec la vidéo ou la photo que tu as déjà créée jointe au post.
+Le tableau fonctionne comme Orders Butler : une miniature du produit sur chaque ligne, des colonnes que tu peux glisser pour réordonner, redimensionner ou masquer (la disposition est mémorisée), des en-têtes triables au clic et un champ de filtre par mot-clé ou ASIN en direct. Coche les lignes voulues et envoie-les directement vers Deal Posting en un clic, avec la vidéo ou la photo que tu as déjà créée jointe au post.
 
 ## La source Deals Hub (et les offres à venir)
 
@@ -16,7 +16,7 @@ Le Deals Hub est la liste organisée des offres d'Amazon pour les créateurs. C'
 
 Chaque ligne du Deals Hub porte un **Statut** À venir ou En direct, le calendrier de l'offre et les étiquettes appliquées par Amazon (Best Deal, Prime Exclusive, Creator Favorite).
 
-> Les prix des offres à venir et les dates de Prime Day sont confidentiels jusqu'à leur publication par Amazon. Prime Day Butler marque les lignes à venir et te demande confirmation avant de mettre une offre en file vers Deals Butler, pour que tu ne publies pas de prix sous embargo trop tôt.
+> Les prix des offres à venir et les dates de Prime Day sont confidentiels jusqu'à leur publication par Amazon. Prime Day Butler marque les lignes à venir et te demande confirmation avant de mettre une offre en file vers Deal Posting, pour que tu ne publies pas de prix sous embargo trop tôt.
 
 ## Prix le plus bas de l'année
 
@@ -65,21 +65,21 @@ Si une source manque, l'espace de travail fonctionne quand même. Il affiche sim
    - **Plus bas de l'année uniquement** : filtre les offres qui battent le prix le plus bas de l'année.
 5. Clique sur **Lancer maintenant**. La ligne d'état affiche le total, réparti en à venir, gains rapides et dernière minute.
 6. Utilise les onglets de groupe pour te concentrer, trie par **Gains est.** pour publier d'abord ce qui rapporte le plus, ou par **vs plus bas année** pour commencer par les meilleures offres de l'année. Saisis dans le champ **Filtrer par mot-clé ou ASIN** pour réduire les lignes affichées, ou utilise les filtres **Statut de l'offre** et **Avec contenu créé uniquement**.
-7. Par ligne : **Ouvrir** le produit, ouvrir les liens de la colonne **Contenu** ou **Télécharger** le fichier que tu as déjà créé, ou **Ajouter à Deals Butler** pour mettre un seul post en file. **Exporter CSV** vide toute la liste filtrée, colonnes de gains incluses.
-8. **Imprimer la liste de contenu** te donne une liste imprimable des offres actives ou à venir pour lesquelles tu n'as pas encore de contenu, et **Imprimer la liste de reposts** te donne les offres pour lesquelles tu as déjà du contenu ou un post. Les deux affichent le top 60 classé par gains estimés. Sous **Envoyer les offres vers**, choisis l'espace de Deals Butler qui reçoit tes sélections. Pendant un événement Prime, c'est ta file Prime Day par défaut.
+7. Par ligne : **Ouvrir** le produit, ouvrir les liens de la colonne **Contenu** ou **Télécharger** le fichier que tu as déjà créé, ou **Ajouter à Deal Posting** pour mettre un seul post en file. **Exporter CSV** vide toute la liste filtrée, colonnes de gains incluses.
+8. **Imprimer la liste de contenu** te donne une liste imprimable des offres actives ou à venir pour lesquelles tu n'as pas encore de contenu, et **Imprimer la liste de reposts** te donne les offres pour lesquelles tu as déjà du contenu ou un post. Les deux affichent le top 60 classé par gains estimés. Sous **Envoyer les offres vers**, choisis l'espace de Deal Posting qui reçoit tes sélections. Pendant un événement Prime, c'est ta file Prime Day par défaut.
 
 ## Sélectionne et publie en deux clics
 
 Tu n'as pas à mettre les offres en file une par une. Coche la case de chaque ligne voulue (ou **Sélectionner les visibles** pour prendre toute la liste filtrée), puis choisis leur état dans **Envoyer en tant que** :
 
-- **Brouillons à relire** : les offres arrivent dans la file Deals Butler en brouillons. Tu les relis et choisis les destinations là-bas avant toute publication.
+- **Brouillons à relire** : les offres arrivent dans la file Deal Posting en brouillons. Tu les relis et choisis les destinations là-bas avant toute publication.
 - **Prêtes à publier** : les offres arrivent en ciblant déjà tes Destinations sociales activées, à un clic de partir.
 
-Clique sur **Envoyer la sélection vers Deals Butler**. Chaque offre porte son lien d'affiliation ou deep link (créé depuis ton routage de liens dans les Intégrations API) et le texte, et **la vidéo ou la photo que tu as déjà créée pour ce produit est jointe automatiquement**, recherchée par ASIN dans Video Reload Butler et Photo Reload Butler. S'il n'y a pas de copie locale mais que la source est connue, elle est téléchargée à la demande. Ta vidéo créée est publiée dans les groupes et pages Facebook ; les autres destinations utilisent l'image du produit. Les offres à venir (confidentielles) sont confirmées une fois avant la mise en file.
+Clique sur **Envoyer la sélection vers Deal Posting**. Chaque offre porte son lien d'affiliation ou deep link (créé depuis ton routage de liens dans les Intégrations API) et le texte, et **la vidéo ou la photo que tu as déjà créée pour ce produit est jointe automatiquement**, recherchée par ASIN dans Video Reload Butler et Photo Reload Butler. S'il n'y a pas de copie locale mais que la source est connue, elle est téléchargée à la demande. Ta vidéo créée est publiée dans les groupes et pages Facebook ; les autres destinations utilisent l'image du produit. Les offres à venir (confidentielles) sont confirmées une fois avant la mise en file.
 
 ## Sans intervention avec le Pilote automatique du Deals Hub
 
-Si tu préfères ne cocher aucune ligne, déplie **Pilote automatique du Deals Hub** (c'est le même moteur partagé avec Deals Butler) et laisse-le ajouter des offres selon une planification. Trois règles indépendantes couvrent les offres au-dessus d'un pourcentage de remise minimum, les offres avec une opportunité **Creator Connections** et les offres avec une opportunité **SPCC**. Chaque règle a sa propre fréquence (toutes les quelques minutes, heures ou jours), une option actives uniquement, une limite par exécution et une protection « ignorer si publié il y a X jours », et tu choisis si les correspondances arrivent en brouillons à relire ou planifiées directement dans la file de publication automatique. Ce que tu configures ici alimente la même file Deals Butler que tes envois manuels.
+Si tu préfères ne cocher aucune ligne, déplie **Pilote automatique du Deals Hub** (c'est le même moteur partagé avec Deal Posting) et laisse-le ajouter des offres selon une planification. Trois règles indépendantes couvrent les offres au-dessus d'un pourcentage de remise minimum, les offres avec une opportunité **Creator Connections** et les offres avec une opportunité **SPCC**. Chaque règle a sa propre fréquence (toutes les quelques minutes, heures ou jours), une option actives uniquement, une limite par exécution et une protection « ignorer si publié il y a X jours », et tu choisis si les correspondances arrivent en brouillons à relire ou planifiées directement dans la file de publication automatique. Ce que tu configures ici alimente la même file Deal Posting que tes envois manuels.
 
 ## Personnalise le tableau
 
@@ -94,28 +94,28 @@ Clique sur **Trouver les tendances** pour rapporter les offres Prime Day actuell
 
 ## L'espace Offres Prime Day
 
-**Offres Prime Day** est un espace de travail de Deals Butler avec sa propre file, pour que vos offres d'événement ne se mélangent jamais à vos offres habituelles. Tout ce que vous connaissez de Deals Butler fonctionne pareil : Créer votre publication, le Planificateur et les Destinations sociales.
+**Offres Prime Day** est un espace de travail de Deal Posting avec sa propre file, pour que vos offres d'événement ne se mélangent jamais à vos offres habituelles. Tout ce que vous connaissez de Deal Posting fonctionne pareil : Créer votre publication, le Planificateur et les Destinations sociales.
 
 - **Rechercher des offres** ne renvoie que les offres Prime Big Deal Days du catalogue du Deals Hub. Les mots-clés l'affinent, et le prix, le pourcentage de remise, les exclusions, **Max. d'offres récoltées**, **Priorité des résultats** et **Réapprovisionner** s'appliquent toujours.
 - Dans le **Centre de codes promo**, l'onglet **Catalogue des offres Prime Day** s'ouvre avec Prime Big Deal Days déjà coché. Utilisez **Actualiser depuis Amazon**, puis filtrez avec **Actives seulement**, **À venir seulement**, **Prix le plus bas de l'année seulement**, **Exclusivités Prime seulement**, **Favoris des créateurs seulement**, **Creator Connections seulement**, **SPCC seulement** et **Masquer les envoyées**.
 - Les codes promo, les cartes de promotions et les recherches de coupons sont masqués ici car ils ne s'appliquent pas aux offres d'événement.
-- La première fois que vous l'ouvrez, votre planning Deals Butler est copié avec la publication automatique **désactivée**. Vérifiez la fréquence de publication et votre heure de départ avant d'activer le mode Prime Day.
+- La première fois que vous l'ouvrez, votre planning Deal Posting est copié avec la publication automatique **désactivée**. Vérifiez la fréquence de publication et votre heure de départ avant d'activer le mode Prime Day.
 - **Offres Walmart** a un onglet **Offres de l'événement** (l'événement d'automne Walmart) où vous choisissez des offres et les ajoutez à votre file.
 
 ## Publiez vos offres Prime Day : activez et désactivez le mode Prime Day
 
-Prime Day Butler trouve les offres. Pour les publier réellement, passez Deals Butler en **mode Prime Day**.
+Prime Day Butler trouve les offres. Pour les publier réellement, passez Deal Posting en **mode Prime Day**.
 
 **Activez-le (la veille) :**
 
-1. Ouvrez **Deals Butler** dans la navigation de gauche, puis l'onglet **Planificateur**.
+1. Ouvrez **Deal Posting** dans la navigation de gauche, puis l'onglet **Planificateur**.
 2. Repérez la carte **Mode Prime Day** et cochez **Publier mes offres Prime Day à la place**.
 
-Tant qu'il est activé, vos offres Prime Day sont publiées et la publication habituelle de Deals Butler est en pause, donc les deux ne se font jamais concurrence. Vous pouvez continuer à préparer des offres dans votre espace **Prime Day Deals**, mode activé ou non.
+Tant qu'il est activé, vos offres Prime Day sont publiées et la publication habituelle de Deal Posting est en pause, donc les deux ne se font jamais concurrence. Vous pouvez continuer à préparer des offres dans votre espace **Prime Day Deals**, mode activé ou non.
 
 **Désactivez-le (à la fin de l'événement) :**
 
-1. Ouvrez **Deals Butler**. Un bandeau en haut indique que le mode Prime Day est activé.
+1. Ouvrez **Deal Posting**. Un bandeau en haut indique que le mode Prime Day est activé.
 2. Cliquez sur **Désactiver le mode Prime Day** dans ce bandeau. Vos offres habituelles reprennent leur publication.
 
 **Pas besoin de retenir les dates.** La veille de Prime Day ou des Prime Big Deal Days, un bandeau apparaît en haut de l'application pour vous dire d'activer le mode Prime Day, et **Montrez-moi où** désigne directement l'interrupteur. Quand l'événement est terminé et que le mode est toujours activé, un bandeau vous invite à le désactiver, et **Montrez-moi comment** désigne le bouton. Les bandeaux disparaissent d'eux-mêmes dès que vous changez le mode, et la croix en masque un pour cet événement.
@@ -134,7 +134,7 @@ La pastille **Call to action** utilise des lignes Prime dans ces espaces (par ex
 
 ## Envoyez vers les deux butlers les jours d'événement
 
-Pendant Prime Day, Prime Big Deal Days ou un événement Walmart Deals, l'extension Influencer Butler peut envoyer une offre vers l'espace Offres Prime Day en plus de votre espace Deals Butler habituel. Ouvrez les Paramètres de l'extension, puis Offres, et choisissez une option sous « Les jours d'événement » :
+Pendant Prime Day, Prime Big Deal Days ou un événement WAL Deals Finder, l'extension Influencer Butler peut envoyer une offre vers l'espace Offres Prime Day en plus de votre espace Deal Posting habituel. Ouvrez les Paramètres de l'extension, puis Offres, et choisissez une option sous « Les jours d'événement » :
 
 - **Envoyer uniquement vers mon espace choisi** : rien ne change.
 - **Proposer un bouton supplémentaire** (par défaut) : la barre de la page produit affiche une case « Envoyer aussi vers les offres Prime Day », et le bouton Envoyer aux offres des sites d'offres est accompagné d'un bouton « + Offres Prime Day ».
@@ -146,14 +146,14 @@ L'option supplémentaire n'apparaît que pendant un événement, et seulement si
 
 Ce sont les questions que les créateurs posent le plus pendant Prime Day et les Prime Big Deal Days. La bulle de discussion en bas à droite de l'application y répond aussi, et tant qu'un événement est en cours elle les affiche en questions rapides en haut. Demandez-lui un pas à pas et elle met en évidence chaque commande à l'écran.
 
-**Mon mode Prime Day est-il activé en ce moment ?** Ouvrez **Deals Butler**, puis l'onglet **Planificateur**. La carte **Mode Prime Day** montre l'interrupteur, et un bandeau en haut de Deals Butler indique quand il est activé. Chaque clone de Deals Butler a son propre interrupteur.
+**Mon mode Prime Day est-il activé en ce moment ?** Ouvrez **Deal Posting**, puis l'onglet **Planificateur**. La carte **Mode Prime Day** montre l'interrupteur, et un bandeau en haut de Deal Posting indique quand il est activé. Chaque clone de Deal Posting a son propre interrupteur.
 
 **Mes offres Prime Day ne sont pas publiées. Que vérifier ?**
 
-1. Le mode Prime Day est activé sur ce Deals Butler.
-2. La publication automatique est activée dans le **Planificateur** de ce Deals Butler.
+1. Le mode Prime Day est activé sur ce Deal Posting.
+2. La publication automatique est activée dans le **Planificateur** de ce Deal Posting.
 3. Votre file **Offres Prime Day** contient bien des offres. Lancez **Rechercher des offres** à cet endroit, ou envoyez des sélections depuis le **Chercheur d'offres**.
-4. Vos **Destinations sociales** sont connectées. Offres Prime Day publie via les destinations de votre Deals Butler, donc corrigez-les là-bas.
+4. Vos **Destinations sociales** sont connectées. Offres Prime Day publie via les destinations de votre Deal Posting, donc corrigez-les là-bas.
 5. Rien n'est en pause. Si une plateforme a limité votre compte, l'application affiche l'heure de reprise et republie toute seule.
 
 **Pourquoi mes offres habituelles se sont-elles arrêtées ?** Le mode Prime Day les met en pause volontairement pour que les deux ne se fassent jamais concurrence. Elles reprennent quand le mode est désactivé.
@@ -166,7 +166,7 @@ Ce sont les questions que les créateurs posent le plus pendant Prime Day et les
 
 **Il manque dans le Chercheur d'offres des produits que je viens d'acheter.** Orders Butler n'est pas à jour. Lancez-le d'abord, ou suivez le pas à pas Prime Big Deal Days depuis la bulle de discussion, qui actualise les commandes anciennes avant de construire votre liste.
 
-**Ma page Foyer peut-elle afficher les offres Prime Day ?** Dans les versions récentes, oui. Ouvrez **Foyer Butler**, repérez **Offres Prime Day sur cette page** sous la vitrine des offres du jour, et choisissez **Me demander quand le mode Prime Day démarre**, **Oui, afficher les offres Prime Day pendant l'événement** ou **Non, garder mes offres habituelles**. Avec le choix Oui, la page n'affiche que les offres Prime Day de ce Deals Butler pendant l'événement et revient d'elle-même à vos offres habituelles à la fin. Si vous ne voyez pas ce réglage, mettez l'application à jour.
+**Ma page Foyer peut-elle afficher les offres Prime Day ?** Dans les versions récentes, oui. Ouvrez **Foyer Butler**, repérez **Offres Prime Day sur cette page** sous la vitrine des offres du jour, et choisissez **Me demander quand le mode Prime Day démarre**, **Oui, afficher les offres Prime Day pendant l'événement** ou **Non, garder mes offres habituelles**. Avec le choix Oui, la page n'affiche que les offres Prime Day de ce Deal Posting pendant l'événement et revient d'elle-même à vos offres habituelles à la fin. Si vous ne voyez pas ce réglage, mettez l'application à jour.
 
 **Black Friday Butler couvre-t-il Prime Day ?** Non. Black Friday Butler est le radar distinct pour la période du Black Friday et du Cyber Monday.
 
@@ -182,6 +182,6 @@ Ce sont les questions que les créateurs posent le plus pendant Prime Day et les
 
 ## Liens utiles
 
-- [Tutoriel Deals Butler](/help/tutorials/deals) : là où la plupart envoient leurs choix ensuite.
+- [Tutoriel Deal Posting](/help/tutorials/deals) : là où la plupart envoient leurs choix ensuite.
 - [Tutoriel Black Friday Butler](/help/tutorials/black-friday) : le même radar saisonnier pour la fenêtre BFCM.
 - [Tutoriel Storefront Butler](/help/tutorials/storefrontbutler) : garde la source "contenu que j'ai déjà fait" à jour.

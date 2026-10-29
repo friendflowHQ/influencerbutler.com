@@ -44,12 +44,34 @@ export async function GET(request: Request) {
   // event announcement reaches already-installed extensions with no Web Store
   // update (the popup already renders flags.notice). The EXTENSION_FLAGS env
   // `notice` stays an explicit override: only fill from the DB when it is empty.
-  if (!flags.notice) {
+  // The same banner also rides along structured as `eventBanner` (text, date,
+  // register link) so current extensions render a dated card with a Register
+  // button; older ones keep showing the dated `notice` text.
+  let eventBanner: {
+    id: string;
+    text: string;
+    whenLabel: string;
+    ctaLabel: string;
+    ctaUrl: string;
+  } | null = null;
+  {
     try {
       const admin = getAdmin();
       if (admin) {
-        const banners = await activeBanners(admin, "extension");
-        if (banners[0]) flags.notice = banners[0].text.slice(0, MAX_NOTICE_LEN);
+        const b = (await activeBanners(admin, "extension"))[0];
+        if (b) {
+          eventBanner = {
+            id: b.id,
+            text: b.text.slice(0, MAX_NOTICE_LEN),
+            whenLabel: b.whenLabel,
+            ctaLabel: (b.ctaLabel || "Register").slice(0, 40),
+            ctaUrl: b.ctaUrl,
+          };
+          if (!flags.notice) {
+            const dated = b.whenLabel ? `${b.text} (${b.whenLabel})` : b.text;
+            flags.notice = dated.slice(0, MAX_NOTICE_LEN);
+          }
+        }
       }
     } catch (e) {
       // A banner-merge failure must never break the kill-switch feed.
@@ -59,8 +81,9 @@ export async function GET(request: Request) {
 
   // Recompute the version over the merged payload so a banner change (or its
   // window opening/closing) busts the ETag and reaches clients on their next poll.
-  const { version: _version, ...rest } = flags;
+  const { version: _version, ...base } = flags;
   void _version;
+  const rest = { ...base, eventBanner };
   const version = versionOf(rest);
   const etag = `"flags-${version}"`;
   if (request.headers.get("if-none-match") === etag) {

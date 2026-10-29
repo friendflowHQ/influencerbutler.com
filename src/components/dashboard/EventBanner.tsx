@@ -11,7 +11,7 @@ import { trackEvent } from "@/lib/analytics-client";
  * server-side per event, in profiles.dashboard_dismissals, same pattern as
  * SwitchToAnnualBanner.
  */
-type Banner = { id: string; text: string; ctaLabel: string | null; ctaUrl: string };
+type Banner = { id: string; text: string; ctaLabel: string | null; ctaUrl: string; whenLabel?: string };
 
 export default function EventBanner() {
   const [banner, setBanner] = useState<Banner | null>(null);
@@ -60,7 +60,9 @@ export default function EventBanner() {
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-indigo-900">Upcoming event</p>
+          <p className="text-sm font-semibold text-indigo-900">
+            Upcoming event{banner.whenLabel ? `: ${banner.whenLabel}` : ""}
+          </p>
           <p className="mt-1 text-sm text-slate-600">{banner.text}</p>
         </div>
         <div className="flex items-center gap-2">

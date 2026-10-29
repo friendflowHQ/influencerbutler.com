@@ -31,7 +31,7 @@ const FAQ: { q: string; a: ReactNode }[] = [
   },
   {
     q: "Beginner or Power User: which one is for me?",
-    a: "Beginner is the calm start: the starter butlers (Amazon Deals, Message Brands, Daily Commission Butler, Video and Photo Reload, your Foyer page) plus every free tool, with AI included on our key (150 actions a month) and a guided fast track. Power User opens all 50+ butlers, runs AI without a cap on your own OpenAI key, and includes 1:1 call booking. You can upgrade from Beginner to Power User in one click inside the app, with no new license key.",
+    a: "Beginner is the calm start: the starter butlers (AMZ Deals Finder, Message Brands, Daily Commission Butler, Video and Photo Reload, your Foyer page) plus every free tool, with AI included on our key (150 actions a month) and a guided fast track. Power User opens all 50+ butlers, runs AI without a cap on your own OpenAI key, and includes 1:1 call booking. You can upgrade from Beginner to Power User in one click inside the app, with no new license key.",
   },
   {
     q: "What changes on November 28?",

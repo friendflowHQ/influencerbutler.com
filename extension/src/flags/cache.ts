@@ -17,6 +17,16 @@ import { sanitizeDealEvents, type DealEvent } from "../deals/events";
 // overrides that always win).
 const KEY = "ib-flags";
 
+// An admin-scheduled group event announcement: shown in the popup with its
+// date and a Register button that opens the event page.
+export type EventBanner = {
+  id: string;
+  text: string;
+  whenLabel: string;
+  ctaLabel: string;
+  ctaUrl: string;
+};
+
 export type RemoteFlags = {
   // Content hash of the flag payload, used as the ETag for cheap 304s.
   version: string;
@@ -32,6 +42,7 @@ export type RemoteFlags = {
   // Event-day windows (Prime Day, Walmart Deals). While one is open the deal
   // send surfaces offer to also send to the Prime Day Deals workspace.
   events: DealEvent[];
+  eventBanner: EventBanner | null;
 };
 
 export type StoredFlags = RemoteFlags & { fetchedAt: number };
@@ -61,6 +72,24 @@ function cleanStringArray(value: unknown, cap: number, maxLen: number): string[]
 // RemoteFlags with every field present and bounded. Anything malformed is
 // dropped rather than throwing, so a typo in the flag config can never break
 // the extension.
+function sanitizeEventBanner(raw: unknown): EventBanner | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
+  const id = str(o.id, 80);
+  const text = str(o.text, MAX_NOTICE_LEN);
+  const ctaUrl = str(o.ctaUrl, 500);
+  // The Register button opens this URL in a tab, so only accept https links.
+  if (!id || !text || !/^https:\/\//i.test(ctaUrl)) return null;
+  return {
+    id,
+    text,
+    whenLabel: str(o.whenLabel, 60),
+    ctaLabel: str(o.ctaLabel, 40) || "Register",
+    ctaUrl,
+  };
+}
+
 export function sanitizeFlags(raw: unknown): RemoteFlags {
   const obj = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
 
@@ -87,6 +116,7 @@ export function sanitizeFlags(raw: unknown): RemoteFlags {
     selectorOverrides,
     notice,
     events: sanitizeDealEvents(obj.events),
+    eventBanner: sanitizeEventBanner(obj.eventBanner),
   };
 }
 
