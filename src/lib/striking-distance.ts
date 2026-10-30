@@ -38,6 +38,8 @@ export type StrikingRow = {
   /** YYYY-MM-DD the page was last edited, when that is recent enough that Search
    * Console has not caught up yet. Null or absent = no recent edit. */
   recentlyUpdated?: string | null;
+  /** Other queries on the same page folded into this row by groupByPage. */
+  relatedQueries?: { query: string; position: number; impressions: number; clicks: number }[];
 };
 
 export type StrikingSnapshot = {
@@ -93,6 +95,17 @@ export function benchmarkCtr(position: number): number {
 export function isBrandQuery(query: string): boolean {
   const q = query.toLowerCase().replace(/\s+/g, "");
   return q.includes("influencerbutler") || q.includes("influencerbutlerai");
+}
+
+// Queries that are not real searches: pasted URLs/hosts ("site.help.openai.com ...")
+// and fragments cut off mid-phrase ("... billed separately or"). Neither can be
+// acted on, and they crowd out real opportunities.
+const TRAILING_STOPWORD = /\s(or|and|the|a|an|to|of|in|on|with|vs|for)$/;
+const HOSTLIKE = /(^|\s)(site:|[a-z0-9-]+(\.[a-z0-9-]+)*\.(com|org|net|io|ai|dev|co)(\/|\s|$))/;
+
+export function isNoiseQuery(query: string): boolean {
+  const q = query.trim().toLowerCase();
+  return HOSTLIKE.test(q) || TRAILING_STOPWORD.test(q);
 }
 
 export function toPath(url: string): string {
@@ -172,7 +185,7 @@ export function buildStrikingDistance(
   const byQuery = new Map<string, Acc>();
   for (const r of rows) {
     const query = r.query.trim().toLowerCase();
-    if (!query || isBrandQuery(query)) continue;
+    if (!query || isBrandQuery(query) || isNoiseQuery(query)) continue;
     if (!(r.impressions > 0)) continue;
     const acc = byQuery.get(query) ?? {
       impressions: 0,
@@ -287,4 +300,53 @@ export function applyRecentEdits(
   now: Date = new Date(),
 ): StrikingRow[] {
   return rows.map((r) => ({ ...r, recentlyUpdated: recentEditDate(r.page, lastModified, now) }));
+}
+
+/** YYYY-MM-DD the edit will have fully aged into Search Console's averaged window. */
+export function recheckDate(editDay: string, windowDays = RECENT_EDIT_DAYS): string | null {
+  const edited = Date.parse(`${editDay}T00:00:00Z`);
+  if (!Number.isFinite(edited)) return null;
+  return new Date(edited + windowDays * 86400000).toISOString().slice(0, 10);
+}
+
+/**
+ * For a row already edited: which lever is left once Google catches up. A page seen
+ * on page one but rarely clicked needs a better title and description; anything
+ * else needs depth and internal links, not title changes.
+ */
+export function followUpFocus(row: Pick<StrikingRow, "position" | "ctr" | "impressions">): "ctr" | "rank" {
+  const seenNotClicked = row.position <= 10 && row.ctr < benchmarkCtr(row.position) * 0.6;
+  return seenNotClicked && row.impressions >= 20 ? "ctr" : "rank";
+}
+
+/**
+ * Fold rows that share a landing page into one: the highest-upside query leads,
+ * the rest ride along as relatedQueries and their upside is added, so a page
+ * ranking for six phrasings is one task, not six. Input order is preserved.
+ */
+export function groupByPage(rows: StrikingRow[]): StrikingRow[] {
+  const leaders = new Map<string, StrikingRow>();
+  const out: StrikingRow[] = [];
+  for (const r of rows) {
+    const lead = leaders.get(r.page);
+    if (!lead) {
+      const copy = { ...r, relatedQueries: [] as NonNullable<StrikingRow["relatedQueries"]> };
+      leaders.set(r.page, copy);
+      out.push(copy);
+      continue;
+    }
+    lead.potentialClicks += r.potentialClicks;
+    lead.relatedQueries!.push({
+      query: r.query,
+      position: r.position,
+      impressions: r.impressions,
+      clicks: r.clicks,
+    });
+  }
+  return out;
+}
+
+/** Rows still needing work first; rows waiting on Google last. Stable within each group. */
+export function actionableFirst(rows: StrikingRow[]): StrikingRow[] {
+  return [...rows.filter((r) => !r.recentlyUpdated), ...rows.filter((r) => r.recentlyUpdated)];
 }

@@ -22,6 +22,8 @@ import { NextResponse } from "next/server";
 import { requirePermission, createAdminClient } from "@/lib/admin";
 import { isGscConfigured, fetchGscSummary, type GscSummary } from "@/lib/gsc";
 import {
+  actionableFirst,
+  groupByPage,
   applyRecentEdits,
   applySnapshot,
   STRIKING_SNAPSHOT_KEY,
@@ -146,7 +148,11 @@ export async function GET(request: Request) {
 
   const snapshot = await readSnapshot(db);
   const strikingDistance = summary?.strikingDistance
-    ? applyRecentEdits(applySnapshot(summary.strikingDistance, snapshot), pageLastModified)
+    ? actionableFirst(
+        groupByPage(
+          applyRecentEdits(applySnapshot(summary.strikingDistance, snapshot), pageLastModified),
+        ),
+      )
     : null;
 
   return NextResponse.json({

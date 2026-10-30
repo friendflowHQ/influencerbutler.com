@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   applyRecentEdits,
+  actionableFirst,
   applySnapshot,
   benchmarkCtr,
   buildStrikingDistance,
+  followUpFocus,
+  groupByPage,
+  isNoiseQuery,
+  recheckDate,
   isBrandQuery,
   pageKindOf,
   recentEditDate,
@@ -180,5 +185,53 @@ describe("recent edits", () => {
     expect(out[0].recentlyUpdated).toBe("2026-10-21");
     expect(out[0].action).toBe(rows[0].action);
     expect(applyRecentEdits(rows, {}, now)[0].recentlyUpdated).toBeNull();
+  });
+});
+
+describe("noise filter", () => {
+  it("flags host-like and truncated queries only", () => {
+    expect(isNoiseQuery("site.help.openai.com chatgpt subscription api billed separately or")).toBe(true);
+    expect(isNoiseQuery("site:example.com foo")).toBe(true);
+    expect(isNoiseQuery("how to use the")).toBe(true);
+    expect(isNoiseQuery("chatgpt vs openai api")).toBe(false);
+    expect(isNoiseQuery("amazon idea list")).toBe(false);
+  });
+  it("is applied when building the list", () => {
+    const out = buildStrikingDistance([row({ query: "foo.com bar" }), row({ query: "real one" })]);
+    expect(out.map((r) => r.query)).toEqual(["real one"]);
+  });
+});
+
+describe("groupByPage and ordering", () => {
+  const rows = buildStrikingDistance([
+    row({ query: "a", impressions: 300, position: 7 }),
+    row({ query: "b", impressions: 100, position: 8 }),
+    row({ query: "c", page: "https://x.com/blog/other", impressions: 50, position: 9 }),
+  ]);
+
+  it("folds same-page queries under the top one and sums upside", () => {
+    const out = groupByPage(rows);
+    expect(out).toHaveLength(2);
+    expect(out[0].query).toBe("a");
+    expect(out[0].relatedQueries?.map((q) => q.query)).toEqual(["b"]);
+    expect(out[0].potentialClicks).toBeCloseTo(rows[0].potentialClicks + rows[1].potentialClicks, 5);
+    expect(out[1].relatedQueries).toEqual([]);
+  });
+
+  it("puts rows waiting on Google last, keeping order inside each group", () => {
+    const tagged = rows.map((r, i) => ({ ...r, recentlyUpdated: i === 0 ? "2026-10-21" : null }));
+    expect(actionableFirst(tagged).map((r) => r.query)).toEqual(["b", "c", "a"]);
+  });
+});
+
+describe("re-check guidance", () => {
+  it("adds the window to the edit date", () => {
+    expect(recheckDate("2026-10-21")).toBe("2026-11-21");
+    expect(recheckDate("nope")).toBeNull();
+  });
+  it("points at CTR for seen-but-not-clicked rows, rank otherwise", () => {
+    expect(followUpFocus({ position: 6, ctr: 0, impressions: 166 })).toBe("ctr");
+    expect(followUpFocus({ position: 15, ctr: 0, impressions: 166 })).toBe("rank");
+    expect(followUpFocus({ position: 6, ctr: 0.05, impressions: 166 })).toBe("rank");
   });
 });

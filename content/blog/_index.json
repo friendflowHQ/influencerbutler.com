@@ -106,10 +106,11 @@
     },
     {
       "id": "openai-api-key-vs-chatgpt",
-      "title": "ChatGPT vs the OpenAI API: Why Your AI Butlers Need a Key (Not a Subscription)",
+      "title": "ChatGPT Subscription vs OpenAI API: Billed Separately, and Why Your AI Butlers Need a Key",
       "category": "Growth",
-      "summary": "A ChatGPT Plus subscription will not power Influencer Butler's AI features. The plain-English difference between ChatGPT and the OpenAI API, and how to get the key the app needs.",
+      "summary": "Is the OpenAI API billed separately from a ChatGPT subscription? Yes. A ChatGPT Plus plan will not power Influencer Butler's AI features, so here is the plain-English difference and how to get the API key the app needs.",
       "date": "2026-07-30",
+      "updated": "2026-10-30",
       "author": "The Influencer Butler Team",
       "readingTime": "7 min read",
       "keywords": "chatgpt vs openai api, openai api key, how to get openai api key, influencer butler openai, openai api billing, platform.openai.com",

@@ -1,5 +1,7 @@
 "use client";
 
+import { followUpFocus, recheckDate } from "@/lib/striking-distance";
+
 // Google Search Console panel: the actual terms people search to find the site
 // (clicks, impressions, CTR, position) - or the "Connect Search Console" setup
 // card until the property + service account are wired up. GA4 cannot show these
@@ -27,6 +29,8 @@ export type StrikingRow = {
   isNew?: boolean;
   /** YYYY-MM-DD of a recent page edit Search Console has not caught up with yet. */
   recentlyUpdated?: string | null;
+  /** Other queries on the same page, folded into this row. */
+  relatedQueries?: { query: string; position: number; impressions: number; clicks: number }[];
 };
 
 export type SearchResponse = {
@@ -241,12 +245,34 @@ function StrikingDistancePanel({
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.query} className="border-t border-slate-100 align-top">
+                <tr
+                  key={r.query}
+                  className={`border-t border-slate-100 align-top ${r.recentlyUpdated ? "bg-slate-50" : ""}`}
+                >
                   <td className="py-2 pr-2">
                     <p className="font-medium text-slate-800">{r.query}</p>
                     <p className="text-xs text-slate-500" title={r.page}>
                       {r.page}
                     </p>
+                    {r.relatedQueries && r.relatedQueries.length > 0 ? (
+                      <details className="mt-1 text-xs text-slate-600">
+                        <summary className="cursor-pointer text-indigo-700">
+                          +{r.relatedQueries.length} related{" "}
+                          {r.relatedQueries.length === 1 ? "query" : "queries"} on this page
+                        </summary>
+                        <ul className="mt-1 space-y-0.5">
+                          {r.relatedQueries.map((q) => (
+                            <li key={q.query}>
+                              {q.query}{" "}
+                              <span className="text-slate-500">
+                                (pos {q.position.toFixed(1)}, {q.impressions.toLocaleString("en-US")}{" "}
+                                impr, {q.clicks.toLocaleString("en-US")} clicks)
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    ) : null}
                   </td>
                   <td className="py-2 px-2 text-right text-slate-700">
                     <span className="block">{r.position.toFixed(1)}</span>
@@ -267,8 +293,14 @@ function StrikingDistancePanel({
                         <span className="inline-block rounded-full bg-sky-50 px-2 py-0.5 font-medium text-sky-800">
                           Updated {formatDay(r.recentlyUpdated)}, waiting on Google
                         </span>{" "}
-                        Search Console averages 28 days, so give it a few weeks before changing
-                        this page again.
+                        <span className="block mt-1">
+                          Hold off changing this page until{" "}
+                          {formatDay(recheckDate(r.recentlyUpdated) ?? r.recentlyUpdated)}, when Search
+                          Console has fully caught up.{" "}
+                          {followUpFocus(r) === "ctr"
+                            ? "Then check CTR: the page is seen but not clicked, so the title and meta description are the next lever."
+                            : "Then check rank: it needs depth and internal links, not title changes."}
+                        </span>
                       </span>
                     ) : (
                       r.action
