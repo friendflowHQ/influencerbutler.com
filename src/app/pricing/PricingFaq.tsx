@@ -47,7 +47,7 @@ const FAQ: { q: string; a: ReactNode }[] = [
   },
   {
     q: "Do you offer refunds?",
-    a: "If you're charged unexpectedly or run into a serious issue, contact us at influencerbutler.com/contact within 14 days and we'll make it right.",
+    a: "The 14-day free trial is the evaluation period, so all sales are final once the trial converts to a paid plan. To avoid any charge, cancel before day 14 from your dashboard. If you see a duplicate or incorrect charge, contact us at influencerbutler.com/contact before disputing it with your bank and we'll sort it out. Full details are in our Refund Policy.",
   },
   {
     q: "What payment methods do you accept?",
