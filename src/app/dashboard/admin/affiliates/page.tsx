@@ -77,6 +77,7 @@ type OwedOrder = {
 type OwedAffiliate = {
   userId: string;
   email: string | null;
+  paypalEmail: string | null;
   fullName: string | null;
   affiliateCode: string | null;
   lsAffiliateId: string;
@@ -1723,6 +1724,13 @@ export default function AdminAffiliatesPage() {
                           {aff.fullName ?? "(no name)"}
                         </p>
                         <p className="text-sm text-slate-600 break-all">{aff.email ?? "(no email)"}</p>
+                        <p
+                          className={`text-xs break-all ${
+                            aff.paypalEmail ? "text-sky-700" : "text-red-600"
+                          }`}
+                        >
+                          PayPal: {aff.paypalEmail ?? "not set"}
+                        </p>
                         <p className="mt-1 text-xs text-slate-400">
                           {aff.affiliateCode ? `Code ${aff.affiliateCode} · ` : ""}
                           {aff.orderCount} order{aff.orderCount === 1 ? "" : "s"} ·{" "}

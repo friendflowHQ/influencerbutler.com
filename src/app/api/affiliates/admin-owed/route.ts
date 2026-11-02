@@ -73,6 +73,7 @@ type OwedOrder = {
 type OwedAffiliate = {
   userId: string;
   email: string | null;
+  paypalEmail: string | null;
   fullName: string | null;
   affiliateCode: string | null;
   lsAffiliateId: string | null;
@@ -105,7 +106,9 @@ export async function GET(request: Request) {
     // here - a still-unlinked affiliate's referrals stay pending until linked).
     const { data: profiles, error: profilesErr } = await supabase
       .from("profiles")
-      .select("id,email,affiliate_code,ls_affiliate_id,commission_percent,commission_duration_months")
+      .select(
+        "id,email,paypal_email,affiliate_code,ls_affiliate_id,commission_percent,commission_duration_months",
+      )
       .eq("is_affiliate", true);
     if (profilesErr) {
       console.error("admin-owed: profiles query failed", profilesErr);
@@ -116,6 +119,7 @@ export async function GET(request: Request) {
       string,
       {
         email: string | null;
+        paypalEmail: string | null;
         affiliateCode: string | null;
         lsAffiliateId: string | null;
         ratePercent: number;
@@ -141,6 +145,11 @@ export async function GET(request: Request) {
       });
       activeByUser.set(userId, {
         email: str(row.email),
+        // Surfaced separately from `email` on the Owed tab: an affiliate's PayPal
+        // payout address can differ from their account login email, and sending
+        // a manual payment to the wrong one is real money lost. Never assume they
+        // match.
+        paypalEmail: str(row.paypal_email),
         affiliateCode: str(row.affiliate_code),
         lsAffiliateId: lsId,
         ratePercent,
@@ -188,6 +197,7 @@ export async function GET(request: Request) {
         entry = {
           userId: affUserId,
           email: active.email,
+          paypalEmail: active.paypalEmail,
           fullName: nameByUser.get(affUserId) ?? null,
           affiliateCode: active.affiliateCode,
           lsAffiliateId: active.lsAffiliateId,
