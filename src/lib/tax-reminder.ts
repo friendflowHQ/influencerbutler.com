@@ -9,7 +9,7 @@
 
 import { sendTaxFormReminder, type TaxReminderParams } from "@/lib/commission-statement-email";
 
-type ThrottleClient = {
+export type ThrottleClient = {
   from: (table: string) => {
     select: (cols: string) => {
       eq: (col: string, value: string) => {
@@ -47,7 +47,10 @@ async function alreadyReminded(db: ThrottleClient, userId: string, month: string
   }
 }
 
-async function markReminded(db: ThrottleClient, userId: string, month: string): Promise<void> {
+/** Exported for an explicit one-off send (e.g. admin-paypal-nudge) that wants
+ *  to bypass sendTaxReminderOnce's own throttle gate but still stamp this
+ *  month's marker afterward, so the automatic cron doesn't also re-send. */
+export async function markReminded(db: ThrottleClient, userId: string, month: string): Promise<void> {
   try {
     await db.from("app_config").upsert(
       {

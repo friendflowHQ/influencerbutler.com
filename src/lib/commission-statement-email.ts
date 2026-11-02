@@ -292,6 +292,10 @@ export type TaxReminderParams = {
   owedCents: number;
   missingTax: boolean;
   missingPaypal: boolean;
+  /** One-click sign-in link straight into the payout form, if generated.
+   *  Falls back to the plain (login-gated) dashboard URL when absent, so
+   *  existing callers that don't pass this are unaffected. */
+  magicLink?: string | null;
 };
 
 /** Reminder body (plain text). */
@@ -312,7 +316,7 @@ export function buildTaxReminderBody(params: TaxReminderParams): string {
     lines.push("  - Your PayPal payout email");
   }
   lines.push("");
-  lines.push(`Add them here: ${DASHBOARD_URL}`);
+  lines.push(`Add them here: ${params.magicLink ?? DASHBOARD_URL}`);
   lines.push("");
   lines.push(
     "Once that's done you'll be paid on our next monthly run. We pay via PayPal monthly, on or around the 1st of the month, once your balance reaches $10. PayPal receiving and currency-conversion fees are not covered, so the amount that lands may be slightly less.",
