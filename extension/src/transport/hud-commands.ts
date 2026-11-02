@@ -42,6 +42,10 @@ export type ProductRef = {
   promoPercentOff?: number | null;
   startDate?: string | null;
   endDate?: string | null;
+  // Curator-sheet extras: Creator Connections campaign flag, remaining promo
+  // redemptions ("500pcs for promo"). Older desktops ignore them.
+  creatorConnections?: boolean;
+  promoInventory?: number | null;
   // Coupon and price facts read off the card's own text. Omitted when absent
   // (never null or 0). The desktop combines them; older desktops ignore them.
   //   couponPercentOff / couponAmountOff: the clip coupon ("+ 10% Coupon", "$5 coupon").

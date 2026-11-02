@@ -109,6 +109,7 @@ describe("extractDealsFromSheetRows", () => {
       promoPercentOff: 44,
       startDate: "2026-09-30T00:30:00-07:00",
       endDate: "2026-10-05T23:59:00-07:00",
+      creatorConnections: true,
     });
     expect(deals[1]?.asin).toBe("B0GS1XP5W1");
     expect(deals[1]?.promoCode).toBe("3R139Z4Y");
@@ -160,5 +161,56 @@ describe("fetchGoogleSheetDeals", () => {
   it("throws on a non-OK response instead of returning nothing silently", async () => {
     globalThis.fetch = vi.fn(async () => ({ ok: false, status: 403, text: async () => "" })) as unknown as typeof fetch;
     await expect(fetchGoogleSheetDeals("https://docs.google.com/spreadsheets/d/abc/edit")).rejects.toThrow("HTTP 403");
+  });
+});
+
+describe("curator sheet extras", () => {
+  const header = ["Image", "Seq", "Deals", "Imagelink", "Product link", "Code"];
+  const row = (deals: string, image: string): string[] => [
+    "",
+    "#2",
+    deals,
+    image,
+    "https://www.amazon.com/dp/B0C36WN9X9",
+    "1UU9PIPP",
+  ];
+
+  it("reads Creator Connections, promo inventory, rating and the Imagelink column", () => {
+    const deals = [
+      "#2",
+      " 71% off ANRABESS 2 Piece Lounge Sweat Sets",
+      " 50% off Code: 1UU9PIPP + 41% off with Deal",
+      " 16.99(Reg.57.99)",
+      " https://www.amazon.com/dp/B0C36WN9X9",
+      " End Date: 2026-11-03 23:59 PDT",
+      " Start Date: 2026-10-30 04:00 PDT",
+      " 500pcs for promo",
+      " Note: CC B0C36WN9X9",
+      " 4.2 Stars, 1,646 ratings",
+    ].join("\n");
+    const out = extractDealsFromSheetRows(
+      [header, row(deals, "https://m.media-amazon.com/images/I/61F3t9goLgL._AC_SL1500_.jpg")],
+      "https://docs.google.com/spreadsheets/d/x/edit",
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({
+      asin: "B0C36WN9X9",
+      promoCode: "1UU9PIPP",
+      promoPercentOff: 50,
+      endDate: "2026-11-03T23:59:00-07:00",
+      creatorConnections: true,
+      promoInventory: 500,
+      rating: 4.2,
+      ratingCount: 1646,
+      imageUrl: "https://m.media-amazon.com/images/I/61F3t9goLgL._AC_SL1500_.jpg",
+    });
+  });
+
+  it("leaves the extras off a row that does not carry them", () => {
+    const deals = "#4\n 50% off Thermal\n 50% off Code: JHAPF4WM\n https://www.amazon.com/dp/B0H1WN7VH4";
+    const out = extractDealsFromSheetRows([header, row(deals, "")], "u");
+    expect(out[0]?.creatorConnections).toBeUndefined();
+    expect(out[0]?.promoInventory).toBeUndefined();
+    expect(out[0]?.imageUrl).toBeUndefined();
   });
 });

@@ -733,6 +733,16 @@ function renderRow(row: Row): HTMLElement {
     code.textContent = row.deal.promoCode;
     prod.append(code);
   }
+  if (row.deal.creatorConnections) {
+    const cc = el("span", "chip-code");
+    cc.textContent = D.chipCreatorConnections;
+    prod.append(cc);
+  }
+  if (row.deal.promoInventory != null) {
+    const left = el("span", "chip-code");
+    left.textContent = D.chipPromoLeft.replace("{n}", String(row.deal.promoInventory));
+    prod.append(left);
+  }
   tr.append(prod);
 
   tr.append(numCell(formatPrice(row.priceCents, row.currency)));
@@ -1091,6 +1101,8 @@ function toProductRef(row: Row): ProductRef {
     ...(row.deal.promoPercentOff != null ? { promoPercentOff: row.deal.promoPercentOff } : {}),
     ...(row.deal.startDate ? { startDate: row.deal.startDate } : {}),
     ...(row.deal.endDate ? { endDate: row.deal.endDate } : {}),
+    ...(row.deal.creatorConnections ? { creatorConnections: true } : {}),
+    ...(row.deal.promoInventory != null ? { promoInventory: row.deal.promoInventory } : {}),
   };
 }
 

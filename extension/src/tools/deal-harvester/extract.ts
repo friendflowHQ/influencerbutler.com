@@ -30,6 +30,17 @@ export type HarvestedDeal = {
   promoPercentOff?: number | null;
   startDate?: string | null;
   endDate?: string | null;
+  // Curator-sheet extras (see parseDealBlock):
+  //   creatorConnections: the block carries "Note: CC <ASIN>", i.e. the product
+  //     is in an Amazon Creator Connections campaign.
+  //   promoInventory: "500pcs for promo", how many redemptions the code has.
+  //   rating / ratingCount: "4.1 Stars, 49 ratings".
+  //   imageUrl: a sheet's explicit image column, when it has one.
+  creatorConnections?: boolean;
+  promoInventory?: number | null;
+  rating?: number | null;
+  ratingCount?: number | null;
+  imageUrl?: string | null;
 };
 
 // A 10-char Amazon id in a link path (/dp/, /gp/product/, /gp/aw/d/) or an
@@ -183,6 +194,12 @@ const SWC_CODE_PCT_RE = /(\d{1,3})%\s*off\s*Code:/i;
 const SWC_END_RE = /End Date:\s*(\d{4}-\d{1,2}-\d{1,2}[^<\n]*)/i;
 const SWC_START_RE = /Start Date:\s*(\d{4}-\d{1,2}-\d{1,2}[^<\n]*)/i;
 
+// Curator-sheet lines: "Note: CC B0GZPK884N", "500pcs for promo",
+// "4.1 Stars, 49 ratings".
+const SWC_CC_RE = /Note:[^\n]*?\bCC\b/i;
+const SWC_PCS_RE = /(\d[\d,]*)\s*pcs\s+for\s+promo/i;
+const SWC_RATING_RE = /(\d(?:\.\d)?)\s*Stars?,\s*(\d[\d,]*)\s*ratings?/i;
+
 // Named US timezone abbreviations the site prints, mapped to a fixed numeric
 // offset so the normalized date is Date.parse-able everywhere (V8's Date.parse
 // is unreliable with a bare zone name like "PDT").
@@ -232,8 +249,19 @@ export function parseDealBlock(block: string, sourceUrl: string): HarvestedDeal 
   const pctM = block.match(SWC_CODE_PCT_RE);
   const endM = block.match(SWC_END_RE);
   const startM = block.match(SWC_START_RE);
+  const ccM = block.match(SWC_CC_RE);
+  const pcsM = block.match(SWC_PCS_RE);
+  const ratingM = block.match(SWC_RATING_RE);
   const pct = pctM ? Number(pctM[1]) : NaN;
+  const extras: Partial<HarvestedDeal> = {};
+  if (ccM) extras.creatorConnections = true;
+  if (pcsM) extras.promoInventory = Number((pcsM[1] as string).replace(/,/g, ""));
+  if (ratingM) {
+    extras.rating = Number(ratingM[1]);
+    extras.ratingCount = Number((ratingM[2] as string).replace(/,/g, ""));
+  }
   return {
+    ...extras,
     asin: link.asin,
     marketplace: link.marketplace,
     sourceUrl,

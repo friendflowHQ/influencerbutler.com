@@ -96,6 +96,9 @@ export function parseCsv(text: string): string[][] {
 }
 
 const CODE_HEADER_RE = /code|coupon|promo/i;
+// "Imagelink" / "Image link" / "Image URL"; the bare "Image" column is an
+// in-cell picture in Sheets and exports empty, so it must not match.
+const IMAGE_LINK_HEADER_RE = /^image\s*(?:link|url)$/i;
 
 /**
  * Turn parsed CSV rows (header row first) into deals, one per data row.
@@ -117,16 +120,23 @@ export function extractDealsFromSheetRows(rows: string[][], sourceUrl: string): 
     if (codeCol === -1 && CODE_HEADER_RE.test(h.trim())) codeCol = i;
   });
 
+  const imageCol = header.findIndex((h) => IMAGE_LINK_HEADER_RE.test(h.trim()));
+
   const out: HarvestedDeal[] = [];
   for (let r = 1; r < rows.length; r++) {
     const cells = rows[r] as string[];
     const block = cells.join("\n");
     const codeCell = codeCol >= 0 ? (cells[codeCol] ?? "").trim() : "";
+    const imageCell = imageCol >= 0 ? (cells[imageCol] ?? "").trim() : "";
 
     const deal = parseDealBlock(block, sourceUrl);
     if (!deal) continue;
 
-    out.push(codeCell ? { ...deal, promoCode: codeCell } : deal);
+    out.push({
+      ...deal,
+      ...(codeCell ? { promoCode: codeCell } : {}),
+      ...(/^https?:\/\//i.test(imageCell) ? { imageUrl: imageCell } : {}),
+    });
   }
   return out;
 }

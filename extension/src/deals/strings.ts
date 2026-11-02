@@ -49,6 +49,8 @@ export interface DealsDict {
   tabCc: string;
   tabEpc: string;
   tabPromo: string;
+  chipCreatorConnections: string;
+  chipPromoLeft: string;
   filtersHeading: string;
   filterMinDiscount: string;
   filterMinCommission: string;
@@ -145,6 +147,8 @@ const en: DealsDict = {
   tabCc: "Creator Connections",
   tabEpc: "EPC deals",
   tabPromo: "Promo codes",
+  chipCreatorConnections: "CC campaign",
+  chipPromoLeft: "{n} left",
   filtersHeading: "Filters",
   filterMinDiscount: "Minimum percent off",
   filterMinCommission: "Minimum commission %",
@@ -242,6 +246,8 @@ const es: DealsDict = {
   tabCc: "Creator Connections",
   tabEpc: "Ofertas EPC",
   tabPromo: "Códigos promocionales",
+  chipCreatorConnections: "Campaña CC",
+  chipPromoLeft: "{n} restantes",
   filtersHeading: "Filtros",
   filterMinDiscount: "Descuento mínimo (%)",
   filterMinCommission: "Comisión mínima (%)",
@@ -339,6 +345,8 @@ const fr: DealsDict = {
   tabCc: "Creator Connections",
   tabEpc: "Offres EPC",
   tabPromo: "Codes promo",
+  chipCreatorConnections: "Campagne CC",
+  chipPromoLeft: "{n} restants",
   filtersHeading: "Filtres",
   filterMinDiscount: "Réduction minimale (%)",
   filterMinCommission: "Commission minimale (%)",
