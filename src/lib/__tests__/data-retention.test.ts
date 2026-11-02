@@ -5,7 +5,15 @@
  * Dependencies: vitest, ../data-retention.
  */
 import { describe, it, expect, vi } from "vitest";
-import { cutoffIso, purgeAiSessions, purgeCallRecordings, PURGE_BATCH } from "../data-retention";
+import {
+  cutoffIso,
+  purgeAiSessions,
+  purgeCallRecordings,
+  purgeMarketingEmailSends,
+  purgeProductMarketHistory,
+  PURGE_BATCH,
+  BULK_PURGE_BATCH,
+} from "../data-retention";
 
 type Row = Record<string, unknown>;
 
@@ -30,7 +38,13 @@ function fakeAdmin(tables: Record<string, Row[]>, failUpdateFor: string[] = []) 
     api.order = () => api;
     api.limit = (n: number) => { limit = n; return api; };
     api.delete = () => { mode = "delete"; return api; };
-    api.in = (_col: string, ids: unknown[]) => { idList = ids; return api; };
+    // Used both as a select-time membership filter (e.g. funnel in [...]) and,
+    // against the id column, to scope a delete - both read off the same call.
+    api.in = (col: string, ids: unknown[]) => {
+      idList = ids;
+      if (col !== "id") filters.push((r) => ids.includes(r[col]));
+      return api;
+    };
     api.update = (p: Row) => { mode = "update"; patch = p; return api; };
     api.eq = (_col: string, v: unknown) => { eqId = v; return api; };
     api.then = (resolve: (v: unknown) => void) => {
@@ -54,6 +68,7 @@ function fakeAdmin(tables: Record<string, Row[]>, failUpdateFor: string[] = []) 
 
 const NOW = Date.UTC(2027, 5, 15);
 const OLD = "2026-05-01T00:00:00.000Z"; // > 12 months before NOW
+const OLD_24 = "2025-03-01T00:00:00.000Z"; // > 24 months before NOW
 const RECENT = "2027-01-01T00:00:00.000Z";
 
 describe("cutoffIso", () => {
@@ -150,5 +165,80 @@ describe("purgeCallRecordings", () => {
     const out = await purgeCallRecordings(fakeAdmin(tables, ["b1"]), { nowMs: NOW, deleteMedia: del });
     expect(out).toMatchObject({ purged: 0, errors: 1 });
     expect(tables.call_bookings[0].transcript).toBe("hello");
+  });
+});
+
+describe("purgeMarketingEmailSends", () => {
+  it("deletes campaign/sequence sends older than 24 months and keeps newer ones", async () => {
+    const tables = {
+      email_sends: [
+        { id: "old", funnel: "campaign", created_at: OLD_24 },
+        { id: "new", funnel: "sequence", created_at: RECENT },
+      ],
+    };
+    const out = await purgeMarketingEmailSends(fakeAdmin(tables), { nowMs: NOW });
+    expect(out).toMatchObject({ candidates: 1, purged: 1, errors: 0 });
+    expect(tables.email_sends.map((r) => r.id)).toEqual(["new"]);
+  });
+
+  it("never deletes transactional sends, however old", async () => {
+    const tables = { email_sends: [{ id: "receipt", funnel: "transactional", created_at: OLD_24 }] };
+    const out = await purgeMarketingEmailSends(fakeAdmin(tables), { nowMs: NOW });
+    expect(out).toMatchObject({ candidates: 0, purged: 0 });
+    expect(tables.email_sends).toHaveLength(1);
+  });
+
+  it("keeps campaign/sequence sends inside the 24-month window", async () => {
+    const tables = { email_sends: [{ id: "keep", funnel: "campaign", created_at: OLD }] };
+    const out = await purgeMarketingEmailSends(fakeAdmin(tables), { nowMs: NOW });
+    expect(out).toMatchObject({ candidates: 0, purged: 0 });
+    expect(tables.email_sends).toHaveLength(1);
+  });
+
+  it("dry run reports candidates but deletes nothing", async () => {
+    const tables = { email_sends: [{ id: "old", funnel: "campaign", created_at: OLD_24 }] };
+    const out = await purgeMarketingEmailSends(fakeAdmin(tables), { nowMs: NOW, dry: true });
+    expect(out).toMatchObject({ dry: true, candidates: 1, purged: 0 });
+    expect(tables.email_sends).toHaveLength(1);
+  });
+
+  it("limits work to one batch per run", async () => {
+    const rows = Array.from({ length: BULK_PURGE_BATCH + 10 }, (_, i) => ({ id: `e${i}`, funnel: "campaign", created_at: OLD_24 }));
+    const tables = { email_sends: rows };
+    const out = await purgeMarketingEmailSends(fakeAdmin(tables), { nowMs: NOW });
+    expect(out.purged).toBe(BULK_PURGE_BATCH);
+    expect(tables.email_sends).toHaveLength(10);
+  });
+});
+
+describe("purgeProductMarketHistory", () => {
+  const OLD_25 = "2025-04-01T00:00:00.000Z"; // > 25 months before NOW
+
+  it("deletes observations older than 25 months and keeps the rest", async () => {
+    const tables = {
+      product_market_history: [
+        { id: "old", captured_at: OLD_25 },
+        { id: "recent", captured_at: RECENT },
+      ],
+    };
+    const out = await purgeProductMarketHistory(fakeAdmin(tables), { nowMs: NOW });
+    expect(out).toMatchObject({ candidates: 1, purged: 1, errors: 0 });
+    expect(tables.product_market_history.map((r) => r.id)).toEqual(["recent"]);
+  });
+
+  it("keeps observations inside the 24-month seasonality window", async () => {
+    // 20 months back: still needed by market_monthly_rank's default 24-month lookback.
+    const withinSeasonality = "2025-10-15T00:00:00.000Z";
+    const tables = { product_market_history: [{ id: "keep", captured_at: withinSeasonality }] };
+    const out = await purgeProductMarketHistory(fakeAdmin(tables), { nowMs: NOW });
+    expect(out).toMatchObject({ candidates: 0, purged: 0 });
+    expect(tables.product_market_history).toHaveLength(1);
+  });
+
+  it("dry run reports candidates but deletes nothing", async () => {
+    const tables = { product_market_history: [{ id: "old", captured_at: OLD_25 }] };
+    const out = await purgeProductMarketHistory(fakeAdmin(tables), { nowMs: NOW, dry: true });
+    expect(out).toMatchObject({ dry: true, candidates: 1, purged: 0 });
+    expect(tables.product_market_history).toHaveLength(1);
   });
 });
