@@ -86,6 +86,9 @@ type OwedAffiliate = {
   owedCents: number;
   payableCents?: number;
   clearingCents?: number;
+  lastPaidAt?: string | null;
+  lastPaidCents?: number | null;
+  lastPaidCurrency?: string | null;
   orders: OwedOrder[];
 };
 
@@ -304,6 +307,39 @@ function formatDateShort(iso: string | null): string {
   } catch {
     return iso;
   }
+}
+
+// Copy-ready PayPal payment memo for a manual goods-and-services send. Purely
+// derived from the payable amount already on the card - no backend round-trip.
+function PayPalNoteBox({ amountLabel }: { amountLabel: string }) {
+  const [copied, setCopied] = useState(false);
+  const note = `Influencer Butler affiliate commission: ${amountLabel} owed. PayPal fee covered, so you receive the full ${amountLabel}.`;
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(note);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch (err) {
+      console.error("copy failed", err);
+    }
+  };
+  return (
+    <div className="mt-1 flex items-center gap-2">
+      <input
+        readOnly
+        value={note}
+        onFocus={(e) => e.currentTarget.select()}
+        className="w-full min-w-[220px] rounded-md border border-slate-300 bg-white px-2 py-1.5 text-[11px] text-slate-700"
+      />
+      <button
+        type="button"
+        onClick={() => void copy()}
+        className="shrink-0 rounded-md border border-slate-300 px-2 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50"
+      >
+        {copied ? "Copied" : "Copy"}
+      </button>
+    </div>
+  );
 }
 
 const TAB_KEYS: TabKey[] = [
@@ -1713,15 +1749,25 @@ export default function AdminAffiliatesPage() {
                 const state = owedRow[aff.userId] ?? { kind: "idle" };
                 const working = state.kind === "working";
                 const currency = aff.orders[0]?.currency ?? null;
+                const isPaid = (aff.payableCents ?? 0) <= 0 && Boolean(aff.lastPaidAt);
                 return (
                   <li
                     key={aff.userId}
-                    className="rounded-2xl border border-indigo-200 bg-indigo-50/40 p-4 sm:p-6 shadow-sm"
+                    className={`rounded-2xl border p-4 sm:p-6 shadow-sm transition ${
+                      isPaid
+                        ? "border-slate-200 bg-slate-50/60 opacity-70"
+                        : "border-indigo-200 bg-indigo-50/40"
+                    }`}
                   >
                     <div className="flex flex-wrap items-start justify-between gap-4">
                       <div className="min-w-0">
                         <p className="text-base font-semibold text-slate-900 break-words">
                           {aff.fullName ?? "(no name)"}
+                          {isPaid ? (
+                            <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
+                              Paid
+                            </span>
+                          ) : null}
                         </p>
                         <p className="text-sm text-slate-600 break-all">{aff.email ?? "(no email)"}</p>
                         <p
@@ -1737,6 +1783,12 @@ export default function AdminAffiliatesPage() {
                           {formatCents(aff.grossCents, currency)} gross · user_id{" "}
                           {aff.userId.slice(0, 8)}…
                         </p>
+                        {isPaid && aff.lastPaidCents != null ? (
+                          <p className="mt-1 text-xs text-emerald-700">
+                            Paid {formatCents(aff.lastPaidCents, aff.lastPaidCurrency ?? "USD")} on{" "}
+                            {formatDateShort(aff.lastPaidAt ?? null)}
+                          </p>
+                        ) : null}
                       </div>
                       <div className="flex flex-col items-end gap-2">
                         <p className="text-lg font-bold text-indigo-700">
@@ -1751,21 +1803,26 @@ export default function AdminAffiliatesPage() {
                           </p>
                         ) : null}
                         {aff.payableCents && aff.payableCents > 0 ? (
-                          <p className="-mt-1 text-[11px] text-slate-400">
-                            Paying by hand? Send{" "}
-                            {formatCents(grossUpForPayPalGs(aff.payableCents), currency)} via PayPal
-                            goods &amp; services so they net{" "}
-                            {formatCents(aff.payableCents, currency)}.
-                          </p>
+                          <>
+                            <p className="-mt-1 text-[11px] text-slate-400">
+                              Paying by hand? Send{" "}
+                              {formatCents(grossUpForPayPalGs(aff.payableCents), currency)} via PayPal
+                              goods &amp; services so they net{" "}
+                              {formatCents(aff.payableCents, currency)}.
+                            </p>
+                            <PayPalNoteBox amountLabel={formatCents(aff.payableCents, currency)} />
+                          </>
                         ) : null}
-                        <button
-                          type="button"
-                          onClick={() => onDisburse(aff)}
-                          disabled={working}
-                          className="rounded-lg bg-[#0070ba] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#005a96] disabled:opacity-60"
-                        >
-                          {working ? "Working…" : "Disburse via PayPal"}
-                        </button>
+                        {!isPaid ? (
+                          <button
+                            type="button"
+                            onClick={() => onDisburse(aff)}
+                            disabled={working}
+                            className="rounded-lg bg-[#0070ba] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#005a96] disabled:opacity-60"
+                          >
+                            {working ? "Working…" : "Disburse via PayPal"}
+                          </button>
+                        ) : null}
                         {aff.payableCents && aff.payableCents > 0 ? (
                           <button
                             type="button"
@@ -1776,33 +1833,37 @@ export default function AdminAffiliatesPage() {
                             Record manual payout
                           </button>
                         ) : null}
-                        <button
-                          type="button"
-                          onClick={() => onMarkPaid(aff)}
-                          disabled={working}
-                          className="text-[11px] font-medium text-slate-400 underline decoration-dotted underline-offset-2 transition hover:text-red-600 disabled:opacity-60"
-                        >
-                          Force-reconcile all orders
-                        </button>
+                        {aff.orders.length > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => onMarkPaid(aff)}
+                            disabled={working}
+                            className="text-[11px] font-medium text-slate-400 underline decoration-dotted underline-offset-2 transition hover:text-red-600 disabled:opacity-60"
+                          >
+                            Force-reconcile all orders
+                          </button>
+                        ) : null}
                       </div>
                     </div>
 
-                    <details className="mt-3">
-                      <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-slate-500 hover:text-slate-700">
-                        {aff.orderCount} captured order{aff.orderCount === 1 ? "" : "s"}
-                      </summary>
-                      <ul className="mt-2 space-y-1 rounded-lg bg-white/70 p-3 text-xs text-slate-600">
-                        {aff.orders.map((o) => (
-                          <li key={o.lsOrderId} className="flex flex-wrap justify-between gap-2">
-                            <span className="break-all">Order {o.lsOrderId}</span>
-                            <span>
-                              {formatCents(o.totalCents, o.currency)}
-                              {o.createdAt ? ` · ${formatDate(o.createdAt)}` : ""}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </details>
+                    {aff.orders.length > 0 ? (
+                      <details className="mt-3">
+                        <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-slate-500 hover:text-slate-700">
+                          {aff.orderCount} captured order{aff.orderCount === 1 ? "" : "s"}
+                        </summary>
+                        <ul className="mt-2 space-y-1 rounded-lg bg-white/70 p-3 text-xs text-slate-600">
+                          {aff.orders.map((o) => (
+                            <li key={o.lsOrderId} className="flex flex-wrap justify-between gap-2">
+                              <span className="break-all">Order {o.lsOrderId}</span>
+                              <span>
+                                {formatCents(o.totalCents, o.currency)}
+                                {o.createdAt ? ` · ${formatDate(o.createdAt)}` : ""}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    ) : null}
 
                     {state.kind === "success" ? (
                       <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">

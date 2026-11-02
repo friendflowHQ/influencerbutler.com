@@ -85,6 +85,12 @@ type OwedAffiliate = {
   payableCents: number;
   /** Recognized but still inside the 14-day clearing buffer. */
   clearingCents: number;
+  /** Most recent successful payout on file. Drives the "already paid" UI state
+   *  and lets a fully-settled affiliate (no pending orders left) still show up
+   *  instead of silently vanishing from the list. */
+  lastPaidAt: string | null;
+  lastPaidCents: number | null;
+  lastPaidCurrency: string | null;
   orders: OwedOrder[];
 };
 
@@ -207,6 +213,9 @@ export async function GET(request: Request) {
           owedCents: 0,
           payableCents: 0,
           clearingCents: 0,
+          lastPaidAt: null,
+          lastPaidCents: null,
+          lastPaidCurrency: null,
           orders: [],
         };
         byAffiliate.set(affUserId, entry);
@@ -222,12 +231,83 @@ export async function GET(request: Request) {
     }
 
     // Owe each affiliate their own promised rate on the gap gross (LS paid $0).
-    const affiliates = [...byAffiliate.values()].map((a) => ({
+    const affiliates: OwedAffiliate[] = [...byAffiliate.values()].map((a) => ({
       ...a,
       owedCents: Math.round((a.grossCents * a.ratePercent) / 100),
       payableCents: 0,
       clearingCents: 0,
+      lastPaidAt: null,
+      lastPaidCents: null,
+      lastPaidCurrency: null,
     }));
+
+    // Also surface affiliates who have nothing currently owed but were paid
+    // recently, instead of letting them silently vanish from the list once
+    // fully settled. The card reverts to normal automatically once new
+    // commission clears for them - no flag to unset, just live data.
+    try {
+      const { data: payoutRows, error: payoutsErr } = await supabase
+        .from("affiliate_payouts")
+        .select("user_id,gross_cents,currency,paid_at")
+        .eq("status", "success");
+      if (payoutsErr) throw payoutsErr;
+
+      const lastPaidByUser = new Map<
+        string,
+        { paidAt: string; grossCents: number; currency: string | null }
+      >();
+      for (const row of payoutRows ?? []) {
+        const userId = str(row.user_id);
+        const paidAt = str(row.paid_at);
+        if (!userId || !paidAt) continue;
+        const prior = lastPaidByUser.get(userId);
+        if (!prior || new Date(paidAt).getTime() > new Date(prior.paidAt).getTime()) {
+          lastPaidByUser.set(userId, {
+            paidAt,
+            grossCents: typeof row.gross_cents === "number" ? row.gross_cents : 0,
+            currency: str(row.currency),
+          });
+        }
+      }
+
+      // Widen: a recently-paid, now fully-settled affiliate has no pending gap
+      // orders, so `byAffiliate` never created an entry for them. Add one.
+      for (const [userId, last] of lastPaidByUser) {
+        if (byAffiliate.has(userId)) continue;
+        const active = activeByUser.get(userId);
+        if (!active) continue; // no longer an active affiliate
+        affiliates.push({
+          userId,
+          email: active.email,
+          paypalEmail: active.paypalEmail,
+          fullName: nameByUser.get(userId) ?? null,
+          affiliateCode: active.affiliateCode,
+          lsAffiliateId: active.lsAffiliateId,
+          ratePercent: active.ratePercent,
+          orderCount: 0,
+          grossCents: 0,
+          owedCents: 0,
+          payableCents: 0,
+          clearingCents: 0,
+          lastPaidAt: last.paidAt,
+          lastPaidCents: last.grossCents,
+          lastPaidCurrency: last.currency,
+          orders: [],
+        });
+      }
+
+      // Stamp last-paid info onto every entry, old and newly-widened alike.
+      for (const a of affiliates) {
+        const last = lastPaidByUser.get(a.userId);
+        if (last) {
+          a.lastPaidAt = last.paidAt;
+          a.lastPaidCents = last.grossCents;
+          a.lastPaidCurrency = last.currency;
+        }
+      }
+    } catch (err) {
+      console.warn("admin-owed: last-paid overlay skipped", err);
+    }
 
     // Overlay the engine's recognition/clearing split so the tab shows what is
     // actually safe to disburse now (annual amortized, past the 14-day clear)
