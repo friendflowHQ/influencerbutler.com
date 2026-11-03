@@ -1094,6 +1094,15 @@
       "order": 711,
       "locales": ["en-US", "es-ES", "fr-FR"],
       "audience": "power"
+    },
+    {
+      "id": "digital-product-butler",
+      "title": "Digital Product Butler: create and sell your own digital product",
+      "category": "Foyer",
+      "summary": "Answer a few questions and Digital Product Butler decides what digital product to sell in your niche, writes it as an ebook (PDF and EPUB) with AI cover art, estimates a price, and attaches it to your Foyer page ready to sell. Power User only.",
+      "order": 1000,
+      "locales": ["en-US", "es-ES", "fr-FR"],
+      "audience": "power"
     }
   ]
 }
