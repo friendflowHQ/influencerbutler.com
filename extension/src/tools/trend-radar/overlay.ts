@@ -2,6 +2,8 @@ import { el } from "../../ui/components";
 import { createInlineShadow } from "../../ui/host";
 import { t } from "../../i18n";
 import { log } from "../../shared/log";
+import { runPool } from "../../shared/pool";
+import { SCAN_TAB_CONCURRENCY, SCAN_TAB_STAGGER_MS } from "../../shared/constants";
 import { parseDiscoveryTiles, type DiscoveryTile } from "../../amazon/discovery-tiles";
 import { marketplaceFromUrl } from "../../amazon/product-signals";
 import { getRateCard } from "../../rate-card/cache";
@@ -198,30 +200,47 @@ export async function initTrendRadar(settings: Settings): Promise<void> {
       .sort(comparator("trending"));
     const targets = pending.slice(0, SCAN_CAP);
     let done = 0;
-    for (const row of targets) {
-      if (stopScan) break;
-      setStatus(t().searchScanning(done + 1, targets.length));
-      row.scanned = true;
-      try {
-        const result = await sendToBackground<ScanAsinResult>({
-          kind: "SCAN_ASIN_IN_TAB",
-          asin: row.tile.asin,
-          marketplace,
-        });
-        if (result.classified && result.counts) {
-          row.influencerVideos = result.counts.influencer;
-          row.score = scoreFor(row.tile, row.ratePct, row.flags, row.influencerVideos, settings);
-          renderBadge(row);
+    let blocked = false;
+    await runPool(
+      targets,
+      async (row) => {
+        setStatus(t().searchScanning(Math.min(done + 1, targets.length), targets.length));
+        row.scanned = true;
+        try {
+          const result = await sendToBackground<ScanAsinResult>({
+            kind: "SCAN_ASIN_IN_TAB",
+            asin: row.tile.asin,
+            marketplace,
+          });
+          if (result.blocked) {
+            blocked = true;
+            row.scanned = false;
+          } else if (result.classified && result.counts) {
+            row.influencerVideos = result.counts.influencer;
+            row.score = scoreFor(row.tile, row.ratePct, row.flags, row.influencerVideos, settings);
+            renderBadge(row);
+          }
+        } catch (error) {
+          log("trend-radar", `scan failed for ${row.tile.asin}`, error);
         }
-      } catch (error) {
-        log("trend-radar", `scan failed for ${row.tile.asin}`, error);
-      }
-      done += 1;
-    }
+        done += 1;
+      },
+      {
+        limit: SCAN_TAB_CONCURRENCY,
+        staggerMs: SCAN_TAB_STAGGER_MS,
+        shouldStop: () => stopScan || blocked,
+      },
+    );
     const remaining = rows.filter(
       (r) => r.reorderEl.style.display !== "none" && !r.scanned,
     ).length;
-    setStatus(remaining > 0 ? t().searchScanMore(done, remaining) : t().searchScanDone(done));
+    setStatus(
+      blocked
+        ? t().searchScanBlocked(done)
+        : remaining > 0
+          ? t().searchScanMore(done, remaining)
+          : t().searchScanDone(done),
+    );
   };
 
   const toolbarHost = renderTrendToolbar({

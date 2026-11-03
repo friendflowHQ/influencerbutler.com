@@ -2,6 +2,8 @@ import { createInlineShadow } from "../../ui/host";
 import { el } from "../../ui/components";
 import { t } from "../../i18n";
 import { log } from "../../shared/log";
+import { runPool } from "../../shared/pool";
+import { SCAN_TAB_CONCURRENCY, SCAN_TAB_STAGGER_MS } from "../../shared/constants";
 import { parseStoreTiles, type StoreTile } from "../../amazon/brand-store";
 import { marketplaceFromUrl } from "../../amazon/product-signals";
 import type { DpStaticSignals } from "../../amazon/dp-static";
@@ -267,29 +269,41 @@ export async function initStoreOverlay(settings: Settings): Promise<void> {
     .sort((a, b) => b.score.score - a.score.score)
     .slice(0, SCAN_CAP);
   let done = 0;
-  for (const row of targets) {
-    if (stopRequested || run.signal.aborted) break;
-    toolbar.setStatus(t().searchScanning(done + 1, targets.length));
-    row.scanned = true;
-    try {
-      const result = await sendToBackground<ScanAsinResult>({
-        kind: "SCAN_ASIN_IN_TAB",
-        asin: row.tile.asin,
-        marketplace,
-      });
-      if (result.classified && result.counts) {
-        row.influencerVideos = result.counts.influencer;
-        row.score = scoreFor(row, settings);
-        renderBadge(row);
-        applyGreenBoxes();
+  let scanBlocked = false;
+  await runPool(
+    targets,
+    async (row) => {
+      toolbar.setStatus(t().searchScanning(Math.min(done + 1, targets.length), targets.length));
+      row.scanned = true;
+      try {
+        const result = await sendToBackground<ScanAsinResult>({
+          kind: "SCAN_ASIN_IN_TAB",
+          asin: row.tile.asin,
+          marketplace,
+        });
+        if (result.blocked) {
+          scanBlocked = true;
+          row.scanned = false;
+        } else if (result.classified && result.counts) {
+          row.influencerVideos = result.counts.influencer;
+          row.score = scoreFor(row, settings);
+          renderBadge(row);
+          applyGreenBoxes();
+        }
+      } catch (error) {
+        log("store-overlay", `scan failed for ${row.tile.asin}`, error);
       }
-    } catch (error) {
-      log("store-overlay", `scan failed for ${row.tile.asin}`, error);
-    }
-    done += 1;
-  }
+      done += 1;
+    },
+    {
+      limit: SCAN_TAB_CONCURRENCY,
+      staggerMs: SCAN_TAB_STAGGER_MS,
+      shouldStop: () => stopRequested || scanBlocked || run.signal.aborted,
+    },
+  );
   toolbar.setRunning(false);
-  if (!stopRequested) toolbar.setStatus(t().searchScanDone(done));
+  if (scanBlocked) toolbar.setStatus(t().searchScanBlocked(done));
+  else if (!stopRequested) toolbar.setStatus(t().searchScanDone(done));
 }
 
 // The store is client-rendered; at document_idle the grid may not exist yet.

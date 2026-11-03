@@ -29,6 +29,15 @@ const DWELL_TIMEOUT_MS = 22_000;
 // improve (the widget can stream more videos in), then resolve with the best.
 const SETTLE_MS = 3_500;
 
+// What a tab scan hands back: the best classified finding (null on failure or
+// timeout) and whether the tab ended on Amazon's robot check, so a caller
+// running several scans at once can stop the whole batch instead of hammering.
+type Capture = { finding: ProductScanFinding | null; blocked: boolean };
+
+// Amazon's interstitial is titled "Robot Check"; reading the tab title needs
+// only the "tabs" permission we already hold.
+const BLOCKED_TITLE_RE = /robot check/i;
+
 type Pending = {
   asin: string;
   best: VideoCounts | null;
@@ -38,7 +47,7 @@ type Pending = {
   settleTimer: ReturnType<typeof setTimeout> | null;
   dwellTimer: ReturnType<typeof setTimeout> | null;
   done: boolean;
-  resolve: (finding: ProductScanFinding | null) => void;
+  resolve: (capture: Capture) => void;
 };
 
 // Keyed by the tab we opened, so an incoming product_scan can be matched to the
@@ -61,13 +70,14 @@ function better(a: VideoCounts | null, b: VideoCounts): VideoCounts {
 // classified product_scan, and resolve with the best finding (or null on
 // failure/timeout). Shared by the order video-count pass and the watchlist
 // poller so the tab lifecycle lives in one place.
-function captureInTab(asin: string, marketplace: string): Promise<ProductScanFinding | null> {
+function captureInTab(asin: string, marketplace: string): Promise<Capture> {
+  const failed: Capture = { finding: null, blocked: false };
   return chrome.tabs
     .create({ url: productUrl(asin, marketplace), active: false })
     .then((tab) => {
       const tabId = tab.id;
-      if (typeof tabId !== "number") return null;
-      return new Promise<ProductScanFinding | null>((resolve) => {
+      if (typeof tabId !== "number") return failed;
+      return new Promise<Capture>((resolve) => {
         const pending: Pending = {
           asin,
           best: null,
@@ -83,13 +93,16 @@ function captureInTab(asin: string, marketplace: string): Promise<ProductScanFin
     })
     .catch((error) => {
       log("order-video-scan", `could not open tab for ${asin}`, error);
-      return null;
+      return failed;
     });
 }
 
+// Several of these may be in flight at once (the search, trend and store
+// overlays scan a few products side by side); pendingByTab is keyed by tab id so
+// each tab's finding is matched to its own request.
 export async function scanAsinInTab(asin: string, marketplace: string): Promise<ScanAsinResult> {
-  const finding = await captureInTab(asin, marketplace);
-  return { counts: finding?.counts ?? null, classified: finding !== null };
+  const { finding, blocked } = await captureInTab(asin, marketplace);
+  return { counts: finding?.counts ?? null, classified: finding !== null, blocked };
 }
 
 // Watchlist variant: the same tab scan, but returning the fields a change alert
@@ -98,7 +111,7 @@ export async function scanProductInTab(
   asin: string,
   marketplace: string,
 ): Promise<ProductSnapshotResult> {
-  const finding = await captureInTab(asin, marketplace);
+  const { finding } = await captureInTab(asin, marketplace);
   return {
     inStock: finding?.inStock ?? null,
     influencerVideos: finding?.counts.influencer ?? null,
@@ -133,10 +146,21 @@ function finish(tabId: number): void {
   pendingByTab.delete(tabId);
   if (pending.settleTimer) clearTimeout(pending.settleTimer);
   if (pending.dwellTimer) clearTimeout(pending.dwellTimer);
-  void chrome.tabs.remove(tabId).catch(() => {
-    // tab may already be gone (user closed it, or navigation removed it)
-  });
-  pending.resolve(pending.bestFinding);
+  void (async () => {
+    // Only a scan that produced nothing can be a robot check; read the title
+    // before the tab is closed.
+    let blocked = false;
+    if (!pending.bestFinding) {
+      blocked = await chrome.tabs
+        .get(tabId)
+        .then((tab) => BLOCKED_TITLE_RE.test(tab.title ?? ""))
+        .catch(() => false);
+    }
+    await chrome.tabs.remove(tabId).catch(() => {
+      // tab may already be gone (user closed it, or navigation removed it)
+    });
+    pending.resolve({ finding: pending.bestFinding, blocked });
+  })();
 }
 
 // The products to run the count over: the account's synced order history. Read

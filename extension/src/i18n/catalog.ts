@@ -430,6 +430,7 @@ export interface Dict {
   searchScanning: (done: number, total: number) => string;
   searchScanDone: (n: number) => string;
   searchScanMore: (done: number, remaining: number) => string;
+  searchScanBlocked: (done: number) => string;
   tileCommission: (amount: string) => string;
   tileCampaign: string;
   tileCampaignRate: (pct: number) => string;
@@ -1754,6 +1755,8 @@ const en: Dict = {
   searchScanning: (done, total) => `Scanning ${done} of ${total}...`,
   searchScanDone: (n) => `Scanned ${n} products.`,
   searchScanMore: (done, remaining) => `Scanned ${done}. Click Scan again for ${remaining} more.`,
+  searchScanBlocked: (done) =>
+    `Scan paused after ${done}: Amazon showed a robot check. Wait a few minutes, then click Scan again.`,
   tileCommission: (amount) => `${amount}/sale`,
   tileCampaign: "Campaign",
   tileCampaignRate: (pct) => `Campaign ${pct}%`,
@@ -3098,6 +3101,8 @@ const es: Dict = {
   searchScanning: (done, total) => `Escaneando ${done} de ${total}...`,
   searchScanDone: (n) => `Escaneados ${n} productos.`,
   searchScanMore: (done, remaining) => `Escaneados ${done}. Pulsa Escanear de nuevo para ${remaining} más.`,
+  searchScanBlocked: (done) =>
+    `Escaneo en pausa tras ${done}: Amazon mostró una comprobación de robot. Espera unos minutos y pulsa Escanear de nuevo.`,
   tileCommission: (amount) => `${amount}/venta`,
   tileCampaign: "Campaña",
   tileCampaignRate: (pct) => `Campaña ${pct}%`,
@@ -4447,6 +4452,8 @@ const fr: Dict = {
   searchScanning: (done, total) => `Analyse ${done} sur ${total}...`,
   searchScanDone: (n) => `${n} produits analysés.`,
   searchScanMore: (done, remaining) => `${done} analysés. Cliquez de nouveau sur Analyser pour ${remaining} de plus.`,
+  searchScanBlocked: (done) =>
+    `Analyse en pause après ${done} : Amazon a affiché une vérification robot. Patientez quelques minutes, puis cliquez de nouveau sur Analyser.`,
   tileCommission: (amount) => `${amount}/vente`,
   tileCampaign: "Campagne",
   tileCampaignRate: (pct) => `Campagne ${pct}%`,

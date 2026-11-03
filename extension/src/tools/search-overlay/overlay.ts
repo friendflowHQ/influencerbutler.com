@@ -3,6 +3,8 @@ import { el } from "../../ui/components";
 import { t } from "../../i18n";
 import { legend } from "./legend";
 import { log } from "../../shared/log";
+import { runPool } from "../../shared/pool";
+import { SCAN_TAB_CONCURRENCY, SCAN_TAB_STAGGER_MS } from "../../shared/constants";
 import { queryAll } from "../../amazon/selectors";
 import { type SearchTile } from "../../amazon/search-results";
 import type { DpStaticSignals } from "../../amazon/dp-static";
@@ -561,40 +563,55 @@ export async function initSearchOverlay(
     const targets = pending.slice(0, SCAN_CAP);
     let done = 0;
     let failed = 0;
-    for (const row of targets) {
-      if (stopScan || epoch !== initEpoch) break;
-      setStatus(t().searchScanning(done + 1, targets.length));
-      row.scanned = true;
-      try {
-        const result = await sendToBackground<ScanAsinResult>({
-          kind: "SCAN_ASIN_IN_TAB",
-          asin: row.tile.asin,
-          marketplace,
-        });
-        if (epoch !== initEpoch) break;
-        if (result.classified && result.counts) {
-          row.influencerVideos = result.counts.influencer;
-          row.totalVideos = result.counts.total;
-          // A live scan of this exact ASIN: authoritative, drop any estimate mark.
-          row.videoSource = "self";
-          recompute(row, settings);
-          renderBadge(row, settings);
+    let blocked = false;
+    // A few product tabs hydrate side by side. A robot check on any of them
+    // stops new tabs from opening; the ones already in flight finish.
+    await runPool(
+      targets,
+      async (row) => {
+        setStatus(t().searchScanning(Math.min(done + 1, targets.length), targets.length));
+        row.scanned = true;
+        try {
+          const result = await sendToBackground<ScanAsinResult>({
+            kind: "SCAN_ASIN_IN_TAB",
+            asin: row.tile.asin,
+            marketplace,
+          });
+          if (epoch !== initEpoch) return;
+          if (result.blocked) {
+            blocked = true;
+            row.scanned = false;
+          } else if (result.classified && result.counts) {
+            row.influencerVideos = result.counts.influencer;
+            row.totalVideos = result.counts.total;
+            // A live scan of this exact ASIN: authoritative, drop any estimate mark.
+            row.videoSource = "self";
+            recompute(row, settings);
+            renderBadge(row, settings);
+          }
+        } catch (error) {
+          log("search-overlay", `scan failed for ${row.tile.asin}`, error);
+          // Let the next Scan click retry this tile.
+          row.scanned = false;
+          failed += 1;
         }
-      } catch (error) {
-        log("search-overlay", `scan failed for ${row.tile.asin}`, error);
-        // Let the next Scan click retry this tile.
-        row.scanned = false;
-        failed += 1;
-      }
-      done += 1;
-    }
+        done += 1;
+      },
+      {
+        limit: SCAN_TAB_CONCURRENCY,
+        staggerMs: SCAN_TAB_STAGGER_MS,
+        shouldStop: () => stopScan || blocked || epoch !== initEpoch,
+      },
+    );
     // How many visible rows are still unscanned (either beyond this batch's cap,
     // or skipped because the user hit Stop) so the user knows more can be scored.
     const remaining = rows.filter(
       (r) => r.tile.el.style.display !== "none" && !r.scanned,
     ).length;
     setStatus(
-      failed > 0
+      blocked
+        ? t().searchScanBlocked(done)
+        : failed > 0
         ? legend().scanFailed(failed)
         : remaining > 0
           ? t().searchScanMore(done, remaining)

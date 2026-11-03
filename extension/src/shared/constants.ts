@@ -255,6 +255,11 @@ export const QUEUE_CAP = 500;
 export const FETCH_DELAY_MIN_MS = 2500;
 export const FETCH_DELAY_MAX_MS = 4000;
 export const ORDER_SCAN_CAP = 20;
+// "Scan videos" on search / trend / store grids opens product tabs, a few at a
+// time (the order-history scan above stays sequential). Starts are staggered so
+// the tabs do not all open in the same instant.
+export const SCAN_TAB_CONCURRENCY = 3;
+export const SCAN_TAB_STAGGER_MS = 1200;
 export const STOREFRONT_SCAN_CAP = 25;
 export const SCAN_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 

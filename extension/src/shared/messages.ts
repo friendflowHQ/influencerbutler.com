@@ -909,6 +909,8 @@ export type IntegrationsView = {
 export type ScanAsinResult = {
   counts: VideoCounts | null;
   classified: boolean;
+  // The tab landed on Amazon's robot check. Batch callers stop scanning.
+  blocked?: boolean;
 };
 
 export type OrderAsinItem = { asin: string; marketplace: string; title: string | null };
