@@ -381,3 +381,25 @@ Also: add a sentence to terms.html that customers are responsible for lawful con
 - Retention enforcement: no new cleanup jobs this week; Appendix D status unchanged (crons built, not confirmed deployed).
 - Instagram account switching, PostTap/API health fixes, imagegen provider ordering (OpenAI preferred over Fal; user-supplied keys, local-only), magic-link fix `89b47a4`: no new data or vendors. (If Fal.ai is listed as a user-key provider in §2.3, nothing changes.)
 - Terms: nothing in the week's diffs changes obligations.
+
+## Update 2026-11-03: weekly audit (nothing mechanical; nothing new to publish; one low-priority disclosure note)
+
+Live policy "Last Updated: October 29, 2026" already covers the phone app (§2.11), affiliate payouts (§2.9) and the extension catalogue. Items from the 2026-10-27 update remain open and unchanged (see above).
+
+### New this week
+
+1. **Retention enforcement now exists for two tables (website repo `b9a72f2`).** `/api/cron/purge-marketing-email-sends` deletes campaign/sequence `email_sends` older than 24 months; this now backs the §7 promise "Marketing email events: opens and clicks for 24 months". No policy change needed; transactional sends and the suppression list are untouched, matching §7. [CONFIRM: the cron is registered in `vercel.json` and has run in production.]
+2. **`product_market_history` is now pruned at 25 months (same commit).** This is the pooled, de-identified shared-catalogue price/rank log (§2.x shared catalogue paragraph). The policy gives no retention period for it, and the code comment says it is not personal data. Optional, not required: add one sentence to §7 if you want the promise stated.
+
+```html
+<li><strong>Pooled product catalogue observations</strong> (product facts only, de-identified): kept for 25 months, then deleted.</li>
+```
+
+   [CONFIRM: you want to state a retention period for non-personal pooled data at all; this is a new retention commitment, so not auto-published.]
+
+### Checked, no action needed
+
+- Extension 0.1.35 (storefront counts, planner, toolbar, popup toggles, deal-sheet CC/promo/rating/image fields): read from pages the user already views and pushed through the existing deals channel; no new data category or vendor found.
+- Phone app: Deals-tab expansion, Watch it run switch, and "make an AI image" (runs on the desktop with the user's own OpenAI key, local-only): covered by §2.11 and the local-only language; no new vendor.
+- `keys-for-email` licenses route (worker-secret only) and affiliate PayPal reminder emails: covered by §2.2 and §2.9.
+- Subprocessor list: no new SDK or vendor in either repo's diffs. Terms: no obligation changes.
