@@ -51,6 +51,8 @@ Posting a photo to a product that is out of stock earns nothing and can drag dow
 
 ## Delete the original before re-posting
 
+**Coming soon:** deleting photos from Amazon is not available in the current version yet. Until it is, photos already on your source storefront are not reposted there; other marketplaces post normally.
+
 Amazon's duplicate detection is per-storefront, so re-posting a photo to the same marketplace it already lives on can be rejected as a duplicate. To refresh a photo on its own storefront, turn on **Delete the original before re-posting** in Step 3. Your photo is safe: the original is downloaded to your computer first, and only then deleted. If a re-post fails after the delete, the photo lands in the **Deleted from Amazon** tab with its saved file so you can put it back.
 
 Other marketplaces are separate storefronts, so they never delete anything.
@@ -91,6 +93,18 @@ Two optional switches in the filters make a reload run smarter:
 
 - **Winners first: only reload photos whose products earned commissions**. The run skips any photo unless one of its tagged products earned a commission inside the lookback window (default 365 days), using the earnings data already on your computer. Combined with the per-run Max, this spends the whole run on your proven earners instead of random old uploads. It ranks by earnings where known: a photo this butler has never processed may have no earnings match yet, so widen the lookback or turn the switch off when you want a full sweep.
 - **Refresh the title on reload**. Amazon sometimes deprioritizes a re-post it recognizes as identical, so a reload lands best with a real metadata change. This rewrites each title with a fresh hook before reposting. The built-in style needs no API key; the AI style uses your Anthropic key and falls back to the built-in hooks if the rewrite fails. When no rewrite is possible, the original title is kept.
+
+## Chat with the butler
+
+The **Chat with the butler** card at the top of the panel works the same way as in Video Reload Butler: describe what you want, review the changes it proposes, say yes to apply them, and use **Show you what I did and why** to check each one before you click **Run**. Anything it cannot do yet is sent to our team as a feature request for you.
+
+## Only re-upload products that pass your rules
+
+The **Only re-upload products that pass these rules** card checks each photo's product before it is re-uploaded: it can require a tagged ASIN or a parent ASIN, a minimum number of sales a month (Amazon's "bought in past month" figure, or a sales-rank estimate), and a maximum number of influencer videos on the product page. A photo that fails a rule is skipped and the reason shows in the log.
+
+## Make vertical photos horizontal
+
+Set **Change vertical photos to horizontal** to turn portrait and square photos into a 16:9 landscape photo before posting. Fill the empty sides with a blurred copy of the photo or with black bars. Landscape photos are left as they are, and a converted photo that would be over Amazon's 10MB limit keeps its original shape.
 
 ## Where the data goes
 

@@ -51,6 +51,8 @@ Publier une photo sur un produit en rupture de stock ne rapporte rien et peut d�
 
 ## Supprimer l'original avant de republier
 
+**Bientôt disponible :** la suppression de photos sur Amazon n'est pas encore disponible dans la version actuelle. En attendant, les photos déjà présentes sur votre vitrine d'origine n'y sont pas republiées ; les autres marketplaces publient normalement.
+
 La détection de doublons d'Amazon se fait par vitrine, donc republier une photo sur le même marketplace où elle existe déjà peut être rejeté comme doublon. Pour rafraîchir une photo sur sa propre vitrine, activez **Supprimer l'original avant de republier** à l'étape 3. Votre photo est en sécurité : l'original est d'abord téléchargé sur votre ordinateur, et seulement ensuite supprimé. Si une republication échoue après la suppression, la photo arrive dans l'onglet **Supprimées d'Amazon** avec son fichier enregistré pour que vous puissiez la remettre.
 
 Les autres marketplaces sont des vitrines distinctes : ils ne suppriment jamais rien.
@@ -91,6 +93,18 @@ Deux interrupteurs optionnels dans les filtres rendent un rechargement plus inte
 
 - **Gagnants d'abord : ne recharger que les photos dont les produits ont généré des commissions**. L'exécution ignore toute photo sauf si l'un de ses produits identifiés a généré une commission dans la fenêtre de recherche (365 jours par défaut), d'après les données de gains déjà sur votre ordinateur. Combiné au Max par exécution, cela consacre toute l'exécution à vos valeurs sûres plutôt qu'à de vieux envois au hasard. Le classement suit les gains connus : une photo que ce butler n'a jamais traitée peut ne pas encore avoir de correspondance de gains, alors élargissez la fenêtre ou désactivez l'interrupteur pour un balayage complet.
 - **Rafraîchir le titre lors du rechargement**. Amazon déprioritise parfois une republication qu'il reconnaît comme identique, un rechargement fonctionne donc mieux avec un vrai changement de métadonnées. Ceci réécrit chaque titre avec une nouvelle accroche avant la republication. Le style intégré ne nécessite aucune clé API ; le style IA utilise votre clé Anthropic et revient aux accroches intégrées si la réécriture échoue. Quand aucune réécriture n'est possible, le titre original est conservé.
+
+## Discuter avec le majordome
+
+La carte **Discuter avec le majordome** en haut du panneau fonctionne comme dans Video Reload Butler : décrivez ce que vous voulez, vérifiez les changements proposés, acceptez pour les appliquer et utilisez **Vous montrer ce que j'ai fait et pourquoi** pour contrôler chacun avant de cliquer sur **Lancer**. Ce qu'il ne sait pas encore faire est envoyé à notre équipe comme demande de fonctionnalité.
+
+## Remettre en ligne uniquement les produits qui respectent vos règles
+
+La carte **Remettre en ligne uniquement les produits qui respectent ces règles** vérifie le produit de chaque photo avant sa remise en ligne : elle peut exiger un ASIN tagué ou un ASIN parent, un minimum de ventes par mois (le chiffre « achetés le mois dernier » d'Amazon, ou une estimation par classement des ventes) et un maximum de vidéos d'influenceurs sur la page produit. Une photo qui ne respecte pas une règle est ignorée et la raison apparaît dans le journal.
+
+## Passer les photos verticales en horizontal
+
+Choisissez **Passer les photos verticales en horizontal** pour transformer les photos verticales et carrées en photo paysage 16:9 avant la publication. Remplissez les côtés vides avec une copie floutée de la photo ou avec des bandes noires. Les photos paysage restent telles quelles, et une photo convertie qui dépasserait la limite de 10 Mo d'Amazon garde sa forme d'origine.
 
 ## Où vont les données
 

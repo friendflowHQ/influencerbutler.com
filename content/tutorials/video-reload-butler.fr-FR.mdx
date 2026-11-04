@@ -268,6 +268,25 @@ Deux interrupteurs optionnels dans les filtres rendent un rechargement plus inte
 - **Gagnants d'abord : ne recharger que les vidéos dont les produits ont généré des commissions**. L'exécution ignore toute vidéo sauf si l'un de ses produits identifiés a généré une commission dans la fenêtre de recherche (365 jours par défaut), d'après les données de gains déjà sur votre ordinateur. Combiné au Max par exécution, cela consacre toute l'exécution à vos valeurs sûres plutôt qu'à de vieux envois au hasard. Le classement suit les gains connus : une vidéo que ce butler n'a jamais traitée peut ne pas encore avoir de correspondance de gains, alors élargissez la fenêtre ou désactivez l'interrupteur pour un balayage complet.
 - **Rafraîchir le titre lors du rechargement**. Amazon déprioritise parfois une republication qu'il reconnaît comme identique, un rechargement fonctionne donc mieux avec un vrai changement de métadonnées. Ceci réécrit chaque titre avec une nouvelle accroche avant la republication. Le style intégré ne nécessite aucune clé API ; le style IA utilise votre clé Anthropic et revient aux accroches intégrées si la réécriture échoue. Quand aucune réécriture n'est possible, le titre original est conservé.
 
+## Discuter avec le majordome
+
+En haut du panneau, une carte **Discuter avec le majordome** vous attend. Écrivez ce que vous voulez avec vos mots, par exemple : « Supprime toutes les vidéos, remets en ligne seulement les produits qui se vendent à plus de 300 par mois et ont moins de 5 vidéos d'influenceurs, passe les verticales en horizontal et amène tout ce qui dure moins de 30 secondes à 34 secondes avec mon clip de fin. »
+
+Le majordome vous dit s'il peut le faire, liste chaque réglage qu'il changerait et pourquoi, puis demande **Voulez-vous que j'applique ces réglages pour vous ?** Une fois accepté, cliquez sur **Vous montrer ce que j'ai fait et pourquoi** pour parcourir chaque champ modifié un par un, ou sur **Annuler ces changements** pour tout remettre comme avant. Rien ne se lance avant que vous cliquiez vous-même sur **Lancer**, et toute suppression vous demande toujours de taper DELETE.
+
+Si une partie de votre demande n'est pas encore possible, le majordome vous dit ce qu'il peut faire aujourd'hui et envoie la partie manquante à notre équipe comme demande de fonctionnalité. Il ne peut pas choisir un fichier pour vous : pour un clip, cliquez toujours sur **Parcourir** à côté du fichier du clip.
+
+## Remettre en ligne uniquement les produits qui respectent vos règles
+
+Dans **Quoi traiter**, la carte **Remettre en ligne uniquement les produits qui respectent ces règles** vérifie le produit de chaque vidéo avant sa remise en ligne :
+
+- **Lien produit requis** : un ASIN tagué, un ASIN parent, ou l'un des deux.
+- **Se vend au moins à ce nombre par mois** : utilise le chiffre « achetés le mois dernier » d'Amazon, ou une estimation à partir du classement des ventes s'il manque. Amazon n'affiche ce chiffre qu'à partir de 50 par mois, donc un produit sans chiffre compte comme moins de 50.
+- **Au plus ce nombre de vidéos d'influenceurs sur le produit** : compte les vidéos d'influenceurs de la page produit. Votre propre vidéo compte aussi tant qu'elle est en ligne.
+- **Quand les ventes ou les vidéos ne peuvent pas être lues** : ignorer la vidéo (le choix sûr) ou la remettre en ligne quand même.
+
+Par défaut, une vidéo qui ne respecte pas une règle reste simplement sur Amazon. Pour tout vider et ne remettre en ligne que les bonnes, utilisez une exécution qui supprime les originaux et activez **Supprimer aussi les vidéos qui ne respectent pas ces règles**. Chaque vidéo supprimée est d'abord sauvegardée sur votre ordinateur et peut être récupérée depuis l'onglet **Supprimées d'Amazon**.
+
 ## Où vont les données
 
 Les logs par exécution arrivent dans la ligne video-reload-butler du panneau Video Log. Les fichiers vidéo originaux sont téléchargés dans un dossier temporaire pendant la conversion et nettoyés après chaque exécution.

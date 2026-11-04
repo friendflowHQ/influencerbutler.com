@@ -268,6 +268,25 @@ Two optional switches in the filters make a reload run smarter:
 - **Winners first: only reload videos whose products earned commissions**. The run skips any video unless one of its tagged products earned a commission inside the lookback window (default 365 days), using the earnings data already on your computer. Combined with the per-run Max, this spends the whole run on your proven earners instead of random old uploads. It ranks by earnings where known: a video this butler has never processed may have no earnings match yet, so widen the lookback or turn the switch off when you want a full sweep.
 - **Refresh the title on reload**. Amazon sometimes deprioritizes a re-post it recognizes as identical, so a reload lands best with a real metadata change. This rewrites each title with a fresh hook before reposting. The built-in style needs no API key; the AI style uses your Anthropic key and falls back to the built-in hooks if the rewrite fails. When no rewrite is possible, the original title is kept.
 
+## Chat with the butler
+
+At the top of the panel there is a **Chat with the butler** card. Type what you want in your own words, for example: "Delete every video, re-upload only products that sell 300+ a month and have fewer than 5 influencer videos, make vertical videos horizontal, and bring anything under 30 seconds to 34 seconds with my outro clip."
+
+The butler tells you whether it can do it, lists every setting it would change and why, and asks **Want me to apply these settings for you?** After you say yes, click **Show you what I did and why** to walk through each changed field one by one, or **Undo these changes** to put everything back. Nothing runs until you click **Run** yourself, and any delete still asks you to type DELETE.
+
+If part of your request is not possible yet, the butler says what it can do today and sends the missing part to our team as a feature request for you. It cannot pick a file for you, so for a clip you still click **Browse** next to the clip file.
+
+## Only re-upload products that pass your rules
+
+In **What to process**, the **Only re-upload products that pass these rules** card checks each video's product before it is re-uploaded:
+
+- **Product link needed**: a tagged ASIN, a parent ASIN, or either one.
+- **Sells at least this many per month**: uses Amazon's "bought in past month" figure, or an estimate from the sales rank when the figure is missing. Amazon only shows the figure from 50 a month, so a product without it counts as under 50.
+- **At most this many influencer videos on the product**: counts the influencer videos on the product page. Your own video counts too while it is still live.
+- **When sales or video counts cannot be read**: skip the video (safe) or re-upload it anyway.
+
+By default a video that fails a rule is simply left on Amazon. To clear out everything and re-upload only the good ones, use a run that deletes originals and turn on **Also delete videos that fail these rules**. Every deleted video is saved to your computer first and can be brought back from the **Deleted from Amazon** tab.
+
 ## Where the data goes
 
 Per-run logs land in the video-reload-butler row of the Video Log panel. Original video files are downloaded to a temp dir during conversion and cleaned up after each run.

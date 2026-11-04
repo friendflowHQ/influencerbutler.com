@@ -51,6 +51,8 @@ Publicar una foto en un producto agotado no genera nada y puede perjudicar las m
 
 ## Eliminar el original antes de volver a publicar
 
+**Próximamente:** eliminar fotos de Amazon aún no está disponible en la versión actual. Mientras tanto, las fotos que ya están en tu escaparate de origen no se vuelven a publicar allí; los demás marketplaces publican con normalidad.
+
 La detección de duplicados de Amazon es por escaparate, así que volver a publicar una foto en el mismo marketplace donde ya existe puede rechazarse como duplicado. Para refrescar una foto en su propio escaparate, activa **Eliminar el original antes de volver a publicar** en el Paso 3. Tu foto está a salvo: el original se descarga primero a tu equipo y solo entonces se elimina. Si una nueva publicación falla tras la eliminación, la foto va a la pestaña **Eliminadas de Amazon** con su archivo guardado para que puedas reponerla.
 
 Los demás marketplaces son escaparates distintos, así que nunca eliminan nada.
@@ -91,6 +93,18 @@ Dos interruptores opcionales en los filtros hacen más inteligente una recarga:
 
 - **Ganadores primero: recargar solo fotos cuyas productos generaron comisiones**. La ejecución omite cualquier foto salvo que uno de sus productos etiquetados haya generado una comisión dentro de la ventana de búsqueda (365 días por defecto), usando los datos de ganancias que ya están en tu ordenador. Combinado con el Máximo por ejecución, dedica toda la ejecución a tus ganadores probados en lugar de subidas antiguas al azar. Clasifica por ganancias conocidas: una foto que este butler nunca ha procesado puede no tener coincidencia de ganancias todavía, así que amplía la ventana o apaga el interruptor cuando quieras un barrido completo.
 - **Renovar el título al recargar**. Amazon a veces desprioriza una republicación que reconoce como idéntica, así que una recarga funciona mejor con un cambio real de metadatos. Esto reescribe cada título con un gancho nuevo antes de republicar. El estilo integrado no necesita clave de API; el estilo con IA usa tu clave de Anthropic y recurre a los ganchos integrados si la reescritura falla. Cuando no es posible reescribir, se conserva el título original.
+
+## Habla con el mayordomo
+
+La tarjeta **Habla con el mayordomo** de la parte superior del panel funciona igual que en Video Reload Butler: describe lo que quieres, revisa los cambios que propone, acepta para aplicarlos y usa **Muéstrame qué hiciste y por qué** para revisar cada uno antes de pulsar **Ejecutar**. Lo que aún no puede hacer se envía a nuestro equipo como solicitud de función por ti.
+
+## Volver a subir solo los productos que cumplan tus reglas
+
+La tarjeta **Volver a subir solo los productos que cumplan estas reglas** revisa el producto de cada foto antes de volver a subirla: puede exigir un ASIN etiquetado o un ASIN principal, un mínimo de ventas al mes (la cifra "comprados el mes pasado" de Amazon, o una estimación por ranking de ventas) y un máximo de videos de influencers en la página del producto. Una foto que no cumple una regla se omite y el motivo aparece en el registro.
+
+## Pasar las fotos verticales a horizontal
+
+Elige **Cambiar las fotos verticales a horizontales** para convertir las fotos verticales y cuadradas en una foto horizontal 16:9 antes de publicarla. Rellena los lados vacíos con una copia desenfocada de la foto o con barras negras. Las fotos horizontales se dejan igual, y una foto convertida que superaría el límite de 10 MB de Amazon conserva su forma original.
 
 ## Adónde van los datos
 
