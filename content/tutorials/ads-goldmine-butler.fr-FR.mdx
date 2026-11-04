@@ -21,12 +21,12 @@ Le résultat est un tableau triable et filtrable d'ASIN avec un score composite 
 ## Avant de commencer
 
 - **CC Storefront ID** dans la barre supérieure.
-- **Clé de la Creators API** dans API Integrations - requise pour les signaux d'offre. Sans elle, la colonne Offre reste vide et les scores reposent sur les autres signaux.
+- **Clé de la Creators API** dans Clés d'IA et de données - requise pour les signaux d'offre. Sans elle, la colonne Offre reste vide et les scores reposent sur les autres signaux.
 - **cc-check s'est exécuté récemment** : Ads Goldmine lit les catalogues CC + SPCC que cc-check maintient.
 
 ## Votre première actualisation
 
-1. Ouvrez **Ads Goldmine** sous Amazon Butler.
+1. Ouvrez **Mine d’Annonces** sous Amazon Butler.
 2. Cliquez sur **Actualiser maintenant**.
 
 L'actualisation se déroule dans cet ordre :
@@ -75,7 +75,7 @@ Les signaux des sondages et l'ensemble des candidats du catalogue vivent dans le
 ## Pièges courants
 
 - **"Aucun produit pour le moment"** : vous n'avez pas cliqué sur Actualiser maintenant, ou cc-check n'a pas encore récolté les catalogues CC/SPCC. Lancez cc-check, puis Actualiser maintenant.
-- **La colonne Offre est vide** : clé de la Creators API manquante dans API Integrations. Ajoutez-la et réactualisez.
+- **La colonne Offre est vide** : clé de la Creators API manquante dans Clés d'IA et de données. Ajoutez-la et réactualisez.
 - **SPCC, Boutique de marque ou Offre affichent encore "-" pour la plupart des lignes** : ces signaux se remplissent progressivement. SPCC est résolu à la prochaine actualisation ; Boutique de marque et Offre sondent un lot limité des marques les plus prioritaires par exécution, donc la couverture grandit sur plusieurs actualisations.
 - **Beaucoup de lignes notées 15** : ce sont des marques uniquement présentes dans votre catalogue Creator Connections, sans autre signal pour l'instant. Réactualisez (et ajoutez une clé de la Creators API) pour superposer des signaux d'offre, de boutique de marque et de recherche de marque qui les différencient.
 

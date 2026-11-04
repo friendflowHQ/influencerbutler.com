@@ -8,7 +8,7 @@ category: Amazon
 
 ## Ce que fait Mots-clés et filtres
 
-Mots-clés et filtres se trouve sous **Amazon Butler › Contacter les marques › Mots-clés et filtres**. C'est deux outils dans un seul panneau :
+Mots-clés et filtres se trouve sous **Amazon Butler › Messages aux marques › Mots-clés et filtres**. C'est deux outils dans un seul panneau :
 
 1. **Filtres de mots-clés et de marques** : les filtres d'inclusion/exclusion qui décident qui Contacter les marques contacte. Ils se trouvaient auparavant dans Contacter les marques ; ils vivent désormais ici pour que tout votre travail sur les mots-clés soit au même endroit.
 2. **Générateur de mots-clés par IA** : décrivez une niche et l'IA remplit les 12 groupes mensuels avec des mots-clés produits saisonniers. Les mots-clés générés sont classés par rapport à votre catalogue CC local (SPCC) ; les correspondances reçoivent une étiquette **SPCC** visible et sont triées en premier, puis vous envoyez les listes de votre choix vers Contacter les marques.
@@ -38,12 +38,12 @@ Les doublons sont supprimés automatiquement et la modification est enregistrée
 
 ## Avant de commencer
 
-- **Connectez votre clé API OpenAI** dans **Intégrations API** (pas encore de clé ? [Configurez l'API OpenAI](/help/tutorials/openai-api-setup)). Tant que ce n'est pas fait, le générateur par IA reste verrouillé et affiche une invite « Connecter OpenAI ». (Les filtres ci-dessus fonctionnent sans clé.)
+- **Connectez votre clé API OpenAI** dans **Clés d'IA et de données** (pas encore de clé ? [Configurez l'API OpenAI](/help/tutorials/openai-api-setup)). Tant que ce n'est pas fait, le générateur par IA reste verrouillé et affiche une invite « Connecter OpenAI ». (Les filtres ci-dessus fonctionnent sans clé.)
 - **Lancez une actualisation SPCC** (CC Check / Data Refresh Butler) pour que votre catalogue soit rempli. Le classement SPCC ne vaut que ce que vaut le catalogue qui le sous-tend.
 
 ## Générer des mots-clés
 
-1. Ouvrez **Amazon Butler › Contacter les marques › Mots-clés et filtres**.
+1. Ouvrez **Amazon Butler › Messages aux marques › Mots-clés et filtres**.
 2. Renseignez **Catégorie / niche** (p. ex. `ustensiles de cuisine`), **Mots-clés par mois** et l'**indication de prix IA (min. / max.)**. L'IA garde ses suggestions de mots-clés dans cette fourchette de prix : un minimum plus élevé oriente donc vers des produits haut de gamme plutôt que vers des articles bon marché. Elle façonne les suggestions de mots-clés, pas les offres que vous récupérez.
 3. Activez les **biais produits** pour orienter l'IA : multiples, résout un problème, offrable, tendance, etc. Les biais cochés s'ajoutent comme instructions supplémentaires.
 4. (Facultatif) Cochez **Mots-clés uniques d'un mois à l'autre** pour qu'un même mot-clé ne se répète jamais d'un mois au suivant. La génération se fait alors un mois à la fois, ce qui est un peu plus lent.
@@ -77,14 +77,14 @@ Quelle que soit la voie choisie, l'espace de travail supprime les doublons (sans
 
 Générer coûte un appel API. Pour éviter de payer deux fois lorsque vous voulez la même niche aux deux endroits :
 
-- Dans **Deal Posting › Filtres**, utilisez **Copier les réglages vers Mots-clés et filtres** pour pousser vos réglages de filtre ici.
+- Dans **Publication d'offres › Filtres**, utilisez **Copier les réglages vers Mots-clés et filtres** pour pousser vos réglages de filtre ici.
 - Dans cet espace de travail, utilisez **Copier les réglages des Offres du jour** pour les récupérer dans l'autre sens.
 
 Les deux boutons copient les champs de filtre, les 12 groupes mensuels, chaque bac par jour et les données de biais par mot-clé, sans utiliser de nouvel appel API.
 
 ## Problèmes courants
 
-- **Le générateur est grisé** : votre clé OpenAI n'est pas connectée. Ouvrez Intégrations API et ajoutez-la.
+- **Le générateur est grisé** : votre clé OpenAI n'est pas connectée. Ouvrez Clés d'IA et de données et ajoutez-la.
 - **Aucune étiquette SPCC n'apparaît** : votre catalogue CC est vide ou obsolète. Lancez d'abord une actualisation SPCC.
 - **Un envoi a ajouté moins de mots-clés que prévu** : les doublons déjà présents dans votre liste Contacter les marques sont ignorés ; les puces désactivées comptent aussi comme présentes.
 

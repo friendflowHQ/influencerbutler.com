@@ -15,7 +15,7 @@ Detalle crítico: Retag Butler **añade** etiquetas de reemplazo junto a las ant
 - **La URL de tu tienda de Amazon Creator** (se rellena desde Ajustes → Escaneo de tienda).
 - **Sesión de Creator Hub iniciada** en Chrome.
 - **Storefront Butler sincronizado recientemente**: Retag Butler lee qué filas están marcadas como no disponibles desde esa sincronización.
-- Opcional: una **clave de Creators API** en API Integrations - se usa para sugerencias de reemplazo de mejor calidad.
+- Opcional: una **clave de Creators API** en Claves de IA y datos - se usa para sugerencias de reemplazo de mejor calidad.
 
 ## Elegir tu modo
 
@@ -41,7 +41,7 @@ Regla práctica: mantén min similarity en 50 (quieres ver candidatos débiles p
 
 ## Tu primera ejecución
 
-1. Abre **Retag Butler** dentro de Amazon Butler.
+1. Abre **Reetiquetar** dentro de Amazon Butler.
 2. Asegúrate de que la URL de tu tienda esté configurada en **Ajustes → Perfil** (Retag Butler la usa automáticamente; no hay un campo de URL en el panel).
 3. Elige modo **Revisión**.
 4. Deja los umbrales por defecto (50 / 70).
@@ -63,7 +63,7 @@ El historial de re-etiquetado se registra por fila en tu caché preseed. El pane
 
 ## Tropiezos comunes
 
-- **Se ejecuta sin parar sin escanear nada y todas las páginas de Amazon dicen que no se encuentra la página**: tu enlace de escaparate sigue siendo el de ejemplo que trae Butler. Abre **Configuración → Perfil** y pega el tuyo (tiene esta forma: `https://www.amazon.com/shop/tunombre`), o ejecuta allí la comprobación de escaparate para que lo rellene por ti. Pega el enlace solo, sin corchetes angulares alrededor de tu nombre: Amazon lee `<tunombre>` como otra dirección y devuelve el mismo resultado vacío.
+- **Se ejecuta sin parar sin escanear nada y todas las páginas de Amazon dicen que no se encuentra la página**: tu enlace de escaparate sigue siendo el de ejemplo que trae Butler. Abre **Ajustes → Perfil** y pega el tuyo (tiene esta forma: `https://www.amazon.com/shop/tunombre`), o ejecuta allí la comprobación de escaparate para que lo rellene por ti. Pega el enlace solo, sin corchetes angulares alrededor de tu nombre: Amazon lee `<tunombre>` como otra dirección y devuelve el mismo resultado vacío.
 - **"No se encontraron candidatos"**: probablemente Storefront Butler aún no ha marcado ninguna fila como no disponible. Vuelve a sincronizar Storefront Butler.
 - **El reemplazo se ve mal (p. ej. categoría no relacionada)**: sube min similarity a 60-65 para filtrar matches débiles.
 - **Banner "Ya re-etiquetado dentro del cooldown"**: Retag Butler está respetando `skipRetaggedWithinDays`. Bájalo o espera.

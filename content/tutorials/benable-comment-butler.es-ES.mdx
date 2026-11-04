@@ -15,7 +15,7 @@ Si la IA falla por cualquier razón (rate-limited, producto raro), Butler recurr
 ## Antes de empezar
 
 - **Una sesión activa de Benable** en Chrome.
-- **Clave de API de OpenAI** en **API Integrations** ([cómo conseguirla](/help/tutorials/openai-api-setup)) - genera los comentarios por producto.
+- **Clave de API de OpenAI** en **Claves de IA y datos** ([cómo conseguirla](/help/tutorials/openai-api-setup)) - genera los comentarios por producto.
 - **1-10 URLs de tienda de Benable** de creadores a los que quieres comentar.
 - **Al menos 3-5 frases canned de respaldo** en el textarea de canned-phrases (p. ej. "¡Me encanta esta elección!", "Lo añado a mi lista", "Exactamente lo que necesitaba").
 
@@ -31,7 +31,7 @@ Empieza con Dry run. Lee 20-30 de los comentarios generados. Si el tono se sient
 
 ## Tu primera ejecución
 
-1. Abre **Benable Butler** en la barra lateral izquierda y luego **Comment Butler** (anidado).
+1. Abre **Benable Butler** en la barra lateral izquierda y luego **Comentar** (anidado).
 2. En **Storefronts**, pega 1-10 URLs de perfil. Una por línea.
 3. En **Modo**, deja Dry run para la primera pasada.
 4. En **Frases canned**, añade 5-10 comentarios de fallback. Mantenlos lo bastante genéricos como para encajar con cualquier producto (p. ej. "Una elección muy inteligente", "Lo añado al carrito ahora", "Me encanta la curación").
@@ -68,9 +68,9 @@ El historial por comentario (perfil + elemento + texto del comentario + marca de
 
 ## Tropiezos comunes
 
-- **"Falta la clave de OpenAI"**: configúrala en API Integrations. Comment Butler puede caer al fallback canned, pero es muy preferible generar comentarios frescos.
+- **"Falta la clave de OpenAI"**: configúrala en Claves de IA y datos. Comment Butler puede caer al fallback canned, pero es muy preferible generar comentarios frescos.
 - **Los comentarios fallan al publicarse (la UI devolvió error)**: Benable cambió selectores. Comment Butler muestra "Selectores aún no configurados" hasta que se vuelva a correr la inspección en runtime; el banner del espacio lo indica si pasa.
-- **Cada comentario es canned**: tu clave de OpenAI no es válida o está rate-limited. Comprueba API Integrations.
+- **Cada comentario es canned**: tu clave de OpenAI no es válida o está rate-limited. Comprueba Claves de IA y datos.
 - **Los comentarios se sienten genéricos**: afina el campo Tono y añade contexto específico del producto. La IA usa la descripción de Amazon + tu tono; si cualquiera de los dos es flojo, la salida es floja.
 
 ## Relacionado

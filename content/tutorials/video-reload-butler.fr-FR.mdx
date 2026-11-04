@@ -18,11 +18,11 @@ Vous pouvez aussi l'utiliser pour **élaguer les vidéos sous-performantes** (le
 - **Session Creator Hub connectée** dans Chrome.
 - **FFmpeg installé**: se fait automatiquement à l'install de l'app. Si vous voyez "ffmpeg not found", lancez `npm run stage:ffmpeg` depuis la racine du repo.
 - Optionnel : une image de filigrane et/ou une police pour les légendes, si vous voulez des overlays.
-- **Facultatif : une clé API OpenAI** dans API Integrations, pour la traduction et le doublage par IA et la réécriture des titres signalés. Le style IA de **Actualiser le titre au rechargement** utilise une clé Anthropic. [Comment obtenir une clé OpenAI](/help/tutorials/openai-api-setup).
+- **Facultatif : une clé API OpenAI** dans Clés d'IA et de données, pour la traduction et le doublage par IA et la réécriture des titres signalés. Le style IA de **Actualiser le titre au rechargement** utilise une clé Anthropic. [Comment obtenir une clé OpenAI](/help/tutorials/openai-api-setup).
 
 ## Votre première conversion + re-upload
 
-1. Ouvrez **Video Reload Butler** sous Amazon Butler.
+1. Ouvrez **Remettre des vidéos en ligne** sous Amazon Butler.
 2. Dans la carte **Filtres et options** :
    - **Durée min / max**: laissez large pour la première exécution.
    - **Ignorer les vidéos avec vues ≥**: 1000 par défaut. Cela garde vos meilleures vidéos intactes. Celles *sous* ce seuil sont éligibles au re-upload.
@@ -88,7 +88,7 @@ Quand vous diffusez une vidéo vers un marché non anglophone, Video Reload Butl
 Quelques points à connaître :
 
 - Les marchés anglophones (US, CA, UK, AU, SG) sont publiés sans changement, et les marchés qui partagent une langue réutilisent la même traduction et le même fichier, donc une diffusion vers plusieurs pays reste rapide.
-- La traduction, la transcription et le doublage utilisent votre propre clé OpenAI depuis **Intégrations API** et consomment des jetons par exécution ; c'est pourquoi la carte est désactivée par défaut. L'audio doublé est mis en cache : relancer la même vidéo avec la même voix ne facture rien de plus.
+- La traduction, la transcription et le doublage utilisent votre propre clé OpenAI depuis **Clés d'IA et de données** et consomment des jetons par exécution ; c'est pourquoi la carte est désactivée par défaut. L'audio doublé est mis en cache : relancer la même vidéo avec la même voix ne facture rien de plus.
 - Si le doublage IA est activé mais qu'aucune clé OpenAI n'est configurée, le journal d'exécution vous avertit une fois et la vidéo est publiée avec son audio d'origine, que les boutiques non anglophones peuvent rejeter. Si le doublage échoue sur un segment, ce segment est ignoré ; si aucun audio ne revient du tout, l'audio d'origine est conservé.
 - Sous-titres ou doublage ? Les sous-titres gardent votre vraie voix et coûtent moins cher, mais le spectateur doit lire. Le doublage sonne natif et fonctionne avec le son activé, mais remplace votre voix par une voix de synthèse et coûte plus cher par exécution. Commencez par les sous-titres, puis passez au doublage sur les marchés où cela compte.
 

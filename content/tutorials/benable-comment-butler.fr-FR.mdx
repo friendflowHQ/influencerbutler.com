@@ -15,7 +15,7 @@ Si l'IA échoue pour une raison ou une autre (rate-limit, produit bizarre), Butl
 ## Avant de commencer
 
 - **Une session Benable active** dans Chrome.
-- **Clé d'API OpenAI** dans **API Integrations** ([comment l'obtenir](/help/tutorials/openai-api-setup)) - génère les commentaires par produit.
+- **Clé d'API OpenAI** dans **Clés d'IA et de données** ([comment l'obtenir](/help/tutorials/openai-api-setup)) - génère les commentaires par produit.
 - **1-10 URLs de boutiques Benable** des créateurs à qui vous voulez commenter.
 - **Au moins 3-5 phrases canned de secours** dans le textarea canned-phrases (par ex. "Excellente sélection !", "Je l'ajoute à ma liste", "Exactement ce qu'il me fallait").
 
@@ -31,7 +31,7 @@ Démarrez en Dry run. Lisez 20-30 commentaires générés. Si le ton vous convie
 
 ## Votre première passe
 
-1. Ouvrez **Benable Butler** dans la barre latérale gauche, puis **Comment Butler** (imbriqué).
+1. Ouvrez **Benable Butler** dans la barre latérale gauche, puis **Commenter** (imbriqué).
 2. Dans **Storefronts**, collez 1-10 URLs de profil. Une par ligne.
 3. Dans **Mode**, laissez Dry run pour la première passe.
 4. Dans **Phrases canned**, ajoutez 5-10 commentaires de fallback. Gardez-les assez génériques pour coller à n'importe quel produit (par ex. "Très belle sélection", "Je l'ajoute à mon panier", "J'adore la curation").
@@ -68,9 +68,9 @@ L'historique par commentaire (profil cible + élément + texte du commentaire + 
 
 ## Pièges courants
 
-- **"Clé OpenAI manquante"**: configurez-la dans API Integrations. Comment Butler peut retomber sur les phrases canned, mais il vaut largement mieux générer des commentaires frais.
+- **"Clé OpenAI manquante"**: configurez-la dans Clés d'IA et de données. Comment Butler peut retomber sur les phrases canned, mais il vaut largement mieux générer des commentaires frais.
 - **Les commentaires échouent à se poster (l'UI a renvoyé une erreur)**: Benable a changé ses sélecteurs. Comment Butler affiche "Sélecteurs pas encore configurés" tant que l'inspection runtime n'est pas relancée ; la bannière de l'espace l'indique si ça arrive.
-- **Chaque commentaire est canned**: votre clé OpenAI est invalide ou rate-limited. Vérifiez API Integrations.
+- **Chaque commentaire est canned**: votre clé OpenAI est invalide ou rate-limited. Vérifiez Clés d'IA et de données.
 - **Les commentaires paraissent génériques**: affinez le champ Ton et ajoutez du contexte spécifique au produit. L'IA utilise la description Amazon + votre ton ; si l'un des deux est faible, la sortie est faible.
 
 ## Relié

@@ -16,7 +16,7 @@ Le seuil vous appartient : 99 % par défaut parce que c'est là que vivent les v
 
 ## Premier passage
 
-1. Ouvrez **Pricecrash Butler** dans le menu latéral (sous Orders Butler, groupe Amazon).
+1. Ouvrez **Pricecrash Butler** dans le menu latéral (groupe Deals Butler).
 2. Sélectionnez au moins une **catégorie** à scanner. « All » couvre tous les rayons.
 3. (Facultatif) Sous **Marchés à analyser**, cochez les régions Amazon à parcourir (UK, DE, FR et plus). Laissez tout décoché pour n'analyser que votre marché principal. Une case se débloque une fois que vous connectez les identifiants de l'API Creators de cette région dans les Réglages : US et CA utilisent vos identifiants par défaut ; UK, DE, FR, IT et ES utilisent vos identifiants EU ; et JP, AU et IN utilisent vos identifiants FE.
 4. Choisissez le comportement à la détection : **Brouillon pour relecture**, **Planifier automatiquement** (choisissez le moment en dessous : **Publier tout de suite** ou **À la prochaine heure de publication programmée**) ou **Sans transfert**.
@@ -70,8 +70,8 @@ La ligne sous les limites indique le maximum de publications supplémentaires pa
 
 ## Pièges fréquents
 
-- Pas d'identifiants : ouvrez Paramètres → Intégrations API → Creators API.
-- Vous ne voyez que des offres amazon.com (US) alors que vous vendez sur un autre marché ? : dans Paramètres → Intégrations API → Creators API, réglez le menu **Marketplace** sur votre boutique (par exemple amazon.co.uk) puis enregistrez. Vos identifiants principaux couvrent déjà votre propre marché, donc inutile d'ajouter un jeu d'identifiants « EU » ou « FE » séparé juste pour l'analyser. Utilisez les cases **Marchés à analyser** uniquement pour parcourir des régions supplémentaires.
+- Pas d'identifiants : ouvrez Clés d'IA et de données → Creators API.
+- Vous ne voyez que des offres amazon.com (US) alors que vous vendez sur un autre marché ? : dans Clés d'IA et de données → Creators API, réglez le menu **Marketplace** sur votre boutique (par exemple amazon.co.uk) puis enregistrez. Vos identifiants principaux couvrent déjà votre propre marché, donc inutile d'ajouter un jeu d'identifiants « EU » ou « FE » séparé juste pour l'analyser. Utilisez les cases **Marchés à analyser** uniquement pour parcourir des régions supplémentaires.
 - `429 RequestThrottled` : trop de Butlers tapent PA-API en même temps. Baissez la cadence.
 - Aucun résultat à 99 % : c'est normal. Baissez le seuil.
 
