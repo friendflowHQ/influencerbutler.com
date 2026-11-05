@@ -19,6 +19,8 @@ import type { ClientMeta, WalkthroughPayload, TourCatalogEntry, VideoPayload, Bo
 import { resolveTextProvider, openAiFallbackProvider } from "@/lib/ai-concierge/llm";
 import type { TextProvider } from "@/lib/ai-concierge/llm";
 import type { Principal } from "@/lib/mcp/auth";
+import { buildLookTemplate, pickLatestImage, IMAGE_NOTE } from "@/lib/ai-concierge/look-templates";
+import type { LookTemplateResult } from "@/lib/ai-concierge/look-templates";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -57,12 +59,13 @@ function sanitizeClient(raw: unknown): ClientMeta | undefined {
 function buildReply(
   reply: string,
   images: Array<{ url: string; alt: string }>,
-  extras: { walkthrough: WalkthroughPayload | null; video: VideoPayload | null; booking: BookingPayload | null },
+  extras: { walkthrough: WalkthroughPayload | null; video: VideoPayload | null; booking: BookingPayload | null; template?: LookTemplateResult["template"] | null },
 ): Record<string, unknown> {
   const payload: Record<string, unknown> = { reply, images };
   if (extras.walkthrough) payload.walkthrough = extras.walkthrough;
   if (extras.video) payload.video = extras.video;
   if (extras.booking) payload.booking = extras.booking;
+  if (extras.template) payload.template = extras.template;
   return payload;
 }
 
@@ -90,6 +93,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
   const history = Array.isArray(body.messages) ? body.messages.slice(-MAX_HISTORY) : [];
+  // A screenshot pasted on a user turn (for build_look_template). The text model
+  // never receives it; only the template builder sends it to a vision model.
+  const pastedImage = pickLatestImage(history);
   const client = sanitizeClient(body.client);
   // The desktop app sends the live guided-tour catalog it ships so the model can
   // offer any current tour, not just the base curated set. Walkthroughs are
@@ -117,6 +123,7 @@ export async function POST(request: Request) {
             client.butlerStatus,
         }]
       : []),
+    ...(pastedImage ? [{ role: "system", content: IMAGE_NOTE }] : []),
     ...history
       .filter((m) => m.role === "user" || m.role === "assistant")
       .map((m) => ({ role: m.role, content: String(m.content || "").slice(0, 4000) })),
@@ -147,6 +154,8 @@ export async function POST(request: Request) {
   // reply so the client renders a video card / inline booking card. First wins.
   let video: VideoPayload | null = null;
   let booking: BookingPayload | null = null;
+  // build_look_template's result (a Community template it just published). First wins.
+  let template: LookTemplateResult["template"] | null = null;
   try {
     for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
       let res = await callProvider(activeProvider);
@@ -185,6 +194,14 @@ export async function POST(request: Request) {
           if (call.function.name === "offer_booking" && !booking) {
             booking = resolveBooking(args);
           }
+          if (call.function.name === "build_look_template") {
+            const built: LookTemplateResult = template
+              ? { ok: false, error: "already_built", message: "A template was already made this turn." }
+              : await buildLookTemplate({ butler: args.butler, notes: args.notes, image: pastedImage, userId: principal.userId });
+            if (built.ok && "template" in built && built.template && built.template.id) template = built.template;
+            messages.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(built).slice(0, 4000) });
+            continue;
+          }
           const result = await executeAgentTool(call.function.name, args, principal, client);
           messages.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(result).slice(0, 8000) });
         }
@@ -192,12 +209,12 @@ export async function POST(request: Request) {
       }
 
       const { text, images } = extractReplyImages(choice.content ?? "");
-      return NextResponse.json(buildReply(text, images, { walkthrough, video, booking }));
+      return NextResponse.json(buildReply(text, images, { walkthrough, video, booking, template }));
     }
     const fallbackText = walkthrough
       ? "The walkthrough is ready. Follow the Next buttons on screen."
       : "I ran into a loop working that out. Could you rephrase, or book a human call?";
-    return NextResponse.json(buildReply(fallbackText, [], { walkthrough, video, booking }));
+    return NextResponse.json(buildReply(fallbackText, [], { walkthrough, video, booking, template }));
   } catch (err) {
     console.error("[ai-concierge/chat] threw", err);
     return NextResponse.json({ error: "The assistant is unavailable right now." }, { status: 502 });

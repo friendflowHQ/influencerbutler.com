@@ -1305,7 +1305,11 @@ export type CleanLinkResult = {
   expandFailed?: boolean;
 };
 
-export type AiChatTurn = { role: "user" | "assistant"; content: string };
+// images: a pasted screenshot (data URL) on the newest user turn, for turning a
+// collage or outfit board into a Community template.
+export type AiChatTurn = { role: "user" | "assistant"; content: string; images?: string[] };
+// A Community template the concierge just built from that screenshot.
+export type AiChatTemplate = { id: string; butler: "collage" | "fashion"; name: string };
 export type AiChatImage = { url: string; alt: string };
 // A tutorial-video card (show_video) the concierge may attach to a reply.
 export type AiChatVideo = { tutorialId: string; title: string; videoId: string; url: string };
@@ -1324,6 +1328,7 @@ export type AiChatResult = {
   images?: AiChatImage[];
   video?: AiChatVideo;
   booking?: AiChatBooking;
+  template?: AiChatTemplate;
   error?: string;
 };
 

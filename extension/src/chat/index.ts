@@ -11,6 +11,7 @@ import type {
   AiChatTurn,
   AiChatVideo,
   AiChatBooking,
+  AiChatTemplate,
   BookingDay,
   BookingSlotsResult,
   BookingCreateResult,
@@ -64,8 +65,27 @@ function main(): void {
   const sendBtn = el("button", "chat-send primary", "Send");
   const voiceBtn = el("button", "chat-voice", "🎙 Voice");
   voiceBtn.type = "button";
+  // A screenshot for the assistant (a collage or outfit board to turn into a
+  // template): the paperclip button, or paste an image into the question box.
+  const attachBtn = el("button", "chat-attach", "📎");
+  attachBtn.type = "button";
+  attachBtn.title = "Add a screenshot";
+  attachBtn.setAttribute("aria-label", "Add a screenshot");
+  const fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.accept = "image/png,image/jpeg,image/webp";
+  fileInput.hidden = true;
+  const attached = el("div", "chat-attached");
+  attached.hidden = true;
+  const attachedImg = document.createElement("img");
+  attachedImg.alt = "";
+  const attachedRemove = el("button", "chat-attached-remove", "×");
+  attachedRemove.type = "button";
+  attachedRemove.setAttribute("aria-label", "Remove the screenshot");
+  attached.append(attachedImg, el("span", undefined, "Screenshot added"), attachedRemove);
+  let pendingImage = "";
   const inputRow = el("div", "chat-input-row");
-  inputRow.append(input, sendBtn, voiceBtn);
+  inputRow.append(attachBtn, fileInput, input, sendBtn, voiceBtn);
 
   const footer = el("p", "chat-footer");
   const still = el("span", undefined, "Still stuck? ");
@@ -77,7 +97,85 @@ function main(): void {
 
   const voiceAudio = document.createElement("audio");
   voiceAudio.autoplay = true;
-  root.append(intro, suggestWrap, log, inputRow, footer, voiceAudio);
+  root.append(intro, suggestWrap, log, attached, inputRow, footer, voiceAudio);
+
+  // Downscale to a JPEG of at most 1600 px and about 1 MB; "" when it cannot fit.
+  async function shrinkImage(file: File): Promise<string> {
+    const src = await new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result || ""));
+      r.onerror = () => reject(new Error("read"));
+      r.readAsDataURL(file);
+    });
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = () => reject(new Error("decode"));
+      i.src = src;
+    });
+    const scale = Math.min(1, 1600 / Math.max(img.naturalWidth || 1, img.naturalHeight || 1));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round((img.naturalWidth || 1) * scale));
+    canvas.height = Math.max(1, Math.round((img.naturalHeight || 1) * scale));
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return "";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    for (const q of [0.86, 0.76, 0.64, 0.52]) {
+      const url = canvas.toDataURL("image/jpeg", q);
+      if (Math.floor(((url.length - url.indexOf(",") - 1) * 3) / 4) <= 1000 * 1024) return url;
+    }
+    return "";
+  }
+
+  async function attachImage(file: File | null | undefined): Promise<void> {
+    if (!file || !/^image\//.test(file.type || "")) return;
+    try {
+      const url = await shrinkImage(file);
+      if (!url) { addBubble("error", "That image is too large. Try a smaller screenshot."); return; }
+      pendingImage = url;
+      attachedImg.src = url;
+      attached.hidden = false;
+      input.focus();
+    } catch {
+      addBubble("error", "That image could not be read. Try another screenshot.");
+    }
+  }
+  function clearImage(): void {
+    pendingImage = "";
+    attached.hidden = true;
+    attachedImg.removeAttribute("src");
+  }
+  attachBtn.onclick = () => fileInput.click();
+  fileInput.onchange = () => { void attachImage(fileInput.files && fileInput.files[0]); fileInput.value = ""; };
+  attachedRemove.onclick = () => clearImage();
+  input.addEventListener("paste", (ev: ClipboardEvent) => {
+    const items = ev.clipboardData && ev.clipboardData.items;
+    if (!items) return;
+    for (const item of Array.from(items)) {
+      if (item.kind === "file" && item.type.startsWith("image/")) {
+        const f = item.getAsFile();
+        if (f) { ev.preventDefault(); void attachImage(f); return; }
+      }
+    }
+  });
+
+  // A Community template the assistant just built from the screenshot. It is
+  // used in the desktop app, so the card says where to find it there.
+  function addTemplateCard(tpl: AiChatTemplate): void {
+    const card = el("div", "chat-template");
+    const where = tpl.butler === "fashion"
+      ? "Open the desktop app: Fashion Looks, Template, Community."
+      : "Open the desktop app: Collage Butler, Collage Templates, Community.";
+    card.append(
+      el("span", "chat-template-title", "New template added"),
+      el("span", "chat-template-name", tpl.name || ""),
+      el("span", "chat-template-where", where),
+    );
+    log.appendChild(card);
+    log.scrollTop = log.scrollHeight;
+  }
 
   function addBubble(
     role: "user" | "assistant" | "error",
@@ -270,15 +368,26 @@ function main(): void {
   }
 
   async function send(text: string): Promise<void> {
-    const content = text.trim();
+    const image = pendingImage;
+    const content = text.trim() || (image ? "Can you make this screenshot into a template?" : "");
     if (!content || sending) return;
     sending = true;
     sendBtn.disabled = true;
     input.value = "";
     suggestWrap.style.display = "none";
 
-    messages.push({ role: "user", content });
-    addBubble("user", content);
+    // One screenshot per conversation reaches the server: drop older ones.
+    if (image) for (const m of messages) delete m.images;
+    messages.push(image ? { role: "user", content, images: [image] } : { role: "user", content });
+    const userBubble = addBubble("user", content);
+    if (image) {
+      const shot = document.createElement("img");
+      shot.src = image;
+      shot.alt = "Your screenshot";
+      shot.className = "chat-msg-img";
+      userBubble.appendChild(shot);
+      clearImage();
+    }
     const thinking = addBubble("assistant", "Thinking...");
     thinking.classList.add("thinking");
 
@@ -290,6 +399,7 @@ function main(): void {
         addBubble("assistant", res.reply, res.images);
         if (res.video) addVideoCard(res.video);
         if (res.booking) addBookingCard(res.booking);
+        if (res.template) addTemplateCard(res.template);
       } else {
         addBubble("error", res.error || "The assistant is unavailable right now.");
       }

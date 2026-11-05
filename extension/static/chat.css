@@ -92,3 +92,15 @@
 .chat-booking-done-title { color: #15803d; font-weight: 700; font-size: 14px; margin: 0; }
 .chat-booking-done-sub { color: #6b7280; font-size: 12px; margin: 0; }
 .chat-booking-error { color: #b91c1c; font-size: 12px; margin: 0; }
+
+/* Pasted screenshot (attach button, chip above the input) and the "New template added" card. */
+.chat-attach { border: 1px solid var(--border, #d9dce1); background: transparent; border-radius: 10px; width: 38px; cursor: pointer; font-size: 16px; }
+.chat-attached { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; padding: 6px 8px; border: 1px dashed rgba(234, 88, 12, .45); border-radius: 10px; font-size: 12px; }
+.chat-attached[hidden] { display: none !important; }
+.chat-attached img { width: 44px; height: 44px; object-fit: cover; border-radius: 7px; }
+.chat-attached-remove { margin-left: auto; border: 0; background: transparent; font-size: 16px; cursor: pointer; }
+.chat-template { display: flex; flex-direction: column; gap: 3px; align-self: flex-start; max-width: 320px; padding: 10px 12px; border: 1px solid rgba(234, 88, 12, .35); background: rgba(234, 88, 12, .06); border-radius: 12px; }
+.chat-template-title { font-weight: 700; font-size: 13px; }
+.chat-template-name { font-size: 12.5px; }
+.chat-template-where { font-size: 12px; opacity: .8; }
+.chat-attach:focus-visible, .chat-attached-remove:focus-visible { outline: 2px solid #ea580c; outline-offset: 2px; }

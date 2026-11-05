@@ -105,6 +105,29 @@ function safeDays(raw: unknown): BookingDay[] {
   return days;
 }
 
+// Only the newest user turn's screenshot is sent, and only a real image data URL.
+const CHAT_IMAGE_RE = /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
+function safeTurns(messages: AiChatTurn[]): AiChatTurn[] {
+  const out = (Array.isArray(messages) ? messages : []).map((m) => ({ role: m.role, content: String(m.content || ""), images: m.images }));
+  let kept = false;
+  for (let i = out.length - 1; i >= 0; i -= 1) {
+    const m = out[i]!;
+    const img = m.role === "user" && Array.isArray(m.images) ? m.images[0] : undefined;
+    if (!kept && typeof img === "string" && img.length <= 2_200_000 && CHAT_IMAGE_RE.test(img)) { m.images = [img]; kept = true; }
+    else delete m.images;
+  }
+  return out;
+}
+
+function safeTemplate(raw: unknown): AiChatResult["template"] {
+  if (!raw || typeof raw !== "object") return undefined;
+  const t = raw as Record<string, unknown>;
+  const id = typeof t.id === "string" && /^ct_[0-9a-f]{16}$/.test(t.id) ? t.id : "";
+  const butler = t.butler === "fashion" ? "fashion" : t.butler === "collage" ? "collage" : null;
+  if (!id || !butler) return undefined;
+  return { id, butler, name: typeof t.name === "string" ? t.name.slice(0, 60) : "" };
+}
+
 export async function assistantChat(messages: AiChatTurn[]): Promise<AiChatResult> {
   const state = await getState();
   const key = state.auth.licenseKey;
@@ -114,13 +137,13 @@ export async function assistantChat(messages: AiChatTurn[]): Promise<AiChatResul
     const res = await fetch(ENDPOINTS.aiChat, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({ messages, client: { surface: "extension" } }),
+      body: JSON.stringify({ messages: safeTurns(messages), client: { surface: "extension" } }),
     });
-    const data = (await res.json().catch(() => null)) as { reply?: string; images?: unknown; video?: unknown; booking?: unknown; error?: string } | null;
+    const data = (await res.json().catch(() => null)) as { reply?: string; images?: unknown; video?: unknown; booking?: unknown; template?: unknown; error?: string } | null;
     if (!res.ok || !data || typeof data.reply !== "string") {
       return { ok: false, error: data?.error || `The assistant is unavailable (HTTP ${res.status}).` };
     }
-    return { ok: true, reply: data.reply, images: safeImages(data.images), video: safeVideo(data.video), booking: safeBooking(data.booking) };
+    return { ok: true, reply: data.reply, images: safeImages(data.images), video: safeVideo(data.video), booking: safeBooking(data.booking), template: safeTemplate(data.template) };
   } catch {
     return { ok: false, error: "Network error reaching the assistant." };
   }

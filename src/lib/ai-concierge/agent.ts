@@ -16,6 +16,7 @@
  */
 
 import { readFileSync } from "node:fs";
+import { LOOK_TEMPLATE_TOOL } from "./look-templates";
 import { join } from "node:path";
 import { callTool } from "@/lib/mcp/tools";
 import type { Principal } from "@/lib/mcp/auth";
@@ -611,6 +612,10 @@ export function buildInstructions(
     "- No financial or investment advice. If asked, say you are not a licensed advisor.",
     "- Never name or compare against specific competitor products by name.",
     "- Do not use em-dashes. Use a colon, comma, or two sentences instead.",
+    "- Templates from screenshots: when the user pastes a screenshot of a collage or outfit board and wants it as a",
+    "  template, call build_look_template (ask 'Collage Butler or Fashion Looks?' first if unclear). It goes live for",
+    "  every creator at once, no review. Then say where to find it, from the tool's message. Never promise exact copies",
+    "  of someone else's words or logos: templates copy the layout, colors and style only.",
     "- When you cannot help, or the user wants a person, call offer_human_call and let them know they",
     `  can book a human demo or support call at ${SITE}${BOOK_CALL_PATH}.`,
   ].join("\n");
@@ -627,6 +632,9 @@ type AgentTool = { name: string; description: string; parameters: JsonSchema };
 const NO_ARGS: JsonSchema = { type: "object", properties: {}, additionalProperties: false };
 
 export const AGENT_TOOLS: AgentTool[] = [
+  // Pasted screenshot -> shared Community template (Collage Butler / Fashion Looks).
+  // Executed by the chat route itself (it holds the image); see ./look-templates.
+  LOOK_TEMPLATE_TOOL as unknown as AgentTool,
   {
     name: "search_help",
     description:
@@ -787,7 +795,8 @@ export function toChatTools(extraTours: TourCatalogEntry[] = []) {
 
 /** Shape for the OpenAI Realtime session `tools` (flattened). */
 export function toRealtimeTools() {
-  return AGENT_TOOLS.map((t) => ({
+  // Voice has no pasted screenshot, so the screenshot-to-template tool stays text-only.
+  return AGENT_TOOLS.filter((t) => t.name !== "build_look_template").map((t) => ({
     type: "function" as const,
     name: t.name,
     description: t.description,
