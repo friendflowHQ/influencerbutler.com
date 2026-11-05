@@ -204,6 +204,7 @@ export default function AdminEventsPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const [callOffersOpenId, setCallOffersOpenId] = useState<string | null>(null);
+  const [ytCopyOpenId, setYtCopyOpenId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [imagingId, setImagingId] = useState<string | null>(null);
   const [uploadingImageId, setUploadingImageId] = useState<string | null>(null);
@@ -1505,6 +1506,16 @@ export default function AdminEventsPage() {
                             : "Upload to YouTube"}
                     </button>
                   ) : null}
+                  {/* Ready-to-paste YouTube title, SEO description, hashtags and
+                      tags, for uploading a recording by hand in YouTube Studio. */}
+                  <button
+                    type="button"
+                    onClick={() => setYtCopyOpenId(ytCopyOpenId === e.id ? null : e.id)}
+                    className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-[#f97316] hover:text-[#c2410c]"
+                    aria-expanded={ytCopyOpenId === e.id}
+                  >
+                    {ytCopyOpenId === e.id ? "Hide YouTube copy" : "YouTube copy"}
+                  </button>
                   {/* Publish a recording captured outside Recall (Loom, Meet, a
                       file host) by pasting its link. Always available so a call
                       that never ran a Recall bot can still go up on YouTube. */}
@@ -1553,10 +1564,180 @@ export default function AdminEventsPage() {
               </div>
               {openId === e.id ? <RegistrationsPanel eventId={e.id} /> : null}
               {callOffersOpenId === e.id ? <CallOffersPanel eventId={e.id} /> : null}
+              {ytCopyOpenId === e.id ? <YouTubeCopyPanel eventId={e.id} /> : null}
             </div>
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+type YtCopy = { title: string; description: string; hashtags: string[]; tags: string; source: "ai" | "template" };
+
+const YT_COPY_KEY = (id: string) => `ib.admin.ytCopy.${id}`;
+
+/**
+ * Copy-and-paste YouTube metadata for one event. Drafted on first open (AI when
+ * configured, using the recap once the call was recorded) and kept in this
+ * browser so reopening is instant; "Regenerate" drafts a fresh one. The fields
+ * are editable, and each has a one-click Copy button.
+ */
+function YouTubeCopyPanel({ eventId }: { eventId: string }) {
+  const [copy, setCopy] = useState<YtCopy | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const draft = useCallback(async () => {
+    setLoading(true);
+    setNote(null);
+    try {
+      const res = await fetch("/api/admin/events/youtube-copy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: eventId }),
+      });
+      const j = (await res.json().catch(() => ({}))) as { copy?: YtCopy; note?: string | null; error?: string };
+      if (!res.ok || !j.copy) {
+        setNote(j.error || `Could not draft the YouTube copy (HTTP ${res.status}).`);
+        return;
+      }
+      setCopy(j.copy);
+      setNote(j.note ?? null);
+      try {
+        localStorage.setItem(YT_COPY_KEY(eventId), JSON.stringify(j.copy));
+      } catch {
+        /* storage unavailable: keep it in memory only */
+      }
+    } catch {
+      setNote("Could not reach the drafter. Check your connection and try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, [eventId]);
+
+  useEffect(() => {
+    let cached: YtCopy | null = null;
+    try {
+      const raw = localStorage.getItem(YT_COPY_KEY(eventId));
+      if (raw) cached = JSON.parse(raw) as YtCopy;
+    } catch {
+      cached = null;
+    }
+    if (cached && typeof cached.description === "string") setCopy(cached);
+    else void draft();
+  }, [eventId, draft]);
+
+  const update = (patch: Partial<YtCopy>) => {
+    setCopy((cur) => {
+      if (!cur) return cur;
+      const next = { ...cur, ...patch };
+      try {
+        localStorage.setItem(YT_COPY_KEY(eventId), JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  };
+
+  const copyText = async (key: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(key);
+      setTimeout(() => setCopied((cur) => (cur === key ? null : cur)), 2000);
+    } catch {
+      window.prompt("Copy this:", text);
+    }
+  };
+
+  const copyBtn = (key: string, text: string, label: string) => (
+    <button
+      type="button"
+      onClick={() => copyText(key, text)}
+      disabled={!text}
+      className="rounded-lg bg-[#c2410c] px-3 py-1 text-xs font-semibold text-white hover:bg-[#9a3412] disabled:opacity-60"
+    >
+      {copied === key ? "Copied!" : label}
+    </button>
+  );
+
+  const inputCls =
+    "mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200";
+
+  return (
+    <div className="mt-4 rounded-xl border border-orange-200 bg-orange-50/40 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-900">YouTube upload copy</h3>
+          <p className="text-xs text-slate-600">
+            For uploading the recording by hand in YouTube Studio. Edit anything, then copy each field.
+            {copy ? (copy.source === "ai" ? " Drafted with AI." : " Basic template.") : null}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void draft()}
+          disabled={loading}
+          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-indigo-400 hover:text-indigo-700 disabled:opacity-60"
+        >
+          {loading ? "Drafting..." : copy ? "Regenerate" : "Draft"}
+        </button>
+      </div>
+      {note ? <p className="mt-2 text-xs text-amber-800">{note}</p> : null}
+      {!copy && loading ? <p className="mt-3 text-sm text-slate-500">Drafting the YouTube copy...</p> : null}
+      {copy ? (
+        <div className="mt-3 space-y-3">
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              <label htmlFor={`yt-title-${eventId}`} className="text-xs font-semibold text-slate-700">
+                Title ({copy.title.length}/100)
+              </label>
+              {copyBtn("title", copy.title, "Copy title")}
+            </div>
+            <input
+              id={`yt-title-${eventId}`}
+              value={copy.title}
+              maxLength={100}
+              onChange={(ev) => update({ title: ev.target.value })}
+              className={inputCls}
+            />
+          </div>
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              <label htmlFor={`yt-desc-${eventId}`} className="text-xs font-semibold text-slate-700">
+                Description ({copy.description.length}/5000, hashtags included)
+              </label>
+              {copyBtn("description", copy.description, "Copy description")}
+            </div>
+            <textarea
+              id={`yt-desc-${eventId}`}
+              value={copy.description}
+              maxLength={5000}
+              rows={14}
+              onChange={(ev) => update({ description: ev.target.value })}
+              className={`${inputCls} font-mono text-xs leading-relaxed`}
+            />
+          </div>
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              <label htmlFor={`yt-tags-${eventId}`} className="text-xs font-semibold text-slate-700">
+                Tags ({copy.tags.length}/500, paste into Show more &gt; Tags)
+              </label>
+              {copyBtn("tags", copy.tags, "Copy tags")}
+            </div>
+            <textarea
+              id={`yt-tags-${eventId}`}
+              value={copy.tags}
+              maxLength={500}
+              rows={2}
+              onChange={(ev) => update({ tags: ev.target.value })}
+              className={`${inputCls} text-xs`}
+            />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

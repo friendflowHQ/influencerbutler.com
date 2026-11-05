@@ -65,7 +65,7 @@ const SYSTEM = [
 ].join("\n");
 
 /** Removes em/en dashes from generated copy, replacing them with a hyphen. */
-function stripDashes(s: string): string {
+export function stripDashes(s: string): string {
   return s.split(EM_DASH).join("-").split(EN_DASH).join("-");
 }
 
@@ -98,7 +98,7 @@ function parseModelJson(content: string): Record<string, unknown> | null {
 }
 
 /** Result of a provider round: the parsed object, or a human reason it failed. */
-type CallResult =
+export type CallResult =
   | { ok: true; data: Record<string, unknown> }
   | { ok: false; reason: string };
 
@@ -141,7 +141,7 @@ async function callProviderOnce(
   return { ok: true, data: parsed };
 }
 
-async function callJson(system: string, user: string): Promise<CallResult> {
+export async function callJson(system: string, user: string): Promise<CallResult> {
   const providers = [resolveTextProvider(), openAiFallbackProvider()].filter(
     (p): p is NonNullable<typeof p> => !!p,
   );
