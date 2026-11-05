@@ -1,37 +1,42 @@
 ---
-title: "Collage Butler: build multi-product collage images to post"
-summary: "Pull products from Amazon by keyword, arrange them into one scroll-stopping collage image, and send it straight to Social Posting Butler."
+title: "Collage Butler: post a designed product collage every day"
+summary: "Answer a few questions and Collage Butler makes a framed, editorial product collage each day, with every product linked, and posts it for you."
 category: Collage
 ---
 
 ## What Collage Butler does
 
-Collage Butler turns a handful of Amazon products into a single, ready-to-post collage image. You give it keywords, it pulls matching products from the Creators API, arranges their photos in the layout you choose, adds your headline and call to action, and hands the finished image to Social Posting Butler. It is built for round-up style posts (new arrivals, a themed edit, a sale grid) where one image needs to show several products at once. You can also stage your products inside a shopping cart for the viral "5 things in a Walmart cart" look, and make a whole batch of graphics in one run.
+Collage Butler turns a handful of Amazon products into one designed collage and posts it for you. The default **Editorial board** looks like a magazine page: a framed card, a big title, the products cut out and arranged at sizes that suit each one, a small seasonal sticker, and your signature with "earns commission" at the bottom. Every post carries one link per product, tagged with your Associates ID. Instagram gets the same words with a note that the items are linked in your bio.
 
 ## Before you start
 
-- **Collage Butler is in beta.** It is already live in the left menu, with an "In Beta" note while we keep polishing it.
-- Have a few **keywords** in mind for the products you want to feature (for example: summer dresses, beach bags, sandals).
-- Have **Social Posting Butler** set up if you plan to post the collage, since that is where finished collages are queued.
+- **Collage Butler is an opt-in beta for Power User plans.** Turn it on in **Settings > Beta features** (Collage Butler). Until then its panels stay locked.
+- Connect the **Amazon Creators API** in **Settings > AI & Data Keys**. Collage Butler uses it to find products.
+- Sign in to the places you want it to post (Instagram, your Facebook group or page, Pinterest). They are set up in **Deal Posting > Social Destinations**.
 
-## How to use it
+## Set it up in a few questions
 
-1. In the left menu, open the **Collage Butler** group (it has its own group with sub-sections). Start on the main **Collage Butler** panel.
-2. Open the **Keywords & Filters** sub-section. Enter your **Keywords**, and optionally a **Category**, a **Minimum price**, and a **Maximum price**. These decide which Amazon products get pulled into the collage.
-3. Back on the main panel, open the **AI Collage Generator** tab. Under **Render mode**, pick one: **Template (real product photos)** for an exact, repeatable layout, **AI generated**, or **Hybrid (AI background + real photos)**.
-4. Choose a **Layout**, such as 2 x 2 (4 products) or 3 x 3 (9 products). The layout sets how many product photos appear.
-5. Pick an **AI render style** (used by the AI and Hybrid modes). Choose **Walmart cart** to stage your products inside a shopping cart on a bright store background, the viral "5 things in a cart" look, or pick **Magazine cover**, **Seasonal banner**, or **Minimalist flat lay**. Leave it on **Auto** to keep the default style.
-6. Type a **Headline** (for example, Amazon New Arrivals) and a **Call to action** (for example, Shop now).
-7. Set **How many graphics** to make a batch in one run. Leave it at 1 for a single collage, or raise it (up to 20) to get several at once. Tip: put one keyword theme per line in Keywords & Filters, and each theme becomes its own set of graphics, so one batch can cover several collections.
-8. Click **Generate collage** to build the image (or the whole batch) and see it in the preview, or click **Generate and queue to Social Posting** to build them and send them straight to Social Posting Butler.
-9. Open the **Collage Gallery** sub-section any time to review every collage you have generated and its post status. This view is read-only.
-10. To reuse a look, open **Collage Templates** and save a default layout, font, colors, and headline and call-to-action presets you can pull into future collages.
+1. Open **Collage Butler** in the left menu. On the **Overview** tab, click **Start posting for me**.
+2. **What do you want to share?** Pick topics (Home Decor, Kitchen, Fashion and more) and add your own search words. Collage Butler takes turns between them, one collage at a time.
+3. **Price range.** Only products in this range go into your collages.
+4. **Pick a style.** **Editorial board** (recommended) or **Classic grid** (product photos in tidy squares).
+5. **How many products** on each collage: 4, 6 or 8.
+6. **Headline style.** New finds, Gift ideas, Must haves, or your own words.
+7. **Pick your colors.** Match the season (it changes on its own), pick a season, or use your brand colors.
+8. **Your signature.** Your name or brand, written at the bottom of every collage.
+9. **Where to post** and **how often** (collages a day, between which hours, on which days).
+10. **Quick check.** Collage Butler checks the Creators API and your sign-ins.
+11. Click **See an example first** to make one collage without posting it, then **Start posting for me**.
+
+## Every day after that
+
+- The **Posting for you** card on the Overview tab shows today's posting times and which collages are lined up.
+- Use **Make today's collages now**, **Post the next one now**, **Pause**, or **Edit my answers** from the same card.
+- Lined-up collages sit in your posting queue, where you can delete any of them before it posts.
+- **Collage Gallery** lists every collage you have made. **Keywords & Filters** holds your search words and price range.
 
 ## Notes
 
-- **This workspace is in beta** and still being polished. Some pieces, like the **Build Your Post** caption editor and the full **Settings** panel (brand colors, watermark, spend cap), come online as the generator wiring lands, so expect a few gaps.
-- The **Console Log** tab shows generation activity and is handy if a collage does not come out as expected.
-- **Batch runs make several images at once.** In AI or Hybrid mode each image carries a small per-image cost, so a batch is capped at 20 graphics per run.
-- The **Walmart cart** and other AI styles apply to the AI and Hybrid render modes. Template mode always uses your real product photos in a grid, so the style picker does not change it.
-- Product photos come from the Amazon Creators API, so a keyword with no matching products yields an empty collage. Widen the keyword or ease the price filters if nothing shows up.
-- AI and Hybrid render modes generate new imagery and can carry a small per-image cost. A monthly spend cap keeps that in check once the Settings panel is live.
+- **Cut-outs are free for most products.** Product photos shot on a white background are cut out automatically. A photo that can't be cut out (a room scene, for example) shows as a rounded photo tile instead.
+- **Editorial board and real-photo grids cost nothing to make.** The AI and Hybrid grid looks generate new imagery, carry a small cost per image, and stop at your monthly AI limit (**Collage Butler > Settings**).
+- Turning the beta off in Settings also pauses the daily posting.
