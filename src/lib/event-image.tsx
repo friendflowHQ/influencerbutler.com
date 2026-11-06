@@ -17,8 +17,11 @@
 import { ImageResponse } from "next/og";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { generateHeroImage } from "./blog-hero";
+import { openAiFallbackProvider, resolveTextProvider, type TextProvider } from "./ai-concierge/llm";
 import {
   buildScenePrompt,
+  pickComposition,
+  SCENE_COMPOSITIONS,
   formatEventDate,
   formatEventTime,
   titleFontSize,
@@ -37,13 +40,59 @@ export type EventImageInput = {
   timezone: string;
 };
 
+async function askForScene(provider: TextProvider, title: string, composition: string): Promise<string | null> {
+  const res = await fetch(provider.url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${provider.key}` },
+    body: JSON.stringify({
+      model: provider.model,
+      temperature: 1,
+      max_tokens: 1000,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You write one-sentence scene descriptions for illustrated event cover art for social media creators " +
+            "and Amazon influencers. Describe concrete objects, setting, and at most one or two people, as a fresh " +
+            "visual metaphor for the topic. Never mention video calls, webcams, laptops, screens, monitors, desks, " +
+            "text, words, letters, or logos. Reply with the sentence only, under 45 words.",
+        },
+        { role: "user", content: `Event title: ${title}\nFraming: ${composition}` },
+      ],
+    }),
+  });
+  if (!res.ok) throw new Error(`scene writer ${res.status}: ${(await res.text().catch(() => "")).slice(0, 200)}`);
+  const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+  const text = (json.choices?.[0]?.message?.content || "").replace(/\s+/g, " ").trim();
+  return text ? text.slice(0, 400) : null;
+}
+
+/** A topic-specific scene written by the text model, or null (keyword fallback). */
+async function sceneIdea(title: string, composition: string): Promise<string | null> {
+  const providers = [resolveTextProvider(), openAiFallbackProvider()].filter(
+    (p, i, all): p is TextProvider => !!p && all.findIndex((q) => q?.url === p.url) === i,
+  );
+  for (const provider of providers) {
+    try {
+      const idea = await askForScene(provider, title, composition);
+      if (idea) return idea;
+    } catch (e) {
+      console.error(`[event-image] scene writer (${provider.kind}) failed`, e);
+    }
+  }
+  return null;
+}
+
 /**
  * The AI backdrop as a data URL, or null plus the reason when generation is
- * unavailable (so the admin UI can say why the card came out plain).
+ * unavailable (so the admin UI can say why the card came out plain). The
+ * framing is random per generation so Regenerate gives a genuinely new look.
  */
 async function backdropDataUrl(title: string): Promise<{ dataUrl: string | null; error: string | null }> {
   try {
-    const b64 = await generateHeroImage(buildScenePrompt(title));
+    const composition = pickComposition(title, Math.floor(Math.random() * SCENE_COMPOSITIONS.length));
+    const idea = await sceneIdea(title, composition);
+    const b64 = await generateHeroImage(buildScenePrompt(title, idea, composition));
     return { dataUrl: `data:image/png;base64,${b64}`, error: null };
   } catch (e) {
     console.error("[event-image] backdrop generation failed, using gradient", e);
