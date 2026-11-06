@@ -1,6 +1,6 @@
 /**
  * Summary: Generates a hero image for every module of the free Amazon
- *   Influencer course, using the OpenAI Images API (gpt-image-1), then
+ *   Influencer course, using the OpenAI Images API (model fallback list in scripts/lib/openai-image.mjs), then
  *   downsizes with sharp so course pages stay light. Output:
  *   public/assets/course/<module-id>.png (~1200px wide). Prompts live in
  *   this file (modules are content, not manifest posts). Run locally; needs
@@ -24,6 +24,7 @@ import { writeFile, mkdir, access } from "node:fs/promises";
 import { constants as FS } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { generateImage } from "./lib/openai-image.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -89,27 +90,12 @@ async function generateOne(sharp, id, promptBase) {
     return "skipped";
   }
   console.log(`  generating: ${id}`);
-  const res = await fetch("https://api.openai.com/v1/images/generations", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-image-1",
-      prompt: `${promptBase}${STYLE_SUFFIX}`,
-      size: "1536x1024",
-      quality,
-      n: 1,
-    }),
+  const { b64 } = await generateImage({
+    apiKey: API_KEY,
+    prompt: `${promptBase}${STYLE_SUFFIX}`,
+    size: "1536x1024",
+    quality,
   });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`OpenAI API ${res.status}: ${text.slice(0, 500)}`);
-  }
-  const json = await res.json();
-  const b64 = json?.data?.[0]?.b64_json;
-  if (!b64) throw new Error(`No image data returned for ${id}`);
 
   await mkdir(outDir, { recursive: true });
   const resized = await sharp(Buffer.from(b64, "base64"))

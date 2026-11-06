@@ -1,6 +1,6 @@
 /**
  * Summary: Generates the hero image for every blog post from its `imagePrompt`
- *   in content/blog/_index.json, using the OpenAI Images API (gpt-image-1), and
+ *   in content/blog/_index.json, using the OpenAI Images API (models in scripts/lib/openai-image.mjs), and
  *   saves each as an SEO-named PNG under public/assets/blog/<slug>.png. Run this
  *   locally; it needs outbound network access and your OpenAI key.
  *
@@ -15,9 +15,10 @@
  * Flags:
  *   --force         Regenerate images even if the file already exists.
  *   --only=<slug>   Only generate the image for one post id.
- *   --size=WxH      Override image size (default 1536x1024). gpt-image-1
- *                   supports 1024x1024, 1024x1536, 1536x1024, auto.
- *   --model=NAME    Override the image model (default gpt-image-1).
+ *   --size=WxH      Override image size (default 1536x1024). GPT Image
+ *                   models support 1024x1024, 1024x1536, 1536x1024, auto.
+ *   --model=NAME    Try this image model first (default: the fallback list in
+ *                   scripts/lib/openai-image.mjs; gpt-image-1 is retired).
  *   --quality=Q     Image quality: low | medium | high | auto (default medium).
  *                   Lower quality is dramatically cheaper. "high" can cost 4-10x
  *                   more than "medium" for little visible gain at blog-hero size.
@@ -28,6 +29,7 @@ import { readFile, writeFile, mkdir, access } from "node:fs/promises";
 import { constants as FS } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { generateImage } from "./lib/openai-image.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -48,7 +50,8 @@ const only = onlyArg ? onlyArg.split("=")[1] : null;
 const sizeArg = args.find((a) => a.startsWith("--size="));
 const size = sizeArg ? sizeArg.split("=")[1] : "1536x1024";
 const modelArg = args.find((a) => a.startsWith("--model="));
-const model = modelArg ? modelArg.split("=")[1] : "gpt-image-1";
+const preferredModel = modelArg ? modelArg.split("=")[1] : null;
+const model = preferredModel || "first available model";
 const qualityArg = args.find((a) => a.startsWith("--quality="));
 const VALID_QUALITY = ["low", "medium", "high", "auto"];
 let quality = qualityArg ? qualityArg.split("=")[1] : "medium";
@@ -87,31 +90,7 @@ async function generateOne(post) {
   const prompt = `${post.imagePrompt}${STYLE_SUFFIX}`;
   console.log(`  generating: ${post.image}`);
 
-  const res = await fetch("https://api.openai.com/v1/images/generations", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${API_KEY}`,
-    },
-    body: JSON.stringify({
-      model,
-      prompt,
-      size,
-      quality,
-      n: 1,
-    }),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`OpenAI API ${res.status}: ${text.slice(0, 500)}`);
-  }
-
-  const json = await res.json();
-  const b64 = json?.data?.[0]?.b64_json;
-  if (!b64) {
-    throw new Error(`No image data returned for ${post.id}`);
-  }
+  const { b64 } = await generateImage({ apiKey: API_KEY, prompt, size, quality, preferredModel });
 
   await mkdir(path.dirname(outPath), { recursive: true });
   await writeFile(outPath, Buffer.from(b64, "base64"));
