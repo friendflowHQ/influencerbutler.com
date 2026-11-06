@@ -1,6 +1,6 @@
 /**
  * Generates the branded cover image for a group event: an AI backdrop in the
- * blog hero style (gpt-image-1 + STYLE_SUFFIX, via generateHeroImage) with the
+ * blog hero style (OpenAI image model + STYLE_SUFFIX, via generateHeroImage) with the
  * event title, date, and time overlaid, then stores the PNG in the public
  * Supabase Storage bucket "event-images" and returns its URL.
  *

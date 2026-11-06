@@ -4,7 +4,7 @@
  * Generates (or regenerates) the branded cover image for an event: an AI
  * backdrop in the blog hero style with the title, date, and time overlaid,
  * stored in Supabase Storage. Patches events.image_url and returns the URL.
- * Gated by events.manage; audit-logged. Runs the slow gpt-image-1 call, so it
+ * Gated by events.manage; audit-logged. Runs the slow OpenAI image call, so it
  * is a separate step from create/update (kept fast) and is auto-invoked by the
  * admin UI right after saving.
  */
