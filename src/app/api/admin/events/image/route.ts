@@ -37,7 +37,7 @@ export async function POST(request: Request) {
   const event = await getEvent(admin, id);
   if (!event) return NextResponse.json({ error: "Event not found" }, { status: 404 });
 
-  const imageUrl = await generateEventImage(
+  const { url: imageUrl, backdropError } = await generateEventImage(
     {
       id: event.id,
       title: event.title,
@@ -62,8 +62,8 @@ export async function POST(request: Request) {
     action: "event.image",
     targetType: "event",
     targetId: id,
-    details: { title: event.title },
+    details: { title: event.title, backdropError },
   });
 
-  return NextResponse.json({ ok: true, imageUrl });
+  return NextResponse.json({ ok: true, imageUrl, backdropError });
 }

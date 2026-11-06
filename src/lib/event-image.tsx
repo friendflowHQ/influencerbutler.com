@@ -37,14 +37,17 @@ export type EventImageInput = {
   timezone: string;
 };
 
-/** The AI backdrop as a data URL, or null when generation is unavailable. */
-async function backdropDataUrl(title: string): Promise<string | null> {
+/**
+ * The AI backdrop as a data URL, or null plus the reason when generation is
+ * unavailable (so the admin UI can say why the card came out plain).
+ */
+async function backdropDataUrl(title: string): Promise<{ dataUrl: string | null; error: string | null }> {
   try {
     const b64 = await generateHeroImage(buildScenePrompt(title));
-    return `data:image/png;base64,${b64}`;
+    return { dataUrl: `data:image/png;base64,${b64}`, error: null };
   } catch (e) {
     console.error("[event-image] backdrop generation failed, using gradient", e);
-    return null;
+    return { dataUrl: null, error: e instanceof Error ? e.message : String(e) };
   }
 }
 
@@ -157,14 +160,18 @@ function renderCard(event: EventImageInput, backdrop: string | null): ImageRespo
 /**
  * Generate + store the event cover image. Returns the public URL (with a cache
  * -busting suffix so a regenerate is visible), or null on any failure.
+ * backdropError is set when the AI backdrop failed and the plain gradient card
+ * was stored instead.
  */
 export async function generateEventImage(
   event: EventImageInput,
   admin: SupabaseClient,
-): Promise<string | null> {
+): Promise<{ url: string | null; backdropError: string | null }> {
+  let backdropError: string | null = null;
   try {
     const backdrop = await backdropDataUrl(event.title);
-    const img = renderCard(event, backdrop);
+    backdropError = backdrop.error;
+    const img = renderCard(event, backdrop.dataUrl);
     const bytes = new Uint8Array(await img.arrayBuffer());
 
     const path = `events/${event.id}.png`;
@@ -174,14 +181,14 @@ export async function generateEventImage(
     });
     if (error) {
       console.error("[event-image] storage upload failed", error.message);
-      return null;
+      return { url: null, backdropError };
     }
     const { data } = admin.storage.from(BUCKET).getPublicUrl(path);
-    if (!data?.publicUrl) return null;
+    if (!data?.publicUrl) return { url: null, backdropError };
     // Cache-bust so a regenerate (same path, upsert) shows the new image.
-    return `${data.publicUrl}?v=${Date.now()}`;
+    return { url: `${data.publicUrl}?v=${Date.now()}`, backdropError };
   } catch (e) {
     console.error("[event-image] generate failed", e);
-    return null;
+    return { url: null, backdropError };
   }
 }

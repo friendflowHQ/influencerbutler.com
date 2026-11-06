@@ -531,8 +531,14 @@ export default function AdminEventsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
-      setMessage(res.ok ? "Event image ready." : data.error || "Could not generate the image.");
+      const data = (await res.json().catch(() => ({}))) as { error?: string; backdropError?: string | null };
+      setMessage(
+        !res.ok
+          ? data.error || "Could not generate the image."
+          : data.backdropError
+            ? `AI artwork failed, so a plain card was used. Try Regenerate image. Reason: ${data.backdropError}`
+            : "Event image ready.",
+      );
       await refetch();
     } finally {
       setImagingId(null);
