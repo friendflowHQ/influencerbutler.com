@@ -35,6 +35,7 @@ const navItems: NavItem[] = [
     ],
   },
   { href: "/dashboard/foyer", label: "Foyer Subscribers" },
+  { href: "/dashboard/foyer/sales", label: "Foyer Sales" },
   { href: "/dashboard/events", label: "Upcoming Events" },
   { href: "/dashboard/extension", label: "Extension" },
   { href: "/dashboard/api-keys", label: "API Keys" },

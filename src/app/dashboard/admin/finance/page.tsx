@@ -2,12 +2,14 @@
 
 // Admin Finance dashboard: the "real-time CPA". Revenue recognition (safe to
 // spend), Lemon Squeezy bank payouts (estimate + confirm), expenses, quarterly
-// tax planning, and the exportable P&L. Access requires the finance permission
+// tax planning, the exportable P&L, and Foyer commission (our 5% on creators'
+// Foyer sales, from the links Worker). Access requires the finance permission
 // AND an email 2FA code (StepUpGate); all data comes from /api/admin/finance/*.
 
 import { useCallback, useEffect, useState } from "react";
 import StepUpGate from "./StepUpGate";
 import RevenueTab from "./RevenueTab";
+import CommissionTab, { FoyerCommissionOverviewCard } from "./CommissionTab";
 import PayoutsTab from "./PayoutsTab";
 import ExpensesTab from "./ExpensesTab";
 import TaxesTab from "./TaxesTab";
@@ -58,6 +60,7 @@ type OverviewResponse = {
 const TABS = [
   { key: "overview", label: "Overview" },
   { key: "revenue", label: "Revenue" },
+  { key: "commission", label: "Foyer commission" },
   { key: "payouts", label: "Payouts" },
   { key: "expenses", label: "Expenses" },
   { key: "taxes", label: "Taxes" },
@@ -280,6 +283,8 @@ export default function AdminFinancePage() {
               </div>
             ) : null}
 
+            <FoyerCommissionOverviewCard onOpen={() => setTab("commission")} />
+
             {enrichment && enrichment.enrichedCount < enrichment.totalOrders ? (
               <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
                 {enrichment.totalOrders - enrichment.enrichedCount} of {enrichment.totalOrders}{" "}
@@ -292,6 +297,7 @@ export default function AdminFinancePage() {
       ) : null}
 
       {tab === "revenue" ? <RevenueTab /> : null}
+      {tab === "commission" ? <CommissionTab /> : null}
       {tab === "payouts" ? <PayoutsTab /> : null}
       {tab === "expenses" ? <ExpensesTab /> : null}
       {tab === "taxes" ? <TaxesTab /> : null}
