@@ -53,9 +53,9 @@ async function askForScene(provider: TextProvider, title: string, composition: s
           role: "system",
           content:
             "You write one-sentence scene descriptions for illustrated event cover art for social media creators " +
-            "and Amazon influencers. Describe concrete objects, setting, and at most one or two people, as a fresh " +
-            "visual metaphor for the topic. Never mention video calls, webcams, laptops, screens, monitors, desks, " +
-            "text, words, letters, or logos. Reply with the sentence only, under 45 words.",
+            "and Amazon influencers. Describe the concrete objects and setting that represent the topic, as a fresh " +
+            "visual metaphor. The framing already includes a live video call, so describe only the topic part. " +
+            "Never mention text, words, letters, or logos. Reply with the sentence only, under 45 words.",
         },
         { role: "user", content: `Event title: ${title}\nFraming: ${composition}` },
       ],

@@ -7,19 +7,20 @@
 import { DateTime } from "luxon";
 
 /**
- * Camera framings rotated across events so covers never share a layout. The
- * old single prompt ("group video call, laptops, cozy home studio") made every
- * cover the same person at a laptop in front of a video-call grid.
+ * Framings rotated across events. Each one blends the "live video call" look
+ * (friendly faces on a screen, headset, podcast mic) with the event's topic
+ * scene, and they differ in how the two share the picture, so covers feel like
+ * the same series without all being the same person at a laptop.
  */
 export const SCENE_COMPOSITIONS = [
-  "an overhead flat lay of objects arranged on a table",
-  "a close-up still life with a shallow focal point",
-  "a wide, airy interior scene with one person mid-action",
-  "a playful isometric miniature world",
-  "a bold visual metaphor with oversized objects",
-  "a cheerful outdoor scene in warm afternoon light",
-  "a cutaway view of a busy little workshop",
-  "a close-up of hands at work on a project",
+  "a big screen showing a grid of friendly waving faces on a video call, with the topic's objects spilling out of the screen into the cozy room",
+  "a creator in a headset beside a podcast microphone, mid-conversation on a live call, surrounded by the topic's props",
+  "a split scene: on one side video-call tiles of smiling people, on the other side the topic scene in full detail",
+  "an overhead flat lay of the topic's objects on a table, with a tablet showing a small video call of happy faces",
+  "close-up hands at work on the topic in the foreground, with a monitor behind showing a lively group video call",
+  "a playful isometric miniature world themed on the topic, with a giant screen in the middle showing a live group call",
+  "a warm live-studio set with a ring light and microphone, the topic's props arranged around it, and video-call faces on the back wall",
+  "a cozy room where two or three people on video-call screens float like picture frames around the topic scene",
 ];
 
 /** Topic scenes used when the AI scene writer is unavailable. */
@@ -60,8 +61,8 @@ export function buildScenePrompt(title: string, sceneIdea?: string | null, compo
   const frame = composition || pickComposition(theme);
   return (
     `Cover art for an event themed around "${theme}". Composition: ${frame}. ` +
-    `Subject: ${subject}. Avoid video-call grids, webcams, laptops, and people ` +
-    `sitting at a desk looking at a screen.`
+    `Topic scene: ${subject}. Keep the friendly, live group-call energy, but make ` +
+    `the topic scene clearly visible so it does not look like a generic video call.`
   );
 }
 
