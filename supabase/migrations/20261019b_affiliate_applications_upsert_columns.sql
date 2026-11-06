@@ -1,0 +1,27 @@
+-- Follow-up to 20261019_affiliate_applications_column_lockdown.sql, same day.
+--
+-- That migration's GRANT UPDATE whitelist only covered the form fields a
+-- user types (email, full_name, website, social_handles, audience_size,
+-- niche, promotion_strategy, agreed_to_terms, country). It missed that the
+-- application-submit flow writes two more columns on every save:
+--   .from("affiliate_applications").upsert({ ...formFields, user_id, status: "pending" }, { onConflict: "user_id" })
+-- (src/app/affiliates/apply/page.tsx, src/app/dashboard/affiliates/AffiliateApplyInline.tsx)
+--
+-- Postgres checks UPDATE privilege on every column in an upsert's
+-- ON CONFLICT DO UPDATE SET clause even when the row is brand new and no
+-- conflict actually occurs, so every application submission started failing
+-- with "permission denied for table affiliate_applications" as soon as the
+-- prior migration was applied (confirmed in production).
+--
+-- Adding user_id and status here does not reopen the hole the prior
+-- migration closed: own_app_update_pending's RLS policy
+--   FOR UPDATE USING (auth.uid() = user_id AND status = 'pending')
+-- has no separate WITH CHECK, so Postgres reuses the USING clause to check
+-- the NEW row too. A user can therefore only ever "update" user_id to their
+-- own id (a no-op) and status to 'pending' (the only value the app ever
+-- sends) - RLS rejects any other value at the row-check layer regardless of
+-- the column grant. admin_notes and the other staff/system columns stay
+-- excluded; they have no such RLS value constraint, which is exactly why
+-- they needed the column-level lockdown in the first place.
+
+GRANT UPDATE (user_id, status) ON public.affiliate_applications TO authenticated;
