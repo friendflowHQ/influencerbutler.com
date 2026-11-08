@@ -1,12 +1,12 @@
 ---
 title: "Telegram Bot setup: post deals to a Telegram channel"
-summary: Create a bot with BotFather, add it to your channel, and connect it on the API Integrations panel so Deal Posting can post automatically.
+summary: Create a bot with BotFather, add it to your channel, and connect it on Deal Posting's Settings tab so Deal Posting can post automatically.
 category: Other
 ---
 
 ## What this does
 
-Deal Posting can post your product images and captions straight into a Telegram channel. To wire it up you connect a Telegram bot on the **API Integrations** panel. You need two values: a **bot token** and the **channel (chat) ID** you want to post into. The whole setup takes about five minutes. Here is the full walkthrough.
+Deal Posting can post your product images and captions straight into a Telegram channel. To wire it up you connect a Telegram bot on the **Settings** tab of **Deal Posting**, under **Connections**. You need two values: a **bot token** and the **channel (chat) ID** you want to post into. The whole setup takes about five minutes. Here is the full walkthrough.
 
 ## 1. Create a bot with BotFather
 
@@ -20,7 +20,7 @@ When the username is accepted, BotFather replies with your access token. It look
 
 <div className="help-shot-placeholder" style={{ border: "2px dashed var(--brand, #f97316)", borderRadius: "8px", padding: "18px", margin: "12px 0", textAlign: "center", color: "var(--muted, #666)", fontSize: "13px" }}>[ Screenshot: BotFather reply containing the HTTP API token ]</div>
 
-Back in InfluencerButler, open **API Integrations** and paste the token into the **Telegram Bot Token** field on the Telegram Bot card.
+Back in InfluencerButler, open **Deal Posting**, go to its **Settings** tab, find **Connections**, and paste the token into the **Telegram Bot Token** field on the Telegram Bot card.
 
 <div className="help-shot-placeholder" style={{ border: "2px dashed var(--brand, #f97316)", borderRadius: "8px", padding: "18px", margin: "12px 0", textAlign: "center", color: "var(--muted, #666)", fontSize: "13px" }}>[ Screenshot: The Telegram Bot card with the token pasted into "Telegram Bot Token" ]</div>
 
@@ -57,5 +57,5 @@ Once connected, Deal Posting posts to this channel using Telegram's Bot API `sen
 
 ## Related
 
-- [API Integrations](/help/tutorials/api-integrations) is where the Telegram Bot card lives, alongside every other API key Butler uses.
+- [Deal Posting](/help/tutorials/deals) is where the Telegram Bot card lives, on its Settings tab under Connections.
 - [Deal Posting](/help/tutorials/deals) builds the posts that get sent to this channel.

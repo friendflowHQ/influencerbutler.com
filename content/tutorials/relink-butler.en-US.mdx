@@ -21,7 +21,7 @@ The point is the same in every mode: keep the published content the same, change
 
 ## Before you start
 
-- **The new affiliate provider configured** in **API Integrations**. Whatever you're switching to needs to be live first; Relink Butler routes new links through it.
+- **The new affiliate provider configured** in **Deeplink Butler > Link Settings**. Whatever you're switching to needs to be live first; Relink Butler routes new links through it.
 - **At least one content scope** populated:
   - **Deal Posting posts** in `deals/`'s post history.
   - **YouTube videos** uploaded via YouTube Butler.
@@ -50,7 +50,7 @@ Deal Posting + Pinterest swaps happen in-app (just updating local databases). Yo
 ## Common gotchas
 
 - **Preview is empty**: usually means the scope is empty. Verify Deal Posting (or whichever scope) has post history first.
-- **"New provider not configured"**: finish setup in API Integrations before running. The Remint mode needs the new provider's API key to generate replacement links.
+- **"New provider not configured"**: finish setup in Deeplink Butler > Link Settings before running. The Remint mode needs the new provider's API key to generate replacement links.
 - **YouTube swaps slow**: YouTube only allows ~10 edits/hour without rate-limiting. Relink Butler honors this; let the run take its time.
 
 ## Related

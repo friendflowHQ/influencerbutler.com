@@ -44,8 +44,8 @@ The **Est. earnings** column picks the best per-sale estimate (Amazon vs CC) and
 
 - **Storefront Butler** has synced at least once so it knows what content you've made.
 - **Orders Butler** has synced at least once if you want the "products I own" and last-minute signals.
-- **Creators API key** configured in **API Integrations** for fresh discoveries, the owned-product deal check, and trending search.
-- **Associate Rate Card** harvested (under Settings) so the Amazon-default earnings estimate can populate. Without it, that column shows a dash.
+- **Creators API key** configured in **Amazon Butler > Amazon Settings** for fresh discoveries, the owned-product deal check, and trending search.
+- **Associate Rate Card** harvested (under Amazon Butler > Amazon Settings) so the Amazon-default earnings estimate can populate. Without it, that column shows a dash.
 - **Signed in to Amazon Associates in the app** for the Deals Hub source. Prime Day Butler reads the Deals Hub from your in-app Amazon browser, so it needs an active Associates session. If you're signed out, it skips the Deals Hub and tells you to sign in, then run again.
 
 If any source is missing, the workspace still runs. It just shows fewer rows.
@@ -75,7 +75,7 @@ You don't have to queue deals one at a time. Tick the checkbox on each row you w
 - **Drafts to review**: the deals land in the Deal Posting queue as drafts. You review them and choose destinations there before anything posts.
 - **Ready to post**: the deals arrive already targeting your enabled Social Destinations, so they're one click from going out.
 
-Click **Send selected to Deal Posting**. Each deal carries its affiliate or deep link (built from your API Integrations link routing) and the caption, and **the video or photo you already made for that product is attached automatically**, looked up by ASIN from Video Reload Butler and Photo Reload Butler. If no local copy exists but the source is known, it's downloaded on demand. Your created video posts to Facebook groups and pages; other destinations use the product image. Upcoming (embargoed) deals are confirmed once before they're queued.
+Click **Send selected to Deal Posting**. Each deal carries its affiliate or deep link (built from your Deeplink Butler > Link Settings link routing) and the caption, and **the video or photo you already made for that product is attached automatically**, looked up by ASIN from Video Reload Butler and Photo Reload Butler. If no local copy exists but the source is known, it's downloaded on demand. Your created video posts to Facebook groups and pages; other destinations use the product image. Upcoming (embargoed) deals are confirmed once before they're queued.
 
 ## Hands-off with Deals Hub Auto-Pilot
 
@@ -176,7 +176,7 @@ These are the questions creators ask most during Prime Day and Prime Big Deal Da
 - **The Deals Hub does not use the Creators API.** It reads Amazon's curated deals from your signed-in Associates session in the app, so this source still works while Amazon has your own Creator API access on hold. Fresh discoveries and the owned-product deal check are the parts that need the API.
 - **The Deals Hub needs a signed-in Amazon session in the app.** If the source comes back empty with a "sign in, then run again" note, open Amazon Associates in the app once to refresh the session.
 - **Upcoming deals are embargoed.** Their price and dates are confidential until Amazon publishes them. Use the upcoming view to plan, but wait until a deal is live (or its publish time) before you post.
-- **Amazon-default earnings need the rate card.** If the Amazon % column is blank, harvest the Associate Rate Card under Settings.
+- **Amazon-default earnings need the rate card.** If the Amazon % column is blank, harvest the Associate Rate Card under Amazon Butler > Amazon Settings.
 - **The owned-deal check costs API calls.** Turn off "Check owned products for live deals" if you're rate-limited and only need quick wins.
 - **CC eligibility lags.** A product can be CC-eligible today and gone tomorrow. The chip shows what was true at scan time.
 

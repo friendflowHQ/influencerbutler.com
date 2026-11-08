@@ -1,12 +1,12 @@
 ---
 title: "Configuración del bot de Telegram: publica ofertas en un canal de Telegram"
-summary: Crea un bot con BotFather, añádelo a tu canal y conéctalo en el panel de API Integrations para que Deal Posting publique automáticamente.
+summary: Crea un bot con BotFather, añádelo a tu canal y conéctalo en la pestaña Ajustes de Publicación de ofertas para que Deal Posting publique automáticamente.
 category: Other
 ---
 
 ## Qué hace
 
-Deal Posting puede publicar las imágenes de tus productos y sus textos directamente en un canal de Telegram. Para configurarlo, conectas un bot de Telegram en el panel de **Claves de IA y datos**. Necesitas dos valores: un **token del bot** y el **ID del canal (chat)** en el que quieres publicar. Toda la configuración lleva unos cinco minutos. Aquí tienes la guía completa.
+Deal Posting puede publicar las imágenes de tus productos y sus textos directamente en un canal de Telegram. Para configurarlo, conectas un bot de Telegram en la pestaña **Ajustes** de **Publicación de ofertas**, en **Conexiones**. Necesitas dos valores: un **token del bot** y el **ID del canal (chat)** en el que quieres publicar. Toda la configuración lleva unos cinco minutos. Aquí tienes la guía completa.
 
 ## 1. Crea un bot con BotFather
 
@@ -20,7 +20,7 @@ Cuando se acepta el nombre de usuario, BotFather responde con tu token de acceso
 
 <div className="help-shot-placeholder" style={{ border: "2px dashed var(--brand, #f97316)", borderRadius: "8px", padding: "18px", margin: "12px 0", textAlign: "center", color: "var(--muted, #666)", fontSize: "13px" }}>[ Captura: respuesta de BotFather con el token de la API HTTP ]</div>
 
-De vuelta en InfluencerButler, abre **Claves de IA y datos** y pega el token en el campo **Telegram Bot Token** de la tarjeta del bot de Telegram.
+De vuelta en InfluencerButler, abre **Publicación de ofertas**, ve a su pestaña **Ajustes**, busca **Conexiones** y pega el token en el campo **Telegram Bot Token** de la tarjeta del bot de Telegram.
 
 <div className="help-shot-placeholder" style={{ border: "2px dashed var(--brand, #f97316)", borderRadius: "8px", padding: "18px", margin: "12px 0", textAlign: "center", color: "var(--muted, #666)", fontSize: "13px" }}>[ Captura: la tarjeta del bot de Telegram con el token pegado en "Telegram Bot Token" ]</div>
 
@@ -57,5 +57,5 @@ Una vez conectado, Deal Posting publica en este canal usando el endpoint `sendPh
 
 ## Relacionado
 
-- [API Integrations](/help/tutorials/api-integrations) es donde vive la tarjeta del bot de Telegram, junto con todas las demás claves de API que usa Butler.
+- [Publicación de ofertas](/help/tutorials/deals) es donde vive la tarjeta del bot de Telegram, en su pestaña Ajustes, dentro de Conexiones.
 - [Deal Posting](/help/tutorials/deals) crea las publicaciones que se envían a este canal.

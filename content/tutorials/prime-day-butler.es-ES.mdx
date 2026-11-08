@@ -44,8 +44,8 @@ La columna **Ganancia est.** elige la mejor estimación por venta (Amazon o CC) 
 
 - **Storefront Butler** se ha sincronizado al menos una vez para saber qué contenido has creado.
 - **Orders Butler** se ha sincronizado al menos una vez si quieres las señales de "productos que poseo" y de última hora.
-- **Clave de la Creators API** configurada en **Claves de IA y datos** para los nuevos descubrimientos, la comprobación de ofertas de productos que tienes y la búsqueda de tendencias.
-- **Tarjeta de Tarifas de Asociados** descargada (en Ajustes) para que se complete la estimación de ganancias de Amazon. Sin ella, esa columna muestra un guion.
+- **Clave de la Creators API** configurada en **Amazon Butler > Configuración de Amazon** para los nuevos descubrimientos, la comprobación de ofertas de productos que tienes y la búsqueda de tendencias.
+- **Tarjeta de Tarifas de Asociados** descargada (en Amazon Butler > Configuración de Amazon) para que se complete la estimación de ganancias de Amazon. Sin ella, esa columna muestra un guion.
 - **Sesión iniciada en Amazon Associates en la app** para la fuente Deals Hub. Prime Day Butler lee el Deals Hub desde el navegador de Amazon de la app, así que necesita una sesión de Associates activa. Si no has iniciado sesión, omite el Deals Hub y te pide que inicies sesión y vuelvas a ejecutar.
 
 Si falta alguna fuente, el espacio de trabajo sigue funcionando. Solo muestra menos filas.
@@ -75,7 +75,7 @@ No tienes que encolar las ofertas de una en una. Marca la casilla de cada fila q
 - **Borradores para revisar**: las ofertas llegan a la cola de Deal Posting como borradores. Las revisas y eliges destinos ahí antes de que se publique nada.
 - **Listas para publicar**: las ofertas llegan ya apuntando a tus Destinos sociales activos, a un clic de salir.
 
-Haz clic en **Enviar seleccionadas a Deal Posting**. Cada oferta lleva su enlace de afiliado o deep link (creado desde tu enrutado de enlaces en Claves de IA y datos) y el texto, y **el vídeo o la foto que ya creaste para ese producto se adjunta automáticamente**, buscado por ASIN en Video Reload Butler y Photo Reload Butler. Si no hay copia local pero se conoce la fuente, se descarga al momento. Tu vídeo creado se publica en grupos y páginas de Facebook; otros destinos usan la imagen del producto. Las ofertas próximas (confidenciales) se confirman una vez antes de encolarse.
+Haz clic en **Enviar seleccionadas a Deal Posting**. Cada oferta lleva su enlace de afiliado o deep link (creado desde tu enrutado de enlaces en Deeplink Butler > Configuración de enlaces) y el texto, y **el vídeo o la foto que ya creaste para ese producto se adjunta automáticamente**, buscado por ASIN en Video Reload Butler y Photo Reload Butler. Si no hay copia local pero se conoce la fuente, se descarga al momento. Tu vídeo creado se publica en grupos y páginas de Facebook; otros destinos usan la imagen del producto. Las ofertas próximas (confidenciales) se confirman una vez antes de encolarse.
 
 ## Sin intervención con el Piloto automático del Deals Hub
 
@@ -176,7 +176,7 @@ Estas son las preguntas que más hacen los creadores durante Prime Day y Prime B
 - **El Deals Hub no usa la API de Creators.** Lee las ofertas seleccionadas de Amazon desde tu sesión de Associates iniciada en la app, así que esta fuente sigue funcionando mientras Amazon tenga retenido tu acceso a la Creator API. Los descubrimientos nuevos y la comprobación de ofertas en productos que tienes son las partes que necesitan la API.
 - **El Deals Hub necesita una sesión iniciada en Amazon en la app.** Si la fuente vuelve vacía con un aviso de "inicia sesión y vuelve a ejecutar", abre Amazon Associates en la app una vez para refrescar la sesión.
 - **Las ofertas próximas están embargadas.** Su precio y fechas son confidenciales hasta que Amazon las publique. Usa la vista de próximas para planificar, pero espera a que una oferta esté en directo (o a su hora de publicación) antes de publicar.
-- **Las ganancias de Amazon necesitan la tarjeta de tarifas.** Si la columna Amazon % está vacía, descarga la Tarjeta de Tarifas de Asociados en Ajustes.
+- **Las ganancias de Amazon necesitan la tarjeta de tarifas.** Si la columna Amazon % está vacía, descarga la Tarjeta de Tarifas de Asociados en Amazon Butler > Configuración de Amazon.
 - **La comprobación de ofertas de productos que tienes cuesta llamadas a la API.** Desactiva "Buscar ofertas activas en productos que tengo" si tienes límite de tasa y solo necesitas ganancias rápidas.
 - **La elegibilidad de CC va con retraso.** Un producto puede ser elegible para CC hoy y dejar de serlo mañana. El distintivo muestra lo que era cierto al momento del escaneo.
 

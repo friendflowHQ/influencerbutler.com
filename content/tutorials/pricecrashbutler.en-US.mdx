@@ -17,7 +17,7 @@ The threshold is yours - 99% is the default because that's where real pricing er
 
 ## First run
 
-1. Open **Pricecrash Butler** in the left nav (it lives under Orders Butler in the Amazon group).
+1. Open **Pricecrash Butler** in the left nav (it lives in the Deals Butler group).
 2. Pick at least one **category** to scan. "All" sweeps every Amazon department; otherwise multi-select the ones that match your niche.
 3. (Optional) Under **Marketplaces to scan**, tick the Amazon regions you want to sweep (UK, DE, FR and more). Leave them all unchecked to scan only your home marketplace. A box unlocks once you connect that region's Creators API credentials in Settings: US and CA use your default credentials; UK, DE, FR, IT and ES use your EU credentials; and JP, AU and IN use your FE credentials.
 4. Decide what should happen when a deal is found:
@@ -95,9 +95,9 @@ While Pricecrash is running, the topbar **Hours Saved** and **Money Saved** coun
 
 ## Gotchas
 
-- **"Creators API not configured" in the log**: open Settings → API Integrations → Creators API and fill in your partner tag, access key, and secret. Pricecrash uses the same credentials as Deal Posting.
+- **"Creators API not configured" in the log**: open Amazon Butler > Amazon Settings → Creators API and fill in your partner tag, access key, and secret. Pricecrash uses the same credentials as Deal Posting.
 - **`429 RequestThrottled`**: too many Butlers hit PA-API in the same minute. Pricecrash caps scheduled ticks at one page per category (or one page per keyword when keywords are set) for this reason; the manual "Run now" allows multi-page sweeps and is more likely to throttle.
-- **Only seeing amazon.com (US) deals when you sell on another marketplace?**: open Settings → API Integrations → Creators API and set the **Marketplace** dropdown to your store (for example amazon.co.uk), then save. Your main credentials already cover your own marketplace, so you do not need a separate "EU" or "FE" credential set just to scan it. Pricecrash then sweeps your marketplace by default; use the **Marketplaces to scan** tick-boxes only when you want to sweep additional regions.
+- **Only seeing amazon.com (US) deals when you sell on another marketplace?**: open Amazon Butler > Amazon Settings → Creators API and set the **Marketplace** dropdown to your store (for example amazon.co.uk), then save. Your main credentials already cover your own marketplace, so you do not need a separate "EU" or "FE" credential set just to scan it. Pricecrash then sweeps your marketplace by default; use the **Marketplaces to scan** tick-boxes only when you want to sweep additional regions.
 - **Empty runs at 99%**: expected. The whole pitch is that 99%-off errors are rare. Lower the threshold.
 - **Posts not appearing in Deal Posting**: confirm Deal Posting is enabled in Settings; the hand-off writes to that workspace's `posts.json`, so if Deal Posting isn't visible the deal still lands on disk but you can't see it.
 - **Caption preview looks right, but the live post has a generic call to action you didn't write**: Pricecrash Butler has its OWN Build Your Post box, separate from Deal Posting's. If you have only ever written your caption in Deal Posting's Build Your Post, Pricecrash's own box is still empty, so it falls back to a built-in default line. Open Pricecrash Butler's own Build Your Post section, click **Copy setup** on Deal Posting's Build Your Post, then **Paste setup** there to carry your caption and comment over in one click, or type your caption directly into Pricecrash's own box.

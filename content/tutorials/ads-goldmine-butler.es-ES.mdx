@@ -21,7 +21,7 @@ El resultado es una tabla ordenable y filtrable de ASIN con una puntuación comp
 ## Antes de empezar
 
 - **CC Storefront ID** en la barra superior.
-- **Clave de la Creators API** en Claves de IA y datos - necesaria para las señales de oferta. Sin ella, la columna Oferta queda en blanco y las puntuaciones dependen de las demás señales.
+- **Clave de la Creators API** en Amazon Butler > Configuración de Amazon - necesaria para las señales de oferta. Sin ella, la columna Oferta queda en blanco y las puntuaciones dependen de las demás señales.
 - **cc-check se ha ejecutado recientemente**: Ads Goldmine lee de los catálogos CC + SPCC que mantiene cc-check.
 
 ## Tu primera actualización
@@ -75,7 +75,7 @@ Las señales de los sondeos y el conjunto de candidatos del catálogo viven en l
 ## Problemas comunes
 
 - **"Aún no hay productos"**: no has hecho clic en Actualizar ahora, o cc-check todavía no ha recolectado los catálogos CC/SPCC. Ejecuta cc-check y luego Actualizar ahora.
-- **La columna Oferta está en blanco**: falta la clave de la Creators API en Claves de IA y datos. Añádela y vuelve a actualizar.
+- **La columna Oferta está en blanco**: falta la clave de la Creators API en Amazon Butler > Configuración de Amazon. Añádela y vuelve a actualizar.
 - **SPCC, Tienda de marca u Oferta siguen mostrando "-" en la mayoría de filas**: esas señales se rellenan de forma gradual. SPCC se resuelve en la siguiente actualización; Tienda de marca y Oferta sondean un lote limitado de las marcas de mayor prioridad por ejecución, así que la cobertura crece a lo largo de varias actualizaciones.
 - **Muchas filas con puntuación 15**: son marcas que solo están en tu catálogo de Creator Connections sin otra señal todavía. Vuelve a actualizar (y añade una clave de la Creators API) para sumar señales de oferta, tienda de marca y búsqueda de marca que las diferencien.
 

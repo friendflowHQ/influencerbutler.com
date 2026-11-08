@@ -15,7 +15,7 @@ If the AI fails for any reason (rate-limited, weird product), Butler falls back 
 ## Before you start
 
 - **A signed-in Benable session** in Chrome.
-- **OpenAI API key** in **API Integrations** ([how to get one](/help/tutorials/openai-api-setup)) - generates the per-product comments.
+- **OpenAI API key** in **AI & Data Keys** ([how to get one](/help/tutorials/openai-api-setup)) - generates the per-product comments.
 - **1-10 Benable storefront URLs** of creators you want to comment on.
 - **At least 3-5 canned fallback phrases** in the canned-phrases textarea (e.g. "Love this pick!", "Adding to my list", "This is exactly what I needed").
 
@@ -68,9 +68,9 @@ Per-comment history (target profile + item + comment text + timestamp + AI-or-ca
 
 ## Common gotchas
 
-- **"OpenAI key missing"**: set it in API Integrations. Comment Butler can fall back to canned phrases, but it's strongly preferable to generate fresh comments.
+- **"OpenAI key missing"**: set it in AI & Data Keys. Comment Butler can fall back to canned phrases, but it's strongly preferable to generate fresh comments.
 - **Comments fail to post (UI returned an error)**: Benable changed selectors. Comment Butler displays "Selectors not yet wired" until the runtime inspection is rerun; the workspace's banner shows this if it happens.
-- **Every comment is canned**: your OpenAI key is invalid or rate-limited. Check API Integrations.
+- **Every comment is canned**: your OpenAI key is invalid or rate-limited. Check AI & Data Keys.
 - **Comments feel generic**: sharpen the Tone field and add product-specific context. The AI uses Amazon's product description + your tone; if either is weak, the output is weak.
 
 ## Related

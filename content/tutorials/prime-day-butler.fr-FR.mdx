@@ -44,8 +44,8 @@ La colonne **Gains est.** retient la meilleure estimation par vente (Amazon ou C
 
 - **Storefront Butler** s'est synchronisé au moins une fois pour savoir quel contenu tu as créé.
 - **Orders Butler** s'est synchronisé au moins une fois si tu veux les signaux "produits que je possède" et dernière minute.
-- **Clé de l'API Creators** configurée dans **Clés d'IA et de données** pour les nouvelles découvertes, la vérification des offres sur tes produits et la recherche de tendances.
-- **Grille tarifaire des Partenaires** récupérée (dans Paramètres) pour que l'estimation des gains Amazon se remplisse. Sans elle, cette colonne affiche un tiret.
+- **Clé de l'API Creators** configurée dans **Amazon Butler > Paramètres Amazon** pour les nouvelles découvertes, la vérification des offres sur tes produits et la recherche de tendances.
+- **Grille tarifaire des Partenaires** récupérée (dans Amazon Butler > Paramètres Amazon) pour que l'estimation des gains Amazon se remplisse. Sans elle, cette colonne affiche un tiret.
 - **Connecté à Amazon Associates dans l'app** pour la source Deals Hub. Prime Day Butler lit le Deals Hub depuis le navigateur Amazon de l'app, il lui faut donc une session Associates active. Si tu es déconnecté, il ignore le Deals Hub et te demande de te connecter puis de relancer.
 
 Si une source manque, l'espace de travail fonctionne quand même. Il affiche simplement moins de lignes.
@@ -75,7 +75,7 @@ Tu n'as pas à mettre les offres en file une par une. Coche la case de chaque li
 - **Brouillons à relire** : les offres arrivent dans la file Deal Posting en brouillons. Tu les relis et choisis les destinations là-bas avant toute publication.
 - **Prêtes à publier** : les offres arrivent en ciblant déjà tes Destinations sociales activées, à un clic de partir.
 
-Clique sur **Envoyer la sélection vers Deal Posting**. Chaque offre porte son lien d'affiliation ou deep link (créé depuis ton routage de liens dans Clés d'IA et de données) et le texte, et **la vidéo ou la photo que tu as déjà créée pour ce produit est jointe automatiquement**, recherchée par ASIN dans Video Reload Butler et Photo Reload Butler. S'il n'y a pas de copie locale mais que la source est connue, elle est téléchargée à la demande. Ta vidéo créée est publiée dans les groupes et pages Facebook ; les autres destinations utilisent l'image du produit. Les offres à venir (confidentielles) sont confirmées une fois avant la mise en file.
+Clique sur **Envoyer la sélection vers Deal Posting**. Chaque offre porte son lien d'affiliation ou deep link (créé depuis ton routage de liens dans Deeplink Butler > Paramètres des liens) et le texte, et **la vidéo ou la photo que tu as déjà créée pour ce produit est jointe automatiquement**, recherchée par ASIN dans Video Reload Butler et Photo Reload Butler. S'il n'y a pas de copie locale mais que la source est connue, elle est téléchargée à la demande. Ta vidéo créée est publiée dans les groupes et pages Facebook ; les autres destinations utilisent l'image du produit. Les offres à venir (confidentielles) sont confirmées une fois avant la mise en file.
 
 ## Sans intervention avec le Pilote automatique du Deals Hub
 
@@ -176,7 +176,7 @@ Ce sont les questions que les créateurs posent le plus pendant Prime Day et les
 - **Le Deals Hub n'utilise pas l'API Creators.** Il lit les offres sélectionnées par Amazon depuis ta session Associates connectée dans l'app, donc cette source fonctionne toujours pendant qu'Amazon retient ton propre accès à la Creator API. Les nouvelles découvertes et la vérification des offres sur tes produits sont les parties qui ont besoin de l'API.
 - **Le Deals Hub a besoin d'une session Amazon connectée dans l'app.** Si la source revient vide avec une note "connecte-toi puis relance", ouvre Amazon Associates dans l'app une fois pour rafraîchir la session.
 - **Les offres à venir sont sous embargo.** Leur prix et leurs dates sont confidentiels jusqu'à leur publication par Amazon. Sers-toi de la vue à venir pour planifier, mais attends qu'une offre soit en direct (ou son heure de publication) avant de publier.
-- **Les gains Amazon ont besoin de la grille tarifaire.** Si la colonne Amazon % est vide, récupère la grille tarifaire des Partenaires dans Paramètres.
+- **Les gains Amazon ont besoin de la grille tarifaire.** Si la colonne Amazon % est vide, récupère la grille tarifaire des Partenaires dans Amazon Butler > Paramètres Amazon.
 - **La vérification des offres sur tes produits coûte des appels API.** Désactive "Vérifier les offres en cours sur mes produits" si tu es limité en débit et n'as besoin que des gains rapides.
 - **L'éligibilité CC est en retard.** Un produit peut être éligible CC aujourd'hui et ne plus l'être demain. La pastille montre ce qui était vrai au moment du scan.
 

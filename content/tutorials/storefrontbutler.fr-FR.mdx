@@ -16,7 +16,7 @@ Il vous faut :
 
 1. **L'URL de votre boutique Amazon Creator**: le lien public `https://www.amazon.com/shop/votrenom`. Storefront Butler la pré-remplit depuis **Paramètres → Scan de boutique** si vous l'y avez configurée.
 2. **Une session Amazon active dans Chrome**: Storefront Butler ouvre une fenêtre Chrome et utilise votre session existante. Pas de connexion séparée.
-3. **Une clé Creators API** dans **Clés d'IA et de données** (recommandée, pas strictement obligatoire). Sans elle, l'enrichissement est ignoré et vous n'obtenez que les URL et ASIN bruts.
+3. **Une clé Creators API** dans **Amazon Butler > Paramètres Amazon** (recommandée, pas strictement obligatoire). Sans elle, l'enrichissement est ignoré et vous n'obtenez que les URL et ASIN bruts.
 
 ## Votre première synchronisation
 
@@ -32,7 +32,7 @@ Une fenêtre Chrome s'ouvre et parcourt chaque section. La progression apparaît
 Quelques boutons que vous voudrez sans doute toucher après la première exécution :
 
 - **maxItemsByType** dans les paramètres plafonne le nombre d'éléments tirés par catégorie. Utile si vous avez 500+ photos mais ne vous intéressez qu'aux 100 plus récentes.
-- **Le routage des liens** (le fournisseur de deeplink et le partenaire d'affiliation par lesquels passe chaque URL produit) se configure une seule fois dans **Clés d'IA et de données > DeepLink Routing**, et non par workspace. Storefront Butler suit ce choix global automatiquement.
+- **Le routage des liens** (le fournisseur de deeplink et le partenaire d'affiliation par lesquels passe chaque URL produit) se configure une seule fois dans **Deeplink Butler > Paramètres des liens > DeepLink Routing**, et non par workspace. Storefront Butler suit ce choix global automatiquement.
 - **flagUnavailableForRetag** reste activé par défaut - quand Storefront Butler voit un ASIN en rupture, il marque la ligne pour que Retag Butler puisse la remplacer ensuite.
 - **pricingScheduler** relance le rafraîchissement prix/commissions à une cadence (12 h par défaut) sans re-parcourir toute la boutique.
 
@@ -48,7 +48,7 @@ La colonne **Statut du contenu** indique si vous avez déjà du contenu enregist
 
 - **"L'URL de boutique est vide"**: configurez-la dans cet espace ou dans **Paramètres → Scan de boutique**. La copie des Paramètres est la valeur par défaut pour tous les espaces qui ont besoin de votre boutique.
 - **La synchronisation semble figée sur une section**: Amazon vous limite. Storefront Butler retente avec backoff ; laissez-lui une minute avant de cliquer sur Arrêter.
-- **Lignes enrichies sans prix**: généralement votre clé Creators API est absente ou expirée. Ouvrez **Clés d'IA et de données** et revérifiez-la.
+- **Lignes enrichies sans prix**: généralement votre clé Creators API est absente ou expirée. Ouvrez **Amazon Butler > Paramètres Amazon** et revérifiez-la.
 - **Un produit apparaît dans la colonne Marketplaces mais n'est pas vraiment en vente là-bas**: la colonne liste chaque marketplace Amazon qui propose la fiche, et barre ceux qui sont en rupture de stock pour le moment (l'export CSV les marque "(out of stock)"). Un code barré signifie que la fiche existe toujours sur ce marketplace mais n'a aucune offre achetable en ce moment ; ne considérez donc comme réellement en vente que les codes non barrés. Cela vaut aussi pour les marketplaces internationaux.
 - **La colonne Statut ASIN affiche "En attente"**: ce statut de disponibilité (En stock / En rupture de stock / Indisponible) provient de l'API Creators et ne se remplit qu'après l'enrichissement. Cliquez sur **Update Pricing & Deals** pour l'actualiser, puis utilisez le filtre **Statut ASIN** en haut du tableau pour restreindre, par exemple, aux seuls produits en rupture de stock. Les lignes sans ASIN (certaines listes d'idées et photos) affichent un tiret au lieu d'une étiquette.
 

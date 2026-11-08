@@ -28,7 +28,7 @@ La seule étape qui consomme des crédits OpenAI est le bouton **Générer des a
 
 - **Une session Benable connectée** dans Chrome. L'outil utilise votre session existante, comme les autres majordomes Benable.
 - **L'URL d'une liste Benable** que vous possédez, comme `https://benable.com/<votre-nom>/<votre-liste>`.
-- **Une clé OpenAI dans Clés IA et Données** ([comment l'obtenir](/help/tutorials/openai-api-setup)) uniquement si vous voulez le texte de "Générer des améliorations IA". L'analyse et les scores fonctionnent sans elle.
+- **Une clé OpenAI dans Clés d'IA et de données** ([comment l'obtenir](/help/tutorials/openai-api-setup)) uniquement si vous voulez le texte de "Générer des améliorations IA". L'analyse et les scores fonctionnent sans elle.
 
 ## Optimisez tout votre profil en un clic
 
@@ -111,8 +111,8 @@ Les produits Amazon, les recommandations qui ne sont pas des produits et les pro
 ## Problèmes fréquents
 
 - **"Saisissez une URL de liste benable.com."** : l'URL n'est pas un lien de liste Benable. Elle doit ressembler à `https://benable.com/<nom>/<liste>`.
-- **"Connectez OpenAI pour générer des améliorations IA"** : l'analyse a fonctionné, mais le texte IA nécessite votre clé OpenAI dans Clés IA et Données. Ajoutez-la et cliquez à nouveau sur Générer des améliorations IA.
-- **"Connectez votre API Amazon Creators pour ajouter des produits"** : ajouter des produits recherche sur Amazon des choix sur le thème, il faut donc que votre API Amazon Creators soit connectée dans Clés IA et Données. Les notes des nouveaux produits utilisent aussi votre clé OpenAI, mais les produits s'ajoutent quand même sans elle.
+- **"Connectez OpenAI pour générer des améliorations IA"** : l'analyse a fonctionné, mais le texte IA nécessite votre clé OpenAI dans Clés d'IA et de données. Ajoutez-la et cliquez à nouveau sur Générer des améliorations IA.
+- **"Connectez votre API Amazon Creators pour ajouter des produits"** : ajouter des produits recherche sur Amazon des choix sur le thème, il faut donc que votre API Amazon Creators soit connectée dans Amazon Butler > Paramètres Amazon. Les notes des nouveaux produits utilisent aussi votre clé OpenAI, mais les produits s'ajoutent quand même sans elle.
 - **Le score semble élevé mais la liste n'est pas optimisée** : sur vos propres listes, nous ne pouvons pas voir les notes, donc le score ne reflète que la structure. Lisez la note "notes indéterminées" et renforcez les notes de vos produits.
 - **Une analyse est revenue pauvre** : la liste est peut-être privée, vide ou encore en chargement. L'outil attend désormais que le compteur d'articles de la liste s'affiche (et recharge une fois s'il n'apparaît pas), et quand il ne peut toujours pas lire une liste, il signale « impossible de lire cette liste » et la laisse telle quelle au lieu de la noter comme vide. Réessayez et assurez-vous d'être connecté.
 

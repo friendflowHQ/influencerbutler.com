@@ -21,7 +21,7 @@ The output is a sortable, filterable table of ASINs with a 0-100 composite score
 ## Before you start
 
 - **CC Storefront ID** in the topbar.
-- **Creators API key** in API Integrations - required for Deal signals. Without it, the Deal column stays blank and scores rely on the other signals.
+- **Creators API key** in Amazon Butler > Amazon Settings - required for Deal signals. Without it, the Deal column stays blank and scores rely on the other signals.
 - **cc-check has run recently**: Ads Goldmine reads from the CC + SPCC catalogs cc-check maintains.
 
 ## Running your first refresh
@@ -75,7 +75,7 @@ Probe signals and the catalog candidate set live in the Ads Goldmine workspace's
 ## Common gotchas
 
 - **"No products yet"**: you haven't clicked Refresh Now, or cc-check hasn't harvested the CC/SPCC catalogs yet. Run cc-check, then Refresh Now.
-- **Deal column is blank**: Creators API key missing in API Integrations. Add it and re-refresh.
+- **Deal column is blank**: Creators API key missing in Amazon Butler > Amazon Settings. Add it and re-refresh.
 - **SPCC, Brand Store, or Deal still show "-" for most rows**: those signals fill in gradually. SPCC is resolved on the next refresh; Brand Store and Deal probe a capped batch of the highest-priority brands per run, so coverage grows over several refreshes.
 - **Lots of rows scoring 15**: those are brands that are only in your Creator Connections catalog with no other signal yet. Refresh again (and add a Creators API key) to layer on deal, brand-store, and brand-search signals that differentiate them.
 
