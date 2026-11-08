@@ -20,6 +20,7 @@ import { NextResponse, after } from "next/server";
 import { adminService, type AdminService } from "@/lib/admin-service";
 import { hashLicenseKey } from "@/lib/license-auth";
 import { safeEqual } from "@/lib/auth-secret";
+import { keepPlanUrl } from "@/lib/comp-expiry-customer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -161,6 +162,8 @@ type CompInfo = {
   compEndsAt: string | null;
   compKind: string | null;
   compPlan: string | null;
+  /** Signed one-click "Keep my plan" checkout link for the desktop banner / end screen. */
+  compKeepUrl: string | null;
 };
 
 /**
@@ -182,6 +185,7 @@ async function liveCompInfo(svc: AdminService, userId: string): Promise<CompInfo
       compEndsAt: g.expires_at,
       compKind: g.kind ?? null,
       compPlan: await compPlanName(svc, g.ls_subscription_id),
+      compKeepUrl: keepPlanUrl(g.ls_subscription_id, "app"),
     };
   } catch {
     return null;
@@ -202,6 +206,7 @@ async function endedCompInfo(svc: AdminService, userId: string): Promise<Partial
       compEndsAt: g.expires_at,
       compKind: g.kind ?? null,
       compPlan: await compPlanName(svc, g.ls_subscription_id),
+      compKeepUrl: keepPlanUrl(g.ls_subscription_id, "app-ended"),
     };
   } catch {
     return {};
