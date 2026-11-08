@@ -495,7 +495,7 @@ export default function AdminCancellationsPage() {
                           <td className="px-3 py-2 text-slate-700">{r.emailMasked ?? "unknown"}</td>
                           <td className="px-3 py-2 text-slate-500">{r.planName ?? "-"}</td>
                           <td className="px-3 py-2 text-slate-500">{formatDay(r.cancelledAt)}</td>
-                          <td className="px-3 py-2 text-slate-500">{r.reasonLabel ?? "-"}</td>
+                          <td className="px-3 py-2 text-slate-500">{r.reasonLabel ?? "No answer yet"}</td>
                           <td className="px-3 py-2 text-slate-600">
                             {r.comp ? (
                               <span className="font-mono text-[11px] text-slate-600">

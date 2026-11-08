@@ -18,6 +18,7 @@ import {
   REASONS,
   WOULD_RETURN_OPTIONS,
 } from "@/lib/cancel-reasons";
+import { syncSurveyRepliesFromSupport } from "@/lib/cancel-survey-replies";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,6 +26,14 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const actor = await requirePermission("reports.view", request);
   if (!actor) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  // Pull survey answers that arrived as email replies (support tickets) into
+  // subscription_cancel_reasons first, so the reads below include them.
+  // Idempotent and best-effort: a Worker outage just skips the sync.
+  const replySync = await syncSurveyRepliesFromSupport().catch((err) => {
+    console.error("cancellations: survey reply sync failed", err);
+    return null;
+  });
 
   const [rows, unsurveyed, dashboard] = await Promise.all([
     listCancellations(200),
@@ -55,6 +64,7 @@ export async function GET(request: Request) {
     admin: { email: actor.email },
     rows,
     dashboard,
+    replySync,
     summary: {
       total: rows.length,
       answered: answered.length,

@@ -24,6 +24,7 @@ export default function MetricTile({
   series,
   accent = "#6366f1",
   hint,
+  compareLabel = "vs last month",
 }: {
   label: string;
   unit: MetricUnit;
@@ -34,6 +35,8 @@ export default function MetricTile({
   /** Optional caption under the label, e.g. to explain what a tile does and
    *  does not measure so unrelated tiles are not read as one funnel. */
   hint?: string;
+  /** Tooltip + caption for what the arrow compares against. */
+  compareLabel?: string;
 }) {
   const delta = deltaBits(current, previous);
   return (
@@ -41,7 +44,7 @@ export default function MetricTile({
       <div className="flex items-baseline justify-between gap-2">
         <p className="text-2xl font-bold text-slate-900">{formatMetricValue(unit, current)}</p>
         {delta ? (
-          <p className={`text-xs font-semibold ${delta.tone}`} title="vs last month">
+          <p className={`text-xs font-semibold ${delta.tone}`} title={compareLabel}>
             {delta.arrow} {delta.label}
           </p>
         ) : null}

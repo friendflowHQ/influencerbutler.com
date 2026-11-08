@@ -18,6 +18,8 @@ export type MetricSnapshot = {
   current: number | null;
   previous: number | null;
   series: number[] | null;
+  /** Current month only: previous month over the same days so far. */
+  previousToDate?: number | null;
 };
 
 export type ProjectionFigure = {

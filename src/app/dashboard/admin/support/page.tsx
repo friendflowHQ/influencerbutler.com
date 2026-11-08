@@ -277,7 +277,11 @@ export default function SupportAdminPage() {
   const [bucket, setBucket] = useState<string>("attention");
   const [priority, setPriority] = useState<string>("");
   const [tier, setTier] = useState<string>("");
+  // qInput is what is typed; q is the applied search (debounced, or on Enter).
+  const [qInput, setQInput] = useState<string>("");
   const [q, setQ] = useState<string>("");
+  // Guards against a slow, older list response overwriting a newer one.
+  const listSeq = useRef(0);
 
   const [selected, setSelected] = useState<Ticket | null>(null);
   const [detailBusy, setDetailBusy] = useState(false);
@@ -311,27 +315,40 @@ export default function SupportAdminPage() {
   }, []);
 
   const fetchList = useCallback(async () => {
+    const seq = ++listSeq.current;
     setLoading(true);
     setError(null);
     try {
       const qs = new URLSearchParams();
-      if (activeBucket.statuses.length) qs.set("statuses", activeBucket.statuses.join(","));
+      // A search looks across every status: the ticket you are hunting for by
+      // ID or email is often already answered, so it is not in the
+      // "needs attention" tab the page opens on.
+      if (activeBucket.statuses.length && !q.trim()) qs.set("statuses", activeBucket.statuses.join(","));
       if (priority) qs.set("priority", priority);
       if (tier.trim()) qs.set("tier", tier.trim());
       if (q.trim()) qs.set("q", q.trim());
       qs.set("limit", "100");
       const res = await fetch(`/api/admin/support/list?${qs.toString()}`, { cache: "no-store" });
+      if (seq !== listSeq.current) return;
       if (res.status === 403) { setForbidden(true); return; }
       const json = (await res.json()) as { tickets?: Ticket[]; error?: string };
+      if (seq !== listSeq.current) return;
       if (!res.ok) { setError(json.error || "Failed to load"); setTickets([]); return; }
       setTickets(json.tickets ?? []);
     } catch (e) {
+      if (seq !== listSeq.current) return;
       setError(e instanceof Error ? e.message : "Failed to load");
       setTickets([]);
     } finally {
-      setLoading(false);
+      if (seq === listSeq.current) setLoading(false);
     }
   }, [activeBucket, priority, tier, q]);
+
+  // Apply the typed search after a short pause (Enter applies it at once).
+  useEffect(() => {
+    const t = setTimeout(() => setQ(qInput), 350);
+    return () => clearTimeout(t);
+  }, [qInput]);
 
   const openTicket = useCallback(async (id: string) => {
     setActionMsg("");
@@ -651,13 +668,44 @@ export default function SupportAdminPage() {
           placeholder="Tier (e.g. growth)"
           className="w-36 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-700"
         />
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search ID / title / text / email"
-          className="w-56 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-700"
-        />
+        <form
+          role="search"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (qInput === q) fetchList();
+            else setQ(qInput);
+          }}
+          className="flex items-center gap-1"
+        >
+          <label className="sr-only" htmlFor="support-search">Search tickets</label>
+          <input
+            id="support-search"
+            type="search"
+            value={qInput}
+            onChange={(e) => setQInput(e.target.value)}
+            placeholder="Search ID / title / text / email"
+            className="w-56 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-700"
+          />
+          <button
+            type="submit"
+            className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Search
+          </button>
+        </form>
       </div>
+      {q.trim() ? (
+        <p className="-mt-2 text-xs text-slate-500">
+          Showing matches for &ldquo;{q.trim()}&rdquo; across all statuses.{" "}
+          <button
+            type="button"
+            onClick={() => { setQInput(""); setQ(""); }}
+            className="font-medium text-orange-700 underline"
+          >
+            Clear search
+          </button>
+        </p>
+      ) : null}
 
       {error && <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
 

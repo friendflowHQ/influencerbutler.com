@@ -68,6 +68,12 @@ export type MetricSnapshot = {
   previous: number | null;
   /** Per-day values for the requested month (index 0 = the 1st), or null. */
   series: number[] | null;
+  /**
+   * Current month only: the previous month's total over the SAME days so far
+   * (day 1 through today's day of the month), for a fair month-to-date delta.
+   * Absent for historical months and for metrics that cannot be cut by day.
+   */
+  previousToDate?: number | null;
 };
 
 /**
@@ -151,6 +157,11 @@ export type GrowthSnapshot = {
   month: string;
   prevMonth: string;
   migrationPending: boolean;
+  /**
+   * Set for the current month: deltas should compare month-to-date against the
+   * previous month's first `throughDay` days (metrics[k].previousToDate).
+   */
+  comparison: { mode: "month_to_date"; throughDay: number } | null;
   metrics: Record<string, MetricSnapshot>;
   /** Only present for the current month; null for historical snapshots. */
   projection: EarningsProjection | null;
@@ -444,9 +455,12 @@ export function bucketRows(
   days: number,
   value: (row: Record<string, unknown>) => number,
   tz: string = DEFAULT_TIMEZONE,
+  /** When set, also total the previous month's days 1..prevThroughDay. */
+  prevThroughDay?: number | null,
 ): MetricSnapshot {
   let current = 0;
   let previous = 0;
+  let previousToDate = 0;
   const series = new Array<number>(days).fill(0);
   for (const row of rows) {
     const ts = row[tsCol];
@@ -462,9 +476,14 @@ export function bucketRows(
       if (day >= 1 && day <= days) series[day - 1] += v;
     } else if (rowMonth === prevMonth) {
       previous += v;
+      if (prevThroughDay != null && Number(localDate.slice(8, 10)) <= prevThroughDay) {
+        previousToDate += v;
+      }
     }
   }
-  return { current, previous, series };
+  return prevThroughDay != null
+    ? { current, previous, series, previousToDate }
+    : { current, previous, series };
 }
 
 /**
@@ -560,13 +579,19 @@ export async function computeGrowthSnapshot(
 
   const metrics: Record<string, MetricSnapshot> = {};
   for (const def of GROWTH_METRICS) metrics[def.key] = emptySnapshotMetric();
-  let migrationPending = false;
+  // Kept in the payload for older clients; conversions no longer need the
+  // trial_converted_at migration (they are derived from paid orders).
+  const migrationPending = false;
   let projection: EarningsProjection | null = null;
   let planBreakdown: PlanBreakdownRow[] | null = null;
   // The projection blends this month's secured revenue with the trials open
   // right now, so it only makes sense for the current month. "Current" means
   // the business's local calendar month (DEFAULT_TIMEZONE), not UTC's.
   const isCurrentMonth = month === currentMonthKey(new Date());
+  // Month-to-date comparison for the current month: today's local day number.
+  const throughDay = isCurrentMonth
+    ? Number(localDateStr(new Date(), DEFAULT_TIMEZONE).slice(8, 10))
+    : null;
 
   /** Two-month window fetch; returns rows or null on error. */
   async function windowRows(
@@ -575,12 +600,32 @@ export async function computeGrowthSnapshot(
     tsCol: string,
     extra?: (c: Chain) => Chain,
   ): Promise<Record<string, unknown>[] | null> {
+    // Each month is read on its own. One combined two-month read, oldest first,
+    // let a huge previous month (a bulk newsletter import of ~30k rows in Sept
+    // 2026) use up the whole ROW_LIMIT, so the month being viewed read as 0.
+    const [prevPart, curPart] = await Promise.all([
+      monthRows(table, cols, tsCol, prevBounds!.startIso, bounds!.startIso, extra),
+      monthRows(table, cols, tsCol, bounds!.startIso, bounds!.nextIso, extra),
+    ]);
+    if (!prevPart || !curPart) return null;
+    return [...prevPart, ...curPart];
+  }
+
+  /** One [startIso, endIso) range, paged in a stable order up to ROW_LIMIT. */
+  async function monthRows(
+    table: string,
+    cols: string,
+    tsCol: string,
+    startIso: string,
+    endIso: string,
+    extra?: (c: Chain) => Chain,
+  ): Promise<Record<string, unknown>[] | null> {
     try {
       let chain = supabase
         .from(table)
         .select(cols)
-        .gte(tsCol, prevBounds!.startIso)
-        .lt(tsCol, bounds!.nextIso);
+        .gte(tsCol, startIso)
+        .lt(tsCol, endIso);
       if (extra) chain = extra(chain);
       // Supabase silently caps one response at its "max rows" setting (1000 by
       // default), ignoring a larger .limit(). An unordered capped read returns an
@@ -617,11 +662,84 @@ export async function computeGrowthSnapshot(
   const isAddon = (row: Record<string, unknown>) =>
     addonVariant !== "" && String(row.ls_variant_id ?? "") === addonVariant;
 
+  /** Every row of a table (optionally filtered), paged in a stable order. */
+  async function allRows(
+    table: string,
+    cols: string,
+    orderCol: string,
+    extra?: (c: Chain) => Chain,
+  ): Promise<Record<string, unknown>[] | null> {
+    try {
+      let chain = supabase.from(table).select(cols);
+      if (extra) chain = extra(chain);
+      chain = chain.order(orderCol);
+      const rows: Record<string, unknown>[] = [];
+      for (let from = 0; from < ROW_LIMIT; from += PAGE_SIZE) {
+        const res = await chain.range(from, from + PAGE_SIZE - 1);
+        if (res.error) {
+          console.error(`growth snapshot: ${table} full read failed`, res.error);
+          return null;
+        }
+        const page = res.data ?? [];
+        rows.push(...page);
+        if (page.length < PAGE_SIZE) break;
+      }
+      return rows;
+    } catch (err) {
+      console.error(`growth snapshot: ${table} full read threw`, err);
+      return null;
+    }
+  }
+
+  /**
+   * One row per customer: the moment they first actually paid us ({ ts }), and
+   * whether that paying subscription began as a free trial ({ wasTrial }).
+   *
+   * Built from paid orders with a non-zero total, not from subscription rows or
+   * the trial_converted_at stamp, because both over-count:
+   *   - subscriptions.created_at counts every row: in-house comp grants
+   *     (comp:<uuid>), trial starts that never paid, replacement trials and
+   *     plan switches.
+   *   - trial_converted_at is also stamped by the $0 invoice Lemon Squeezy
+   *     sends when a trial STARTS, so most trials read as "converted" on day 0.
+   * Zero-total orders (trial starts, 100%-off comp checkouts), comps and the
+   * add-on are excluded. Renewals never count: only each customer's first
+   * charge does.
+   */
+  async function loadFirstPaidStarts(): Promise<Record<string, unknown>[] | null> {
+    const [orders, subs] = await Promise.all([
+      allRows("orders", "created_at,user_id,ls_subscription_id,total", "created_at", (c) =>
+        c.eq("status", "paid").not("ls_subscription_id", "is", null).lt("created_at", bounds!.nextIso),
+      ),
+      allRows("subscriptions", "ls_subscription_id,user_id,ls_variant_id,trial_started_at", "ls_subscription_id"),
+    ]);
+    if (!orders || !subs) return null;
+    const subById = new Map<string, Record<string, unknown>>();
+    for (const sub of subs) subById.set(String(sub.ls_subscription_id ?? ""), sub);
+    const firstByUser = new Map<string, Record<string, unknown>>();
+    for (const o of orders) {
+      const total = typeof o.total === "number" ? o.total : Number(o.total ?? 0);
+      if (!Number.isFinite(total) || total <= 0) continue;
+      const subId = String(o.ls_subscription_id ?? "");
+      if (!subId || subId.startsWith("comp:")) continue;
+      const sub = subById.get(subId) ?? null;
+      if (sub && isAddon(sub)) continue;
+      if (compSubscriptionIds?.has(subId)) continue;
+      const userId = String(o.user_id ?? sub?.user_id ?? "");
+      if (!userId) continue;
+      if (firstByUser.has(userId)) continue; // orders are oldest first
+      firstByUser.set(userId, {
+        ts: o.created_at,
+        wasTrial: sub ? sub.trial_started_at != null : false,
+      });
+    }
+    return [...firstByUser.values()];
+  }
+
   const [
     trialClickRows,
     trialStartRows,
-    trialConvRows,
-    newSubRows,
+    paidStarts,
     activeRows,
     orderRows,
     affSignupRows,
@@ -641,10 +759,8 @@ export async function computeGrowthSnapshot(
     windowRows("subscriptions", "trial_started_at", "trial_started_at", (c) =>
       c.not("trial_started_at", "is", null),
     ),
-    windowRows("subscriptions", "trial_converted_at", "trial_converted_at", (c) =>
-      c.not("trial_converted_at", "is", null),
-    ),
-    windowRows("subscriptions", "created_at,ls_variant_id", "created_at"),
+    // First-ever paid charge per customer (see loadFirstPaidStarts).
+    loadFirstPaidStarts(),
     // Point-in-time: every active/on-trial sub, filtered for the addon
     // variant in code.
     (async () => {
@@ -714,7 +830,9 @@ export async function computeGrowthSnapshot(
     tsCol: string,
     value: (row: Record<string, unknown>) => number = one,
   ) =>
-    rows ? bucketRows(rows, tsCol, prevMonth, month, bounds.days, value) : emptySnapshotMetric();
+    rows
+      ? bucketRows(rows, tsCol, prevMonth, month, bounds.days, value, DEFAULT_TIMEZONE, throughDay)
+      : emptySnapshotMetric();
 
   // Seeded demo events (source = 'seed', written by the seed-activity cron for
   // the homepage social-proof widget) are not real trial interest, so they must
@@ -727,27 +845,14 @@ export async function computeGrowthSnapshot(
   metrics.trial_clicks = bucket(realTrialClickRows, "created_at");
   metrics.trials_started = bucket(trialStartRows, "trial_started_at");
   metrics.app_trials_started = bucket(appTrialRows, "app_trial_started_at");
-  if (trialConvRows) {
-    metrics.trial_conversions = bucketRows(
-      trialConvRows,
-      "trial_converted_at",
-      prevMonth,
-      month,
-      bounds.days,
-      one,
-    );
-  } else {
-    // Most likely 42703: trial_converted_at not in prod yet.
-    migrationPending = true;
-  }
-  if (newSubRows) {
-    metrics.new_subscriptions = bucketRows(
-      newSubRows.filter((r) => !isAddon(r)),
-      "created_at",
-      prevMonth,
-      month,
-      bounds.days,
-      one,
+  // New subscriptions = customers whose FIRST real (non-zero) charge fell in
+  // the month. Trial conversions = the subset of those whose paying
+  // subscription started as a free trial. Each customer counts once, ever.
+  if (paidStarts) {
+    metrics.new_subscriptions = bucket(paidStarts, "ts");
+    metrics.trial_conversions = bucket(
+      paidStarts.filter((r) => r.wasTrial === true),
+      "ts",
     );
   }
   let onTrialLive: Record<string, unknown>[] = [];
@@ -903,6 +1008,7 @@ export async function computeGrowthSnapshot(
     month,
     prevMonth,
     migrationPending,
+    comparison: throughDay != null ? { mode: "month_to_date", throughDay } : null,
     metrics,
     projection,
     planBreakdown,

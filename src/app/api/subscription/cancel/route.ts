@@ -3,6 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { lsApi } from "@/lib/lemonsqueezy";
 import { normalizeWouldReturn } from "@/lib/cancel-reasons";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
@@ -55,7 +56,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const { data: ownRow } = await userClient
+    // The subscriptions table has RLS with no SELECT policy, so the user client
+    // always read back nothing and every in-app cancel failed with "not found".
+    // Read with the service role, still keyed by the signed-in user's id so this
+    // stays a real ownership check.
+    const admin = createAdminClient();
+    const { data: ownRow } = await admin
       .from("subscriptions")
       .select("id,user_id,ls_subscription_id")
       .eq("ls_subscription_id", subscriptionId)
@@ -83,36 +89,34 @@ export async function POST(request: Request) {
       );
     }
 
-    // Log the reason using the service-role client (so RLS insert-constraint is
-    // not a concern; users can still only SELECT their own rows).
-    const serviceUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (serviceUrl && serviceKey) {
-      const serviceClient = createServerClient(serviceUrl, serviceKey, {
-        cookies: {
-          getAll() {
-            return [];
-          },
-          setAll() {
-            // No-op
-          },
-        },
-      });
-
-      await serviceClient.from("subscription_cancel_reasons").insert({
-        user_id: user.id,
-        subscription_id: subscriptionId,
-        reason,
-        feedback,
-        intended_outcome: intendedOutcome,
-        would_return: wouldReturn,
-        offer_feedback: offerFeedback,
-        source: "in_app",
-        completed_at: new Date().toISOString(),
-        offer_shown: offerShown,
-        offer_accepted: false,
-      });
+    // Log the reason with the service-role client (RLS only lets users SELECT
+    // their own rows). offer_feedback arrives with the hand-applied 20261017
+    // migration; if prod lags, the insert errors on that column, so retry
+    // without it (folding the text into feedback) rather than lose the answer.
+    const baseRow = {
+      user_id: user.id,
+      subscription_id: subscriptionId,
+      reason,
+      feedback,
+      intended_outcome: intendedOutcome,
+      would_return: wouldReturn,
+      source: "in_app",
+      completed_at: new Date().toISOString(),
+      offer_shown: offerShown,
+      offer_accepted: false,
+    };
+    const first = await admin
+      .from("subscription_cancel_reasons")
+      .insert({ ...baseRow, offer_feedback: offerFeedback });
+    if (first.error) {
+      console.error("cancel: reason insert failed, retrying without offer_feedback", first.error);
+      const merged = offerFeedback
+        ? [feedback, `What's missing / broken: ${offerFeedback}`].filter(Boolean).join("\n\n")
+        : feedback;
+      const retry = await admin
+        .from("subscription_cancel_reasons")
+        .insert({ ...baseRow, feedback: merged });
+      if (retry.error) console.error("cancel: reason insert retry failed", retry.error);
     }
 
     return NextResponse.json({ ok: true });

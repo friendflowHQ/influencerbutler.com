@@ -39,6 +39,7 @@ type MetricsResponse = {
   month?: string;
   prevMonth?: string;
   migrationPending?: boolean;
+  comparison?: { mode: "month_to_date"; throughDay: number } | null;
   catalog?: CatalogEntry[];
   metrics?: Record<string, MetricSnapshot>;
   projection?: EarningsProjection | null;
@@ -64,7 +65,10 @@ const TILE_HINTS: Record<string, string> = {
   app_trials_started:
     "Desktop app trials: walkthrough email captures and no-card claims. No card, so these do not auto-convert.",
   trials_started: "Paid-checkout trials (Lemon Squeezy). A separate population from clicks.",
-  trial_conversions: "Trials that became paid subscriptions.",
+  trial_conversions:
+    "Customers whose first real payment came after a free trial. Once per customer; comps and renewals excluded.",
+  new_subscriptions:
+    "Customers who paid us for the first time (after a trial or directly). Once per customer; comps, $0 trial starts and renewals excluded.",
   download_leads: "Emails captured at the app download. These are your named leads.",
   facebook_members: "Members of your Facebook community group, captured daily.",
 };
@@ -224,6 +228,15 @@ export default function AdminGrowthPage() {
 
   const m = metrics?.metrics ?? {};
   const catalog = metrics?.catalog ?? null;
+  // Current month: compare month-to-date with the same days of last month, so a
+  // week into the month does not read as a huge drop against a full month.
+  const mtd = isCurrentMonth && metrics?.comparison?.mode === "month_to_date" ? metrics.comparison : null;
+  const shortMonth = (key: string) => {
+    const [y, mo] = key.split("-").map(Number);
+    return new Date(Date.UTC(y, mo - 1, 1)).toLocaleString("en-US", { month: "short", timeZone: "UTC" });
+  };
+  const mtdRange = mtd ? `${shortMonth(month)} 1-${mtd.throughDay}` : "";
+  const prevMtdRange = mtd ? `${shortMonth(shiftMonth(month, -1))} 1-${mtd.throughDay}` : "";
 
   const strip: { label: string; value: string; live?: boolean; tone: string }[] = [
     {
@@ -351,6 +364,11 @@ export default function AdminGrowthPage() {
         <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-700">
           Your numbers, {monthLabel(month)}
         </h2>
+        {mtd ? (
+          <p className="mt-1 text-xs text-slate-500">
+            Month to date: arrows compare {mtdRange} against {prevMtdRange}, not all of last month.
+          </p>
+        ) : null}
         {metrics?.migrationPending ? (
           <p className="mt-1 text-xs text-amber-700">
             Trial conversions need 20260704_trial_conversion_capture.sql applied in the Supabase
@@ -375,7 +393,8 @@ export default function AdminGrowthPage() {
                   label={entry.label}
                   unit={entry.unit}
                   current={snap.current}
-                  previous={snap.previous}
+                  previous={mtd ? (snap.previousToDate ?? null) : snap.previous}
+                  compareLabel={mtd ? `vs ${prevMtdRange}` : "vs last month"}
                   series={snap.series}
                   accent={accent}
                   hint={TILE_HINTS[key]}

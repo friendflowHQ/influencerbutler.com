@@ -1282,7 +1282,11 @@ export async function POST(request: Request) {
       // moment (belt-and-braces alongside subscription_updated).
       await captureOrderDiscount(supabase, renewalOrderId, attrs.discount_total);
       await captureOrderMoneyBreakdown(supabase, renewalOrderId, attrs);
-      if (lsSubscriptionId) {
+      // Only a real (non-zero) charge converts a trial: Lemon Squeezy also sends
+      // this event for the $0 invoice at trial START, which used to stamp nearly
+      // every trial as converted on day 0.
+      const paidTotal = Number(attrs.total ?? 0);
+      if (lsSubscriptionId && Number.isFinite(paidTotal) && paidTotal > 0) {
         await stampTrialConversion(supabase, lsSubscriptionId);
       }
     },

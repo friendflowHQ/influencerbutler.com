@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { pauseSubscription } from "@/lib/lemonsqueezy";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
@@ -49,7 +50,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    const { data: ownRow } = await userClient
+    // subscriptions has RLS with no SELECT policy: the user client always read
+    // back nothing, so every pause failed with "not found". Read with the
+    // service role, keyed by the signed-in user's id (a real ownership check).
+    const admin = createAdminClient();
+    const { data: ownRow } = await admin
       .from("subscriptions")
       .select("id,user_id,ls_subscription_id,status")
       .eq("ls_subscription_id", subscriptionId)
@@ -84,26 +89,10 @@ export async function POST(request: Request) {
 
     // Reflect the pause locally right away - the subscription_paused webhook
     // will also write this, idempotently, whenever it lands.
-    const serviceUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (serviceUrl && serviceKey) {
-      const serviceClient = createServerClient(serviceUrl, serviceKey, {
-        cookies: {
-          getAll() {
-            return [];
-          },
-          setAll() {
-            // No-op
-          },
-        },
-      });
-
-      await serviceClient
-        .from("subscriptions")
-        .update({ status: "paused", pause_resumes_at: resumesAtIso })
-        .eq("ls_subscription_id", subscriptionId);
-    }
+    await admin
+      .from("subscriptions")
+      .update({ status: "paused", pause_resumes_at: resumesAtIso })
+      .eq("ls_subscription_id", subscriptionId);
 
     return NextResponse.json({ ok: true, resumesAt: resumesAtIso });
   } catch (error) {

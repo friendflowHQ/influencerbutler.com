@@ -77,16 +77,45 @@ function str(v: unknown): string | null {
 export async function listCancellations(limit = 200): Promise<CancellationRow[]> {
   const supabase = createAdminClient();
 
-  const { data: rows } = await supabase
+  // Core columns only. offer_feedback / manual_offer_sent_at arrive with the
+  // hand-applied 20261017 migration; selecting them while prod lags made the
+  // whole query error, which the page read as "0 answered". They are fetched
+  // separately below, best-effort, like the winback_* columns.
+  const { data: rows, error: rowsErr } = await supabase
     .from("subscription_cancel_reasons")
     .select(
-      "id,user_id,subscription_id,reason,feedback,intended_outcome,would_return,source,emailed_at,completed_at,created_at,offer_feedback,offer_shown,offer_accepted,manual_offer_sent_at",
+      "id,user_id,subscription_id,reason,feedback,intended_outcome,would_return,source,emailed_at,completed_at,created_at,offer_shown,offer_accepted",
     )
     .order("created_at", { ascending: false })
     .limit(limit);
+  if (rowsErr) console.error("listCancellations: query failed", rowsErr);
 
   const list = rows ?? [];
   if (list.length === 0) return [];
+
+  const optionalByRow = new Map<string, { offerFeedback: string | null; manualOfferSentAt: string | null }>();
+  {
+    const ids = list.map((r) => str(r.id)).filter(Boolean) as string[];
+    try {
+      const { data: opt, error: optErr } = await supabase
+        .from("subscription_cancel_reasons")
+        .select("id,offer_feedback,manual_offer_sent_at")
+        .in("id", ids);
+      if (!optErr) {
+        for (const o of opt ?? []) {
+          const id = str(o.id);
+          if (id) {
+            optionalByRow.set(id, {
+              offerFeedback: str(o.offer_feedback),
+              manualOfferSentAt: str(o.manual_offer_sent_at),
+            });
+          }
+        }
+      }
+    } catch {
+      // Columns not present yet: no offer feedback / reach-out stamps.
+    }
+  }
 
   const userIds = Array.from(new Set(list.map((r) => str(r.user_id)).filter(Boolean))) as string[];
   const subIds = Array.from(
@@ -176,10 +205,10 @@ export async function listCancellations(limit = 200): Promise<CancellationRow[]>
       emailMasked: userId ? maskEmail(emailByUser.get(userId) ?? null) : null,
       completed,
       winback: winbackByRow.get(str(r.id) ?? "") ?? null,
-      offerFeedback: str(r.offer_feedback),
+      offerFeedback: optionalByRow.get(str(r.id) ?? "")?.offerFeedback ?? null,
       offerShown: Boolean(r.offer_shown),
       offerAccepted: Boolean(r.offer_accepted),
-      manualOfferSentAt: str(r.manual_offer_sent_at),
+      manualOfferSentAt: optionalByRow.get(str(r.id) ?? "")?.manualOfferSentAt ?? null,
     };
   });
 }
@@ -327,7 +356,7 @@ export async function loadCancellationDashboard(limit = 300): Promise<Cancellati
       supabase.from("profiles").select("id,email").in("id", userIds),
       supabase
         .from("subscription_cancel_reasons")
-        .select("user_id,reason,would_return,created_at")
+        .select("user_id,reason,would_return,created_at,source,completed_at")
         .in("user_id", userIds)
         .order("created_at", { ascending: false }),
       supabase
@@ -340,11 +369,16 @@ export async function loadCancellationDashboard(limit = 300): Promise<Cancellati
       const id = str(p.id);
       if (id) emailByUser.set(id, str(p.email));
     }
-    // Newest-first: keep the first reason we see per user.
+    // Newest ANSWERED reason per user. An emailed survey nobody answered yet is
+    // a placeholder row with reason "unspecified"; it must not hide a real answer
+    // and must not read as a reason, so it shows as "no answer yet" (null).
     for (const rr of reasonsRes.data ?? []) {
       const id = str(rr.user_id);
       if (!id || reasonByUser.has(id)) continue;
-      reasonByUser.set(id, { reason: str(rr.reason), wouldReturn: str(rr.would_return) });
+      const pending = str(rr.source) === "email" && !str(rr.completed_at);
+      const reason = str(rr.reason);
+      if (pending || !reason || reason === "unspecified") continue;
+      reasonByUser.set(id, { reason, wouldReturn: str(rr.would_return) });
     }
     // A live PAID subscription = a genuine reactivation (the comp's own live row
     // has a `comp:` sentinel and must not count as "came back").
@@ -486,7 +520,9 @@ export async function countUnsurveyedEndedSubs(): Promise<number> {
   const { data: ended } = await supabase
     .from("subscriptions")
     .select("ls_subscription_id,status")
-    .in("status", ["cancelled", "expired"]);
+    .in("status", ["cancelled", "expired"])
+    // Our own comp grants (comp:<uuid>) expire by design; they are not churn.
+    .not("ls_subscription_id", "like", "comp:%");
 
   const endedIds = new Set(
     (ended ?? []).map((s) => str(s.ls_subscription_id)).filter(Boolean) as string[],
