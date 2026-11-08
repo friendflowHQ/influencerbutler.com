@@ -321,6 +321,20 @@ export default function AdminUsersPage() {
     }
   };
 
+  // Deep link: /dashboard/admin/users?email=x opens the lookup for that user
+  // (used by Creator stores). Runs once on mount.
+  const [deepLinked, setDeepLinked] = useState(false);
+  useEffect(() => {
+    if (deepLinked) return;
+    setDeepLinked(true);
+    const target = new URLSearchParams(window.location.search).get("email");
+    if (target) {
+      setTab("lookup");
+      void lookup(target);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deepLinked]);
+
   // Generic action runner against an admin endpoint.
   const act = async (
     path: string,
