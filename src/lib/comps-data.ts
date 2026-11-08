@@ -73,6 +73,17 @@ export type CompRow = {
   issuedByAffiliateId: string | null;
   issuedByAffiliateName: string | null;
   issuedByAffiliateEmail: string | null;
+  /** comp_grants.kind: winback / creator / affiliate / trial / referral (null before the 20261108 migration). */
+  kind: string | null;
+  /** Customer-facing end-of-comp emails (7 days, 1 day) and the owner's creator alert. */
+  userWarn7SentAt: string | null;
+  userWarn1SentAt: string | null;
+  ownerCreatorWarnSentAt: string | null;
+  /** Comp-to-paid conversion: when they started a paid plan, which one, and its delayed first charge. */
+  convertedAt: string | null;
+  convertedPlan: string | null;
+  convertedLsSubscriptionId: string | null;
+  firstChargeAt: string | null;
 };
 
 export type CompsResult = {
@@ -426,6 +437,14 @@ function buildCompRow(args: {
         issuedByAffiliateEmail: aff?.email ?? null,
       };
     })(),
+    kind: str(grant?.kind) ?? (str(grant?.issued_by_affiliate_id) ? "affiliate" : null),
+    userWarn7SentAt: str(grant?.user_warn7_sent_at),
+    userWarn1SentAt: str(grant?.user_warn1_sent_at),
+    ownerCreatorWarnSentAt: str(grant?.owner_creator_warn_sent_at),
+    convertedAt: str(grant?.converted_at),
+    convertedPlan: str(grant?.converted_plan),
+    convertedLsSubscriptionId: str(grant?.converted_ls_subscription_id),
+    firstChargeAt: str(grant?.first_charge_at),
   };
 }
 

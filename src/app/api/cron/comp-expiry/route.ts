@@ -21,6 +21,11 @@ import { loadComps, type CompRow } from "@/lib/comps-data";
 import { cancelCompSubscription } from "@/lib/comps-cancel";
 import { sendCompDigest } from "@/lib/comp-expiry-email";
 import { verifyBearer } from "@/lib/auth-secret";
+import {
+  CUSTOMER_NOTICE_KINDS,
+  sendCustomerCompEmail,
+  sendOwnerCreatorAlert,
+} from "@/lib/comp-expiry-customer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -91,6 +96,23 @@ export async function GET(request: Request) {
     }
   }
 
+  // Customer-facing notices (win-back + creator comps only) and the owner's
+  // per-creator "ends in 7 days, extend?" alert. A comp that already converted
+  // to a paid plan gets nothing.
+  const custWarn7: CompRow[] = [];
+  const custWarn1: CompRow[] = [];
+  const ownerCreator: CompRow[] = [];
+  for (const row of result.rows) {
+    if (row.state === "cancelled" || row.state === "forever") continue;
+    if (row.convertedAt) continue;
+    if (!row.kind || !CUSTOMER_NOTICE_KINDS.has(row.kind)) continue;
+    const d = row.daysRemaining;
+    if (d == null || d <= 0) continue;
+    if (d <= 1 && !row.userWarn1SentAt) custWarn1.push(row);
+    else if (d <= 7 && !row.userWarn7SentAt && !row.userWarn1SentAt) custWarn7.push(row);
+    if (row.kind === "creator" && d <= 7 && !row.ownerCreatorWarnSentAt) ownerCreator.push(row);
+  }
+
   const summarize = (r: CompRow) => ({
     email: r.email,
     code: r.discountCode,
@@ -105,7 +127,28 @@ export async function GET(request: Request) {
       wouldCancel: toCancel.map(summarize),
       wouldWarn: [...toWarn1, ...toWarn7].map(summarize),
       needsMonths: needsMonths.map(summarize),
+      wouldEmailCustomer7: custWarn7.map(summarize),
+      wouldEmailCustomer1: custWarn1.map(summarize),
+      wouldAlertOwnerCreator: ownerCreator.map(summarize),
     });
+  }
+
+  // Customer emails. Stamp FIRST and only send when the stamp landed, so a
+  // missing column (20261108 migration not applied yet) can never turn into a
+  // daily repeat email.
+  const customerEmailed: CompRow[] = [];
+  for (const row of custWarn1) {
+    if (!(await stampColumns(row, ["user_warn1_sent_at", "user_warn7_sent_at"]))) continue;
+    if (await sendCustomerCompEmail(row, "warn1")) customerEmailed.push(row);
+  }
+  for (const row of custWarn7) {
+    if (!(await stampColumns(row, ["user_warn7_sent_at"]))) continue;
+    if (await sendCustomerCompEmail(row, "warn7")) customerEmailed.push(row);
+  }
+  const ownerAlerted: CompRow[] = [];
+  for (const row of ownerCreator) {
+    if (!(await stampColumns(row, ["owner_creator_warn_sent_at"]))) continue;
+    if (await sendOwnerCreatorAlert(row)) ownerAlerted.push(row);
   }
 
   // Cancel expired comps.
@@ -153,5 +196,34 @@ export async function GET(request: Request) {
     warned: warned.map(summarize),
     needsMonths: needsMonths.map(summarize),
     emailed,
+    customerEmailed: customerEmailed.map(summarize),
+    ownerCreatorAlerted: ownerAlerted.map(summarize),
   });
+}
+
+/**
+ * Stamp one or more marker columns on a comp_grants row (only the markers, so
+ * it never upserts a partial row). Returns false when the update failed, e.g.
+ * the 20261108 columns are not in prod yet: the caller then skips the send.
+ */
+async function stampColumns(row: CompRow, fields: string[]): Promise<boolean> {
+  const svc = adminService();
+  if (!svc) return false;
+  const nowIso = new Date().toISOString();
+  const patch: Record<string, string> = { updated_at: nowIso };
+  for (const f of fields) patch[f] = nowIso;
+  try {
+    const { error } = await svc
+      .from("comp_grants")
+      .update(patch)
+      .eq("ls_subscription_id", row.lsSubscriptionId);
+    if (error) {
+      console.error("comp-expiry: marker stamp failed", { fields, error });
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error("comp-expiry: marker stamp threw", error);
+    return false;
+  }
 }

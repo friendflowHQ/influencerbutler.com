@@ -176,6 +176,7 @@ export async function GET(request: Request) {
       }
 
       const result = await issueInHouseComp({
+        kind: "affiliate",
         email,
         name: app.full_name,
         months: null,

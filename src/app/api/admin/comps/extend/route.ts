@@ -100,6 +100,15 @@ export async function POST(request: Request) {
     console.error("comps/extend grant update failed", grantUpdateErr);
     return NextResponse.json({ error: "Could not save the new expiry." }, { status: 500 });
   }
+  // Re-arm the customer + owner end-of-comp notices for the new date. Separate
+  // and best-effort: these columns come from the 20261108 migration.
+  {
+    const { error: noticeErr } = await svc
+      .from("comp_grants")
+      .update({ user_warn7_sent_at: null, user_warn1_sent_at: null, owner_creator_warn_sent_at: null })
+      .eq("ls_subscription_id", id);
+    if (noticeErr) console.warn("comps/extend: notice markers not reset (migration 20261108?)", noticeErr);
+  }
 
   // Revive the entitlement: if the cron already cancelled this comp, flip the
   // synthetic subscription back to active. In-house comps are only ever active or

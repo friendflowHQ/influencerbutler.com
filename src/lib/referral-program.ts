@@ -140,6 +140,7 @@ export async function captureFriendReferral(args: {
     // Give the friend their free month of Pro.
     if (args.userEmail) {
       const result = await issueInHouseComp({
+        kind: "referral",
         email: args.userEmail,
         months: FRIEND_FREE_MONTHS,
         plan: REFERRAL_COMP_PLAN,
@@ -258,6 +259,7 @@ export async function rewardReferrerForSubscription(lsSubscriptionId: string): P
     if (!referrerPays) {
       // Real free month: issueInHouseComp emails them the key + sign-in link.
       const result = await issueInHouseComp({
+        kind: "referral",
         email: referrerEmail,
         months: REFERRER_FREE_MONTHS,
         plan: REFERRAL_COMP_PLAN,
@@ -269,6 +271,7 @@ export async function rewardReferrerForSubscription(lsSubscriptionId: string): P
     } else {
       // Paying referrer: mint an unassigned gift-pass key and email it to them.
       const pass = await issueInHouseComp({
+        kind: "referral",
         email: null,
         months: REFERRER_FREE_MONTHS,
         plan: REFERRAL_COMP_PLAN,

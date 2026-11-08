@@ -38,7 +38,21 @@ type CompRow = {
   issuedByAffiliateId: string | null;
   issuedByAffiliateName: string | null;
   issuedByAffiliateEmail: string | null;
+  kind: string | null;
+  userWarn7SentAt: string | null;
+  userWarn1SentAt: string | null;
+  convertedAt: string | null;
+  convertedPlan: string | null;
+  firstChargeAt: string | null;
 };
+
+const KIND_OPTIONS = [
+  { value: "winback", label: "Win-back" },
+  { value: "creator", label: "Creator" },
+  { value: "affiliate", label: "Affiliate" },
+  { value: "trial", label: "Trial" },
+  { value: "referral", label: "Referral" },
+] as const;
 
 type ListResponse = {
   rows?: CompRow[];
@@ -52,6 +66,7 @@ const FILTERS = [
   { key: "expiring-7", label: "Expiring ≤ 7d" },
   { key: "expiring-30", label: "Expiring ≤ 30d" },
   { key: "expired", label: "Expired, still live" },
+  { key: "converted", label: "Converted to paid" },
 ] as const;
 type FilterKey = (typeof FILTERS)[number]["key"];
 
@@ -311,6 +326,9 @@ export default function AdminCompsPage() {
       case "expired":
         byState = rows.filter((r) => r.state === "expired");
         break;
+      case "converted":
+        byState = rows.filter((r) => r.convertedAt != null);
+        break;
       default:
         byState = rows;
     }
@@ -326,6 +344,7 @@ export default function AdminCompsPage() {
         r.source,
         r.issuedByAffiliateName,
         r.issuedByAffiliateEmail,
+        r.kind,
       ].some((v) => v != null && v.toLowerCase().includes(q)),
     );
   }, [rows, filter, search]);
@@ -386,6 +405,42 @@ export default function AdminCompsPage() {
       setBusyId(null);
     }
   };
+
+  const setKind = async (row: CompRow, kind: string) => {
+    setBusyId(row.lsSubscriptionId);
+    try {
+      const res = await fetch("/api/admin/comps/set-kind", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lsSubscriptionId: row.lsSubscriptionId, kind }),
+      });
+      const json = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        window.alert(json.error ?? "Could not change the label.");
+        return;
+      }
+      await load();
+    } catch {
+      window.alert("Network error. Please retry.");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  // Comp-to-paid conversion totals per kind. Rate = converted / comps that are
+  // decided (converted, or ended via cancel/expiry), so comps still running do
+  // not drag the rate down.
+  const conversion = useMemo(() => {
+    const kinds = ["winback", "creator", "affiliate", "referral"];
+    return kinds.map((kind) => {
+      const ofKind = rows.filter((r) => r.kind === kind);
+      const converted = ofKind.filter((r) => r.convertedAt != null).length;
+      const decided = ofKind.filter(
+        (r) => r.convertedAt != null || r.state === "cancelled" || r.state === "expired",
+      ).length;
+      return { kind, total: ofKind.length, converted, decided };
+    });
+  }, [rows]);
 
   const setMonths = async (row: CompRow) => {
     const raw = window.prompt(
@@ -749,6 +804,25 @@ export default function AdminCompsPage() {
         </div>
       ) : null}
 
+      <section aria-label="Comp to paid conversions" className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {conversion.map((c) => {
+          const label = KIND_OPTIONS.find((k) => k.value === c.kind)?.label ?? c.kind;
+          const rate = c.decided > 0 ? Math.round((c.converted / c.decided) * 100) : null;
+          return (
+            <div key={c.kind} className="rounded-xl border border-slate-200 bg-white p-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label} comps</p>
+              <p className="mt-1 text-2xl font-semibold text-slate-900">
+                {c.converted}
+                <span className="text-sm font-normal text-slate-500"> converted of {c.total}</span>
+              </p>
+              <p className="mt-1 text-xs text-slate-600">
+                {rate == null ? "No ended comps yet" : `${rate}% of ended comps went paid`}
+              </p>
+            </div>
+          );
+        })}
+      </section>
+
       <div className="mt-6 flex flex-wrap items-center gap-2">
         {FILTERS.map((f) => (
           <button
@@ -843,6 +917,38 @@ export default function AdminCompsPage() {
                           {row.issuedByAffiliateName ?? row.issuedByAffiliateEmail ?? "an affiliate"}
                         </div>
                       ) : null}
+                      <div className="mt-1 flex flex-wrap items-center gap-1">
+                        <label className="sr-only" htmlFor={`kind-${row.lsSubscriptionId}`}>
+                          Comp kind
+                        </label>
+                        <select
+                          id={`kind-${row.lsSubscriptionId}`}
+                          value={row.kind ?? ""}
+                          disabled={busy}
+                          onChange={(e) => void setKind(row, e.target.value)}
+                          className="rounded-md border border-slate-300 bg-white px-1.5 py-0.5 text-[11px] text-slate-700"
+                        >
+                          {row.kind == null ? <option value="">Unlabeled</option> : null}
+                          {KIND_OPTIONS.map((k) => (
+                            <option key={k.value} value={k.value}>
+                              {k.label}
+                            </option>
+                          ))}
+                        </select>
+                        {row.convertedAt ? (
+                          <span
+                            className="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800"
+                            title={row.firstChargeAt ? `First charge ${shortDate(row.firstChargeAt)}` : undefined}
+                          >
+                            Converted to paid {shortDate(row.convertedAt)}
+                            {row.convertedPlan ? ` (${row.convertedPlan})` : ""}
+                          </span>
+                        ) : row.userWarn1SentAt || row.userWarn7SentAt ? (
+                          <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                            {row.userWarn1SentAt ? "1-day email sent" : "7-day email sent"}
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <span

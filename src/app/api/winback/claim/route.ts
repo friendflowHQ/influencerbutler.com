@@ -161,6 +161,7 @@ export async function GET(request: Request) {
   }
 
   const result = await issueInHouseComp({
+    kind: "winback",
     email,
     name,
     months: WINBACK_COMP_MONTHS,

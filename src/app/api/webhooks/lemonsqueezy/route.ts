@@ -13,6 +13,7 @@ import { sendCancelSurveyEmail } from "@/lib/cancel-survey-email";
 import { sendEmail } from "@/lib/email-send";
 import { transactionalFrom } from "@/lib/email-senders";
 import { sendMetaEvent } from "@/lib/meta-capi";
+import { applyCompConversion, compConversionSource } from "@/lib/comp-conversion";
 
 export const runtime = "nodejs";
 
@@ -995,7 +996,16 @@ export async function POST(request: Request) {
         && process.env.LEMONSQUEEZY_VARIANT_DAILY_DEALS_ADDON != null
         && String(attrs.variant_id) === String(process.env.LEMONSQUEEZY_VARIANT_DAILY_DEALS_ADDON);
 
-      if (isTrial && !isAddonSubscription) {
+      // Comp-to-paid: a win-back / creator comp user who just chose a paid plan.
+      // Their LS free trial is only the vehicle for the delayed first charge
+      // (moved to the comp end date below), not a real trial, so they skip the
+      // trial bookkeeping, trial drip and trial discount codes.
+      const compSource = isAddonSubscription
+        ? null
+        : await compConversionSource(supabase, userId, recordId);
+      const compKeeper = compSource?.keeper === true;
+
+      if (isTrial && !isAddonSubscription && !compKeeper) {
         basePayload.trial_started_at = new Date().toISOString();
 
         // Record the real trial start for the public recent-activity widget.
@@ -1060,6 +1070,21 @@ export async function POST(request: Request) {
           onConflict: "ls_subscription_id",
         }),
       );
+
+      // Record the comp conversion and, for a running win-back / creator comp,
+      // move the first charge to the comp end date. Best-effort, never throws.
+      if (compSource) {
+        await applyCompConversion(
+          supabase,
+          {
+            userId,
+            lsSubscriptionId: recordId,
+            status,
+            planName: getString(attrs.product_name) ?? getString(attrs.variant_name),
+          },
+          compSource,
+        );
+      }
 
       // Backfill license rows that arrived before this subscription existed.
       // order_created/subscription_created/license_key_created are independent

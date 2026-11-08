@@ -254,6 +254,9 @@ export type CompTracking = {
   activated: boolean;
   activatedAt: string | null;
   lastSeenAt: string | null;
+  /** When the comp converted to a paid plan (comp_grants.converted_at), and the delayed first charge. */
+  convertedAt: string | null;
+  firstChargeAt: string | null;
 };
 
 /** One cancelled customer, enriched with their win-back comp + outcome. */
@@ -427,6 +430,8 @@ export async function loadCancellationDashboard(limit = 300): Promise<Cancellati
           activated: comp.activatedAt != null,
           activatedAt: comp.activatedAt,
           lastSeenAt: comp.lastSeenAt,
+          convertedAt: comp.convertedAt,
+          firstChargeAt: comp.firstChargeAt,
         }
       : null;
     const row: CancelledCustomerRow = {
@@ -438,8 +443,10 @@ export async function loadCancellationDashboard(limit = 300): Promise<Cancellati
       reasonLabel: reasonInfo?.reason ? reasonLabel(reasonInfo.reason) : null,
       wouldReturn: reasonInfo?.wouldReturn ?? null,
       comp: compTracking,
-      reactivated,
-      wonBackViaComp: reactivated && compTracking != null,
+      // A recorded comp-to-paid conversion counts even before the live paid row
+      // is visible here (e.g. the webhook stamped the grant first).
+      reactivated: reactivated || compTracking?.convertedAt != null,
+      wonBackViaComp: compTracking != null && (reactivated || compTracking.convertedAt != null),
     };
     return { userId, row };
   });

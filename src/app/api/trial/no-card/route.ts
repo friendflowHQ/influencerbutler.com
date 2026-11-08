@@ -116,6 +116,7 @@ export async function POST(request: Request) {
     : `${siteUrl}/pricing`;
 
   const result = await issueInHouseComp({
+    kind: "trial",
     email,
     name,
     months: null,

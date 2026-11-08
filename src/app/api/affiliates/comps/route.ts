@@ -263,6 +263,7 @@ export async function POST(request: Request) {
       : null;
 
     const result = await issueInHouseComp({
+      kind: "affiliate",
       email: recipientEmail,
       name: recipientName,
       months: duration.months,

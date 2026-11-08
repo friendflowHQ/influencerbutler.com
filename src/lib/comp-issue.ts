@@ -77,7 +77,16 @@ export type IssueCompInput = {
    * the monthly quota can be counted and the admin Comps page can attribute it.
    */
   issuedByAffiliateId?: string | null;
+  /**
+   * What this comp is for, stored on comp_grants.kind: 'winback' (auto-comp
+   * after a cancel), 'creator' (creator / collab comps from the admin page),
+   * 'affiliate' (affiliate VIP passes), 'trial' (no-card trial), 'referral'.
+   * Drives which end-of-comp emails go out. Omitted -> 'creator'.
+   */
+  kind?: CompKind;
 };
+
+export type CompKind = "winback" | "creator" | "affiliate" | "trial" | "referral";
 
 export type IssueCompResult =
   | {
@@ -369,7 +378,7 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
     : days != null
       ? `${codeSeg}FREE${days}D`
       : `${codeSeg}FREE${months}M`;
-  const grantInsert = await svc.from("comp_grants").insert({
+  const grantRow = {
     ls_subscription_id: sentinel,
     user_id: userId,
     user_email: hasRecipient ? email : null,
@@ -382,7 +391,15 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
     source: "in_house",
     license_key_id: licenseKeyId,
     issued_by_affiliate_id: input.issuedByAffiliateId ?? null,
-  });
+  };
+  let grantInsert = await svc
+    .from("comp_grants")
+    .insert({ ...grantRow, kind: input.kind ?? (input.issuedByAffiliateId ? "affiliate" : "creator") });
+  if (grantInsert.error) {
+    // comp_grants.kind is added by 20261108_comp_conversion.sql, applied by hand
+    // in prod. Until then, insert without it rather than losing the grant row.
+    grantInsert = await svc.from("comp_grants").insert(grantRow);
+  }
   if (grantInsert.error) {
     console.error("comp-issue: comp_grants insert failed (grant still active)", grantInsert.error);
   }

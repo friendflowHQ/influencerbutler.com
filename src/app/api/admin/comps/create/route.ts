@@ -111,7 +111,7 @@ export async function POST(request: Request) {
     seats = parsed;
   }
 
-  const result = await issueInHouseComp({ email, name, months, days, plan, seats, forever, allowExisting });
+  const result = await issueInHouseComp({ email, name, months, days, plan, seats, forever, allowExisting, kind: "creator" });
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
