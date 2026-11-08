@@ -19,6 +19,7 @@ import {
 import { resolveCheckoutDiscount, affiliateCaptureCustom } from "@/lib/promo-resolver";
 import { planMetaFor } from "@/lib/pricing-constants";
 import { readGeo, upsertCheckoutGeo } from "@/lib/recent-activity";
+import { compGrantsForUser, isCompSubscriptionId } from "@/lib/comp-conversion";
 
 type CheckoutRequestBody = {
   plan?: string;
@@ -111,17 +112,29 @@ export async function POST(request: Request) {
     // Exempt: the Deals add-on is a legitimate additive second sub. The
     // guest checkout route (/api/checkout/guest) is exempt by nature (guests
     // have no session and therefore no existing subscription).
+    //
+    // Comps do not count: a comped user (in-house `comp:` subscription, or an LS
+    // subscription started with a 100%-off comp code) must be able to choose a
+    // paid plan before the comp ends. When they have any comp grant we skip the
+    // LS-by-email fallback, because the LS comp subscription itself would read
+    // as live there.
     if (!isAddon) {
-      const { data: liveSub } = await createAdminClient()
+      const admin = createAdminClient();
+      const grants = await compGrantsForUser(admin, userId);
+      const grantIds = new Set(grants.map((g) => g.lsSubscriptionId));
+      const { data: liveSubs } = await admin
         .from("subscriptions")
         .select("ls_subscription_id")
         .eq("user_id", userId)
         .in("status", ["active", "on_trial", "past_due"])
-        .limit(1)
-        .maybeSingle();
+        .limit(20);
+      const livePaid = (liveSubs ?? []).some(
+        (s: { ls_subscription_id?: string | null }) =>
+          !isCompSubscriptionId(s.ls_subscription_id ?? null, grantIds),
+      );
 
       const alreadySubscribed =
-        liveSub != null || (await hasLiveSubscriptionForEmail(email));
+        livePaid || (grants.length === 0 && (await hasLiveSubscriptionForEmail(email)));
 
       if (alreadySubscribed) {
         return NextResponse.json(

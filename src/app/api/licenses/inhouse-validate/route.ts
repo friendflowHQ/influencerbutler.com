@@ -83,7 +83,13 @@ export async function POST(request: Request) {
         .in("status", LIVE_STATUSES)
         .order("created_at", { ascending: false })
     ).data ?? [];
-  if (subs.length === 0) return NextResponse.json({ valid: false });
+  if (subs.length === 0) {
+    // The key is ours and belongs to a real account, it just has no live plan
+    // any more (a comp that ended, or a cancelled plan). Say so explicitly so the
+    // licensing worker and desktop treat it as "access ended" (drop to the Free
+    // Forever butlers) rather than as an unknown key / network blip.
+    return NextResponse.json({ valid: false, reason: "access_ended", ...(await endedCompInfo(svc, userId)) });
+  }
 
   const dailyDealsVariant = process.env.LEMONSQUEEZY_VARIANT_DAILY_DEALS_ADDON || null;
   const addons: Array<{ type: string; status: string; variantId: number | null }> = [];
@@ -112,8 +118,13 @@ export async function POST(request: Request) {
   // Comps page can show "Active". Best-effort, off the response path.
   if (licenseKeyId) after(() => stampSeen(svc, licenseKeyId));
 
+  // When the live plan is a comp, tell the desktop when it ends so it can show
+  // the days-left banner and the end screen.
+  const comp = await liveCompInfo(svc, userId);
+
   return NextResponse.json({
     valid: true,
+    ...(comp ?? {}),
     email: typeof email === "string" ? email : null,
     status: primaryStatus || "active",
     variantId: primaryVariantId ? Number(primaryVariantId) : null,
@@ -143,4 +154,91 @@ async function stampSeen(svc: AdminService, licenseKeyId: string): Promise<void>
   } catch (err) {
     console.warn("inhouse-validate: stampSeen failed", err);
   }
+}
+
+type CompInfo = {
+  expiresAt: string | null;
+  compEndsAt: string | null;
+  compKind: string | null;
+  compPlan: string | null;
+};
+
+/**
+ * The running comp for a user, if their live plan is a comp: the latest future
+ * comp_grants.expires_at that has not been cancelled, and no live PAID plan
+ * alongside it (a converted user is no longer "on a comp"). Best-effort.
+ */
+async function liveCompInfo(svc: AdminService, userId: string): Promise<CompInfo | null> {
+  try {
+    const grants = await readGrants(svc, userId);
+    const now = Date.now();
+    const open = grants
+      .filter((g) => !g.cancelled_at && !g.converted_at && g.expires_at && new Date(g.expires_at).getTime() > now)
+      .sort((a, b) => new Date(b.expires_at as string).getTime() - new Date(a.expires_at as string).getTime());
+    if (open.length === 0) return null;
+    const g = open[0];
+    return {
+      expiresAt: g.expires_at,
+      compEndsAt: g.expires_at,
+      compKind: g.kind ?? null,
+      compPlan: await compPlanName(svc, g.ls_subscription_id),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** For an ended comp: when it ended and what kind it was (for the end screen). */
+async function endedCompInfo(svc: AdminService, userId: string): Promise<Partial<CompInfo> & { compEnded?: boolean }> {
+  try {
+    const grants = await readGrants(svc, userId);
+    const ended = grants
+      .filter((g) => g.expires_at)
+      .sort((a, b) => new Date(b.expires_at as string).getTime() - new Date(a.expires_at as string).getTime());
+    if (ended.length === 0) return {};
+    const g = ended[0];
+    return {
+      compEnded: true,
+      compEndsAt: g.expires_at,
+      compKind: g.kind ?? null,
+      compPlan: await compPlanName(svc, g.ls_subscription_id),
+    };
+  } catch {
+    return {};
+  }
+}
+
+type GrantRow = {
+  ls_subscription_id: string;
+  expires_at: string | null;
+  cancelled_at: string | null;
+  converted_at?: string | null;
+  kind?: string | null;
+};
+
+async function readGrants(svc: AdminService, userId: string): Promise<GrantRow[]> {
+  const full = await svc
+    .from("comp_grants")
+    .select("ls_subscription_id,expires_at,cancelled_at,converted_at,kind")
+    .eq("user_id", userId)
+    .limit(20);
+  if (!full.error) return (full.data ?? []) as GrantRow[];
+  // Pre-migration prod (no kind / converted_at columns yet).
+  const base = await svc
+    .from("comp_grants")
+    .select("ls_subscription_id,expires_at,cancelled_at")
+    .eq("user_id", userId)
+    .limit(20);
+  return (base.data ?? []) as GrantRow[];
+}
+
+/** The plan name on the comp's subscription, with the "(comp)" suffix stripped. */
+async function compPlanName(svc: AdminService, lsSubscriptionId: string): Promise<string | null> {
+  const r = await svc
+    .from("subscriptions")
+    .select("plan_name")
+    .eq("ls_subscription_id", lsSubscriptionId)
+    .maybeSingle();
+  const name = typeof r.data?.plan_name === "string" ? r.data.plan_name : null;
+  return name ? name.replace(/\s*\(comp\)\s*$/i, "") : null;
 }

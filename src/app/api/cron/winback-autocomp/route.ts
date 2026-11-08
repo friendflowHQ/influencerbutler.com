@@ -91,7 +91,25 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Query failed" }, { status: 500 });
   }
 
-  const rows = (data ?? []) as CancelledSub[];
+  const allRows = (data ?? []) as CancelledSub[];
+
+  // Drop cancelled subscriptions that were themselves comps (an LS subscription
+  // started with a 100%-off code, cancelled at expiry by the comp-expiry cron),
+  // even when the grant row has no user_id recorded.
+  const candidateSubIds = allRows
+    .map((r) => r.ls_subscription_id)
+    .filter((id): id is string => typeof id === "string" && id.length > 0);
+  const compSubIds = new Set<string>();
+  if (candidateSubIds.length > 0) {
+    const { data: compRows } = await supabase
+      .from("comp_grants")
+      .select("ls_subscription_id")
+      .in("ls_subscription_id", candidateSubIds);
+    for (const c of compRows ?? []) {
+      if (typeof c.ls_subscription_id === "string") compSubIds.add(c.ls_subscription_id);
+    }
+  }
+  const rows = allRows.filter((r) => !(r.ls_subscription_id && compSubIds.has(r.ls_subscription_id)));
 
   // Dedupe to distinct users whose cancel is past the grace delay, inside max age.
   const seen = new Set<string>();
@@ -123,11 +141,14 @@ export async function GET(request: Request) {
     if (typeof s.user_id === "string") liveUsers.add(s.user_id);
   }
 
+  // ANY comp grant counts (in-house, Lemon Squeezy comp code, affiliate pass).
+  // Filtering on in_house only let an LS-code creator comp loop: the expiry
+  // cron cancels the LS comp subscription, this cron then saw a "cancelled
+  // customer" and handed out a fresh 3 free months plus a win-back email.
   const alreadyComped = new Set<string>();
   const { data: grants } = await supabase
     .from("comp_grants")
-    .select("user_id,source")
-    .eq("source", "in_house")
+    .select("user_id")
     .in("user_id", eligibleUserIds);
   for (const g of grants ?? []) {
     if (typeof g.user_id === "string") alreadyComped.add(g.user_id);
