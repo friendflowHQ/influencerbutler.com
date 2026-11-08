@@ -22,8 +22,10 @@
  * the service-role client after auth. Until that migration is applied to prod
  * the route answers { migrationPending: true } instead of a 500.
  */
+import { after } from "next/server";
 import { resolveLicenseOnly } from "@/lib/license-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { markActivatedForUser } from "@/lib/funnel-activation";
 import {
   isMissingTableError,
   jsonWithCors,
@@ -153,6 +155,15 @@ export async function POST(request: Request) {
     if (isMissingTableError(metaError)) return migrationPendingResponse();
     console.error("desktop/earnings-sync: meta upsert failed", metaError);
     return jsonWithCors({ error: "Could not save sync status" }, 500);
+  }
+
+  // Funnels v2: an earnings sync is a strong activation signal. Off the
+  // response path and never throws.
+  try {
+    const email = auth.auth.email;
+    after(() => markActivatedForUser({ userId, email }, "earnings-sync", { source: "earnings-sync" }));
+  } catch (err) {
+    console.warn("desktop/earnings-sync: activation hook skipped", err);
   }
 
   return jsonWithCors({ ok: true, months: payload.months.length, asins: payload.topAsins.length });

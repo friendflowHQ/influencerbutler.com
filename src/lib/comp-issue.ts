@@ -404,6 +404,24 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
     console.error("comp-issue: comp_grants insert failed (grant still active)", grantInsert.error);
   }
 
+  // Funnels v2: record the comp's plan level ("comp" source, ranked below a
+  // real Lemon Squeezy plan) so the lifecycle emails pick the right track.
+  // Best-effort and loaded lazily; a missing plan-level column is a no-op.
+  if (hasRecipient && !isDailyDeals) {
+    try {
+      const { syncPlanLevelTag } = await import("@/lib/plan-level");
+      const { levelForPlan } = await import("@/lib/pricing-constants");
+      await syncPlanLevelTag(
+        svc as unknown as Parameters<typeof syncPlanLevelTag>[0],
+        email,
+        levelForPlan(input.plan),
+        "comp",
+      );
+    } catch (err) {
+      console.error("comp-issue: plan level sync failed (grant still active)", err);
+    }
+  }
+
   // 4) Deliver the key. Best-effort; the admin UI also shows it. Skipped for
   //    unassigned comps (no real recipient to email or sign in).
   if (hasRecipient) {

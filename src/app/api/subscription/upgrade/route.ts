@@ -10,6 +10,7 @@ import {
   planForVariantId,
 } from "@/lib/lemonsqueezy";
 import { planMetaFor, ADDON_PLAN_DAILY_DEALS } from "@/lib/pricing-constants";
+import { syncPlanLevelForPlanChange } from "@/lib/plan-level";
 
 export const runtime = "nodejs";
 
@@ -240,6 +241,19 @@ export async function POST(request: Request) {
         text: text.slice(0, 500),
       });
       return NextResponse.json({ error: "Could not switch plans" }, { status: 502 });
+    }
+
+    // Funnels v2: plan- tag for the new plan level (the webhook repeats this).
+    // Best-effort; never changes the response.
+    try {
+      await syncPlanLevelForPlanChange(createAdminClient(), {
+        email: user.email ?? null,
+        userId: user.id,
+        variantId: newVariantId,
+        plan: targetPlan ?? null,
+      });
+    } catch (err) {
+      console.error("upgrade: plan level sync failed", err);
     }
 
     // The subscription_updated webhook persists the new variant/plan/renewal to

@@ -21,6 +21,7 @@ import { adminService, type AdminService } from "@/lib/admin-service";
 import { hashLicenseKey } from "@/lib/license-auth";
 import { safeEqual } from "@/lib/auth-secret";
 import { keepPlanUrl } from "@/lib/comp-expiry-customer";
+import { markActivated } from "@/lib/funnel-activation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -136,6 +137,12 @@ export async function POST(request: Request) {
   // Record that this comp's key checked in (first activation + last seen), so the
   // Comps page can show "Active". Best-effort, off the response path.
   if (licenseKeyId) after(() => stampSeen(svc, licenseKeyId));
+
+  // Funnels v2: a license check-in is a WEAK engagement signal (sets
+  // engaged_at only). Off the response path; markActivated never throws.
+  if (typeof email === "string" && email) {
+    after(() => markActivated(email, "license-validate", { source: "inhouse-validate" }));
+  }
 
   // When the live plan is a comp, tell the desktop when it ends so it can show
   // the days-left banner and the end screen.

@@ -20,6 +20,7 @@ import { jsonWithCors, optionsResponse, isMissingTableError, parseTimestamp } fr
 import { tagRecipientsAsContacts } from "@/lib/email-marketing";
 import { isEmailSuppressed, normalizeEmail } from "@/lib/email-unsubscribe";
 import { EXT_REVIEW_TAG, EXT_REVIEW_SOURCE } from "@/lib/extension-review";
+import { markActivated } from "@/lib/funnel-activation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -88,6 +89,10 @@ export async function POST(request: Request) {
   // helper degrades to a no-op if the marketing tables are not applied yet.
   await tagRecipientsAsContacts(db, [email], EXT_REVIEW_TAG, EXT_REVIEW_SOURCE);
   await upsertLifecycle(db, email, installedAt);
+
+  // Funnels v2: an extension install is a WEAK engagement signal (engaged_at
+  // only). markActivated never throws.
+  await markActivated(email, "extension-install", { db, source: "extension-review-optin" });
 
   return jsonWithCors({ ok: true });
 }

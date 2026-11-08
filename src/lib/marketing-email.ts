@@ -17,7 +17,7 @@ import {
   unsubscribeFooterHtml,
   unsubscribeHeaders,
 } from "@/lib/email-unsubscribe";
-import { sendEmail, logSuppressedSkip, type EmailFunnel } from "@/lib/email-send";
+import { sendEmail, logSuppressedSkip, type EmailFunnel, type SendTracking } from "@/lib/email-send";
 import { plainTextToTrackableHtml } from "@/lib/email-marketing";
 import type { EmailStream } from "@/lib/email-senders";
 
@@ -49,7 +49,7 @@ export type MarketingEmail = {
    * never by the bulk cron. The unsubscribe footer + headers are still appended,
    * so the test email is byte-for-byte what a real recipient would receive. */
   bypassSuppression?: boolean;
-};
+} & SendTracking;
 
 /**
  * Sends one marketing email.
@@ -86,6 +86,11 @@ export async function sendMarketingEmail(email: MarketingEmail): Promise<boolean
     category: email.category,
     funnel: email.funnel,
     stream: email.stream ?? "lifecycle",
+    // Funnels v2 tracking: only forwarded when set, so callers that never pass
+    // them log exactly the pre-v2 row.
+    ...(email.stepKey ? { stepKey: email.stepKey } : {}),
+    ...(email.experimentId ? { experimentId: email.experimentId } : {}),
+    ...(email.variant ? { variant: email.variant } : {}),
   });
   return result.ok;
 }

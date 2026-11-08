@@ -44,6 +44,11 @@ import { personalizeReviewBody } from "@/lib/extension-review";
 import { personalizePathBody } from "@/lib/email-path-select";
 import { personalizeBundleSubmitBody } from "@/lib/grow-together-submit";
 import { isMissingTable } from "@/lib/growth-goals";
+import { mergeStepTimestamps, type StampedStep } from "@/lib/funnel-staleness";
+
+// Freshness stamps added by 20261110_funnels_v2_measure.sql. Writes include
+// them and retry without them (isMissingOptionalColumn) until it is applied.
+const SEQUENCE_STAMP_COLS = ["updated_at", "updated_by", "content_updated_at", "content_updated_by"] as const;
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -75,6 +80,11 @@ type SequenceRow = {
   created_at: string;
   auto_pause_enabled?: boolean;
   health_alerted_at?: string | null;
+  // 20261110 freshness stamps (absent before it; GET falls back to created_at).
+  updated_at?: string | null;
+  updated_by?: string | null;
+  content_updated_at?: string | null;
+  content_updated_by?: string | null;
 };
 
 type StepRow = {
@@ -84,6 +94,8 @@ type StepRow = {
   day_offset: number;
   subject: string;
   body: string;
+  updated_at?: string | null;
+  updated_by?: string | null;
 };
 
 type EnrollmentCounts = { active: number; completed: number; cancelled: number };
@@ -170,9 +182,40 @@ function isMissingOptionalColumn(error: { message?: string; code?: string } | nu
   if (!error) return false;
   if (error.code === "42703" || error.code === "PGRST204") return true;
   return (
-    /send_hour|track_opens|auto_pause_enabled|health_alerted_at|stream/i.test(error.message ?? "") &&
+    /send_hour|track_opens|auto_pause_enabled|health_alerted_at|stream|updated_at|updated_by|content_updated/i.test(
+      error.message ?? "",
+    ) &&
     /column|schema cache/i.test(error.message ?? "")
   );
+}
+
+/**
+ * Inserts step rows with updated_at / updated_by (a row that already carries
+ * them, e.g. an unchanged step from mergeStepTimestamps, keeps its own). Retries
+ * without the stamp columns when 20261110 is not applied. Returns the error.
+ */
+async function insertStepsStamped(
+  db: SupabaseClient,
+  rows: Array<Record<string, unknown>>,
+  nowIso: string,
+  actor: string | null,
+): Promise<{ message?: string; code?: string } | null> {
+  const stamped = rows.map((r) => ({
+    ...r,
+    updated_at: typeof r.updated_at === "string" && r.updated_at ? r.updated_at : nowIso,
+    updated_by: "updated_by" in r ? (r.updated_by ?? null) : actor,
+  }));
+  const { error } = await db.from("email_sequence_steps").insert(stamped);
+  if (!error) return null;
+  if (!isMissingOptionalColumn(error)) return error;
+  const bare = rows.map((r) => {
+    const copy = { ...r };
+    delete copy.updated_at;
+    delete copy.updated_by;
+    return copy;
+  });
+  const { error: retryErr } = await db.from("email_sequence_steps").insert(bare);
+  return retryErr ?? null;
 }
 
 /** Validates an untrusted track_opens value: undefined = leave unchanged. */
@@ -423,15 +466,25 @@ export async function GET(request: Request) {
   if (sequences.length > 0) {
     const ids = sequences.map((s) => s.id);
 
-    const { data: stepData, error: stepErr } = await db
+    // updated_at / updated_by need 20261110; retry the original select without them.
+    const STEP_COLS: string = "id, sequence_id, position, day_offset, subject, body";
+    const STEP_COLS_STAMPED: string = `${STEP_COLS}, updated_at, updated_by`;
+    let { data: stepData, error: stepErr } = await db
       .from("email_sequence_steps")
-      .select("id, sequence_id, position, day_offset, subject, body")
+      .select(STEP_COLS_STAMPED)
       .in("sequence_id", ids)
       .order("position", { ascending: true });
+    if (stepErr && isMissingOptionalColumn(stepErr)) {
+      ({ data: stepData, error: stepErr } = await db
+        .from("email_sequence_steps")
+        .select(STEP_COLS)
+        .in("sequence_id", ids)
+        .order("position", { ascending: true }));
+    }
     if (stepErr) {
       console.error("admin emails/sequences: steps query failed", stepErr);
     }
-    for (const step of (stepData ?? []) as StepRow[]) {
+    for (const step of (stepData ?? []) as unknown as StepRow[]) {
       const list = stepsById.get(step.sequence_id) ?? [];
       list.push(step);
       stepsById.set(step.sequence_id, list);
@@ -559,8 +612,15 @@ export async function GET(request: Request) {
       const convertedByStep = convertedById.get(row.id);
       return {
         ...row,
+        // Freshness stamps: null before 20261110, so fall back to created_at.
+        updated_at: row.updated_at ?? row.created_at,
+        updated_by: row.updated_by ?? row.created_by ?? null,
+        content_updated_at: row.content_updated_at ?? row.updated_at ?? row.created_at,
+        content_updated_by: row.content_updated_by ?? row.updated_by ?? row.created_by ?? null,
         steps: (stepsById.get(row.id) ?? []).map((step) => ({
           ...step,
+          updated_at: step.updated_at ?? null,
+          updated_by: step.updated_by ?? null,
           category: stepCategory(row.id, step.position),
           // People whose next step is this one (last_step_sent = position - 1).
           queued: queuedByLastStep?.get(step.position - 1) ?? 0,
@@ -646,17 +706,23 @@ export async function POST(request: Request) {
   // Omitted = column default (true, auto-pause on); only set when explicitly given.
   if (autoPauseEnabled !== undefined) insertRow.auto_pause_enabled = autoPauseEnabled;
   if (stream !== undefined) insertRow.stream = stream;
+  const nowIso = new Date().toISOString();
+  insertRow.updated_at = nowIso;
+  insertRow.updated_by = actor.email;
+  insertRow.content_updated_at = nowIso;
+  insertRow.content_updated_by = actor.email;
 
   let { data, error } = await db.from("email_sequences").insert(insertRow).select("id").single();
-  if (
-    error &&
-    ("send_hour" in insertRow ||
-      "track_opens" in insertRow ||
-      "auto_pause_enabled" in insertRow ||
-      "stream" in insertRow) &&
-    isMissingOptionalColumn(error)
-  ) {
-    // Optional column not applied yet: retry without them so create still works.
+  if (error && isMissingOptionalColumn(error)) {
+    // 20261110 stamp columns not applied yet: retry without only those first,
+    // so stream / send_hour / track_opens (older, applied columns) still save.
+    // Dropping stream here would silently send cold outreach from the
+    // lifecycle domain (column default 'lifecycle').
+    for (const col of SEQUENCE_STAMP_COLS) delete insertRow[col];
+    ({ data, error } = await db.from("email_sequences").insert(insertRow).select("id").single());
+  }
+  if (error && isMissingOptionalColumn(error)) {
+    // An older optional column is missing too: retry without all of them.
     delete insertRow.send_hour;
     delete insertRow.track_opens;
     delete insertRow.auto_pause_enabled;
@@ -675,7 +741,7 @@ export async function POST(request: Request) {
   }
 
   const stepRows = steps.map((step, i) => ({ ...step, sequence_id: data.id, position: i + 1 }));
-  const { error: stepErr } = await db.from("email_sequence_steps").insert(stepRows);
+  const stepErr = await insertStepsStamped(db, stepRows, nowIso, actor.email);
   if (stepErr) {
     console.error("admin emails/sequences: steps insert failed", stepErr);
     // Best-effort rollback so a half-created sequence doesn't linger.
@@ -811,14 +877,52 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
     }
 
+    // Freshness stamps. Steps are replaced wholesale below, so read the old
+    // ones first: unchanged steps keep their updated_at, and the sequence's
+    // content_updated_at only bumps when a step actually changed.
+    const nowIso = new Date().toISOString();
+    let stampedSteps: Array<Record<string, unknown>> | null = null;
+    if (steps) {
+      const OLD_COLS: string = "position, day_offset, subject, body";
+      const OLD_COLS_STAMPED: string = `${OLD_COLS}, updated_at, updated_by`;
+      let { data: oldData, error: oldErr } = await db
+        .from("email_sequence_steps")
+        .select(OLD_COLS_STAMPED)
+        .eq("sequence_id", id)
+        .order("position", { ascending: true });
+      if (oldErr && isMissingOptionalColumn(oldErr)) {
+        ({ data: oldData, error: oldErr } = await db
+          .from("email_sequence_steps")
+          .select(OLD_COLS)
+          .eq("sequence_id", id)
+          .order("position", { ascending: true }));
+      }
+      // A failed read only costs precision (every step is stamped as changed).
+      const oldSteps = oldErr ? [] : ((oldData ?? []) as unknown as StampedStep[]);
+      const merged = mergeStepTimestamps(oldSteps, steps, nowIso, actor.email);
+      stampedSteps = merged.steps.map((step, i) => ({ ...step, sequence_id: id, position: i + 1 }));
+      if (merged.contentChanged || oldErr) {
+        values.content_updated_at = nowIso;
+        values.content_updated_by = actor.email;
+      }
+    }
+    values.updated_at = nowIso;
+    values.updated_by = actor.email;
+
     if (Object.keys(values).length > 0) {
       let { error } = await db.from("email_sequences").update(values).eq("id", id);
-      if (
-        error &&
-        ("send_hour" in values || "track_opens" in values || "stream" in values) &&
-        isMissingOptionalColumn(error)
-      ) {
-        // Optional column not applied yet: retry without them so the rest saves.
+      if (error && isMissingOptionalColumn(error)) {
+        // 20261110 stamp columns not applied yet: retry without only those
+        // first, so a send_hour / stream / track_opens edit still saves.
+        for (const col of SEQUENCE_STAMP_COLS) delete values[col];
+        if (Object.keys(values).length > 0) {
+          ({ error } = await db.from("email_sequences").update(values).eq("id", id));
+        } else {
+          error = null;
+        }
+      }
+      if (error && isMissingOptionalColumn(error)) {
+        // An older optional column is missing too: retry without all of them.
         delete values.send_hour;
         delete values.track_opens;
         delete values.stream;
@@ -834,7 +938,7 @@ export async function PATCH(request: Request) {
       }
     }
 
-    if (steps) {
+    if (steps && stampedSteps) {
       // Replace all steps. In-flight enrollments keep their last_step_sent
       // pointer: editing step content mid-flight is safe, and removing steps
       // completes those people early - accepted v1 semantics.
@@ -846,8 +950,7 @@ export async function PATCH(request: Request) {
         console.error("admin emails/sequences: steps delete failed", deleteErr);
         return NextResponse.json({ error: "Failed to save steps" }, { status: 500 });
       }
-      const stepRows = steps.map((step, i) => ({ ...step, sequence_id: id, position: i + 1 }));
-      const { error: insertErr } = await db.from("email_sequence_steps").insert(stepRows);
+      const insertErr = await insertStepsStamped(db, stampedSteps, nowIso, actor.email);
       if (insertErr) {
         console.error("admin emails/sequences: steps insert failed", insertErr);
         return NextResponse.json({ error: "Failed to save steps" }, { status: 500 });

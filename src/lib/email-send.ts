@@ -25,6 +25,8 @@ export type EmailFunnel =
   | "conversion"
   | "onboarding"
   | "winback"
+  // Funnels v2 Beginner -> Power User nudges (cron affiliate-funnel Step H).
+  | "upgrade"
   | "newsletter"
   | "campaign"
   | "sequence"
@@ -48,6 +50,18 @@ export type EmailSendInput = {
    * "transactional" so a caller that forgets lands on the account-required
    * path, never on a marketing/cold domain. See src/lib/email-senders.ts. */
   stream?: EmailStream;
+} & SendTracking;
+
+/** Funnels v2 per-send tracking, logged to email_sends.step_key /
+ * experiment_id / variant (20261110_funnels_v2_measure). All optional: when
+ * none is set the logged row is exactly what it was before v2. */
+export type SendTracking = {
+  /** Content key actually sent, e.g. 'day5.mod-walmart.power'. */
+  stepKey?: string | null;
+  /** email_experiments.id when this send was part of an A/B test. */
+  experimentId?: string | null;
+  /** Experiment arm, 'a' | 'b'. */
+  variant?: string | null;
 };
 
 export type EmailSendResult = { ok: boolean; id: string | null };
@@ -59,26 +73,63 @@ type LogRow = {
   category: string;
   funnel: EmailFunnel;
   status: "sent" | "suppressed" | "failed";
+  // Funnels v2 tracking columns (20261110). Present only when set, so a row
+  // without tracking is byte-identical to the pre-v2 insert.
+  step_key?: string;
+  experiment_id?: string;
+  variant?: string;
 };
+
+const TRACKING_COLS = ["step_key", "experiment_id", "variant"] as const;
+
+function hasTracking(row: LogRow): boolean {
+  return TRACKING_COLS.some((c) => row[c] !== undefined);
+}
+
+function withoutTracking<T extends Record<string, unknown>>(row: T): T {
+  const copy = { ...row };
+  for (const c of TRACKING_COLS) delete copy[c];
+  return copy;
+}
+
+/** "column does not exist" (Postgres 42703 / PostgREST PGRST204): the
+ * tracking migration has not been applied to this database yet. */
+function isMissingColumn(error: { code?: string } | null | undefined): boolean {
+  return !!error && (error.code === "42703" || error.code === "PGRST204");
+}
 
 async function logSend(row: LogRow): Promise<void> {
   try {
     const db = createAdminClient();
-    const { error } = await db.from("email_sends").insert(row);
+    let { error } = await db.from("email_sends").insert(row);
+    if (error && isMissingColumn(error) && hasTracking(row)) {
+      // Prod lags 20261110: log the send without the tracking columns rather
+      // than lose the row.
+      ({ error } = await db.from("email_sends").insert(withoutTracking(row)));
+    }
     if (error && error.code === "23505" && row.resend_id) {
       // The Resend webhook's email.sent event won the race and inserted a
       // skeleton row (category 'unknown'). Upgrade it with the real metadata.
-      const { error: updateError } = await db
+      const patch: Record<string, unknown> = {
+        recipient: row.recipient,
+        subject: row.subject,
+        category: row.category,
+        funnel: row.funnel,
+        status: row.status,
+      };
+      for (const c of TRACKING_COLS) if (row[c] !== undefined) patch[c] = row[c];
+      let { error: updateError } = await db
         .from("email_sends")
-        .update({
-          recipient: row.recipient,
-          subject: row.subject,
-          category: row.category,
-          funnel: row.funnel,
-          status: row.status,
-        })
+        .update(patch)
         .eq("resend_id", row.resend_id)
         .eq("category", "unknown");
+      if (updateError && isMissingColumn(updateError) && hasTracking(row)) {
+        ({ error: updateError } = await db
+          .from("email_sends")
+          .update(withoutTracking(patch))
+          .eq("resend_id", row.resend_id)
+          .eq("category", "unknown"));
+      }
       if (updateError) console.error("email-send: log upgrade failed", updateError);
     } else if (error) {
       console.error("email-send: log insert failed", error);
@@ -89,11 +140,11 @@ async function logSend(row: LogRow): Promise<void> {
 }
 
 function logRowFor(
-  input: Pick<EmailSendInput, "to" | "subject" | "category" | "funnel">,
+  input: Pick<EmailSendInput, "to" | "subject" | "category" | "funnel"> & SendTracking,
   status: LogRow["status"],
   resendId: string | null = null,
 ): LogRow {
-  return {
+  const row: LogRow = {
     resend_id: resendId,
     recipient: input.to.trim().toLowerCase(),
     subject: input.subject,
@@ -101,6 +152,10 @@ function logRowFor(
     funnel: input.funnel ?? "transactional",
     status,
   };
+  if (input.stepKey) row.step_key = input.stepKey;
+  if (input.experimentId) row.experiment_id = input.experimentId;
+  if (input.variant) row.variant = input.variant;
+  return row;
 }
 
 /**
@@ -109,7 +164,7 @@ function logRowFor(
  * in the admin dashboard instead of vanishing silently.
  */
 export async function logSuppressedSkip(
-  input: Pick<EmailSendInput, "to" | "subject" | "category" | "funnel">,
+  input: Pick<EmailSendInput, "to" | "subject" | "category" | "funnel"> & SendTracking,
 ): Promise<void> {
   await logSend(logRowFor(input, "suppressed"));
 }

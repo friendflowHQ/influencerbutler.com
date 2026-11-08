@@ -49,6 +49,10 @@
       "schedule": "0 23 28-31 * *"
     },
     {
+      "path": "/api/cron/funnel-review-reminder",
+      "schedule": "0 15 1 * *"
+    },
+    {
       "path": "/api/cron/testimonial-requests",
       "schedule": "0 15 * * *"
     },

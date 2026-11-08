@@ -9,6 +9,39 @@ import { useCallback, useEffect, useState } from "react";
 import FunnelStepEditor, { type FunnelStep } from "./FunnelStepEditor";
 import SequenceStepDrawer, { DEFAULT_TEST_EMAIL } from "./SequenceStepDrawer";
 import EmailTrends from "./EmailTrends";
+import ExperimentPanel from "./ExperimentPanel";
+import FunnelGoalBars from "./FunnelGoalBars";
+import UpdatedBadge from "./UpdatedBadge";
+import { parseIsoMs, type ExperimentSummary, type MetricBlock } from "./funnel-admin-format";
+
+/**
+ * The actor of a funnel's most recent update: the step whose updatedAt is the
+ * newest (the API reports updatedAt per funnel but the actor per step).
+ */
+function funnelUpdatedBy(funnel: SystemFunnel): string | null {
+  let best: { t: number; by: string | null } | null = null;
+  for (const step of funnel.steps) {
+    const t = parseIsoMs(step.updatedAt);
+    if (t != null && (!best || t > best.t)) best = { t, by: step.updatedBy ?? null };
+  }
+  return best?.by ?? null;
+}
+
+/** Last content change for a custom sequence, falling back through older API shapes. */
+function sequenceUpdated(seq: Sequence): { at: string | null; by: string | null } | null {
+  if (
+    seq.content_updated_at === undefined &&
+    seq.updated_at === undefined &&
+    seq.content_updated_by === undefined &&
+    seq.updated_by === undefined
+  ) {
+    return null; // pre-v2 API: no badge rather than a misleading "created" date
+  }
+  return {
+    at: seq.content_updated_at ?? seq.updated_at ?? seq.created_at ?? null,
+    by: seq.content_updated_by ?? seq.updated_by ?? null,
+  };
+}
 
 /** The shared category prefix for a whole sequence (seq_<id8>), derived from any
  * step's category by stripping the trailing _s<position>. null when the sequence
@@ -31,6 +64,11 @@ type SystemFunnel = {
   converted: number | null;
   convertedLabel: string | null;
   steps: FunnelStep[];
+  // Funnels v2 fields; absent on the older API.
+  metrics?: { activation?: MetricBlock | null; paid?: MetricBlock | null } | null;
+  updatedAt?: string | null;
+  stale?: "fresh" | "amber" | "red";
+  experiments?: ExperimentSummary[];
 };
 
 type SystemSequencesResponse = {
@@ -78,6 +116,12 @@ type Sequence = {
   auto_paused_at: string | null;
   pause_reason: string | null;
   created_at: string;
+  // Last-edit stamps (20261110 migration). Absent on the older API; null on
+  // rows the route read before the columns existed.
+  updated_at?: string | null;
+  updated_by?: string | null;
+  content_updated_at?: string | null;
+  content_updated_by?: string | null;
   steps: SequenceStep[];
   enrollmentCounts: { active: number; completed: number; cancelled: number };
   // Soonest next send across open enrollments (ISO), or null when none pending.
@@ -1070,12 +1114,19 @@ export default function SequencesSection({
         <div className="mt-3 space-y-4">
           {(systemData?.funnels ?? []).map((funnel) => (
             <div key={funnel.funnel} className="rounded-xl border border-slate-200 bg-white p-4">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <h3 className="text-sm font-semibold text-slate-800">{funnel.name}</h3>
                 {funnel.tooltip ? <InfoDot text={funnel.tooltip} /> : null}
                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600">
                   System
                 </span>
+                {funnel.updatedAt !== undefined ? (
+                  <UpdatedBadge
+                    updatedAt={funnel.updatedAt}
+                    updatedBy={funnelUpdatedBy(funnel)}
+                    stale={funnel.stale}
+                  />
+                ) : null}
               </div>
               <p className="mt-0.5 text-xs text-slate-500">{funnel.description}</p>
               {funnel.entered != null ? (
@@ -1086,6 +1137,15 @@ export default function SequencesSection({
                     : ""}
                 </p>
               ) : null}
+              <FunnelGoalBars
+                funnel={funnel.funnel}
+                targetKey={`system:${funnel.funnel}`}
+                metrics={funnel.metrics}
+                canEdit={true}
+                onSaved={() => {
+                  void refetchSystem();
+                }}
+              />
 
               <div className="mt-3 space-y-1 border-t border-slate-100 pt-3">
                 {funnel.steps.map((step) => {
@@ -1113,7 +1173,17 @@ export default function SequencesSection({
                         ) : null}
                         <span className="font-medium">{step.label}:</span> {step.subjectPreview}
                       </span>
-                      <span className="text-xs text-slate-500">{s.text}</span>
+                      <span className="flex flex-wrap items-baseline gap-2">
+                        <span className="text-xs text-slate-500">{s.text}</span>
+                        {step.updatedAt !== undefined ? (
+                          <UpdatedBadge
+                            updatedAt={step.updatedAt}
+                            updatedBy={step.updatedBy}
+                            showBy={false}
+                            variant="inline"
+                          />
+                        ) : null}
+                      </span>
                     </button>
                   );
                 })}
@@ -1121,6 +1191,19 @@ export default function SequencesSection({
                   <p className="text-sm text-slate-500">No steps.</p>
                 ) : null}
               </div>
+              {funnel.experiments !== undefined ? (
+                <ExperimentPanel
+                  funnel={funnel.funnel}
+                  steps={funnel.steps.map((st) => ({
+                    tier: st.tier,
+                    label: st.label,
+                    day_offset: st.day_offset,
+                    contentKeys: st.contentKeys?.map((k) => ({ key: k.key, label: k.label })),
+                  }))}
+                  initial={funnel.experiments}
+                  canEdit={true}
+                />
+              ) : null}
             </div>
           ))}
           {!systemData && !systemError ? (
@@ -1148,7 +1231,7 @@ export default function SequencesSection({
           <div key={seq.id} className="rounded-xl border border-slate-200 bg-white p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <h3 className="text-sm font-semibold text-slate-800">{seq.name}</h3>
                   <InfoDot text={sequenceTooltip(seq.trigger)} />
                   <span
@@ -1160,6 +1243,10 @@ export default function SequencesSection({
                   >
                     {seq.status}
                   </span>
+                  {(() => {
+                    const upd = sequenceUpdated(seq);
+                    return upd ? <UpdatedBadge updatedAt={upd.at} updatedBy={upd.by} /> : null;
+                  })()}
                 </div>
                 <p className="mt-0.5 text-xs text-slate-500">
                   {triggerLabel(seq.trigger)}
@@ -1503,7 +1590,13 @@ export default function SequencesSection({
           funnelKey={editingFunnelStep.funnel}
           funnelName={editingFunnelStep.funnelName}
           funnelVars={editingFunnelStep.vars}
-          step={editingFunnelStep.step}
+          // Re-read the step from the latest fetch so badges and "edited"
+          // markers refresh after a save while the drawer stays open (tabs).
+          step={
+            systemData?.funnels
+              .find((f) => f.funnel === editingFunnelStep.funnel)
+              ?.steps.find((s) => s.tier === editingFunnelStep.step.tier) ?? editingFunnelStep.step
+          }
           canEdit={true}
           stats={funnelStepStats(editingFunnelStep.step.category).stats}
           onClose={() => setEditingFunnelStep(null)}

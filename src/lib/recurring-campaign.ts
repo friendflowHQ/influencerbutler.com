@@ -16,6 +16,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveAudience, type Audience } from "@/lib/email-audience";
 import { sendEmail } from "@/lib/email-send";
 import { FACEBOOK_GROUP_URL } from "@/lib/social";
+import { LEVEL_PRICE_CENTS, PRICE_CHANGE, priceChangeActive, type PlanLevel } from "@/lib/pricing-constants";
 
 export const RECURRING_CONFIG_KEY = "recurring_group_mirror";
 export const RECURRING_EVERY_DAYS = 14;
@@ -94,8 +95,23 @@ export function advanceRunTime(dueMs: number, nowMs: number, everyDays: number):
   return next;
 }
 
+/** "$24.99" / "$39" from cents. */
+function dollars(cents: number): string {
+  return cents % 100 === 0 ? `$${cents / 100}` : `$${(cents / 100).toFixed(2)}`;
+}
+
+/** Solo monthly price for a level at `now`: today's price before the announced
+ * change, the new one after it (so the copy is right even before
+ * LEVEL_PRICE_CENTS is bumped on the day). */
+export function recurringSoloMonthly(level: PlanLevel, now: Date = new Date()): string {
+  const next = PRICE_CHANGE.prices[level]?.solo?.monthly;
+  const cents =
+    !priceChangeActive(now.getTime()) && typeof next === "number" ? next : (LEVEL_PRICE_CENTS[level].solo?.monthly ?? 0);
+  return dollars(cents);
+}
+
 /** The email body for one run (formatted markup; see campaign-email.ts). */
-export function buildRecurringBody(srcTag: string, withPricingNote: boolean): string {
+export function buildRecurringBody(srcTag: string, withPricingNote: boolean, now: Date = new Date()): string {
   const facebookLink = `Come hang out with us in the Influencer Butler Facebook group: [Join the group](${FACEBOOK_GROUP_URL})`;
   const tail = withPricingNote
     ? [
@@ -114,7 +130,7 @@ export function buildRecurringBody(srcTag: string, withPricingNote: boolean): st
       "- Pro requests go first, and some are built within a day",
       "- You can even make a request during your 14-day trial, depending on the current request log",
     ].join("\n"),
-    "You could hire a developer for thousands of dollars and wait weeks. Or you can be a Pro member for $39/month (less with an affiliate promo code).",
+    `You could hire a developer for thousands of dollars and wait weeks. Or you can be a member from ${recurringSoloMonthly("beginner", now)}/month on Beginner, or ${recurringSoloMonthly("power", now)}/month for every butler on Power User (less with an affiliate promo code).`,
     `[Try Pro free for 14 days](https://www.influencerbutler.com/go/download?src=${srcTag})`,
     "- The Influencer Butler team",
     ...tail,
@@ -311,7 +327,7 @@ export async function runRecurringIfDue(
     const row = {
       name: `Group Mirror Butler - auto ${now.toISOString().slice(0, 10)}`,
       subject: RECURRING_SUBJECT,
-      body: buildRecurringBody(recurringSrcTag(now), includePricingNote(now)),
+      body: buildRecurringBody(recurringSrcTag(now), includePricingNote(now), now),
       audience: { kind: "pasted", emails: chosen },
       status: "sending",
       created_by: "auto:recurring",

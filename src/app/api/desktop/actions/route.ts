@@ -10,8 +10,10 @@
  * { actions: [{ action, count? }] }. Only whitelisted actions are accepted, so
  * a client can never write an arbitrary metric name.
  */
+import { after } from "next/server";
 import { resolveLicenseOnly } from "@/lib/license-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { markActivatedForUser } from "@/lib/funnel-activation";
 import {
   EXT_MAX_BATCH,
   clampInt,
@@ -85,6 +87,15 @@ export async function POST(request: Request) {
     if (isMissingTableError(error)) return migrationPendingResponse();
     console.error("desktop/actions: insert failed", error);
     return jsonWithCors({ error: "Could not save actions" }, 500);
+  }
+
+  // Funnels v2: a desktop action is a strong activation signal. Off the
+  // response path and never throws.
+  try {
+    const { userId, email } = auth.auth;
+    after(() => markActivatedForUser({ userId, email }, "desktop-action", { source: "desktop-actions" }));
+  } catch (err) {
+    console.warn("desktop/actions: activation hook skipped", err);
   }
 
   const recorded = rows.reduce((sum, r) => sum + r.count, 0);

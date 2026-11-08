@@ -14,6 +14,41 @@ import { runSwipeKitBroadcast, type SwipeKitDb } from "@/lib/affiliate-swipe-kit
 import { TRIAL_LENGTH_DAYS } from "@/lib/pricing-constants";
 import { getFunnelOverrides, tierThresholdMs, type FunnelOverride } from "@/lib/funnel-copy";
 import { verifyBearer } from "@/lib/auth-secret";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  funnelsV2Enabled,
+  funnelsV2StartMs,
+  type ModuleKey,
+  type PlanLevelValue,
+} from "@/lib/funnel-types";
+import { findStep } from "@/lib/system-funnels";
+import {
+  buildTrackVars,
+  buildUpgradeToolsLine,
+  contentKeyForStep,
+  exitAssignment,
+  getAssignment,
+  isInFlight,
+  loadNextEvent,
+  loadSubscriberSignals,
+  lockAssignment,
+  rankModules,
+  selectBase,
+  type NextEventInfo,
+  type TrackVars,
+} from "@/lib/funnel-personalize";
+import { canSendLifecycle, isCadenceExemptStep } from "@/lib/email-cadence";
+import {
+  loadUpgradeStepsSent,
+  selectUpgradeTier,
+  sendUpgradeEmail,
+  UPGRADE_FUNNEL,
+  UPGRADE_TIERS,
+  type UpgradeTier,
+} from "@/lib/upgrade-emails";
+import { planForVariantId, planLevelForVariantId } from "@/lib/lemonsqueezy";
+import { parseLevelPlan, type Interval, type Tier } from "@/lib/pricing-constants";
+import type { EmailFunnel } from "@/lib/email-send";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -93,6 +128,174 @@ function getServiceClient(): CronClient | null {
   }) as unknown as CronClient;
 }
 
+// --- Funnels v2 (FUNNELS_V2=1) ----------------------------------------------
+//
+// With the flag off none of this runs and every funnel below behaves exactly
+// as before. With it on, the trial / pro / onboarding / apptrial steps:
+//   1. load the person's walkthrough tags + plan level and their sticky
+//      assignment (email_funnel_assignments; in-memory "unknown" if missing),
+//   2. pick the step's content key (module slots consume modules[0..2]),
+//   3. apply the 44h cadence cap (a deferred step is NOT stamped, so the next
+//      run reconsiders it),
+//   4. hand the content key + track vars to the funnel's own send function
+//      (sendTrialEmail etc. resolve copy with resolveFunnelCopyForKey); a
+//      module slot locks the assignment once it sends.
+
+type V2Ctx = {
+  db: SupabaseClient;
+  now: number;
+  v2StartMs: number;
+  base: string;
+  nextEvent: NextEventInfo | null;
+};
+
+type V2Counts = { deferred: number; exited: number };
+
+async function v2Context(supabase: CronClient): Promise<V2Ctx> {
+  const db = supabase as unknown as SupabaseClient;
+  const siteUrl =
+    process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.influencerbutler.com";
+  const now = Date.now();
+  return {
+    db,
+    now,
+    v2StartMs: funnelsV2StartMs(),
+    base: siteUrl.replace(/\/$/, ""),
+    nextEvent: await loadNextEvent(db, now),
+  };
+}
+
+/** Plan level, seat tier and billing interval for an LS variant id. */
+function planFromVariant(variantId: string | null | undefined): {
+  level: PlanLevelValue | null;
+  seatTier: Tier | null;
+  interval: Interval | null;
+} {
+  if (!variantId) return { level: null, seatTier: null, interval: null };
+  const parsed = parseLevelPlan(planForVariantId(variantId));
+  return {
+    level: planLevelForVariantId(variantId),
+    seatTier: parsed?.tier ?? null,
+    interval: parsed?.interval ?? null,
+  };
+}
+
+type V2Step = {
+  funnel: EmailFunnel;
+  tier: string;
+  email: string;
+  /** Funnel entry time (ms), for the in-flight rule. */
+  entryAtMs: number | null;
+  /** How long ago the step became due (age - threshold), for the overdue exemption. */
+  overdueMs: number;
+  /** Plan level from Lemon Squeezy (trial/pro/upgrade); otherwise read from the subscriber row. */
+  lsLevel?: PlanLevelValue | null;
+  seatTier?: Tier | null;
+  interval?: Interval | null;
+  /** Force a base track (upgrade = beginner). */
+  forceTrack?: "beginner" | "power";
+};
+
+/** What the per-funnel send function gets on top of its normal payload. */
+type V2Personal = { contentKey: string; trackVars: TrackVars; modules: ModuleKey[] };
+
+type V2Plan =
+  | {
+      kind: "send";
+      isModuleSlot: boolean;
+    } & V2Personal
+  | { kind: "exited" }
+  | { kind: "deferred" };
+
+/** Steps 1-3: assignment, content key, cadence cap. */
+async function v2PlanStep(ctx: V2Ctx, s: V2Step): Promise<V2Plan> {
+  const step = findStep(s.funnel, s.tier);
+  const slot = step?.slot ?? "base";
+  const signals = await loadSubscriberSignals(ctx.db, s.email);
+  // A real Beginner/Power variant wins. "legacy" from the variant (pre-split
+  // plan, or an id this env does not map) yields to a stored plan_level.
+  // For a paying "legacy" subscriber only a strong stored source (ls / comp)
+  // may override: a desktop "intent" or inferred level is unauthenticated
+  // intake and must never turn a paying customer's copy into Beginner copy.
+  const strongStored =
+    signals.planLevelSource === "ls" || signals.planLevelSource === "comp" ? signals.planLevel : null;
+  const planLevel =
+    s.lsLevel && s.lsLevel !== "legacy"
+      ? s.lsLevel
+      : s.lsLevel === "legacy"
+        ? (strongStored ?? "legacy")
+        : (signals.planLevel ?? null);
+  const track =
+    s.forceTrack ??
+    selectBase({
+      planLevel,
+      planLevelSource: s.lsLevel ? "ls" : signals.planLevelSource,
+      tags: signals.tags,
+      paid: Boolean(s.lsLevel),
+    });
+  const assignment = await getAssignment(ctx.db, {
+    email: s.email,
+    funnel: s.funnel,
+    computed: { track, modules: rankModules(signals.tags) },
+    inFlight: isInFlight(s.entryAtMs, ctx.v2StartMs),
+    now: ctx.now,
+  });
+  if (assignment.exitedAt) return { kind: "exited" };
+
+  const cadence = await canSendLifecycle(ctx.db, s.email, ctx.now, {
+    tierIsExempt: isCadenceExemptStep(s.funnel, s.tier, slot),
+    overdueMs: s.overdueMs,
+  });
+  if (!cadence.ok) return { kind: "deferred" };
+
+  const key = contentKeyForStep(
+    { tier: s.tier, slot, moduleIndex: step?.moduleIndex },
+    { track: assignment.track, modules: assignment.modules },
+  );
+  const trackVars = buildTrackVars({
+    base: assignment.track,
+    tags: signals.tags,
+    seatTier: s.seatTier ?? null,
+    interval: s.interval ?? null,
+    nextEvent: ctx.nextEvent,
+    site: ctx.base,
+    now: ctx.now,
+  });
+  return {
+    kind: "send",
+    contentKey: key,
+    isModuleSlot: slot === "module",
+    trackVars,
+    modules: assignment.modules,
+  };
+}
+
+type V2Outcome = "sent" | "failed" | "deferred" | "exited";
+
+/**
+ * Steps 1-4 for one person and step. `send` is the funnel's own send function
+ * called with the chosen content key and track vars; it returns true when the
+ * send was handled. "deferred" / "exited" mean nothing was sent and the step
+ * must NOT be stamped.
+ */
+async function v2Deliver(
+  ctx: V2Ctx,
+  s: V2Step,
+  send: (personal: V2Personal) => Promise<boolean>,
+): Promise<V2Outcome> {
+  const plan = await v2PlanStep(ctx, s);
+  if (plan.kind !== "send") return plan.kind;
+  const ok = await send({ contentKey: plan.contentKey, trackVars: plan.trackVars, modules: plan.modules });
+  if (ok && plan.isModuleSlot) await lockAssignment(ctx.db, s.email, s.funnel, ctx.now);
+  return ok ? "sent" : "failed";
+}
+
+function msOrNull(iso: string | null | undefined): number | null {
+  if (!iso) return null;
+  const ms = new Date(iso).getTime();
+  return Number.isFinite(ms) ? ms : null;
+}
+
 // --- Auth ----------------------------------------------------------------
 
 function isAuthorized(request: Request): boolean {
@@ -164,6 +367,54 @@ async function hasPurchased(supabase: CronClient, userId: string): Promise<boole
   return false;
 }
 
+/**
+ * Stamps affiliate_applications.conversion_purchased_at (20261110) with the
+ * affiliate's first real purchase after the 1h conversion email: a paid order
+ * with a positive total that is not a comp. Trials and free comps never count.
+ * Returns how many rows were stamped; 0 when the column is missing or any read
+ * fails. Never throws.
+ */
+async function stampConversionPurchases(supabase: CronClient): Promise<number> {
+  const db = supabase as unknown as SupabaseClient;
+  try {
+    const { data, error } = await db
+      .from("affiliate_applications")
+      .select("user_id,conversion_email_1h_sent_at")
+      .not("conversion_email_1h_sent_at", "is", null)
+      .is("conversion_purchased_at", null)
+      .gte("conversion_email_1h_sent_at", new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString())
+      .limit(PER_RUN_LIMIT);
+    if (error) return 0; // 20261110 not applied (or transient): skip
+    let stamped = 0;
+    for (const row of (data ?? []) as { user_id: string | null; conversion_email_1h_sent_at: string }[]) {
+      if (!row.user_id) continue;
+      const { data: orders, error: oErr } = await db
+        .from("orders")
+        .select("created_at,total,ls_subscription_id")
+        .eq("user_id", row.user_id)
+        .eq("status", "paid")
+        .gte("created_at", row.conversion_email_1h_sent_at)
+        .order("created_at", { ascending: true })
+        .limit(10);
+      if (oErr) continue;
+      const first = ((orders ?? []) as { created_at: string; total: number | string | null; ls_subscription_id: string | null }[]).find(
+        (o) => Number(o.total ?? 0) > 0 && !String(o.ls_subscription_id ?? "").startsWith("comp:"),
+      );
+      if (!first) continue;
+      const { error: upErr } = await db
+        .from("affiliate_applications")
+        .update({ conversion_purchased_at: first.created_at })
+        .eq("user_id", row.user_id)
+        .is("conversion_purchased_at", null);
+      if (!upErr) stamped += 1;
+    }
+    return stamped;
+  } catch (err) {
+    console.error("cron: conversion purchase stamp threw", err);
+    return 0;
+  }
+}
+
 function selectTier(
   row: ApprovedAppRow,
   tiers: ReadonlyArray<(typeof TIERS)[number]>,
@@ -209,6 +460,9 @@ async function sendTierEmails(supabase: CronClient): Promise<Record<ConversionTi
 
   const storeId = process.env.LEMONSQUEEZY_STORE_ID;
   const rows = (data ?? []) as ApprovedAppRow[];
+  // Funnels v2: step tracking, A/B overlay, track vars and the cadence cap,
+  // like every other built-in funnel. Off = the exact pre-v2 payload.
+  const v2 = funnelsV2Enabled() ? await v2Context(supabase) : null;
 
   for (const row of rows) {
     const tier = selectTier(row, tiers);
@@ -252,12 +506,31 @@ async function sendTierEmails(supabase: CronClient): Promise<Record<ConversionTi
 
     if (!code) continue;
 
-    const sent = await sendConversionEmail({
+    const conversionPayload = {
       tier: tier.tier,
       to: row.email,
       name: row.full_name,
       code,
-    });
+    };
+    let sent: boolean;
+    if (v2) {
+      const approvedMs = msOrNull(row.reviewed_at);
+      const outcome = await v2Deliver(
+        v2,
+        {
+          funnel: "conversion",
+          tier: tier.tier,
+          email: row.email,
+          entryAtMs: approvedMs,
+          overdueMs: approvedMs == null ? 0 : v2.now - approvedMs - tier.thresholdMs,
+        },
+        (p) => sendConversionEmail({ ...conversionPayload, contentKey: p.contentKey, trackVars: p.trackVars }),
+      );
+      // "deferred" (cadence cap) / "exited" send nothing and stamp nothing.
+      sent = outcome === "sent";
+    } else {
+      sent = await sendConversionEmail(conversionPayload);
+    }
 
     if (!sent) {
       // If email send failed, don't record the sent-at so we retry next run.
@@ -400,6 +673,8 @@ async function sendTrialEmails(supabase: CronClient): Promise<Record<TrialTier, 
   }
 
   const rows = (data ?? []) as TrialSubRow[];
+  const v2 = funnelsV2Enabled() ? await v2Context(supabase) : null;
+  const v2Counts: V2Counts = { deferred: 0, exited: 0 };
 
   for (const row of rows) {
     if (row.status !== "on_trial" && row.status !== "active") continue;
@@ -496,7 +771,7 @@ async function sendTrialEmails(supabase: CronClient): Promise<Record<TrialTier, 
       }
     }
 
-    const sent = await sendTrialEmail({
+    const trialPayload = {
       tier: tier.tier,
       to: contact.email,
       name: contact.name,
@@ -505,7 +780,29 @@ async function sendTrialEmails(supabase: CronClient): Promise<Record<TrialTier, 
       monthlyPercent,
       annualPercent,
       subscriptionUrl,
-    });
+    };
+    let sent: boolean;
+    if (v2) {
+      const startedMs = msOrNull(row.trial_started_at);
+      const plan = planFromVariant(row.ls_variant_id);
+      const outcome = await v2Deliver(v2, {
+        funnel: "trial",
+        tier: tier.tier,
+        email: contact.email,
+        entryAtMs: startedMs,
+        overdueMs: startedMs == null ? 0 : v2.now - startedMs - tier.thresholdMs,
+        lsLevel: plan.level,
+        seatTier: plan.seatTier,
+        interval: plan.interval,
+      }, (p) => sendTrialEmail({ ...trialPayload, contentKey: p.contentKey, trackVars: p.trackVars }));
+      if (outcome === "deferred" || outcome === "exited") {
+        v2Counts[outcome] += 1;
+        continue;
+      }
+      sent = outcome === "sent";
+    } else {
+      sent = await sendTrialEmail(trialPayload);
+    }
 
     if (!sent) continue;
 
@@ -522,6 +819,7 @@ async function sendTrialEmails(supabase: CronClient): Promise<Record<TrialTier, 
     counts[tier.tier] += 1;
   }
 
+  if (v2) console.info("cron: trial v2", v2Counts);
   return counts;
 }
 
@@ -553,7 +851,94 @@ type ProSubRow = {
   pro_email_day2_sent_at: string | null;
   pro_email_day5_sent_at: string | null;
   pro_email_day10_sent_at: string | null;
+  // Funnels v2 only (extended select):
+  ls_variant_id?: string | null;
+  trial_started_at?: string | null;
+  trial_converted_at?: string | null;
 };
+
+// Funnels v2: a trial that converted to paid enters Pro welcome at day5 (its
+// trial drip already covered day0/day2), anchored on the conversion. Only
+// conversions on or after FUNNELS_V2_START count, so past customers are never
+// mailed.
+const PRO_CONVERTER_TIERS = new Set<ProTier>(["day5", "day10"]);
+
+function isTrialConverter(row: ProSubRow): boolean {
+  return Boolean(row.trial_started_at || (!row.pro_started_at && row.trial_converted_at));
+}
+
+/** Pro welcome entry time under v2: pro_started_at, else (a trial converter
+ * the webhook did not anchor) trial_converted_at. */
+function proAnchorIso(row: ProSubRow): string | null {
+  return row.pro_started_at ?? row.trial_converted_at ?? null;
+}
+
+function selectProTierV2(
+  row: ProSubRow,
+  tiers: ReadonlyArray<(typeof PRO_TIERS)[number]>,
+  v2StartMs: number,
+): (typeof PRO_TIERS)[number] | null {
+  const anchor = msOrNull(proAnchorIso(row));
+  if (anchor == null) return null;
+  const converter = isTrialConverter(row);
+  if (converter && anchor < v2StartMs) return null;
+  const age = Date.now() - anchor;
+  for (const t of tiers) {
+    if (converter && !PRO_CONVERTER_TIERS.has(t.tier)) continue;
+    if (age < t.thresholdMs) continue;
+    const sent = row[t.sentCol as keyof ProSubRow];
+    if (sent) continue;
+    return t;
+  }
+  return null;
+}
+
+const PRO_SELECT =
+  "user_id,status,plan_name,pro_started_at,pro_email_day0_sent_at,pro_email_day2_sent_at,pro_email_day5_sent_at,pro_email_day10_sent_at";
+
+/** Funnels v2 pro candidate rows: the usual pro_started_at rows (with
+ * ls_variant_id + trial columns) plus trial converters since v2 started that
+ * have no pro_started_at. Falls back to the base select on a missing column. */
+async function loadProRowsV2(
+  supabase: CronClient,
+  oldest: string,
+  tiers: ReadonlyArray<(typeof PRO_TIERS)[number]>,
+  v2StartMs: number,
+): Promise<ProSubRow[] | null> {
+  const db = supabase as unknown as SupabaseClient;
+  const ext = `${PRO_SELECT},ls_variant_id,trial_started_at,trial_converted_at`;
+  const main = await db.from("subscriptions").select(ext).lte("pro_started_at", oldest).limit(PER_RUN_LIMIT);
+  if (main.error) {
+    const base = await db.from("subscriptions").select(PRO_SELECT).lte("pro_started_at", oldest).limit(PER_RUN_LIMIT);
+    if (base.error) {
+      console.error("cron: pro welcome query failed", base.error);
+      return null;
+    }
+    // Without the trial columns no row reads as a converter: v1 behavior.
+    return (base.data ?? []) as unknown as ProSubRow[];
+  }
+  let rows = (main.data ?? []) as unknown as ProSubRow[];
+
+  const converterTiers = tiers.filter((t) => PRO_CONVERTER_TIERS.has(t.tier));
+  if (converterTiers.length > 0) {
+    const youngest = new Date(Date.now() - Math.min(...converterTiers.map((t) => t.thresholdMs))).toISOString();
+    const conv = await db
+      .from("subscriptions")
+      .select(ext)
+      .is("pro_started_at", null)
+      .eq("status", "active")
+      .gte("trial_converted_at", new Date(v2StartMs).toISOString())
+      .lte("trial_converted_at", youngest)
+      .is("pro_email_day10_sent_at", null)
+      .limit(PER_RUN_LIMIT);
+    if (conv.error) {
+      console.error("cron: pro converter query failed", conv.error);
+    } else {
+      rows = rows.concat((conv.data ?? []) as unknown as ProSubRow[]);
+    }
+  }
+  return rows;
+}
 
 function selectProTier(
   row: ProSubRow,
@@ -585,20 +970,28 @@ async function sendProEmails(supabase: CronClient): Promise<Record<ProTier, numb
   const tiers = withOverrides(PRO_TIERS, "pro", overrides);
   const oldest = new Date(Date.now() - Math.min(...tiers.map((t) => t.thresholdMs))).toISOString();
 
-  const { data, error } = await supabase
-    .from("subscriptions")
-    .select(
-      "user_id,status,plan_name,pro_started_at,pro_email_day0_sent_at,pro_email_day2_sent_at,pro_email_day5_sent_at,pro_email_day10_sent_at",
-    )
-    .lte("pro_started_at", oldest)
-    .limit(PER_RUN_LIMIT);
+  const v2 = funnelsV2Enabled() ? await v2Context(supabase) : null;
+  const v2Counts: V2Counts = { deferred: 0, exited: 0 };
 
-  if (error) {
-    console.error("cron: pro welcome query failed", error);
-    return counts;
+  let rows: ProSubRow[];
+  if (v2) {
+    const loaded = await loadProRowsV2(supabase, oldest, tiers, v2.v2StartMs);
+    if (!loaded) return counts;
+    rows = loaded;
+  } else {
+    const { data, error } = await supabase
+      .from("subscriptions")
+      .select(PRO_SELECT)
+      .lte("pro_started_at", oldest)
+      .limit(PER_RUN_LIMIT);
+
+    if (error) {
+      console.error("cron: pro welcome query failed", error);
+      return counts;
+    }
+
+    rows = (data ?? []) as ProSubRow[];
   }
-
-  const rows = (data ?? []) as ProSubRow[];
 
   for (const row of rows) {
     // Stop nurturing once the subscription is no longer active (cancelled,
@@ -606,19 +999,41 @@ async function sendProEmails(supabase: CronClient): Promise<Record<ProTier, numb
     // "thanks for subscribing" follow-ups.
     if (row.status !== "active") continue;
 
-    const tier = selectProTier(row, tiers);
+    const tier = v2 ? selectProTierV2(row, tiers, v2.v2StartMs) : selectProTier(row, tiers);
     if (!tier) continue;
 
     const contact = await fetchUserContact(supabase, row.user_id);
     if (!contact) continue;
 
-    const sent = await sendProEmail({
+    const proPayload = {
       tier: tier.tier,
       to: contact.email,
       name: contact.name,
       planName: row.plan_name,
       subscriptionUrl,
-    });
+    };
+    let sent: boolean;
+    if (v2) {
+      const anchorMs = msOrNull(proAnchorIso(row));
+      const plan = planFromVariant(row.ls_variant_id ?? null);
+      const outcome = await v2Deliver(v2, {
+        funnel: "pro",
+        tier: tier.tier,
+        email: contact.email,
+        entryAtMs: anchorMs,
+        overdueMs: anchorMs == null ? 0 : v2.now - anchorMs - tier.thresholdMs,
+        lsLevel: plan.level,
+        seatTier: plan.seatTier,
+        interval: plan.interval,
+      }, (p) => sendProEmail({ ...proPayload, contentKey: p.contentKey, trackVars: p.trackVars }));
+      if (outcome === "deferred" || outcome === "exited") {
+        v2Counts[outcome] += 1;
+        continue;
+      }
+      sent = outcome === "sent";
+    } else {
+      sent = await sendProEmail(proPayload);
+    }
 
     if (!sent) continue;
 
@@ -635,6 +1050,7 @@ async function sendProEmails(supabase: CronClient): Promise<Record<ProTier, numb
     counts[tier.tier] += 1;
   }
 
+  if (v2) console.info("cron: pro v2", v2Counts);
   return counts;
 }
 
@@ -788,21 +1204,33 @@ async function sendFreeOnboardingEmails(supabase: CronClient): Promise<Record<On
   // before 20260813_free_onboarding_funnel.sql is applied), this step no-ops
   // instead of breaking the rest of the cron.
   try {
-    const { data, error } = await supabase
-      .from("email_subscribers")
-      .select(
-        "email,created_at,onboarding_email_day0_sent_at,onboarding_email_day2_sent_at,onboarding_email_day5_sent_at,onboarding_email_day10_sent_at,onboarding_send_failures",
-      )
-      .eq("source", ONBOARDING_SOURCE)
-      .is("unsubscribed_at", null)
-      .is("onboarding_converted_at", null)
-      // Leads that failed too many times are parked, so a dead address can't
-      // hog the per-run budget forever.
-      .is("onboarding_abandoned_at", null)
-      // Exclude rows that already finished the drip (day10 is the last tier) so
-      // the per-run budget goes to leads still in progress.
-      .is("onboarding_email_day10_sent_at", null)
-      .limit(PER_RUN_LIMIT);
+    const v2 = funnelsV2Enabled() ? await v2Context(supabase) : null;
+    const v2Counts: V2Counts = { deferred: 0, exited: 0 };
+    const buildQuery = (supersede: boolean) => {
+      let q = supabase
+        .from("email_subscribers")
+        .select(
+          "email,created_at,onboarding_email_day0_sent_at,onboarding_email_day2_sent_at,onboarding_email_day5_sent_at,onboarding_email_day10_sent_at,onboarding_send_failures",
+        )
+        .eq("source", ONBOARDING_SOURCE)
+        .is("unsubscribed_at", null)
+        .is("onboarding_converted_at", null)
+        // Leads that failed too many times are parked, so a dead address can't
+        // hog the per-run budget forever.
+        .is("onboarding_abandoned_at", null)
+        // Exclude rows that already finished the drip (day10 is the last tier) so
+        // the per-run budget goes to leads still in progress.
+        .is("onboarding_email_day10_sent_at", null);
+      // Funnels v2: the app trial supersedes free onboarding, so a lead who
+      // started the desktop app trial leaves this drip (and its budget).
+      if (supersede) q = q.is("app_trial_started_at", null);
+      return q.limit(PER_RUN_LIMIT);
+    };
+    let { data, error } = await buildQuery(Boolean(v2));
+    if (error && v2) {
+      // app_trial_started_at missing (prod lags 20260922): plain v1 pool.
+      ({ data, error } = await buildQuery(false));
+    }
 
     if (error) {
       // Missing columns on schema lag land here - log and move on.
@@ -843,7 +1271,7 @@ async function sendFreeOnboardingEmails(supabase: CronClient): Promise<Record<On
 
       const referredCode = await referredAffiliateCodeForEmail(supabase, row.email);
 
-      const sent = await sendOnboardingEmail({
+      const onboardingPayload = {
         tier: tier.tier,
         to: row.email,
         pricingUrl: pricingUrlForLead(base, pricingUrl, referredCode),
@@ -851,7 +1279,25 @@ async function sendFreeOnboardingEmails(supabase: CronClient): Promise<Record<On
         extensionUrl,
         discountCode: referredCode === null ? discountCode : null,
         discountPercent: Number.isFinite(discountPercent) ? discountPercent : 0,
-      });
+      };
+      let sent: boolean;
+      if (v2) {
+        const createdMs = msOrNull(row.created_at);
+        const outcome = await v2Deliver(v2, {
+          funnel: "onboarding",
+          tier: tier.tier,
+          email: row.email,
+          entryAtMs: createdMs,
+          overdueMs: createdMs == null ? 0 : v2.now - createdMs - tier.thresholdMs,
+        }, (p) => sendOnboardingEmail({ ...onboardingPayload, contentKey: p.contentKey, trackVars: p.trackVars }));
+        if (outcome === "deferred" || outcome === "exited") {
+          v2Counts[outcome] += 1;
+          continue;
+        }
+        sent = outcome === "sent";
+      } else {
+        sent = await sendOnboardingEmail(onboardingPayload);
+      }
 
       if (!sent) {
         // Only a successful send stamps the tier, so without this a permanently
@@ -887,6 +1333,7 @@ async function sendFreeOnboardingEmails(supabase: CronClient): Promise<Record<On
 
       counts[tier.tier] += 1;
     }
+    if (v2) console.info("cron: onboarding v2", v2Counts);
   } catch (err) {
     console.error("cron: onboarding step threw", err);
     return counts;
@@ -999,6 +1446,35 @@ async function appTrialLeadConverted(supabase: CronClient, email: string): Promi
   }
 }
 
+/** Funnels v2: true when the email's only live, non-comp subscription is a
+ * Lemon Squeezy trial (status on_trial), i.e. the LS trial superseded the app
+ * trial rather than a purchase. Best-effort: false on any error. */
+async function appTrialLeadOnLsTrial(supabase: CronClient, email: string): Promise<boolean> {
+  try {
+    const fetchClient = supabase as unknown as CronRowFetchClient;
+    const { data: profile } = await fetchClient.from("profiles").select("id").eq("email", email).maybeSingle();
+    const userId = profile && typeof profile.id === "string" ? profile.id : null;
+    if (!userId) return false;
+    const { data: subData } = await supabase
+      .from("subscriptions")
+      .select("status,ls_subscription_id")
+      .eq("user_id", userId)
+      .limit(20);
+    if (!Array.isArray(subData)) return false;
+    let trial = false;
+    for (const row of subData) {
+      const r = row as { status?: string | null; ls_subscription_id?: string | null };
+      const id = typeof r.ls_subscription_id === "string" ? r.ls_subscription_id : "";
+      if (id.startsWith("comp:")) continue;
+      if (r.status === "on_trial") trial = true;
+      else if (r.status === "active" || r.status === "past_due" || r.status === "paused") return false;
+    }
+    return trial;
+  } catch {
+    return false;
+  }
+}
+
 async function sendAppTrialEmails(supabase: CronClient): Promise<Record<AppTrialTier, number>> {
   const counts: Record<AppTrialTier, number> = {
     day0: 0, day1: 0, day3: 0, day5: 0, day7: 0, day10: 0,
@@ -1028,6 +1504,8 @@ async function sendAppTrialEmails(supabase: CronClient): Promise<Record<AppTrial
   // before 20260922_app_trial_funnel.sql is applied), this step no-ops instead
   // of breaking the rest of the cron.
   try {
+    const v2 = funnelsV2Enabled() ? await v2Context(supabase) : null;
+    const v2Counts: V2Counts = { deferred: 0, exited: 0 };
     const { data, error } = await supabase
       .from("email_subscribers")
       .select(
@@ -1070,12 +1548,23 @@ async function sendAppTrialEmails(supabase: CronClient): Promise<Record<AppTrial
           .from("email_subscribers")
           .update({ app_trial_converted_at: new Date().toISOString() })
           .eq("email", row.email);
+        if (v2) {
+          // Record WHY they left in the assignment: a Lemon Squeezy trial
+          // supersedes the app trial; anything else is a real purchase.
+          const lsTrial = await appTrialLeadOnLsTrial(supabase, row.email);
+          await exitAssignment(v2.db, {
+            email: row.email,
+            funnel: "apptrial",
+            reason: lsTrial ? "superseded" : "converted",
+            now: v2.now,
+          });
+        }
         continue;
       }
 
       const referredCode = await referredAffiliateCodeForEmail(supabase, row.email);
 
-      const sent = await sendAppTrialEmail({
+      const appTrialPayload = {
         tier: tier.tier,
         to: row.email,
         name: "",
@@ -1083,7 +1572,25 @@ async function sendAppTrialEmails(supabase: CronClient): Promise<Record<AppTrial
         helpUrl,
         discountCode: referredCode === null ? discountCode : null,
         discountPercent,
-      });
+      };
+      let sent: boolean;
+      if (v2) {
+        const startedMs = msOrNull(row.app_trial_started_at);
+        const outcome = await v2Deliver(v2, {
+          funnel: "apptrial",
+          tier: tier.tier,
+          email: row.email,
+          entryAtMs: startedMs,
+          overdueMs: startedMs == null ? 0 : v2.now - startedMs - tier.thresholdMs,
+        }, (p) => sendAppTrialEmail({ ...appTrialPayload, contentKey: p.contentKey, trackVars: p.trackVars }));
+        if (outcome === "deferred" || outcome === "exited") {
+          v2Counts[outcome] += 1;
+          continue;
+        }
+        sent = outcome === "sent";
+      } else {
+        sent = await sendAppTrialEmail(appTrialPayload);
+      }
 
       if (!sent) {
         // Only a successful send stamps the tier, so without a failure counter a
@@ -1116,11 +1623,144 @@ async function sendAppTrialEmails(supabase: CronClient): Promise<Record<AppTrial
 
       counts[tier.tier] += 1;
     }
+    if (v2) console.info("cron: app-trial v2", v2Counts);
   } catch (err) {
     console.error("cron: app-trial step threw", err);
     return counts;
   }
 
+  return counts;
+}
+
+// --- Step H: Beginner -> Power User upgrade emails (Funnels v2 only) --------
+
+// Paying Beginner subscribers get two nudges toward Power User, counted from
+// when their paid plan started (pro_started_at, else trial_converted_at):
+// u1 at day 21, u2 at day 35 (upgrade-emails.ts). There are no per-tier
+// *_sent_at columns: progress lives in email_funnel_step_sends (20261109),
+// which sendUpgradeEmail claims before sending. If that table is missing
+// nothing is sent. Exits once the plan is no longer Beginner (variant check
+// below). Capped by the 44h cadence rule like every other non-urgent step.
+
+// Past this age there is nothing left to send (u2 + a two-week catch-up), so
+// a long-standing Beginner is not blasted on the day v2 turns on.
+const UPGRADE_MAX_AGE_MS = 49 * TRIAL_DAY_MS;
+
+type UpgradeSubRow = {
+  user_id: string;
+  status: string | null;
+  ls_variant_id: string | null;
+  ls_subscription_id: string | null;
+  pro_started_at: string | null;
+  trial_converted_at?: string | null;
+};
+
+async function sendUpgradeEmails(supabase: CronClient): Promise<Record<UpgradeTier, number>> {
+  const counts: Record<UpgradeTier, number> = { u1: 0, u2: 0 };
+  const v2 = await v2Context(supabase);
+  const v2Counts: V2Counts = { deferred: 0, exited: 0 };
+  const db = v2.db;
+
+  // Admin day_offset overrides per tier, as in the other funnels.
+  const overrides = await getFunnelOverrides();
+  const thresholdsMs: Record<UpgradeTier, number> = { u1: 0, u2: 0 };
+  for (const t of UPGRADE_TIERS) {
+    thresholdsMs[t.tier] = tierThresholdMs(overrides, UPGRADE_FUNNEL, t.tier, t.dayOffset * TRIAL_DAY_MS);
+  }
+  const youngest = new Date(v2.now - Math.min(thresholdsMs.u1, thresholdsMs.u2)).toISOString();
+  const oldestIso = new Date(v2.now - UPGRADE_MAX_AGE_MS).toISOString();
+
+  try {
+    const cols = "user_id,status,ls_variant_id,ls_subscription_id,pro_started_at";
+    const direct = await db
+      .from("subscriptions")
+      .select(cols)
+      .eq("status", "active")
+      .gte("pro_started_at", oldestIso)
+      .lte("pro_started_at", youngest)
+      .limit(PER_RUN_LIMIT);
+    if (direct.error) {
+      console.error("cron: upgrade query failed", direct.error);
+      return counts;
+    }
+    let rows = (direct.data ?? []) as unknown as UpgradeSubRow[];
+    // Trial converters the webhook did not anchor with pro_started_at.
+    const converted = await db
+      .from("subscriptions")
+      .select(`${cols},trial_converted_at`)
+      .eq("status", "active")
+      .is("pro_started_at", null)
+      .gte("trial_converted_at", oldestIso)
+      .lte("trial_converted_at", youngest)
+      .limit(PER_RUN_LIMIT);
+    if (!converted.error) rows = rows.concat((converted.data ?? []) as unknown as UpgradeSubRow[]);
+
+    const seen = new Set<string>();
+    for (const row of rows) {
+      if (seen.has(row.user_id)) continue;
+      seen.add(row.user_id);
+      // Comps are not paying customers; skip them.
+      if ((row.ls_subscription_id ?? "").startsWith("comp:")) continue;
+      const plan = planFromVariant(row.ls_variant_id);
+      if (plan.level !== "beginner") continue;
+      const anchorMs = msOrNull(row.pro_started_at ?? row.trial_converted_at ?? null);
+      if (anchorMs == null) continue;
+
+      const contact = await fetchUserContact(supabase, row.user_id);
+      if (!contact) continue;
+      const email = contact.email.trim().toLowerCase();
+
+      const sent = await loadUpgradeStepsSent(db, email);
+      if (!sent) {
+        // Progress table missing (20261109 not applied) or unreadable.
+        return counts;
+      }
+      const tier = selectUpgradeTier({ startedAtMs: anchorMs, sent, now: v2.now, thresholdsMs });
+      if (!tier) continue;
+
+      let status: string = "";
+      const outcome = await v2Deliver(
+        v2,
+        {
+          funnel: UPGRADE_FUNNEL as EmailFunnel,
+          tier,
+          email,
+          // A new funnel: nobody is mid-drip, so the in-flight rule never applies.
+          entryAtMs: null,
+          overdueMs: v2.now - anchorMs - thresholdsMs[tier],
+          lsLevel: plan.level,
+          seatTier: plan.seatTier,
+          interval: plan.interval,
+          forceTrack: "beginner",
+        },
+        async (p) => {
+          const res = await sendUpgradeEmail({
+            tier,
+            to: email,
+            name: contact.name,
+            upgradeUrl: `${v2.base}/dashboard/subscription`,
+            bookCallUrl: `${v2.base}/dashboard/book`,
+            toolsLine: buildUpgradeToolsLine(p.modules),
+            contentKey: p.contentKey,
+            trackVars: p.trackVars,
+            db,
+            now: v2.now,
+          });
+          status = res.status;
+          return res.status === "sent";
+        },
+      );
+      if (outcome === "deferred" || outcome === "exited") {
+        v2Counts[outcome] += 1;
+        continue;
+      }
+      if (status === "migration_pending") return counts;
+      if (outcome === "sent") counts[tier] += 1;
+    }
+  } catch (err) {
+    console.error("cron: upgrade step threw", err);
+  }
+  console.info("cron: upgrade v2", v2Counts);
   return counts;
 }
 
@@ -1176,10 +1816,14 @@ export async function GET(request: Request) {
 
   const approval = await autoApprovePending(supabase);
   const emails = await sendTierEmails(supabase);
+  // Funnels v2 (20261110): real purchases for the conversion funnel paid %.
+  const conversionPurchasesStamped = await stampConversionPurchases(supabase);
   const trial = await sendTrialEmails(supabase);
   const pro = await sendProEmails(supabase);
   const onboarding = await sendFreeOnboardingEmails(supabase);
   const appTrial = await sendAppTrialEmails(supabase);
+  // Funnels v2 only; undefined (dropped from the JSON) when the flag is off.
+  const upgrade = funnelsV2Enabled() ? await sendUpgradeEmails(supabase) : undefined;
   // Monthly affiliate swipe-kit. Guarded by an app_config period check inside
   // the runner, so on all but the first run of each month this is a single
   // cheap app_config read that returns "already sent".
@@ -1190,10 +1834,12 @@ export async function GET(request: Request) {
     ok: true,
     approval,
     emails,
+    conversionPurchasesStamped,
     trial,
     pro,
     onboarding,
     appTrial,
+    upgrade,
     swipeKit,
     webhookEventsPruned,
   });

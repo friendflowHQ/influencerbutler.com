@@ -49,6 +49,7 @@ import { buildCampaignEmail } from "@/lib/campaign-email";
 import { runRecurringIfDue } from "@/lib/recurring-campaign";
 import type { NormalizedAttachment } from "@/lib/email-attachments";
 import { verifyBearer } from "@/lib/auth-secret";
+import { evaluateExperiments } from "@/lib/email-experiments";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -488,6 +489,33 @@ async function sendCampaignRecipients(db: SupabaseClient, summary: Summary): Pro
 // (c) Advance sequence enrollments
 // ---------------------------------------------------------------------------
 
+
+/**
+ * 'paid' when the address's live subscription is a real paid one (active /
+ * past_due / paused, not a comp), 'trial' when it is only on_trial or a free
+ * comp, null when it cannot be told (lookup failed, no profile). Never throws.
+ */
+async function sequenceConversionKind(db: SupabaseClient, rawEmail: string): Promise<"paid" | "trial" | null> {
+  try {
+    const email = rawEmail.trim().toLowerCase();
+    const { data: prof } = await db.from("profiles").select("id").eq("email", email).limit(1);
+    const userId = Array.isArray(prof) && prof[0] && typeof prof[0].id === "string" ? prof[0].id : null;
+    if (!userId) return null;
+    const { data: subs, error } = await db
+      .from("subscriptions")
+      .select("status, ls_subscription_id")
+      .eq("user_id", userId)
+      .in("status", ["active", "past_due", "paused", "on_trial"]);
+    if (error || !Array.isArray(subs) || subs.length === 0) return null;
+    const real = subs.filter((r) => !String(r.ls_subscription_id ?? "").startsWith("comp:"));
+    if (real.some((r) => r.status !== "on_trial")) return "paid";
+    // On a trial, or only on a free comp: converted, but not a purchase. The
+    // column allows 'trial' | 'paid' only, so a comp is recorded as 'trial'.
+    return "trial";
+  } catch {
+    return null;
+  }
+}
 async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<void> {
   const sequences = await activeSequences(db);
   if (!sequences || sequences.length === 0) return;
@@ -583,14 +611,27 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
       // yet: retry with just cancelled_at so stop-on-subscribe still works.
       if (stopOnSubscribe && liveEmails && liveEmails.has(enrollment.email.trim().toLowerCase())) {
         const now = new Date().toISOString();
-        const { error: convErr } = await db
+        const convUpdate: Record<string, unknown> = {
+          cancelled_at: now,
+          converted_at: now,
+          converted_step: enrollment.last_step_sent ?? 0,
+        };
+        // Funnels v2 (20261110): 'paid' vs 'trial', so the sequence A/B paid
+        // guardrail counts real purchases only. Unknown kind is left null.
+        const kind = await sequenceConversionKind(db, enrollment.email);
+        if (kind) convUpdate.converted_kind = kind;
+        let { error: convErr } = await db
           .from("email_sequence_enrollments")
-          .update({
-            cancelled_at: now,
-            converted_at: now,
-            converted_step: enrollment.last_step_sent ?? 0,
-          })
+          .update(convUpdate)
           .eq("id", enrollment.id);
+        if (convErr && "converted_kind" in convUpdate) {
+          // 20261110 not applied: retry without converted_kind.
+          delete convUpdate.converted_kind;
+          ({ error: convErr } = await db
+            .from("email_sequence_enrollments")
+            .update(convUpdate)
+            .eq("id", enrollment.id));
+        }
         if (convErr) {
           await db
             .from("email_sequence_enrollments")
@@ -910,6 +951,14 @@ export async function GET(request: Request) {
     await autoEnrollFromSources(db, summary);
   } catch (err) {
     console.error("cron email-marketing: auto-enroll step threw", err);
+  }
+  // Funnels v2 A/B evaluation: at most once per America/Denver day (from 9am),
+  // claimed via the app_config marker ab_evaluate_YYYY-MM-DD inside
+  // evaluateExperiments, so the 10-minute cadence never peeks more than daily.
+  try {
+    await evaluateExperiments(db, new Date());
+  } catch (err) {
+    console.error("cron email-marketing: A/B evaluate step threw", err);
   }
 
   return NextResponse.json(summary);

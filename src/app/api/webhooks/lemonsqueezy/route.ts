@@ -15,6 +15,10 @@ import { transactionalFrom } from "@/lib/email-senders";
 import { sendMetaEvent } from "@/lib/meta-capi";
 import { applyCompConversion, compConversionSource } from "@/lib/comp-conversion";
 import { sendOwnerChargeAlert } from "@/lib/comp-expiry-customer";
+import { syncPlanLevelFromLsSubscription } from "@/lib/plan-level";
+
+/** The plan-level hook takes the full supabase-js client type. */
+type FunnelDb = Parameters<typeof syncPlanLevelFromLsSubscription>[0];
 
 export const runtime = "nodejs";
 
@@ -1074,6 +1078,19 @@ export async function POST(request: Request) {
         }),
       );
 
+      // Funnels v2: plan level (plan- tag, source ls) and, for a real LS trial
+      // start, supersede the app-trial drip. Best-effort; never throws.
+      try {
+        await syncPlanLevelFromLsSubscription(supabase as unknown as FunnelDb, {
+          email: subEmail,
+          userId,
+          variantId: getIdString(attrs.variant_id),
+          trialStarted: isTrial && !isAddonSubscription && !compKeeper,
+        });
+      } catch (err) {
+        console.error("subscription_created: plan level sync failed", err);
+      }
+
       // Backfill license rows that arrived before this subscription existed.
       // order_created/subscription_created/license_key_created are independent
       // webhook deliveries that can race; when license_key_created wins, the
@@ -1156,6 +1173,19 @@ export async function POST(request: Request) {
           })
           .eq("ls_subscription_id", recordId),
       );
+
+      // Funnels v2: keep the plan- tag in step with a variant change. Best-effort.
+      try {
+        const updEmail = getString(attrs.user_email);
+        const subUserId = updEmail ? null : (await findSubscriptionByLsId(supabase, recordId)).userId;
+        await syncPlanLevelFromLsSubscription(supabase as unknown as FunnelDb, {
+          email: updEmail,
+          userId: subUserId,
+          variantId: getIdString(attrs.variant_id),
+        });
+      } catch (err) {
+        console.error("subscription_updated: plan level sync failed", err);
+      }
 
       // A trial reporting 'active' has just converted to paid. Best-effort
       // analytics stamp; guards inside make it idempotent and trials-only.

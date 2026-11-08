@@ -34,6 +34,16 @@ import {
   type WinbackSegment,
 } from "@/lib/winback-emails";
 import { verifyBearer } from "@/lib/auth-secret";
+import { funnelsV2Enabled } from "@/lib/funnel-types";
+import { planLevelForVariantId } from "@/lib/lemonsqueezy";
+import {
+  buildTrackVars,
+  loadNextEvent,
+  loadSubscriberSignals,
+  selectBase,
+  type NextEventInfo,
+  type TrackVars,
+} from "@/lib/funnel-personalize";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -98,6 +108,79 @@ function dueTier(
   return null;
 }
 
+type WinbackStampRow = {
+  id: string;
+  user_id: string | null;
+  winback_t2_sent_at: string | null;
+  winback_discount_code: string | null;
+  winback_comp_claimed_at: string | null;
+};
+
+/** How a churned customer came back: a free comp, the emailed discount, or on
+ * their own. Pure. */
+function winbackConversionKind(
+  row: Pick<WinbackStampRow, "winback_t2_sent_at" | "winback_discount_code" | "winback_comp_claimed_at">,
+  onlyComp: boolean,
+): "comp" | "discount" | "organic" {
+  if (row.winback_comp_claimed_at || onlyComp) return "comp";
+  if (row.winback_t2_sent_at && row.winback_discount_code) return "discount";
+  return "organic";
+}
+
+/**
+ * Stamps winback_converted_at / winback_conversion_kind (20261110) on emailed
+ * win-back rows whose customer now has a paid live subscription again
+ * (active / past_due; on_trial is not a purchase). The funnel's paid % counts
+ * only non-comp kinds. Returns how many rows were stamped; 0 when the columns
+ * are missing (42703 / PGRST204) or anything fails. Never throws.
+ */
+async function stampWinbackConversions(
+  supabase: ReturnType<typeof createAdminClient>,
+  now: number,
+): Promise<number> {
+  try {
+    const { data, error } = await supabase
+      .from("subscription_cancel_reasons")
+      .select("id,user_id,winback_t2_sent_at,winback_discount_code,winback_comp_claimed_at")
+      .not("winback_t1_sent_at", "is", null)
+      .is("winback_converted_at", null)
+      .gte("created_at", new Date(now - 2 * MAX_AGE_MS).toISOString())
+      .limit(CANDIDATE_LIMIT);
+    if (error) return 0; // 20261110 not applied (or a transient error): skip
+    const rows = ((data ?? []) as WinbackStampRow[]).filter((r) => r.user_id);
+    if (rows.length === 0) return 0;
+    const { data: subs, error: subErr } = await supabase
+      .from("subscriptions")
+      .select("user_id,status,ls_subscription_id")
+      .in("user_id", [...new Set(rows.map((r) => r.user_id as string))])
+      .in("status", ["active", "past_due"]);
+    if (subErr) return 0;
+    const live = new Map<string, { real: boolean }>();
+    for (const sub of subs ?? []) {
+      if (typeof sub.user_id !== "string") continue;
+      const real = !String(sub.ls_subscription_id ?? "").startsWith("comp:");
+      const prev = live.get(sub.user_id);
+      live.set(sub.user_id, { real: Boolean(prev?.real) || real });
+    }
+    let stamped = 0;
+    const nowIso = new Date(now).toISOString();
+    for (const row of rows) {
+      const hit = live.get(row.user_id as string);
+      if (!hit) continue;
+      const { error: upErr } = await supabase
+        .from("subscription_cancel_reasons")
+        .update({ winback_converted_at: nowIso, winback_conversion_kind: winbackConversionKind(row, !hit.real) })
+        .eq("id", row.id)
+        .is("winback_converted_at", null);
+      if (!upErr) stamped += 1;
+    }
+    return stamped;
+  } catch (err) {
+    console.error("cron winback: conversion stamp threw", err);
+    return 0;
+  }
+}
+
 export async function GET(request: Request) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -125,6 +208,9 @@ export async function GET(request: Request) {
   }
 
   const rows = (data ?? []) as CancelRow[];
+  // Funnels v2 (20261110): record real win-backs for the funnel paid %.
+  // Best effort; a no-op until the migration is applied.
+  const winbacksStamped = await stampWinbackConversions(supabase, now);
   const overrides = await getFunnelOverrides();
 
   // Dedupe by user: rows are newest-first, so the first row per user is the most
@@ -151,7 +237,7 @@ export async function GET(request: Request) {
   }
 
   if (candidates.length === 0) {
-    return NextResponse.json({ ok: true, sent: 0, skipped: 0, considered: rows.length });
+    return NextResponse.json({ ok: true, sent: 0, skipped: 0, considered: rows.length, winbacksStamped });
   }
 
   const userIds = candidates.map((c) => c.row.user_id as string);
@@ -178,6 +264,32 @@ export async function GET(request: Request) {
     if (id && email) {
       contactByUser.set(id, { email, name: typeof p.full_name === "string" ? p.full_name : "" });
     }
+  }
+
+  // Funnels v2: per-track template vars ({{beginnerPrice}}, {{priceLockLine}},
+  // {{eventLine}}, ...) from the plan the customer cancelled. Off = nothing
+  // extra is read and the payload is exactly as before.
+  const v2 = funnelsV2Enabled();
+  const lastVariantByUser = new Map<string, string | null>();
+  let nextEvent: NextEventInfo | null = null;
+  if (v2) {
+    try {
+      const { data: pastSubs } = await supabase
+        .from("subscriptions")
+        .select("user_id,ls_variant_id")
+        .in("user_id", userIds);
+      for (const s of pastSubs ?? []) {
+        if (typeof s.user_id !== "string") continue;
+        const variant = s.ls_variant_id == null ? null : String(s.ls_variant_id);
+        // Any non-null variant beats a null one; otherwise first seen wins.
+        if (!lastVariantByUser.has(s.user_id) || (variant && !lastVariantByUser.get(s.user_id))) {
+          lastVariantByUser.set(s.user_id, variant);
+        }
+      }
+    } catch (err) {
+      console.error("cron winback: v2 plan lookup threw", err);
+    }
+    nextEvent = await loadNextEvent(supabase);
   }
 
   const discountPercent = winbackDiscountPercent();
@@ -240,7 +352,7 @@ export async function GET(request: Request) {
       }
     }
 
-    const ok = await sendWinbackEmail({
+    const payload = {
       segment,
       tier,
       to: contact.email,
@@ -249,7 +361,24 @@ export async function GET(request: Request) {
       claimUrl: winbackClaimUrl(row.id),
       discountCode,
       discountPercent,
-    });
+    };
+    let ok: boolean;
+    if (v2) {
+      const signals = await loadSubscriberSignals(supabase, contact.email);
+      const variant = lastVariantByUser.get(userId) ?? null;
+      const planLevel = variant ? planLevelForVariantId(variant) : signals.planLevel;
+      const trackVars: TrackVars = buildTrackVars({
+        base: selectBase({ planLevel, planLevelSource: signals.planLevelSource, tags: signals.tags, paid: Boolean(variant) }),
+        tags: signals.tags,
+        nextEvent,
+        now,
+      });
+      // `trackVars` is the Funnels v2 personalization hand-off to
+      // sendWinbackEmail (merged into the copy vars by winback-emails.ts).
+      ok = await sendWinbackEmail({ ...payload, trackVars } as typeof payload);
+    } else {
+      ok = await sendWinbackEmail(payload);
+    }
     if (!ok) {
       skipped += 1;
       continue;
@@ -266,5 +395,5 @@ export async function GET(request: Request) {
     sent += 1;
   }
 
-  return NextResponse.json({ ok: true, sent, skipped, considered: rows.length });
+  return NextResponse.json({ ok: true, sent, skipped, considered: rows.length, winbacksStamped });
 }

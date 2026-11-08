@@ -58,7 +58,7 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
     eyebrow: "Your 14-day Pro trial is live",
     headline: "Welcome to Influencer Butler",
     subhead:
-      "You have full access for the next 14 days. Install the desktop app, activate your license key, and start scheduling.",
+      "Your plan's butlers are unlocked for the next 14 days. Install the desktop app, activate your license key, and follow the walkthrough to set them up.",
     steps: [
       {
         title: "Download and install the desktop app",
@@ -79,8 +79,8 @@ export const WELCOME_COPY: Record<WelcomeTier, WelcomeCopy> = {
         hrefLabel: "How to set up your key",
       },
       {
-        title: "Watch for a 20% discount code",
-        body: "We'll email you a unique 20% off code (and a 30% annual-switch offer) so you can keep going after day 14.",
+        title: "Watch your inbox for a discount code",
+        body: "Before your trial ends we'll email you a personal code for your first month, plus a bigger one if you switch to annual, so you can keep going after day 14.",
       },
     ],
     callout: {

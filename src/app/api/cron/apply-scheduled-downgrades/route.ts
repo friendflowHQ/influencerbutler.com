@@ -18,6 +18,7 @@ import { logAdminAction } from "@/lib/admin-audit";
 import { lsApi, resolveVariantId } from "@/lib/lemonsqueezy";
 import { verifyBearer } from "@/lib/auth-secret";
 import { sendDowngradeDigest, type DowngradeRow } from "@/lib/scheduled-downgrade-email";
+import { syncPlanLevelForPlanChange } from "@/lib/plan-level";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -158,6 +159,18 @@ export async function GET(request: Request) {
         targetId: row.ls_subscription_id,
         details: { source: "cron:apply-scheduled-downgrades", email, targetPlan: row.scheduled_plan },
       });
+
+      // Funnels v2: plan- tag for the new plan level. Best-effort.
+      try {
+        await syncPlanLevelForPlanChange(admin, {
+          email,
+          userId: row.user_id ?? null,
+          variantId: resolution.variantId,
+          plan: row.scheduled_plan,
+        });
+      } catch (err) {
+        console.error("apply-scheduled-downgrades: plan level sync failed", err);
+      }
 
       applied.push(summary);
     } catch (err) {

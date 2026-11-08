@@ -4,17 +4,24 @@
  * Funnel conversion counts for the email drip sequences, computed from the
  * per-funnel sent-at / converted-at columns that already exist on business
  * tables. Because those columns predate the email_sends log, this view covers
- * ALL history, not just sends since the analytics deploy. Each funnel is
- * best-effort: a failed query (e.g. migration not applied) nulls that funnel
- * instead of failing the page.
+ * ALL history, not just sends since the analytics deploy. Each funnel also
+ * carries its Funnels v2 goal metrics (activation % and paid % over a matured
+ * cohort, from src/lib/funnel-metrics.ts) against its target.
+ *
+ * Each funnel is best-effort: a failed query (e.g. migration not applied)
+ * nulls that number instead of failing the page.
  */
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { computeFunnelMetrics, countFunnelTotals, type FunnelMetrics } from "@/lib/funnel-metrics";
+import { getFunnelTargets, systemTargetKey, targetFor } from "@/lib/funnel-targets";
+import type { FunnelKey } from "@/lib/funnel-types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+type MetricWithTarget = FunnelMetrics["activation"] & { target: number };
 
 export type FunnelStats = {
   key: string;
@@ -23,23 +30,19 @@ export type FunnelStats = {
   convertedLabel: string | null;
   entered: number;
   converted: number | null;
+  metrics: {
+    activation: MetricWithTarget;
+    paid: FunnelMetrics["paid"] & { target: number };
+  };
 };
 
-async function countRows(
-  db: SupabaseClient,
-  table: string,
-  notNullColumn: string,
-): Promise<number | null> {
-  const { count, error } = await db
-    .from(table)
-    .select("*", { count: "exact", head: true })
-    .not(notNullColumn, "is", null);
-  if (error) {
-    console.error(`admin emails/funnels: count failed for ${table}.${notNullColumn}`, error);
-    return null;
-  }
-  return count ?? 0;
-}
+const FUNNELS: { key: FunnelKey; label: string; enteredLabel: string }[] = [
+  { key: "trial", label: "Trial drip", enteredLabel: "trials emailed" },
+  { key: "apptrial", label: "App trial", enteredLabel: "app trials emailed" },
+  { key: "onboarding", label: "Free onboarding", enteredLabel: "downloads emailed" },
+  { key: "winback", label: "Win-back", enteredLabel: "churned emailed" },
+  { key: "conversion", label: "Affiliate conversion", enteredLabel: "affiliates emailed" },
+];
 
 export async function GET(request: Request) {
   const actor = await requirePermission("reports.view", request);
@@ -54,59 +57,30 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
   }
 
-  const [
-    trialEntered,
-    trialConverted,
-    onboardingEntered,
-    onboardingConverted,
-    winbackEntered,
-    winbackConverted,
-    conversionEntered,
-  ] = await Promise.all([
-    countRows(db, "subscriptions", "trial_email_day0_sent_at"),
-    countRows(db, "subscriptions", "trial_converted_at"),
-    countRows(db, "email_subscribers", "onboarding_email_day0_sent_at"),
-    countRows(db, "email_subscribers", "onboarding_converted_at"),
-    countRows(db, "subscription_cancel_reasons", "winback_t1_sent_at"),
-    countRows(db, "subscription_cancel_reasons", "winback_comp_claimed_at"),
-    countRows(db, "affiliate_applications", "conversion_email_1h_sent_at"),
-  ]);
+  const now = Date.now();
+  const targets = await getFunnelTargets(db);
 
-  const funnels: FunnelStats[] = [
-    {
-      key: "trial",
-      label: "Trial drip",
-      enteredLabel: "trials emailed",
-      convertedLabel: "converted to paid",
-      entered: trialEntered ?? 0,
-      converted: trialConverted,
-    },
-    {
-      key: "onboarding",
-      label: "Free onboarding",
-      enteredLabel: "downloads emailed",
-      convertedLabel: "converted",
-      entered: onboardingEntered ?? 0,
-      converted: onboardingConverted,
-    },
-    {
-      key: "winback",
-      label: "Win-back",
-      enteredLabel: "churned emailed",
-      convertedLabel: "comp claimed",
-      entered: winbackEntered ?? 0,
-      converted: winbackConverted,
-    },
-    {
-      key: "conversion",
-      label: "Affiliate conversion",
-      enteredLabel: "affiliates emailed",
-      // No converted-at column exists for this funnel; sends-only for v1.
-      convertedLabel: null,
-      entered: conversionEntered ?? 0,
-      converted: null,
-    },
-  ];
+  const funnels: FunnelStats[] = await Promise.all(
+    FUNNELS.map(async (f) => {
+      const [totals, metrics] = await Promise.all([
+        countFunnelTotals(db, f.key),
+        computeFunnelMetrics(db, f.key, now),
+      ]);
+      const target = targetFor(targets, systemTargetKey(f.key));
+      return {
+        key: f.key,
+        label: f.label,
+        enteredLabel: f.enteredLabel,
+        convertedLabel: totals.convertedLabel,
+        entered: totals.entered ?? 0,
+        converted: totals.converted,
+        metrics: {
+          activation: { ...metrics.activation, target: target.activation },
+          paid: { ...metrics.paid, target: target.paid },
+        },
+      };
+    }),
+  );
 
   return NextResponse.json({ funnels });
 }
