@@ -3,14 +3,15 @@
  *
  * Aggregate email metrics per category (and rolled up per funnel) over a
  * recent window: sent, suppressed skips, failures, delivered, opened, clicked,
- * bounced, complained. Rows are paged out of email_sends and aggregated in JS;
- * volume is modest (drip funnels over a small user base), and a SQL view is
- * the upgrade path if that ever changes.
+ * bounced, complained. Rows are keyset-paged out of email_sends and aggregated
+ * in JS. The cold sequences push this past 100k rows a month, so a SQL
+ * GROUP BY (RPC) is the upgrade path if the 90-day view gets too slow.
  */
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isResendWebhookConfigured } from "@/lib/resend-webhook-secret";
+import { isMissingTableError } from "@/lib/extension-api";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -57,6 +58,8 @@ export type EmailAggregate = {
 };
 
 type SendRow = {
+  id: string;
+  created_at: string;
   category: string;
   funnel: string;
   status: string;
@@ -114,17 +117,34 @@ export async function GET(request: Request) {
   const byCategory = new Map<string, EmailAggregate>();
   const byFunnel = new Map<string, EmailAggregate>();
 
-  let offset = 0;
+  // Keyset paging on (created_at, id), newest first. OFFSET paging made every
+  // batch rescan all the rows before it, so a 30-day window (100k+ sends from
+  // the cold sequences) took 10s+ and a single batch could hit the statement
+  // timeout, which the dashboard then misreported as a missing table.
+  let cursor: { created_at: string; id: string } | null = null;
   for (;;) {
-    const { data, error } = await db
+    let q = db
       .from("email_sends")
-      .select("category, funnel, status, delivered_at, opened_at, clicked_at, bounced_at, complained_at")
+      .select("id, created_at, category, funnel, status, delivered_at, opened_at, clicked_at, bounced_at, complained_at")
       .gte("created_at", cutoff)
       .order("created_at", { ascending: false })
-      .range(offset, offset + BATCH - 1);
+      .order("id", { ascending: false })
+      .limit(BATCH);
+    if (cursor) {
+      q = q.or(
+        `created_at.lt."${cursor.created_at}",and(created_at.eq."${cursor.created_at}",id.lt.${cursor.id})`,
+      );
+    }
+    const { data, error } = await q;
     if (error) {
       console.error("admin emails/summary: query failed", error);
-      return NextResponse.json({ days, categories: [], funnels: [], migrationPending: true });
+      // Only a genuinely absent table means "apply the migration". Anything
+      // else (usually a statement timeout) is a transient load failure.
+      return NextResponse.json(
+        isMissingTableError(error)
+          ? { days, categories: [], funnels: [], migrationPending: true }
+          : { days, categories: [], funnels: [], loadError: true },
+      );
     }
     const rows = (data ?? []) as SendRow[];
     for (const row of rows) {
@@ -139,7 +159,8 @@ export async function GET(request: Request) {
       bump(fun, row);
     }
     if (rows.length < BATCH) break;
-    offset += BATCH;
+    const last = rows[rows.length - 1];
+    cursor = { created_at: last.created_at, id: last.id };
   }
 
   const sortDesc = (a: EmailAggregate, b: EmailAggregate) =>

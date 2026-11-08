@@ -58,6 +58,7 @@ type SummaryResponse = {
   categories: EmailAggregate[];
   funnels: EmailAggregate[];
   migrationPending?: boolean;
+  loadError?: boolean;
   tracking?: TrackingHealth;
 };
 
@@ -125,6 +126,7 @@ type SendsResponse = {
   page: number;
   pageSize: number;
   migrationPending?: boolean;
+  loadError?: boolean;
 };
 
 function pct(numerator: number, denominator: number): string {
@@ -272,6 +274,7 @@ export default function AdminEmailsPage() {
 
   const totalPages = sends ? Math.max(1, Math.ceil(sends.total / sends.pageSize)) : 1;
   const migrationPending = Boolean(summary?.migrationPending || sends?.migrationPending);
+  const loadError = !migrationPending && Boolean(summary?.loadError || sends?.loadError);
   const trackingWarning =
     !migrationPending && summary?.tracking && summary.tracking.status in TRACKING_MESSAGES
       ? TRACKING_MESSAGES[summary.tracking.status]
@@ -313,6 +316,13 @@ export default function AdminEmailsPage() {
         <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
           The email_sends table is missing. Apply supabase/migrations/20260816_email_sends.sql to
           prod, then set up the Resend webhook (RESEND_WEBHOOK_SECRET) to start collecting data.
+        </div>
+      ) : null}
+
+      {loadError ? (
+        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          Email stats could not load this time (the database query timed out). Refresh the page to
+          try again.
         </div>
       ) : null}
 

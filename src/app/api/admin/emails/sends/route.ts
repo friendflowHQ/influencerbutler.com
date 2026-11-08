@@ -8,6 +8,7 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isMissingTableError } from "@/lib/extension-api";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,14 +54,17 @@ export async function GET(request: Request) {
 
   const { data, error, count } = await q;
   if (error) {
-    // A missing table (migration not applied yet) is the most likely cause.
+    // Only a genuinely absent table means "apply the migration"; anything else
+    // (usually a statement timeout) is a transient load failure.
     console.error("admin emails/sends: query failed", error);
+    const missing = isMissingTableError(error);
     return NextResponse.json({
       rows: [],
       total: 0,
       page,
       pageSize: PAGE_SIZE,
-      migrationPending: true,
+      migrationPending: missing,
+      loadError: !missing,
     });
   }
 

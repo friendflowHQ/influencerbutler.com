@@ -22,6 +22,7 @@ type TimeseriesResponse = {
   prevTotals: Totals;
   truncated?: boolean;
   migrationPending?: boolean;
+  loadError?: boolean;
 };
 
 // Order metrics show in, both as cards and as chart lines. Sends leads (it is
@@ -124,6 +125,10 @@ export default function EmailTrends(props: {
       ) : data?.migrationPending ? (
         <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
           The email_sends table is missing, so no trend data is available yet.
+        </div>
+      ) : data?.loadError ? (
+        <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          Trend data could not load this time (the database query timed out). Refresh to try again.
         </div>
       ) : !hasSends ? (
         <div className="mt-3 rounded-xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">

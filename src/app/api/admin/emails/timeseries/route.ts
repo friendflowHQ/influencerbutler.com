@@ -22,6 +22,7 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isMissingTableError } from "@/lib/extension-api";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -48,6 +49,7 @@ export type TrendPoint = {
 export type TrendTotals = Record<Metric, number>;
 
 type SendRow = {
+  id: string;
   created_at: string;
   delivered_at: string | null;
   opened_at: string | null;
@@ -114,15 +116,24 @@ export async function GET(request: Request) {
     index.set(date, { date, sent: 0, delivered: 0, opened: 0, clicked: 0, bounced: 0 });
   }
 
-  let offset = 0;
+  // Keyset paging on (created_at, id): OFFSET paging rescans every earlier row
+  // per batch and can hit the statement timeout on the 100k+ row windows.
+  let fetched = 0;
+  let cursor: { created_at: string; id: string } | null = null;
   let truncated = false;
   for (;;) {
     let q = db
       .from("email_sends")
-      .select("created_at, delivered_at, opened_at, clicked_at, bounced_at")
+      .select("id, created_at, delivered_at, opened_at, clicked_at, bounced_at")
       .gte("created_at", cutoff)
       .order("created_at", { ascending: false })
-      .range(offset, offset + BATCH - 1);
+      .order("id", { ascending: false })
+      .limit(BATCH);
+    if (cursor) {
+      q = q.or(
+        `created_at.lt."${cursor.created_at}",and(created_at.eq."${cursor.created_at}",id.lt.${cursor.id})`,
+      );
+    }
     // At most one scope filter is expected; apply whichever was passed.
     if (category) q = q.eq("category", category);
     else if (prefix) q = q.like("category", `${prefix}%`);
@@ -139,7 +150,8 @@ export async function GET(request: Request) {
         points: [],
         totals: blankTotals(),
         prevTotals: blankTotals(),
-        migrationPending: true,
+        migrationPending: isMissingTableError(error),
+        loadError: !isMissingTableError(error),
       });
     }
     const rows = (data ?? []) as SendRow[];
@@ -159,9 +171,11 @@ export async function GET(request: Request) {
         if (point) point[metric] += 1;
       }
     }
-    offset += rows.length;
+    fetched += rows.length;
     if (rows.length < BATCH) break;
-    if (offset >= MAX_ROWS) {
+    const last = rows[rows.length - 1];
+    cursor = { created_at: last.created_at, id: last.id };
+    if (fetched >= MAX_ROWS) {
       truncated = true;
       break;
     }
