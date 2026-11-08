@@ -90,7 +90,26 @@ export async function listCancellations(limit = 200): Promise<CancellationRow[]>
     .limit(limit);
   if (rowsErr) console.error("listCancellations: query failed", rowsErr);
 
-  const list = rows ?? [];
+  // Hide the duplicate an in-app cancel used to leave behind: the webhook raced
+  // the in-app save and filed an unanswered emailed-survey row for the same
+  // cancellation (same subscription, or same customer within 10 minutes of the
+  // in-app answer). The in-app row already holds the real answer. A duplicate
+  // that was later answered by email is kept.
+  const DUP_WINDOW_MS = 10 * 60 * 1000;
+  const inApp = (rows ?? []).filter((r) => str(r.source) !== "email");
+  const inAppSubs = new Set(inApp.map((r) => str(r.subscription_id)).filter(Boolean) as string[]);
+  const isRacedDuplicate = (r: Record<string, unknown>): boolean => {
+    if (str(r.source) !== "email" || str(r.completed_at)) return false;
+    const sub = str(r.subscription_id);
+    if (sub && inAppSubs.has(sub)) return true;
+    const t = Date.parse(str(r.created_at) ?? "");
+    return inApp.some(
+      (a) =>
+        str(a.user_id) === str(r.user_id) &&
+        Math.abs(Date.parse(str(a.created_at) ?? "") - t) <= DUP_WINDOW_MS,
+    );
+  };
+  const list = (rows ?? []).filter((r) => !isRacedDuplicate(r));
   if (list.length === 0) return [];
 
   const optionalByRow = new Map<string, { offerFeedback: string | null; manualOfferSentAt: string | null }>();

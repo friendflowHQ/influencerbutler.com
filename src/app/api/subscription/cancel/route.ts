@@ -75,24 +75,17 @@ export async function POST(request: Request) {
       );
     }
 
-    // Cancel via Lemon Squeezy API - cancels at the end of the current period.
-    const lsResponse = await lsApi(`/subscriptions/${subscriptionId}`, {
-      method: "DELETE",
-    });
-
-    if (!lsResponse.ok) {
-      const text = await lsResponse.text();
-      console.error("Lemon Squeezy cancel failed", { status: lsResponse.status, text });
-      return NextResponse.json(
-        { error: "Failed to cancel subscription with payment provider" },
-        { status: 502 },
-      );
-    }
-
-    // Log the reason with the service-role client (RLS only lets users SELECT
-    // their own rows). offer_feedback arrives with the hand-applied 20261017
-    // migration; if prod lags, the insert errors on that column, so retry
-    // without it (folding the text into feedback) rather than lose the answer.
+    // Save the reason BEFORE cancelling with Lemon Squeezy. LS fires the
+    // subscription_cancelled webhook the moment the DELETE lands, and that
+    // webhook emails a "why did you cancel?" survey unless it already finds a
+    // reason row. Saving afterwards lost that race, so customers who had just
+    // answered in the app got the email anyway and left a duplicate unanswered
+    // row. If the LS cancel then fails, the row is removed again.
+    //
+    // Service-role client (RLS only lets users SELECT their own rows).
+    // offer_feedback arrives with the hand-applied 20261017 migration; if prod
+    // lags, the insert errors on that column, so retry without it (folding the
+    // text into feedback) rather than lose the answer.
     const baseRow = {
       user_id: user.id,
       subscription_id: subscriptionId,
@@ -105,9 +98,12 @@ export async function POST(request: Request) {
       offer_shown: offerShown,
       offer_accepted: false,
     };
+    let reasonRowId: string | null = null;
     const first = await admin
       .from("subscription_cancel_reasons")
-      .insert({ ...baseRow, offer_feedback: offerFeedback });
+      .insert({ ...baseRow, offer_feedback: offerFeedback })
+      .select("id")
+      .single();
     if (first.error) {
       console.error("cancel: reason insert failed, retrying without offer_feedback", first.error);
       const merged = offerFeedback
@@ -115,8 +111,35 @@ export async function POST(request: Request) {
         : feedback;
       const retry = await admin
         .from("subscription_cancel_reasons")
-        .insert({ ...baseRow, feedback: merged });
+        .insert({ ...baseRow, feedback: merged })
+        .select("id")
+        .single();
       if (retry.error) console.error("cancel: reason insert retry failed", retry.error);
+      else reasonRowId = typeof retry.data?.id === "string" ? retry.data.id : null;
+    } else {
+      reasonRowId = typeof first.data?.id === "string" ? first.data.id : null;
+    }
+
+    // Cancel via Lemon Squeezy API - cancels at the end of the current period.
+    const lsResponse = await lsApi(`/subscriptions/${subscriptionId}`, {
+      method: "DELETE",
+    });
+
+    if (!lsResponse.ok) {
+      const text = await lsResponse.text();
+      console.error("Lemon Squeezy cancel failed", { status: lsResponse.status, text });
+      // Nothing was cancelled, so the reason row must not count as churn.
+      if (reasonRowId) {
+        const { error: undoErr } = await admin
+          .from("subscription_cancel_reasons")
+          .delete()
+          .eq("id", reasonRowId);
+        if (undoErr) console.error("cancel: could not remove reason row after LS failure", undoErr);
+      }
+      return NextResponse.json(
+        { error: "Failed to cancel subscription with payment provider" },
+        { status: 502 },
+      );
     }
 
     return NextResponse.json({ ok: true });

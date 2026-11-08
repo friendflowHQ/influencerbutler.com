@@ -56,6 +56,8 @@ type SelectFilter = ListResult & {
   eq: (column: string, value: string) => SelectFilter;
   neq: (column: string, value: string) => SelectFilter;
   ilike: (column: string, pattern: string) => SelectFilter;
+  gte: (column: string, value: string) => SelectFilter;
+  limit: (count: number) => SelectFilter;
   maybeSingle: () => QueryResult;
 };
 
@@ -436,6 +438,36 @@ async function findOrderByLsId(
     userId: getString(data?.user_id),
     lsSubscriptionId: getString(data?.ls_subscription_id),
   };
+}
+
+/**
+ * True when this cancellation already has a reason row, so no survey email is
+ * needed. Matches the subscription id, and (as a backstop against the in-app
+ * cancel racing this webhook) any in-app answer from the same customer in the
+ * last 15 minutes. Uses limit(1), not maybeSingle(): a customer with two rows
+ * made maybeSingle() error, which read as "no row" and re-sent the survey.
+ */
+async function hasCancelReason(
+  supabase: SupabaseServiceClient,
+  lsSubscriptionId: string,
+  userId: string | null,
+): Promise<boolean> {
+  const bySub = await supabase
+    .from("subscription_cancel_reasons")
+    .select("id")
+    .eq("subscription_id", lsSubscriptionId)
+    .limit(1);
+  if ((bySub.data ?? []).length > 0) return true;
+  if (!userId) return false;
+  const since = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+  const recentInApp = await supabase
+    .from("subscription_cancel_reasons")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("source", "in_app")
+    .gte("created_at", since)
+    .limit(1);
+  return (recentInApp.data ?? []).length > 0;
 }
 
 async function recordExists(supabase: SupabaseServiceClient, table: string, column: string, value: string) {
@@ -1160,14 +1192,9 @@ export async function POST(request: Request) {
       // have left a subscription_cancel_reasons row), email a one-question
       // survey so no churn goes unmeasured. Best-effort: never fail the webhook.
       try {
-        const alreadySurveyed = await recordExists(
-          supabase,
-          "subscription_cancel_reasons",
-          "subscription_id",
-          recordId,
-        );
+        const { userId } = await findSubscriptionByLsId(supabase, recordId);
+        const alreadySurveyed = await hasCancelReason(supabase, recordId, userId);
         if (!alreadySurveyed) {
-          const { userId } = await findSubscriptionByLsId(supabase, recordId);
           const email = getString(attrs.user_email);
           if (userId && email) {
             const token = randomUUID();
