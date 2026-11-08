@@ -14,11 +14,12 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isMissingTableError } from "@/lib/extension-api";
+import { callLinksAdmin, linksAdminConfigured } from "@/lib/links-admin";
 
 export type ProofMetricKey =
   | "deals_posted"
   | "product_scans"
-  | "orders_analyzed"
+  | "digital_products_created"
   | "campaigns_accepted"
   | "social_posts_published"
   | "creator_messaged"
@@ -31,7 +32,11 @@ export type ProofMetricKey =
 // pre-aggregated client_action_totals view.
 type ProofSource =
   | { kind: "table_count"; table: string }
-  | { kind: "events_total"; metric: string };
+  | { kind: "events_total"; metric: string }
+  // Creator digital products (Foyer + Digital Product Butler) live in the
+  // links Worker's D1, not Supabase, so they are counted through its admin
+  // stores route (totals.productsTotal: every product ever created).
+  | { kind: "links_products_total" };
 
 type ProofMetricDef = {
   key: ProofMetricKey;
@@ -55,9 +60,9 @@ export const PROOF_METRICS: ProofMetricDef[] = [
     source: { kind: "table_count", table: "extension_product_scans" },
   },
   {
-    key: "orders_analyzed",
-    defaultLabel: "Orders Analyzed",
-    source: { kind: "table_count", table: "extension_orders" },
+    key: "digital_products_created",
+    defaultLabel: "Digital Products Created",
+    source: { kind: "links_products_total" },
   },
   {
     key: "campaigns_accepted",
@@ -110,13 +115,13 @@ export const DEFAULT_PROOF_CONFIG: ProofConfig = {
     // each total (so the movement is visible and the claim is defensible).
     // Product scans is the highest-frequency real action and its live count is
     // already in the thousands, so it carries the smallest baseline-to-live
-    // ratio. Ordered as a believable funnel (scan many products, analyze fewer
-    // orders, post fewer deals/posts, accept the fewest brand campaigns). The
-    // desktop-only metrics stay 0 so the front-end (which hides any metric
-    // whose total is 0) leaves them off until their desktop reporting ships.
+    // ratio. Digital products created is the real count from the links Worker
+    // with no baseline. The desktop-only metrics stay 0 so the front-end (which
+    // hides any metric whose total is 0) leaves them off until their desktop
+    // reporting ships.
     deals_posted: 3400,
     product_scans: 12400,
-    orders_analyzed: 6900,
+    digital_products_created: 0,
     campaigns_accepted: 1320,
     social_posts_published: 2600,
     creator_messaged: 0,
@@ -230,6 +235,19 @@ type AdminClient = ReturnType<typeof createAdminClient>;
  */
 async function liveCount(admin: AdminClient, source: ProofSource): Promise<number> {
   try {
+    if (source.kind === "links_products_total") {
+      if (!linksAdminConfigured()) return 0;
+      const res = await callLinksAdmin<{ totals?: { productsTotal?: unknown } }>(
+        "/admin/commerce/stores",
+        { query: { limit: 1 } },
+      );
+      if (!res.ok) {
+        console.error(`proof-metrics: links products total failed (${res.status})`, res.error);
+        return 0;
+      }
+      const total = Number(res.data?.totals?.productsTotal ?? 0);
+      return Number.isFinite(total) && total > 0 ? Math.round(total) : 0;
+    }
     if (source.kind === "table_count") {
       const { count, error } = await admin
         .from(source.table)
