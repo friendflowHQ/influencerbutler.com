@@ -16,14 +16,15 @@
  *
  * We fetch a double-length window (2 * days) so the response can carry a delta
  * vs the immediately prior window, the same trick the Growth dashboard uses.
- * Rows are paged out of email_sends and bucketed in JS; a SQL view is the
- * upgrade path if volume ever outgrows that (see summary/route.ts).
+ * Counted per UTC day in Postgres by public.email_sends_daily
+ * (20261111_email_sends_rollups.sql); until that migration is applied the
+ * route falls back to scanning rows and bucketing in JS, capped at MAX_ROWS.
  */
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isMissingTableError } from "@/lib/extension-api";
-import { scanNewestFirst } from "@/lib/email-sends-scan";
+import { isMissingFunctionError, scanNewestFirst } from "@/lib/email-sends-scan";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -116,9 +117,30 @@ export async function GET(request: Request) {
     index.set(date, { date, sent: 0, delivered: 0, opened: 0, clicked: 0, bounced: 0 });
   }
 
-  // Newest-first scan without OFFSET (see scanNewestFirst): OFFSET rescans
-  // every earlier row per batch and can hit the statement timeout on the
-  // 100k+ row windows. Every query carries the same scope filter.
+  // Fast path: per-day counts grouped in Postgres
+  // (20261111_email_sends_rollups.sql), no row cap.
+  const rollup = await db
+    .rpc("email_sends_daily", {
+      p_since: cutoff,
+      p_category: category,
+      p_prefix: prefix,
+      p_broadcast_id: broadcastId,
+      p_funnel: funnel,
+    });
+  let error: { code?: string; message?: string } | null = rollup.error;
+  let truncated = false;
+  if (!error) {
+    for (const row of (rollup.data ?? []) as Array<{ day: string } & TrendTotals>) {
+      const point = index.get(row.day);
+      if (!point) continue;
+      for (const metric of ["sent", "delivered", "opened", "clicked", "bounced"] as const) {
+        point[metric] += Number(row[metric]) || 0;
+      }
+    }
+  }
+
+  // Migration not applied yet: newest-first row scan without OFFSET (see
+  // scanNewestFirst), capped at MAX_ROWS. Every query carries the same scope.
   const cols = "created_at, delivered_at, opened_at, clicked_at, bounced_at";
   // At most one scope filter is expected; apply whichever was passed.
   const scope: { col: string; op: "eq" | "like"; value: string } | null = category
@@ -130,7 +152,7 @@ export async function GET(request: Request) {
         : funnel
           ? { col: "funnel", op: "eq", value: funnel }
           : null;
-  const { error, truncated } = await scanNewestFirst<SendRow>(
+  if (error && isMissingFunctionError(error)) ({ error, truncated } = await scanNewestFirst<SendRow>(
     (before, limit) => {
       let q = db.from("email_sends").select(cols).gte("created_at", cutoff);
       if (scope) q = scope.op === "eq" ? q.eq(scope.col, scope.value) : q.like(scope.col, scope.value);
@@ -160,7 +182,7 @@ export async function GET(request: Request) {
       }
     },
     { batch: BATCH, maxRows: MAX_ROWS },
-  );
+  ));
   if (error) {
     console.error("admin emails/timeseries: query failed", error);
     return NextResponse.json({

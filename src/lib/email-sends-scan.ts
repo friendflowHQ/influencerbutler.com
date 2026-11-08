@@ -10,6 +10,15 @@
  */
 
 type ScanError = { code?: string; message?: string };
+
+/**
+ * The rollup RPC (supabase/migrations/20261111_email_sends_rollups.sql) is not
+ * applied yet: PostgREST PGRST202 (function not in schema cache) or Postgres
+ * 42883 (undefined_function). Callers fall back to scanNewestFirst.
+ */
+export function isMissingFunctionError(error: ScanError | null): boolean {
+  return error?.code === "PGRST202" || error?.code === "42883";
+}
 type ScanResult<T> = PromiseLike<{ data: T[] | null; error: ScanError | null }>;
 
 export type ScanOutcome = { error: ScanError | null; fetched: number; truncated: boolean };

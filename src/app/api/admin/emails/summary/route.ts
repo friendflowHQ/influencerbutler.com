@@ -3,16 +3,17 @@
  *
  * Aggregate email metrics per category (and rolled up per funnel) over a
  * recent window: sent, suppressed skips, failures, delivered, opened, clicked,
- * bounced, complained. Rows are keyset-paged out of email_sends and aggregated
- * in JS. The cold sequences push this past 100k rows a month, so a SQL
- * GROUP BY (RPC) is the upgrade path if the 90-day view gets too slow.
+ * bounced, complained. Counted in Postgres by public.email_sends_summary
+ * (20261111_email_sends_rollups.sql); until that migration is applied the
+ * route falls back to scanning rows out of email_sends and counting in JS,
+ * which takes 10-30s at 100k+ sends a month.
  */
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isResendWebhookConfigured } from "@/lib/resend-webhook-secret";
 import { isMissingTableError } from "@/lib/extension-api";
-import { scanNewestFirst } from "@/lib/email-sends-scan";
+import { isMissingFunctionError, scanNewestFirst } from "@/lib/email-sends-scan";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -70,15 +71,34 @@ type SendRow = {
   complained_at: string | null;
 };
 
-function bump(agg: EmailAggregate, row: SendRow) {
-  if (row.status === "suppressed") agg.suppressed += 1;
-  else if (row.status === "failed") agg.failed += 1;
-  else agg.sent += 1;
-  if (row.delivered_at) agg.delivered += 1;
-  if (row.opened_at) agg.opened += 1;
-  if (row.clicked_at) agg.clicked += 1;
-  if (row.bounced_at) agg.bounced += 1;
-  if (row.complained_at) agg.complained += 1;
+type Counts = Omit<EmailAggregate, "key" | "funnel">;
+
+// One row of public.email_sends_summary (already grouped in Postgres).
+type RollupRow = Counts & { category: string; funnel: string };
+
+// Counting rules for a single row; the SQL rollup mirrors these exactly.
+function rowCounts(row: SendRow): Counts {
+  return {
+    sent: row.status !== "suppressed" && row.status !== "failed" ? 1 : 0,
+    suppressed: row.status === "suppressed" ? 1 : 0,
+    failed: row.status === "failed" ? 1 : 0,
+    delivered: row.delivered_at ? 1 : 0,
+    opened: row.opened_at ? 1 : 0,
+    clicked: row.clicked_at ? 1 : 0,
+    bounced: row.bounced_at ? 1 : 0,
+    complained: row.complained_at ? 1 : 0,
+  };
+}
+
+function addCounts(agg: EmailAggregate, c: Counts) {
+  agg.sent += Number(c.sent) || 0;
+  agg.suppressed += Number(c.suppressed) || 0;
+  agg.failed += Number(c.failed) || 0;
+  agg.delivered += Number(c.delivered) || 0;
+  agg.opened += Number(c.opened) || 0;
+  agg.clicked += Number(c.clicked) || 0;
+  agg.bounced += Number(c.bounced) || 0;
+  agg.complained += Number(c.complained) || 0;
 }
 
 function blank(key: string, funnel: string): EmailAggregate {
@@ -117,34 +137,38 @@ export async function GET(request: Request) {
   const byCategory = new Map<string, EmailAggregate>();
   const byFunnel = new Map<string, EmailAggregate>();
 
-  // Newest-first scan without OFFSET (see scanNewestFirst): OFFSET made every
-  // batch rescan the rows before it, so a 30-day window (100k+ sends from the
-  // cold sequences) took 10s+ and a batch could hit the statement timeout,
-  // which the dashboard then misreported as a missing table.
-  const cols = "created_at, category, funnel, status, delivered_at, opened_at, clicked_at, bounced_at, complained_at";
-  const { error } = await scanNewestFirst<SendRow>(
-    (before, limit) => {
-      let q = db.from("email_sends").select(cols).gte("created_at", cutoff);
-      if (before) q = q.lt("created_at", before);
-      return q.order("created_at", { ascending: false }).limit(limit).returns<SendRow[]>();
-    },
-    (at, from, to) =>
-      db.from("email_sends").select(cols).eq("created_at", at).order("id").range(from, to).returns<SendRow[]>(),
-    (rows) => {
-      for (const row of rows) {
-        const catKey = row.category || "unknown";
-        let cat = byCategory.get(catKey);
-        if (!cat) byCategory.set(catKey, (cat = blank(catKey, row.funnel || "transactional")));
-        bump(cat, row);
+  const add = (key: string, funnel: string, counts: Counts) => {
+    let cat = byCategory.get(key);
+    if (!cat) byCategory.set(key, (cat = blank(key, funnel)));
+    addCounts(cat, counts);
+    let fun = byFunnel.get(funnel);
+    if (!fun) byFunnel.set(funnel, (fun = blank(funnel, funnel)));
+    addCounts(fun, counts);
+  };
 
-        const funKey = row.funnel || "transactional";
-        let fun = byFunnel.get(funKey);
-        if (!fun) byFunnel.set(funKey, (fun = blank(funKey, funKey)));
-        bump(fun, row);
-      }
-    },
-    { batch: BATCH },
-  );
+  // Fast path: one GROUP BY in Postgres (20261111_email_sends_rollups.sql).
+  const rollup = await db.rpc("email_sends_summary", { p_since: cutoff });
+  let error: { code?: string; message?: string } | null = rollup.error;
+  if (!error) {
+    for (const row of (rollup.data ?? []) as RollupRow[]) add(row.category, row.funnel, row);
+  } else if (isMissingFunctionError(error)) {
+    // Migration not applied yet: newest-first row scan without OFFSET (see
+    // scanNewestFirst). Slow on 100k+ row windows but correct.
+    const cols = "created_at, category, funnel, status, delivered_at, opened_at, clicked_at, bounced_at, complained_at";
+    ({ error } = await scanNewestFirst<SendRow>(
+      (before, limit) => {
+        let q = db.from("email_sends").select(cols).gte("created_at", cutoff);
+        if (before) q = q.lt("created_at", before);
+        return q.order("created_at", { ascending: false }).limit(limit).returns<SendRow[]>();
+      },
+      (at, from, to) =>
+        db.from("email_sends").select(cols).eq("created_at", at).order("id").range(from, to).returns<SendRow[]>(),
+      (rows) => {
+        for (const row of rows) add(row.category || "unknown", row.funnel || "transactional", rowCounts(row));
+      },
+      { batch: BATCH },
+    ));
+  }
   if (error) {
     console.error("admin emails/summary: query failed", error);
     // Only a genuinely absent table means "apply the migration". Anything
