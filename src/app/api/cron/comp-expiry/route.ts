@@ -91,8 +91,12 @@ export async function GET(request: Request) {
     // End at the exact expires_at (cron runs daily, so at most a day late),
     // never early: the customer emails and the delayed first charge both name
     // that date. daysRemaining is floored, so "<= 0" used to cut up to a day early.
+    // Lemon Squeezy comps are the exception: expires_at is also when LS would
+    // renew and charge full price, so cancel on the LAST run before it (under
+    // 24h left), never after.
     const msLeft = row.expiresAt ? new Date(row.expiresAt).getTime() - Date.now() : null;
-    if (msLeft != null && msLeft <= 0) {
+    const cutoffMs = row.source === "lemonsqueezy" ? 24 * 60 * 60 * 1000 : 0;
+    if (msLeft != null && msLeft <= cutoffMs) {
       toCancel.push(row);
     } else if (row.daysRemaining <= 0) {
       // Under 24h left: nothing to send (both warnings already went out).
@@ -180,14 +184,16 @@ export async function GET(request: Request) {
   {
     const svc = adminService();
     for (const row of chargeRetry) {
-      const ok = svc
+      const outcome = svc
         ? await retryDelayedFirstCharge(svc, {
             compLsSubscriptionId: row.lsSubscriptionId,
             paidLsSubscriptionId: row.convertedLsSubscriptionId as string,
             expiresAt: row.expiresAt as string,
           })
-        : false;
-      (ok ? chargeRetried : chargeStillMissing).push(row);
+        : "failed";
+      if (outcome === "retried") chargeRetried.push(row);
+      else if (outcome === "failed") chargeStillMissing.push(row);
+      // not_applicable is stamped inside, so it is never retried or flagged again.
     }
   }
 

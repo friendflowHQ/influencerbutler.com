@@ -141,11 +141,13 @@ export async function POST(request: Request) {
   // the days-left banner and the end screen.
   // Not when they also hold a live paid plan: then there is nothing to keep.
   const grantIds = new Set(grants.map((g) => g.ls_subscription_id));
+  const addonVariant = process.env.LEMONSQUEEZY_VARIANT_DAILY_DEALS_ADDON || null;
   const hasPaid = subs.some(
     (s) =>
       typeof s.ls_subscription_id === "string" &&
       !s.ls_subscription_id.startsWith("comp:") &&
-      !grantIds.has(s.ls_subscription_id),
+      !grantIds.has(s.ls_subscription_id) &&
+      !(addonVariant && s.ls_variant_id != null && String(s.ls_variant_id) === addonVariant),
   );
   const comp = hasPaid ? null : await liveCompInfo(svc, grants);
 
@@ -237,14 +239,16 @@ async function endedCompInfo(
     const grantIds = new Set(grants.map((x) => x.ls_subscription_id));
     const paid = await svc
       .from("subscriptions")
-      .select("ls_subscription_id,ends_at,created_at")
+      .select("ls_subscription_id,ends_at,created_at,ls_variant_id")
       .eq("user_id", userId)
       .limit(50);
+    const addonVariant = process.env.LEMONSQUEEZY_VARIANT_DAILY_DEALS_ADDON || null;
     if (paid.error) return {};
     const compEndMs = new Date(g.cancelled_at ?? (g.expires_at as string)).getTime();
     const paidLater = (paid.data ?? []).some((s) => {
       const id = typeof s.ls_subscription_id === "string" ? s.ls_subscription_id : "";
       if (!id || id.startsWith("comp:") || grantIds.has(id)) return false;
+      if (addonVariant && s.ls_variant_id != null && String(s.ls_variant_id) === addonVariant) return false;
       const t = new Date(String(s.ends_at ?? s.created_at ?? "")).getTime();
       return Number.isFinite(t) && t > compEndMs;
     });

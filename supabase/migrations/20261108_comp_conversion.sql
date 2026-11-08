@@ -103,9 +103,12 @@ WHERE g.kind IS NULL
       AND s.ls_subscription_id NOT IN (SELECT ls_subscription_id FROM comp_grants)
       AND COALESCE(s.ends_at, s.created_at) <= g.issued_at
       AND EXISTS (
+        -- Initial orders carry no ls_subscription_id, so match the customer's
+        -- own charged orders from before the comp.
         SELECT 1 FROM orders o
-        WHERE o.ls_subscription_id = s.ls_subscription_id
+        WHERE (o.ls_subscription_id = s.ls_subscription_id OR o.user_id = s.user_id)
           AND o.total > 0
+          AND o.created_at <= g.issued_at
       )
   );
 
@@ -114,13 +117,18 @@ WHERE g.kind IS NULL
 UPDATE comp_grants SET kind = 'creator' WHERE kind IS NULL;
 
 -- Comps that already converted: a later live paid plan for the same user. Not
--- another comp, not the Deals add-on (it stacks on a plan).
+-- another comp, not the Deals add-on (it stacks on a plan), not no-card trials.
+-- first_charge_at is set to the conversion time so the cron's delayed-charge
+-- retry never touches these historical subscriptions (their billing dates were
+-- set before this feature existed).
 UPDATE comp_grants g
 SET converted_at = s.created_at,
     converted_ls_subscription_id = s.ls_subscription_id,
-    converted_plan = s.plan_name
+    converted_plan = s.plan_name,
+    first_charge_at = s.created_at
 FROM subscriptions s
 WHERE g.converted_at IS NULL
+  AND g.kind IS DISTINCT FROM 'trial'
   AND g.user_id IS NOT NULL
   AND s.user_id = g.user_id
   AND s.ls_subscription_id NOT LIKE 'comp:%'

@@ -22,7 +22,7 @@ import { readGeo, upsertCheckoutGeo } from "@/lib/recent-activity";
 import {
   compGrantsForUser,
   isCompSubscriptionId,
-  isTrialComp,
+  proCoveringComps,
   runningComp,
   variantHasFreeTrial,
 } from "@/lib/comp-conversion";
@@ -155,16 +155,27 @@ export async function POST(request: Request) {
         );
       }
 
-      const running = runningComp(grants.filter((g) => !isTrialComp(g)));
-      if (running && (await variantHasFreeTrial(variantId)) === false) {
-        return NextResponse.json(
-          {
-            error:
-              "Your free access is still running. To keep every free day, use the Keep my plan button in your dashboard or email, so your first charge lands on your end date.",
-            code: "comp_running_no_trial",
-          },
-          { status: 409 },
-        );
+      const running = runningComp(proCoveringComps(grants));
+      if (running) {
+        const hasTrial = await variantHasFreeTrial(variantId);
+        if (hasTrial === false) {
+          return NextResponse.json(
+            {
+              error:
+                "Your free access is still running. To keep every free day, use the Keep my plan button in your dashboard or email, so your first charge lands on your end date.",
+              code: "comp_running_no_trial",
+            },
+            { status: 409 },
+          );
+        }
+        if (hasTrial == null) {
+          // Could not confirm the plan has a free trial (the delay depends on
+          // it). Never risk an early charge: ask them to retry.
+          return NextResponse.json(
+            { error: "We could not start checkout just now. Please try again in a minute.", code: "retry" },
+            { status: 503 },
+          );
+        }
       }
     }
 

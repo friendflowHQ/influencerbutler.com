@@ -197,3 +197,42 @@ export async function sendOwnerCreatorAlert(row: CompRow): Promise<boolean> {
   }
   return ok;
 }
+
+/**
+ * Owner alert from the webhook: a comped user kept their plan but the first
+ * charge could not be moved to the comp end date (LS refused the trial-end
+ * change), or the plan charged at checkout. Fix it by hand in Lemon Squeezy.
+ */
+export async function sendOwnerChargeAlert(args: {
+  email: string | null;
+  lsSubscriptionId: string;
+  compEndsAt: string | null;
+  reason: "patch_failed" | "charged_at_checkout";
+}): Promise<void> {
+  const when = formatCompDate(args.compEndsAt);
+  const what =
+    args.reason === "patch_failed"
+      ? `Lemon Squeezy did not accept the new trial end. Open subscription ${args.lsSubscriptionId} in Lemon Squeezy and set its trial end to ${when} so they are not charged early.`
+      : `Their new plan (subscription ${args.lsSubscriptionId}) started as active, so it charged at checkout instead of on ${when}. Consider a refund for the free days they lost.`;
+  const body = [
+    `A comped customer kept their plan, but the first charge was not delayed.`,
+    `Who: ${args.email ?? "unknown"}`,
+    `Free access ends: ${when}`,
+    what,
+  ].join("\n\n");
+  for (const to of compAlertRecipients()) {
+    try {
+      await sendEmail({
+        from: transactionalFrom(),
+        to,
+        subject: `Action needed: comp keep-my-plan charge not delayed (${args.email ?? args.lsSubscriptionId})`,
+        text: body,
+        html: bodyToHtml(body),
+        category: "comp_charge_not_delayed",
+        stream: "transactional",
+      });
+    } catch (error) {
+      console.error("comp: owner charge alert failed", error);
+    }
+  }
+}

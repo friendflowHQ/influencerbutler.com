@@ -87,12 +87,18 @@ export async function GET(request: Request) {
   // Within the last ~36h a same-day charge is effectively "on the end date".
   const msLeft = expiresAt != null ? new Date(expiresAt).getTime() - Date.now() : 0;
   const compStillRunning = msLeft > 36 * 60 * 60 * 1000;
-  if (compStillRunning && (await variantHasFreeTrial(variantId)) === false) {
-    console.error("comps/keep: variant has no free trial, cannot delay first charge", { variantId, compId });
-    return page(
-      "Almost there",
-      `Your free access runs until ${formatCompDate(expiresAt)}. We will email you a link to keep your plan the day before it ends, so you are never charged early.`,
-    );
+  if (compStillRunning) {
+    const hasTrial = await variantHasFreeTrial(variantId);
+    if (hasTrial === false) {
+      console.error("comps/keep: variant has no free trial, cannot delay first charge", { variantId, compId });
+      return page(
+        "Almost there",
+        `Your free access runs until ${formatCompDate(expiresAt)}. We will email you a link to keep your plan the day before it ends, so you are never charged early.`,
+      );
+    }
+    if (hasTrial == null) {
+      return page("Please try again", "We could not open checkout just now. Please try the link again in a minute.", 503);
+    }
   }
 
   const res = await lsApi("/checkouts", {

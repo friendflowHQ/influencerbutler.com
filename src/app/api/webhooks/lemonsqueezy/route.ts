@@ -14,6 +14,7 @@ import { sendEmail } from "@/lib/email-send";
 import { transactionalFrom } from "@/lib/email-senders";
 import { sendMetaEvent } from "@/lib/meta-capi";
 import { applyCompConversion, compConversionSource } from "@/lib/comp-conversion";
+import { sendOwnerChargeAlert } from "@/lib/comp-expiry-customer";
 
 export const runtime = "nodejs";
 
@@ -1003,7 +1004,9 @@ export async function POST(request: Request) {
       const compSource = isAddonSubscription
         ? null
         : await compConversionSource(supabase, userId, recordId);
-      const compKeeper = compSource?.keeper === true;
+      // Only a definite comp skips the trial bookkeeping; a pre-migration FREE14D
+      // row (maybe a no-card trial) keeps the normal trial drip.
+      const compKeeper = compSource?.keeper === true && compSource.extendOnly !== true;
 
       if (isTrial && !isAddonSubscription && !compKeeper) {
         basePayload.trial_started_at = new Date().toISOString();
@@ -1071,22 +1074,6 @@ export async function POST(request: Request) {
         }),
       );
 
-      // Record the comp conversion and, for a running win-back / creator comp,
-      // move the first charge to the comp end date. Throws only when that delay
-      // could not be applied, so LS redelivers (everything here is idempotent).
-      if (compSource) {
-        await applyCompConversion(
-          supabase,
-          {
-            userId,
-            lsSubscriptionId: recordId,
-            status,
-            planName: getString(attrs.product_name) ?? getString(attrs.variant_name),
-          },
-          compSource,
-        );
-      }
-
       // Backfill license rows that arrived before this subscription existed.
       // order_created/subscription_created/license_key_created are independent
       // webhook deliveries that can race; when license_key_created wins, the
@@ -1119,6 +1106,33 @@ export async function POST(request: Request) {
       // subscription_updated -> active conversion below.
       if (status === "active" && !isAddonSubscription) {
         await rewardReferrerForSubscription(recordId);
+      }
+
+      // LAST: record the comp conversion and, for a running comp, move the first
+      // charge to the comp end date. Runs after the backfill/supersede above so
+      // nothing is skipped. Never throws; a delay that could not be applied (or
+      // a plan that charged at checkout) alerts the owner right away, since this
+      // webhook always returns 200 and LS will not redeliver.
+      if (compSource) {
+        const conv = await applyCompConversion(
+          supabase,
+          {
+            userId,
+            lsSubscriptionId: recordId,
+            status,
+            planName: getString(attrs.product_name) ?? getString(attrs.variant_name),
+            trialEndsAt,
+          },
+          compSource,
+        );
+        if (conv.patchFailed || conv.chargedAtCheckout) {
+          await sendOwnerChargeAlert({
+            email: subEmail,
+            lsSubscriptionId: recordId,
+            compEndsAt: compSource.grant.expiresAt,
+            reason: conv.patchFailed ? "patch_failed" : "charged_at_checkout",
+          });
+        }
       }
     },
 

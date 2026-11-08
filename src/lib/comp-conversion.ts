@@ -22,6 +22,8 @@ export type OpenComp = {
   discountCode: string | null;
   /** Set when the comp was cancelled (admin "Cancel now", or the expiry cron at its end). */
   cancelledAt: string | null;
+  /** A Deals Butler Workspace add-on comp: it never covers Pro, so it never delays a Pro charge. */
+  isAddon: boolean;
 };
 
 /**
@@ -43,11 +45,34 @@ export async function compGrantsForUser(svc: Svc, userId: string): Promise<OpenC
         .eq("user_id", userId)
         .limit(50);
       if (retry.error) return [];
-      return mapGrants(retry.data ?? []);
+      return markAddons(svc, mapGrants(retry.data ?? []));
     }
-    return mapGrants(data ?? []);
+    return markAddons(svc, mapGrants(data ?? []));
   } catch {
     return [];
+  }
+}
+
+/** Flag Deals add-on comps from their (synthetic) subscription row's plan. */
+async function markAddons(svc: Svc, grants: OpenComp[]): Promise<OpenComp[]> {
+  if (grants.length === 0) return grants;
+  try {
+    const addonVariant = process.env.LEMONSQUEEZY_VARIANT_DAILY_DEALS_ADDON || null;
+    const { data } = await svc
+      .from("subscriptions")
+      .select("ls_subscription_id,plan_name,ls_variant_id")
+      .in("ls_subscription_id", grants.map((g) => g.lsSubscriptionId));
+    const addonIds = new Set<string>();
+    for (const r of (data ?? []) as Record<string, unknown>[]) {
+      const id = typeof r.ls_subscription_id === "string" ? r.ls_subscription_id : null;
+      if (!id) continue;
+      const variant = r.ls_variant_id != null ? String(r.ls_variant_id) : null;
+      const plan = typeof r.plan_name === "string" ? r.plan_name : "";
+      if ((addonVariant && variant === addonVariant) || /workspace/i.test(plan)) addonIds.add(id);
+    }
+    return grants.map((g) => ({ ...g, isAddon: addonIds.has(g.lsSubscriptionId) }));
+  } catch {
+    return grants;
   }
 }
 
@@ -62,6 +87,7 @@ function mapGrants(rows: Record<string, unknown>[]): OpenComp[] {
       kind: typeof r.kind === "string" ? r.kind : null,
       discountCode: typeof r.discount_code === "string" ? r.discount_code : null,
       cancelledAt: typeof r.cancelled_at === "string" ? r.cancelled_at : null,
+      isAddon: false,
     });
   }
   return out;
@@ -89,13 +115,24 @@ export function pendingCompEnd(grants: OpenComp[], now: number = Date.now()): st
   return best == null ? null : new Date(best).toISOString();
 }
 
-/**
- * A no-card trial comp. Before the 20261108 migration there is no `kind`, so
- * fall back to the code shape those trials are minted with (<NAME>FREE14D).
- */
+/** A no-card trial comp, known from its label (set by the 20261108 migration / issuer). */
 export function isTrialComp(g: Pick<OpenComp, "kind" | "discountCode">): boolean {
-  if (g.kind) return g.kind === "trial";
-  return /FREE14D$/i.test(g.discountCode ?? "");
+  return g.kind === "trial";
+}
+
+/**
+ * Before the 20261108 migration there is no `kind`, and a no-card trial and a
+ * 14-day admin/affiliate comp share the <NAME>FREE14D code shape. Such a row is
+ * treated cautiously: its paid checkout gets the delay only as an EXTENSION of
+ * the plan's own trial (never shortening it), and keeps the normal trial drip.
+ */
+export function isAmbiguousTrialComp(g: Pick<OpenComp, "kind" | "discountCode">): boolean {
+  return !g.kind && /FREE14D$/i.test(g.discountCode ?? "");
+}
+
+/** Comps that can delay a Pro charge: not a known trial, not a Deals add-on comp. */
+export function proCoveringComps(grants: OpenComp[]): OpenComp[] {
+  return grants.filter((g) => !isTrialComp(g) && !g.isAddon);
 }
 
 /**
@@ -119,16 +156,23 @@ export function runningComp(grants: OpenComp[], now: number = Date.now()): OpenC
 
 type LsVariant = { data?: { attributes?: { has_free_trial?: boolean } } };
 
+// has_free_trial rarely changes; cache it per variant for the life of the
+// lambda so a transient LS error does not block a checkout that worked before.
+const trialCache = new Map<string, boolean>();
+
 /**
  * Whether a Lemon Squeezy variant has a free trial (the vehicle for the delayed
  * first charge). null when it could not be determined.
  */
 export async function variantHasFreeTrial(variantId: string): Promise<boolean | null> {
+  const cached = trialCache.get(variantId);
+  if (cached !== undefined) return cached;
   try {
     const res = await lsApi(`/variants/${variantId}`, { method: "GET" });
     if (!res.ok) return null;
     const json = (await res.json().catch(() => null)) as LsVariant | null;
     const v = json?.data?.attributes?.has_free_trial;
+    if (typeof v === "boolean") trialCache.set(variantId, v);
     return typeof v === "boolean" ? v : null;
   } catch {
     return null;
@@ -160,14 +204,22 @@ export async function setSubscriptionTrialEnd(lsSubscriptionId: string, iso: str
 /** A comp that ended this long ago still counts as the source of a conversion. */
 const CONVERSION_WINDOW_MS = 90 * 24 * 60 * 60 * 1000;
 
+export type ConversionSource = {
+  grant: OpenComp;
+  /** The comp is still running: the paid plan's first charge waits for its end. */
+  keeper: boolean;
+  /** Pre-migration FREE14D row: only ever EXTEND the plan's own trial, keep the trial drip. */
+  extendOnly: boolean;
+};
+
 /**
  * The comp a brand-new paid subscription is converting from, if any.
  *
- * `keeper` (gets the delayed first charge, skips the trial drip) is true when
- * a non-trial comp is still RUNNING, whatever its kind and even before the
- * 20261108 migration adds `kind`. Otherwise the most recent non-trial comp
- * that ended (not revoked early) inside the conversion window is the source:
- * the conversion is recorded and the plan's normal LS trial applies. The new
+ * `keeper` is true when a Pro-covering comp (not a known trial, not a Deals
+ * add-on comp) is still RUNNING, whatever its kind and even before the
+ * 20261108 migration adds `kind`. Otherwise the most recent such comp that
+ * ended (not revoked early) inside the conversion window is the source: the
+ * conversion is recorded and the plan's normal LS trial applies. The new
  * subscription itself (an LS 100%-off comp checkout) never counts.
  */
 export async function compConversionSource(
@@ -175,13 +227,14 @@ export async function compConversionSource(
   userId: string,
   newLsSubscriptionId: string,
   now: number = Date.now(),
-): Promise<{ grant: OpenComp; keeper: boolean } | null> {
+): Promise<ConversionSource | null> {
   const grants = await compGrantsForUser(svc, userId);
   if (grants.some((g) => g.lsSubscriptionId === newLsSubscriptionId)) return null;
-  const eligible = grants.filter((g) => !isTrialComp(g));
+  const eligible = proCoveringComps(grants);
   const running = runningComp(eligible, now);
-  if (running) return { grant: running, keeper: true };
+  if (running) return { grant: running, keeper: true, extendOnly: isAmbiguousTrialComp(running) };
   const ended = eligible
+    .filter((g) => !isAmbiguousTrialComp(g))
     .filter((g) => !revokedEarly(g))
     .filter((g) => {
       if (!g.expiresAt) return true; // forever / unknown-length comps still count
@@ -194,7 +247,7 @@ export async function compConversionSource(
       return tb - ta;
     });
   const grant = ended[0];
-  return grant ? { grant, keeper: false } : null;
+  return grant ? { grant, keeper: false, extendOnly: false } : null;
 }
 
 /** Cancelled well before its end date (admin "Cancel now"), not by the expiry cron. */
@@ -205,77 +258,120 @@ function revokedEarly(g: OpenComp): boolean {
   return Number.isFinite(c) && Number.isFinite(e) && c < e - 2 * 24 * 60 * 60 * 1000;
 }
 
+export type ConversionResult = {
+  converted: boolean;
+  firstChargeAt: string | null;
+  /** The trial-end PATCH for a running comp failed: the owner must fix it in LS. */
+  patchFailed: boolean;
+  /** A running-comp user's new plan started 'active' (charged at checkout). */
+  chargedAtCheckout: boolean;
+};
+
 /**
- * Called from the subscription_created webhook. Records the comp-to-paid
- * conversion on the comp grant and, for a comp that is still running and a
- * subscription that started on its free trial, moves the LS trial end to the
- * comp end date so the first charge lands that day.
- *
- * Throws when that trial-end PATCH fails, so the webhook returns non-2xx and
- * Lemon Squeezy redelivers (the PATCH and the stamp are idempotent). The
- * comp-expiry cron also retries any converted grant still missing
+ * Called LAST in the subscription_created webhook (after the license backfill
+ * and trial supersede, so nothing else is skipped). Records the comp-to-paid
+ * conversion and, for a comp that is still running and a subscription that
+ * started on its free trial, moves the LS trial end to the comp end date so the
+ * first charge lands that day. Never throws: the webhook always returns 200
+ * (no LS redelivery), so failures come back in the result for the caller to
+ * alert on, and the comp-expiry cron retries converted grants missing
  * first_charge_at.
  */
 export async function applyCompConversion(
   svc: Svc,
-  input: { userId: string; lsSubscriptionId: string; status: string | null; planName: string | null },
-  source?: { grant: OpenComp; keeper: boolean } | null,
-): Promise<{ converted: boolean; firstChargeAt: string | null }> {
-  const src = source === undefined ? await compConversionSource(svc, input.userId, input.lsSubscriptionId) : source;
-  if (!src) return { converted: false, firstChargeAt: null };
-  const { grant, keeper } = src;
-
-  let firstChargeAt: string | null = null;
-  let patchFailed = false;
-  if (keeper && input.status === "on_trial" && grant.expiresAt) {
-    const iso = new Date(grant.expiresAt).toISOString();
-    if (await setSubscriptionTrialEnd(input.lsSubscriptionId, iso)) firstChargeAt = iso;
-    else patchFailed = true;
-  }
-
-  const nowIso = new Date().toISOString();
-  const patch: Record<string, unknown> = {
-    converted_at: nowIso,
-    converted_ls_subscription_id: input.lsSubscriptionId,
-    converted_plan: input.planName,
-    updated_at: nowIso,
-  };
-  if (firstChargeAt) patch.first_charge_at = firstChargeAt;
+  input: {
+    userId: string;
+    lsSubscriptionId: string;
+    status: string | null;
+    planName: string | null;
+    /** The new subscription's own trial end (from the webhook), if any. */
+    trialEndsAt?: string | null;
+  },
+  source?: ConversionSource | null,
+): Promise<ConversionResult> {
+  const none: ConversionResult = { converted: false, firstChargeAt: null, patchFailed: false, chargedAtCheckout: false };
   try {
-    const { error } = await svc.from("comp_grants").update(patch).eq("ls_subscription_id", grant.lsSubscriptionId);
-    if (error) console.error("comp-conversion: grant stamp failed (20261108 migration applied?)", error);
+    const src = source === undefined ? await compConversionSource(svc, input.userId, input.lsSubscriptionId) : source;
+    if (!src) return none;
+    const { grant, keeper, extendOnly } = src;
+
+    let firstChargeAt: string | null = null;
+    let patchFailed = false;
+    if (keeper && input.status === "on_trial" && grant.expiresAt) {
+      const target = new Date(grant.expiresAt).getTime();
+      const own = input.trialEndsAt ? new Date(input.trialEndsAt).getTime() : NaN;
+      if (extendOnly && Number.isFinite(own) && own >= target) {
+        firstChargeAt = new Date(own).toISOString(); // already at or after the comp end
+      } else {
+        const iso = new Date(target).toISOString();
+        if (await setSubscriptionTrialEnd(input.lsSubscriptionId, iso)) firstChargeAt = iso;
+        else patchFailed = true;
+      }
+    }
+
+    const nowIso = new Date().toISOString();
+    const patch: Record<string, unknown> = {
+      converted_at: nowIso,
+      converted_ls_subscription_id: input.lsSubscriptionId,
+      converted_plan: input.planName,
+      updated_at: nowIso,
+    };
+    if (firstChargeAt) patch.first_charge_at = firstChargeAt;
+    try {
+      const { error } = await svc.from("comp_grants").update(patch).eq("ls_subscription_id", grant.lsSubscriptionId);
+      if (error) console.error("comp-conversion: grant stamp failed (20261108 migration applied?)", error);
+    } catch (error) {
+      console.error("comp-conversion: grant stamp threw", error);
+    }
+    return { converted: true, firstChargeAt, patchFailed, chargedAtCheckout: keeper && input.status === "active" };
   } catch (error) {
-    console.error("comp-conversion: grant stamp threw", error);
+    console.error("comp-conversion: apply threw", error);
+    return none;
   }
-  if (patchFailed) {
-    throw new Error(`comp-conversion: could not delay the first charge for ${input.lsSubscriptionId}; retry`);
-  }
-  return { converted: true, firstChargeAt };
 }
+
+export type RetryOutcome = "retried" | "not_applicable" | "failed";
 
 /**
  * Daily backstop (comp-expiry cron): a converted grant whose comp is still
- * running but has no first_charge_at means the trial-end PATCH never landed.
- * Re-apply it while the LS subscription is still on_trial.
+ * running but has no first_charge_at means the trial-end delay never landed.
+ * Only ever EXTENDS the LS trial to the comp end (never moves a charge
+ * earlier). "not_applicable" (sub no longer on trial, or its trial already
+ * ends at or after the comp end) is stamped so the row is not retried again.
  */
 export async function retryDelayedFirstCharge(
   svc: Svc,
   args: { compLsSubscriptionId: string; paidLsSubscriptionId: string; expiresAt: string },
-): Promise<boolean> {
+): Promise<RetryOutcome> {
   try {
     const res = await lsApi(`/subscriptions/${args.paidLsSubscriptionId}`, { method: "GET" });
-    if (!res.ok) return false;
-    const json = (await res.json().catch(() => null)) as { data?: { attributes?: { status?: string } } } | null;
-    if (json?.data?.attributes?.status !== "on_trial") return false;
-    const iso = new Date(args.expiresAt).toISOString();
-    if (!(await setSubscriptionTrialEnd(args.paidLsSubscriptionId, iso))) return false;
-    await svc
-      .from("comp_grants")
-      .update({ first_charge_at: iso, updated_at: new Date().toISOString() })
-      .eq("ls_subscription_id", args.compLsSubscriptionId);
-    return true;
+    if (!res.ok) return "failed";
+    const json = (await res.json().catch(() => null)) as
+      | { data?: { attributes?: { status?: string; trial_ends_at?: string | null } } }
+      | null;
+    const attrs = json?.data?.attributes;
+    const target = new Date(args.expiresAt).getTime();
+    const own = attrs?.trial_ends_at ? new Date(attrs.trial_ends_at).getTime() : NaN;
+    const stamp = async (iso: string) => {
+      await svc
+        .from("comp_grants")
+        .update({ first_charge_at: iso, updated_at: new Date().toISOString() })
+        .eq("ls_subscription_id", args.compLsSubscriptionId);
+    };
+    if (attrs?.status !== "on_trial") {
+      await stamp(new Date().toISOString());
+      return "not_applicable";
+    }
+    if (Number.isFinite(own) && own >= target) {
+      await stamp(new Date(own).toISOString());
+      return "not_applicable";
+    }
+    const iso = new Date(target).toISOString();
+    if (!(await setSubscriptionTrialEnd(args.paidLsSubscriptionId, iso))) return "failed";
+    await stamp(iso);
+    return "retried";
   } catch (error) {
     console.error("comp-conversion: retryDelayedFirstCharge threw", error);
-    return false;
+    return "failed";
   }
 }

@@ -98,13 +98,17 @@ describe("customer emails", () => {
   });
 });
 
-function svcWith(grants: Record<string, unknown>[]) {
-  const builder = {
-    select: () => builder,
-    eq: () => builder,
+function svcWith(grants: Record<string, unknown>[], subs: Record<string, unknown>[] = []) {
+  const grantsQ = {
+    select: () => grantsQ,
+    eq: () => grantsQ,
     limit: async () => ({ data: grants, error: null }),
   };
-  return { from: () => builder };
+  const subsQ = {
+    select: () => subsQ,
+    in: async () => ({ data: subs, error: null }),
+  };
+  return { from: (t: string) => (t === "subscriptions" ? subsQ : grantsQ) };
 }
 
 describe("comp conversion source", () => {
@@ -147,11 +151,28 @@ describe("comp conversion source", () => {
     expect((await compConversionSource(aff, "u1", "ls-5", now))?.keeper).toBe(true);
   });
 
-  it("a pre-migration no-card trial (FREE14D code) is not a conversion source", async () => {
+  it("a pre-migration FREE14D row (maybe a trial) only extends, never shortens", async () => {
     const svc = svcWith([
       { ls_subscription_id: "comp:t2", expires_at: new Date(now + 5 * DAY).toISOString(), discount_code: "JANEFREE14D" },
     ]);
-    expect(await compConversionSource(svc, "u1", "ls-6", now)).toBeNull();
+    const src = await compConversionSource(svc, "u1", "ls-6", now);
+    expect(src?.keeper).toBe(true);
+    expect(src?.extendOnly).toBe(true);
+  });
+
+  it("a labeled trial is never a conversion source", async () => {
+    const svc = svcWith([
+      { ls_subscription_id: "comp:t3", expires_at: new Date(now + 5 * DAY).toISOString(), kind: "trial" },
+    ]);
+    expect(await compConversionSource(svc, "u1", "ls-8", now)).toBeNull();
+  });
+
+  it("a Deals add-on comp never delays a Pro charge", async () => {
+    const svc = svcWith(
+      [{ ls_subscription_id: "comp:dd", expires_at: new Date(now + 300 * DAY).toISOString(), kind: "creator" }],
+      [{ ls_subscription_id: "comp:dd", plan_name: "Deals Butler Workspace (comp)", ls_variant_id: "1677266" }],
+    );
+    expect(await compConversionSource(svc, "u1", "ls-9", now)).toBeNull();
   });
 
   it("an admin-revoked comp gives no delay and no conversion credit", async () => {
@@ -185,9 +206,9 @@ describe("helpers", () => {
     const now = Date.parse("2026-11-08T00:00:00Z");
     const end = pendingCompEnd(
       [
-        { lsSubscriptionId: "a", expiresAt: new Date(now + DAY).toISOString(), kind: null, discountCode: null, cancelledAt: null },
-        { lsSubscriptionId: "b", expiresAt: new Date(now + 3 * DAY).toISOString(), kind: null, discountCode: null, cancelledAt: null },
-        { lsSubscriptionId: "c", expiresAt: new Date(now - DAY).toISOString(), kind: null, discountCode: null, cancelledAt: null },
+        { lsSubscriptionId: "a", expiresAt: new Date(now + DAY).toISOString(), kind: null, discountCode: null, cancelledAt: null, isAddon: false },
+        { lsSubscriptionId: "b", expiresAt: new Date(now + 3 * DAY).toISOString(), kind: null, discountCode: null, cancelledAt: null, isAddon: false },
+        { lsSubscriptionId: "c", expiresAt: new Date(now - DAY).toISOString(), kind: null, discountCode: null, cancelledAt: null, isAddon: false },
       ],
       now,
     );
