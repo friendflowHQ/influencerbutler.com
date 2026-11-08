@@ -7,6 +7,8 @@
  * must stay on the server.
  */
 
+import { createHmac } from "node:crypto";
+
 const DEFAULT_WORKER_URL = "https://links.influencerbutler.com";
 
 export type LinksAdminResult<T = unknown> =
@@ -60,6 +62,26 @@ export async function callLinksAdmin<T = unknown>(
     : null);
   if (!res.ok) return { ok: false, status: res.status, error: errorText ?? `Links service error (${res.status})`, data };
   return { ok: true, status: res.status, data: data as T };
+}
+
+/**
+ * A 15-minute link to a product's cover or file on the links Worker
+ * (GET /api/admin-asset/:productId), signed with LINKS_ADMIN_TOKEN so the
+ * admin's browser can open it without the token header. The message format
+ * must match adminAssetMessage() in workers/links/src/routes/admin-commerce.js.
+ */
+export function signedAdminAssetUrl(productId: string, kind: "cover" | "file", fileId?: string): string | null {
+  const token = process.env.LINKS_ADMIN_TOKEN;
+  if (!token) return null;
+  const exp = Date.now() + 15 * 60 * 1000;
+  const file = kind === "file" ? fileId ?? "" : "";
+  const sig = createHmac("sha256", token).update(`asset|${productId}|${kind}|${file}|${exp}`).digest("hex");
+  const url = new URL(`${baseUrl()}/api/admin-asset/${encodeURIComponent(productId)}`);
+  url.searchParams.set("kind", kind);
+  if (kind === "file") url.searchParams.set("file", file);
+  url.searchParams.set("exp", String(exp));
+  url.searchParams.set("sig", sig);
+  return url.toString();
 }
 
 /** Pass through the Finance tab's range / filter params, whitelisted. */

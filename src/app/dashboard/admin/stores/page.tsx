@@ -71,6 +71,15 @@ type Item = {
   lastSaleAt: number | null;
   period: Money;
   allTime: Money;
+  subtitle?: string;
+  description?: string;
+  deliveryMode?: "files" | "url";
+  deliveryUrl?: string;
+  hasCover?: boolean;
+  files?: { id: string; filename: string; sizeBytes: number }[];
+  paidOrders?: number;
+  peopleWithAccess?: number;
+  events?: { views: number; checkouts: number; downloads: number };
 };
 
 type Detail = {
@@ -80,6 +89,7 @@ type Detail = {
   account: Account | null;
   products: Item[];
   memberships: Item[];
+  eventsDays?: number;
   newsletter: { byStatus: Record<string, number>; bySource: Record<string, number>; growth90d: { day: string; added: number }[] };
 };
 
@@ -215,6 +225,142 @@ function ItemsTable({ title, items, kind }: { title: string; items: Item[]; kind
   );
 }
 
+function fileSize(bytes: number) {
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${bytes} B`;
+}
+
+function assetUrl(productId: string, kind: "cover" | "file", fileId?: string) {
+  const p = new URLSearchParams({ product: productId, kind });
+  if (fileId) p.set("file", fileId);
+  return `/api/admin/stores/asset?${p}`;
+}
+
+function Metric({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div>
+      <div className="text-[11px] font-medium uppercase tracking-wide text-slate-600">{label}</div>
+      <div className="text-sm font-semibold tabular-nums text-slate-900">{value}</div>
+    </div>
+  );
+}
+
+const STATUS_ORDER: Record<string, number> = { active: 0, draft: 1, archived: 2 };
+
+function ProductCards({ products, days }: { products: Item[]; days: number }) {
+  const [showArchived, setShowArchived] = useState(false);
+  const sorted = [...products].sort((a, b) => (STATUS_ORDER[a.status] ?? 3) - (STATUS_ORDER[b.status] ?? 3) || b.createdAt - a.createdAt);
+  const archived = sorted.filter((p) => p.status === "archived").length;
+  const shown = showArchived ? sorted : sorted.filter((p) => p.status !== "archived");
+  return (
+    <section className="mt-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-slate-900">Products ({products.length})</h3>
+        {archived ? (
+          <button type="button" onClick={() => setShowArchived(!showArchived)} className="text-sm font-medium text-slate-700 underline">
+            {showArchived ? "Hide" : "Show"} {archived} archived
+          </button>
+        ) : null}
+      </div>
+      <p className="mt-1 text-xs text-slate-600">
+        Views, buy clicks and downloads cover the last {days} days. Downloads are counted from Nov 8, 2026; before that, &quot;people with access&quot; is the best measure.
+        Opening a product page from here doesn&apos;t count as a view.
+      </p>
+      {shown.length === 0 ? <p className="mt-2 text-sm text-slate-600">None yet.</p> : null}
+      <div className="mt-3 grid gap-4 lg:grid-cols-2">
+        {shown.map((p) => {
+          const ev = p.events ?? { views: 0, checkouts: 0, downloads: 0 };
+          const files = p.files ?? [];
+          return (
+            <article key={p.id} className="flex gap-4 rounded-xl border border-slate-200 bg-white p-4">
+              <div className="h-28 w-24 flex-none overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
+                {p.hasCover ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={assetUrl(p.id, "cover")} alt={`Cover of ${p.title}`} loading="lazy" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full items-center justify-center p-2 text-center text-xs text-slate-600">No cover</div>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h4 className="font-semibold text-slate-900">{p.title || "(untitled)"}</h4>
+                  <StatusPill status={p.status} />
+                  {p.source === "digital_product_butler" ? (
+                    <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-800">Digital Product Butler</span>
+                  ) : null}
+                </div>
+                <div className="mt-0.5 text-sm text-slate-700">
+                  {p.priceCents ? usd(p.priceCents) : "Free"} · @{p.handle} · created {dateOnly(p.createdAt)}
+                </div>
+                {p.subtitle ? <p className="mt-1 text-sm text-slate-700">{p.subtitle}</p> : null}
+                {p.description ? (
+                  <details className="mt-1 text-sm text-slate-700">
+                    <summary className="cursor-pointer font-medium text-slate-800">Description</summary>
+                    <p className="mt-1 whitespace-pre-line">{p.description}</p>
+                  </details>
+                ) : null}
+
+                <div className="mt-3 grid grid-cols-3 gap-x-4 gap-y-2 sm:grid-cols-4">
+                  <Metric label="Views" value={ev.views} />
+                  <Metric label="Buy clicks" value={ev.checkouts} />
+                  <Metric label="Downloads" value={ev.downloads} />
+                  <Metric label="People with access" value={p.peopleWithAccess ?? 0} />
+                  <Metric label="Free claims" value={p.freeClaims ?? 0} />
+                  <Metric label="Paid orders" value={p.paidOrders ?? 0} />
+                  <Metric label="Gross" value={usd(p.allTime.grossCents)} />
+                  <Metric label="They kept" value={usd(p.allTime.creatorNetCents)} />
+                  <Metric label="Our fee" value={usd(p.allTime.ourFeeCents)} />
+                  <Metric label="Stripe fees" value={usd(p.allTime.stripeFeesCents)} />
+                  <Metric label="Refunds" value={p.allTime.refundsCents ? usd(p.allTime.refundsCents) : "-"} />
+                </div>
+
+                <div className="mt-3 text-sm">
+                  {p.deliveryMode === "url" ? (
+                    <p className="text-slate-700">
+                      Delivered as a link:{" "}
+                      {p.deliveryUrl ? (
+                        <a href={p.deliveryUrl} target="_blank" rel="noreferrer noopener" className="break-all font-medium text-orange-700 underline">
+                          {p.deliveryUrl}
+                        </a>
+                      ) : (
+                        "not set"
+                      )}
+                    </p>
+                  ) : files.length ? (
+                    <ul className="space-y-1">
+                      {files.map((f) => (
+                        <li key={f.id}>
+                          <a href={assetUrl(p.id, "file", f.id)} target="_blank" rel="noreferrer" className="font-medium text-orange-700 underline">
+                            {f.filename}
+                          </a>{" "}
+                          <span className="text-xs text-slate-600">({fileSize(f.sizeBytes)})</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-slate-600">No files uploaded.</p>
+                  )}
+                  {p.status === "active" ? (
+                    <a
+                      href={`https://links.influencerbutler.com/@${encodeURIComponent(p.handle)}/p/${encodeURIComponent(p.id)}?src=ibadmin`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-2 inline-block font-medium text-orange-700 underline"
+                    >
+                      Open public product page
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function DetailPanel({ owner, rangeKey, onClose }: { owner: string; rangeKey: RangeKey; onClose: () => void }) {
   const [detail, setDetail] = useState<Detail | null>(null);
   const [sales, setSales] = useState<Sale[]>([]);
@@ -297,7 +443,7 @@ function DetailPanel({ owner, rangeKey, onClose }: { owner: string; rangeKey: Ra
 
       {detail ? (
         <>
-          <ItemsTable title="Products" items={detail.products} kind="product" />
+          <ProductCards products={detail.products} days={detail.eventsDays ?? 30} />
           <ItemsTable title="Memberships" items={detail.memberships} kind="membership" />
 
           <section className="mt-6 grid gap-6 md:grid-cols-2">

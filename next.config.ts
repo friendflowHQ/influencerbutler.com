@@ -53,6 +53,8 @@ const imgSrc = [
   "https://assets.lemonsqueezy.com",
   "https://www.google-analytics.com",
   "https://www.googletagmanager.com",
+  // Admin Creator stores shows product covers via signed links on the links Worker.
+  "https://links.influencerbutler.com",
   // /videos cards show YouTube thumbnails.
   "https://i.ytimg.com",
   // Meta Pixel's no-script/image fallback pings www.facebook.com/tr as an <img>.
