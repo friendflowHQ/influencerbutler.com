@@ -51,6 +51,7 @@ export async function GET(request: Request) {
     month: snapshot.month,
     prevMonth: snapshot.prevMonth,
     migrationPending: snapshot.migrationPending,
+    comparison: snapshot.comparison,
     catalog: GROWTH_METRICS,
     metrics: snapshot.metrics,
     projection: snapshot.projection,
