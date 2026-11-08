@@ -1326,6 +1326,21 @@ a.feature-card:hover h3 { color: var(--brand-600); }
   padding: 2.5rem 0 3.5rem;
 }
 .feature-hero-copy { min-width: 0; }
+/* "New! Nov '26" launch pill above a feature page title. White on
+   brand-700 so it passes WCAG AA. */
+.feature-new-pill {
+  display: block;
+  width: fit-content;
+  margin: 0.75rem 0;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  background: var(--brand-700, #c2410c);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
 .feature-hero-icon {
   display: inline-flex;
   align-items: center;

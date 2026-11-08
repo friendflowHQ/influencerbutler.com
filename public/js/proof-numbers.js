@@ -48,12 +48,30 @@
     requestAnimationFrame(step);
   }
 
-  function statNode(label) {
-    var stat = document.createElement("div");
+  // Optional per-metric link and launch badge. A metric listed here renders as
+  // a link to its feature page, with a small pill above the number.
+  var EXTRAS = {
+    digital_products_created: {
+      href: "/features/digital-product-butler",
+      badge: "New! Nov ’26",
+    },
+  };
+
+  function statNode(key, label) {
+    var extra = EXTRAS[key] || null;
+    var stat = document.createElement(extra && extra.href ? "a" : "div");
     stat.className = "proof-stat";
+    if (extra && extra.href) stat.setAttribute("href", extra.href);
+    if (extra && extra.badge) {
+      var pill = document.createElement("span");
+      pill.className = "proof-new";
+      pill.textContent = extra.badge;
+      stat.appendChild(pill);
+    }
     var strong = document.createElement("strong");
     strong.textContent = "0";
     var span = document.createElement("span");
+    span.className = "proof-stat-label";
     span.textContent = label || "";
     stat.appendChild(strong);
     stat.appendChild(span);
@@ -88,7 +106,7 @@
           divider.className = "proof-divider";
           host.appendChild(divider);
         }
-        var built = statNode(positive[j].label);
+        var built = statNode(positive[j].key, positive[j].label);
         host.appendChild(built.stat);
         nodes[positive[j].key] = built.value;
       }

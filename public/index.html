@@ -534,11 +534,15 @@
         <section class="proof-band" id="live-numbers" aria-label="Live Influencer Butler activity" hidden>
             <style>
                 .proof-band { background: #fff7ed; border-top: 1px solid #fed7aa; border-bottom: 1px solid #fed7aa; padding: 28px 0; }
-                .proof-band .proof-band-label { text-align: center; margin: 0 0 18px; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #9a3412; }
-                .proof-stats { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px 28px; }
-                .proof-stat { text-align: center; min-width: 130px; }
+                .proof-band .proof-band-label { text-align: center; margin: 0 0 28px; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #9a3412; }
+                .proof-stats { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 24px 28px; }
+                .proof-stat { position: relative; text-align: center; min-width: 130px; }
+                a.proof-stat { display: block; text-decoration: none; color: inherit; border-radius: 10px; padding: 2px 6px; }
+                a.proof-stat:hover span.proof-stat-label { text-decoration: underline; text-underline-offset: 3px; }
+                a.proof-stat:focus-visible { outline: 3px solid #c2410c; outline-offset: 4px; }
+                .proof-stat .proof-new { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); margin: 0; white-space: nowrap; padding: 2px 9px; border-radius: 999px; background: #c2410c; color: #fff; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; line-height: 1.5; }
                 .proof-stat strong { display: block; font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 800; line-height: 1.05; color: #7c2d12; font-variant-numeric: tabular-nums; }
-                .proof-stat span { display: block; margin-top: 4px; font-size: 0.9rem; font-weight: 600; color: #78350f; }
+                .proof-stat span.proof-stat-label { display: block; margin-top: 4px; font-size: 0.9rem; font-weight: 600; color: #78350f; }
                 .proof-divider { width: 1px; align-self: stretch; background: #fdba74; }
                 .proof-band-note { text-align: center; margin: 16px 0 0; font-size: 0.8rem; color: #9a3412; }
                 @media (max-width: 640px) { .proof-divider { display: none; } }
