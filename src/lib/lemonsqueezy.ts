@@ -315,7 +315,11 @@ const LIVE_SUB_STATUSES = new Set(["active", "on_trial", "past_due"]);
  * details route). Fails OPEN (returns false) on any LS error so a transient API
  * blip never blocks a legitimate first-time signup.
  */
-export async function hasLiveSubscriptionForEmail(email: string): Promise<boolean> {
+export async function hasLiveSubscriptionForEmail(
+  email: string,
+  /** LS subscription ids to ignore (e.g. the user's own 100%-off comp subscriptions). */
+  excludeIds?: Set<string>,
+): Promise<boolean> {
   try {
     const params = new URLSearchParams();
     params.set("filter[user_email]", email);
@@ -332,10 +336,12 @@ export async function hasLiveSubscriptionForEmail(email: string): Promise<boolea
     }
 
     const payload = (await response.json()) as {
-      data?: { attributes?: { status?: string | null } }[];
+      data?: { id?: string | number; attributes?: { status?: string | null } }[];
     };
-    return (payload.data ?? []).some((s) =>
-      LIVE_SUB_STATUSES.has(s.attributes?.status ?? ""),
+    return (payload.data ?? []).some(
+      (s) =>
+        LIVE_SUB_STATUSES.has(s.attributes?.status ?? "") &&
+        !(excludeIds && s.id != null && excludeIds.has(String(s.id))),
     );
   } catch (error) {
     console.error("lemonsqueezy: live-subscription lookup threw", error);

@@ -19,7 +19,13 @@ import {
 import { resolveCheckoutDiscount, affiliateCaptureCustom } from "@/lib/promo-resolver";
 import { planMetaFor } from "@/lib/pricing-constants";
 import { readGeo, upsertCheckoutGeo } from "@/lib/recent-activity";
-import { compGrantsForUser, isCompSubscriptionId } from "@/lib/comp-conversion";
+import {
+  compGrantsForUser,
+  isCompSubscriptionId,
+  isTrialComp,
+  runningComp,
+  variantHasFreeTrial,
+} from "@/lib/comp-conversion";
 
 type CheckoutRequestBody = {
   plan?: string;
@@ -115,9 +121,12 @@ export async function POST(request: Request) {
     //
     // Comps do not count: a comped user (in-house `comp:` subscription, or an LS
     // subscription started with a 100%-off comp code) must be able to choose a
-    // paid plan before the comp ends. When they have any comp grant we skip the
-    // LS-by-email fallback, because the LS comp subscription itself would read
-    // as live there.
+    // paid plan before the comp ends. The LS-by-email fallback ignores the
+    // user's own comp subscription ids (an LS 100%-off comp reads as live there).
+    //
+    // While a comp is still running, the checkout must not charge before the
+    // comp end date: the webhook moves the plan's free-trial end to that date.
+    // A variant with no free trial would bill at checkout, so refuse it.
     if (!isAddon) {
       const admin = createAdminClient();
       const grants = await compGrantsForUser(admin, userId);
@@ -133,8 +142,7 @@ export async function POST(request: Request) {
           !isCompSubscriptionId(s.ls_subscription_id ?? null, grantIds),
       );
 
-      const alreadySubscribed =
-        livePaid || (grants.length === 0 && (await hasLiveSubscriptionForEmail(email)));
+      const alreadySubscribed = livePaid || (await hasLiveSubscriptionForEmail(email, grantIds));
 
       if (alreadySubscribed) {
         return NextResponse.json(
@@ -142,6 +150,18 @@ export async function POST(request: Request) {
             error:
               "You already have an active subscription. Manage or switch your plan from your dashboard.",
             code: "already_subscribed",
+          },
+          { status: 409 },
+        );
+      }
+
+      const running = runningComp(grants.filter((g) => !isTrialComp(g)));
+      if (running && (await variantHasFreeTrial(variantId)) === false) {
+        return NextResponse.json(
+          {
+            error:
+              "Your free access is still running. To keep every free day, use the Keep my plan button in your dashboard or email, so your first charge lands on your end date.",
+            code: "comp_running_no_trial",
           },
           { status: 409 },
         );

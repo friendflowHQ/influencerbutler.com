@@ -46,8 +46,15 @@ export async function GET(request: Request) {
       .eq("user_id", userId)
       .in("status", VISIBLE_STATUSES)
       .order("created_at", { ascending: false })
-      .limit(1);
-    const row = subs && subs.length > 0 ? (subs[0] as { status?: string | null; ls_variant_id?: string | number | null }) : null;
+      .limit(10);
+    // Prefer a live row over a newer dead one: a comped user who converted and
+    // then cancelled the new paid plan still has their running comp.
+    type SubRow = { status?: string | null; ls_variant_id?: string | number | null };
+    const list = (subs ?? []) as SubRow[];
+    const row =
+      list.find((s) => s.status === "active" || s.status === "on_trial" || s.status === "past_due") ??
+      list[0] ??
+      null;
     status = row?.status ?? null;
     variantId = row?.ls_variant_id ?? null;
   } catch (error) {

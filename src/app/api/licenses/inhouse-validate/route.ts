@@ -75,21 +75,39 @@ export async function POST(request: Request) {
 
   // The entitlement is a live subscription for this user (Pro tier and/or the
   // Deals add-on). No live subscription -> not valid.
-  const subs =
-    (
-      await svc
-        .from("subscriptions")
-        .select("status,ls_variant_id,created_at")
-        .eq("user_id", userId)
-        .in("status", LIVE_STATUSES)
-        .order("created_at", { ascending: false })
-    ).data ?? [];
+  const subsRes = await svc
+    .from("subscriptions")
+    .select("status,ls_variant_id,created_at,ls_subscription_id")
+    .eq("user_id", userId)
+    .in("status", LIVE_STATUSES)
+    .order("created_at", { ascending: false });
+  if (subsRes.error) {
+    // A transient database error must never read as "access ended": the desktop
+    // would persist that and lock a paying user. 503 makes the worker fall back
+    // to its normal path (treated as offline / retry), not a rejection.
+    console.error("inhouse-validate: subscriptions read failed", subsRes.error);
+    return NextResponse.json({ valid: false, error: "server_error" }, { status: 503 });
+  }
+  const grants = await readGrants(svc, userId);
+  const nowMs = Date.now();
+  // A comp ends at its exact expires_at, even before the daily expiry cron
+  // flips its subscription row.
+  const expiredCompIds = new Set(
+    grants
+      .filter((g) => g.expires_at && new Date(g.expires_at).getTime() <= nowMs)
+      .map((g) => g.ls_subscription_id),
+  );
+  const subs = (subsRes.data ?? []).filter(
+    (s) => !(typeof s.ls_subscription_id === "string" && expiredCompIds.has(s.ls_subscription_id)),
+  );
   if (subs.length === 0) {
-    // The key is ours and belongs to a real account, it just has no live plan
-    // any more (a comp that ended, or a cancelled plan). Say so explicitly so the
-    // licensing worker and desktop treat it as "access ended" (drop to the Free
-    // Forever butlers) rather than as an unknown key / network blip.
-    return NextResponse.json({ valid: false, reason: "access_ended", ...(await endedCompInfo(svc, userId)) });
+    // The key is ours and belongs to a real account with no live plan. Only when
+    // the most recent thing that ended was a COMP do we say "access ended" (the
+    // desktop drops to the Free Forever butlers and shows the comp end screen).
+    // A lapsed paying customer keeps the old plain rejection and wording.
+    const ended = await endedCompInfo(svc, userId, grants);
+    if (ended.compEnded) return NextResponse.json({ valid: false, reason: "access_ended", ...ended });
+    return NextResponse.json({ valid: false });
   }
 
   const dailyDealsVariant = process.env.LEMONSQUEEZY_VARIANT_DAILY_DEALS_ADDON || null;
@@ -121,7 +139,15 @@ export async function POST(request: Request) {
 
   // When the live plan is a comp, tell the desktop when it ends so it can show
   // the days-left banner and the end screen.
-  const comp = await liveCompInfo(svc, userId);
+  // Not when they also hold a live paid plan: then there is nothing to keep.
+  const grantIds = new Set(grants.map((g) => g.ls_subscription_id));
+  const hasPaid = subs.some(
+    (s) =>
+      typeof s.ls_subscription_id === "string" &&
+      !s.ls_subscription_id.startsWith("comp:") &&
+      !grantIds.has(s.ls_subscription_id),
+  );
+  const comp = hasPaid ? null : await liveCompInfo(svc, grants);
 
   return NextResponse.json({
     valid: true,
@@ -171,9 +197,8 @@ type CompInfo = {
  * comp_grants.expires_at that has not been cancelled, and no live PAID plan
  * alongside it (a converted user is no longer "on a comp"). Best-effort.
  */
-async function liveCompInfo(svc: AdminService, userId: string): Promise<CompInfo | null> {
+async function liveCompInfo(svc: AdminService, grants: GrantRow[]): Promise<CompInfo | null> {
   try {
-    const grants = await readGrants(svc, userId);
     const now = Date.now();
     const open = grants
       .filter((g) => !g.cancelled_at && !g.converted_at && g.expires_at && new Date(g.expires_at).getTime() > now)
@@ -192,15 +217,38 @@ async function liveCompInfo(svc: AdminService, userId: string): Promise<CompInfo
   }
 }
 
-/** For an ended comp: when it ended and what kind it was (for the end screen). */
-async function endedCompInfo(svc: AdminService, userId: string): Promise<Partial<CompInfo> & { compEnded?: boolean }> {
+/**
+ * For an ended comp: when it ended and what kind it was (for the end screen).
+ * compEnded is true only when the latest comp ended no earlier than the user's
+ * latest non-comp plan, i.e. what they just lost was free access, not a paid
+ * plan they cancelled.
+ */
+async function endedCompInfo(
+  svc: AdminService,
+  userId: string,
+  grants: GrantRow[],
+): Promise<Partial<CompInfo> & { compEnded?: boolean }> {
   try {
-    const grants = await readGrants(svc, userId);
     const ended = grants
       .filter((g) => g.expires_at)
       .sort((a, b) => new Date(b.expires_at as string).getTime() - new Date(a.expires_at as string).getTime());
     if (ended.length === 0) return {};
     const g = ended[0];
+    const grantIds = new Set(grants.map((x) => x.ls_subscription_id));
+    const paid = await svc
+      .from("subscriptions")
+      .select("ls_subscription_id,ends_at,created_at")
+      .eq("user_id", userId)
+      .limit(50);
+    if (paid.error) return {};
+    const compEndMs = new Date(g.cancelled_at ?? (g.expires_at as string)).getTime();
+    const paidLater = (paid.data ?? []).some((s) => {
+      const id = typeof s.ls_subscription_id === "string" ? s.ls_subscription_id : "";
+      if (!id || id.startsWith("comp:") || grantIds.has(id)) return false;
+      const t = new Date(String(s.ends_at ?? s.created_at ?? "")).getTime();
+      return Number.isFinite(t) && t > compEndMs;
+    });
+    if (paidLater) return {};
     return {
       compEnded: true,
       compEndsAt: g.expires_at,

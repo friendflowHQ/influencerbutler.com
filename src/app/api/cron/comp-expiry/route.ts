@@ -21,6 +21,7 @@ import { loadComps, type CompRow } from "@/lib/comps-data";
 import { cancelCompSubscription } from "@/lib/comps-cancel";
 import { sendCompDigest } from "@/lib/comp-expiry-email";
 import { verifyBearer } from "@/lib/auth-secret";
+import { retryDelayedFirstCharge } from "@/lib/comp-conversion";
 import {
   CUSTOMER_NOTICE_KINDS,
   sendCustomerCompEmail,
@@ -87,8 +88,14 @@ export async function GET(request: Request) {
       needsMonths.push(row);
       continue;
     }
-    if (row.daysRemaining <= 0) {
+    // End at the exact expires_at (cron runs daily, so at most a day late),
+    // never early: the customer emails and the delayed first charge both name
+    // that date. daysRemaining is floored, so "<= 0" used to cut up to a day early.
+    const msLeft = row.expiresAt ? new Date(row.expiresAt).getTime() - Date.now() : null;
+    if (msLeft != null && msLeft <= 0) {
       toCancel.push(row);
+    } else if (row.daysRemaining <= 0) {
+      // Under 24h left: nothing to send (both warnings already went out).
     } else if (row.daysRemaining <= 1 && !row.warn1SentAt) {
       toWarn1.push(row);
     } else if (row.daysRemaining <= 7 && !row.warn7SentAt) {
@@ -106,12 +113,27 @@ export async function GET(request: Request) {
     if (row.state === "cancelled" || row.state === "forever") continue;
     if (row.convertedAt) continue;
     if (!row.kind || !CUSTOMER_NOTICE_KINDS.has(row.kind)) continue;
-    const d = row.daysRemaining;
-    if (d == null || d <= 0) continue;
-    if (d <= 1 && !row.userWarn1SentAt) custWarn1.push(row);
-    else if (d <= 7 && !row.userWarn7SentAt && !row.userWarn1SentAt) custWarn7.push(row);
-    if (row.kind === "creator" && d <= 7 && !row.ownerCreatorWarnSentAt) ownerCreator.push(row);
+    if (!row.expiresAt) continue;
+    const hoursLeft = (new Date(row.expiresAt).getTime() - Date.now()) / 3_600_000;
+    if (!(hoursLeft > 0)) continue;
+    // The cron runs once a day, so the "last reminder" goes out on the final run
+    // before the end (under 48h left) and the 7-day note on the run under 8 days.
+    if (hoursLeft <= 48 && !row.userWarn1SentAt) custWarn1.push(row);
+    else if (hoursLeft <= 8 * 24 && !row.userWarn7SentAt && !row.userWarn1SentAt) custWarn7.push(row);
+    if (row.kind === "creator" && hoursLeft <= 8 * 24 && !row.ownerCreatorWarnSentAt) ownerCreator.push(row);
   }
+
+  // Converted comps whose delayed first charge never landed (the webhook PATCH
+  // failed): retry while the comp is still running.
+  const chargeRetry = result.rows.filter(
+    (r) =>
+      r.convertedAt &&
+      !r.firstChargeAt &&
+      r.convertedLsSubscriptionId &&
+      r.expiresAt &&
+      new Date(r.expiresAt).getTime() > Date.now() + 60 * 60 * 1000 &&
+      r.state !== "cancelled",
+  );
 
   const summarize = (r: CompRow) => ({
     email: r.email,
@@ -130,25 +152,43 @@ export async function GET(request: Request) {
       wouldEmailCustomer7: custWarn7.map(summarize),
       wouldEmailCustomer1: custWarn1.map(summarize),
       wouldAlertOwnerCreator: ownerCreator.map(summarize),
+      wouldRetryFirstCharge: chargeRetry.map(summarize),
     });
   }
 
-  // Customer emails. Stamp FIRST and only send when the stamp landed, so a
-  // missing column (20261108 migration not applied yet) can never turn into a
-  // daily repeat email.
+  // Customer emails. CLAIM the marker first (a conditional update that only
+  // succeeds while it is still null) and send only when this run won the claim,
+  // so overlapping runs or a missing column (20261108 not applied) can never
+  // send twice.
   const customerEmailed: CompRow[] = [];
   for (const row of custWarn1) {
-    if (!(await stampColumns(row, ["user_warn1_sent_at", "user_warn7_sent_at"]))) continue;
+    if (!(await claimMarker(row, "user_warn1_sent_at", ["user_warn7_sent_at"]))) continue;
     if (await sendCustomerCompEmail(row, "warn1")) customerEmailed.push(row);
   }
   for (const row of custWarn7) {
-    if (!(await stampColumns(row, ["user_warn7_sent_at"]))) continue;
+    if (!(await claimMarker(row, "user_warn7_sent_at"))) continue;
     if (await sendCustomerCompEmail(row, "warn7")) customerEmailed.push(row);
   }
   const ownerAlerted: CompRow[] = [];
   for (const row of ownerCreator) {
-    if (!(await stampColumns(row, ["owner_creator_warn_sent_at"]))) continue;
+    if (!(await claimMarker(row, "owner_creator_warn_sent_at"))) continue;
     if (await sendOwnerCreatorAlert(row)) ownerAlerted.push(row);
+  }
+
+  const chargeRetried: CompRow[] = [];
+  const chargeStillMissing: CompRow[] = [];
+  {
+    const svc = adminService();
+    for (const row of chargeRetry) {
+      const ok = svc
+        ? await retryDelayedFirstCharge(svc, {
+            compLsSubscriptionId: row.lsSubscriptionId,
+            paidLsSubscriptionId: row.convertedLsSubscriptionId as string,
+            expiresAt: row.expiresAt as string,
+          })
+        : false;
+      (ok ? chargeRetried : chargeStillMissing).push(row);
+    }
   }
 
   // Cancel expired comps.
@@ -186,8 +226,8 @@ export async function GET(request: Request) {
   // Email a digest only when there is something actionable (skip needs-months-
   // only days so the owner is not pinged daily about the same manual-entry item).
   let emailed = false;
-  if (cancelled.length > 0 || warned.length > 0) {
-    emailed = await sendCompDigest({ cancelled, warn: warned, needsMonths });
+  if (cancelled.length > 0 || warned.length > 0 || chargeStillMissing.length > 0) {
+    emailed = await sendCompDigest({ cancelled, warn: warned, needsMonths, chargeNotDelayed: chargeStillMissing });
   }
 
   return NextResponse.json({
@@ -198,32 +238,47 @@ export async function GET(request: Request) {
     emailed,
     customerEmailed: customerEmailed.map(summarize),
     ownerCreatorAlerted: ownerAlerted.map(summarize),
+    firstChargeRetried: chargeRetried.map(summarize),
+    firstChargeStillMissing: chargeStillMissing.map(summarize),
   });
 }
 
 /**
- * Stamp one or more marker columns on a comp_grants row (only the markers, so
- * it never upserts a partial row). Returns false when the update failed, e.g.
- * the 20261108 columns are not in prod yet: the caller then skips the send.
+ * Atomically claim a marker column on a comp_grants row: set it (plus any
+ * `alsoSet` columns) only while it is still null, and report whether THIS call
+ * set it. A failed update (e.g. the 20261108 columns are not in prod yet) or a
+ * row already claimed by another run returns false, so the caller skips the send.
  */
-async function stampColumns(row: CompRow, fields: string[]): Promise<boolean> {
-  const svc = adminService();
+async function claimMarker(row: CompRow, field: string, alsoSet: string[] = []): Promise<boolean> {
+  const svc = adminService() as unknown as {
+    from: (t: string) => {
+      update: (p: Record<string, string>) => {
+        eq: (c: string, v: string) => {
+          is: (c: string, v: null) => {
+            select: (cols: string) => Promise<{ data: unknown[] | null; error: unknown }>;
+          };
+        };
+      };
+    };
+  } | null;
   if (!svc) return false;
   const nowIso = new Date().toISOString();
-  const patch: Record<string, string> = { updated_at: nowIso };
-  for (const f of fields) patch[f] = nowIso;
+  const patch: Record<string, string> = { [field]: nowIso, updated_at: nowIso };
+  for (const f of alsoSet) patch[f] = nowIso;
   try {
-    const { error } = await svc
+    const { data, error } = await svc
       .from("comp_grants")
       .update(patch)
-      .eq("ls_subscription_id", row.lsSubscriptionId);
+      .eq("ls_subscription_id", row.lsSubscriptionId)
+      .is(field, null)
+      .select("ls_subscription_id");
     if (error) {
-      console.error("comp-expiry: marker stamp failed", { fields, error });
+      console.error("comp-expiry: marker claim failed", { field, error });
       return false;
     }
-    return true;
+    return Array.isArray(data) && data.length > 0;
   } catch (error) {
-    console.error("comp-expiry: marker stamp threw", error);
+    console.error("comp-expiry: marker claim threw", error);
     return false;
   }
 }

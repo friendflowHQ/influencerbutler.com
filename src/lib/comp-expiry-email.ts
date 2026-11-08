@@ -38,6 +38,8 @@ export function buildDigestBody(params: {
   cancelled: CompRow[];
   warn: CompRow[];
   needsMonths: CompRow[];
+  /** Converted comps whose delayed first charge could not be set in Lemon Squeezy. */
+  chargeNotDelayed?: CompRow[];
 }): string {
   const lines: string[] = [];
   lines.push("Comp expiry check");
@@ -50,6 +52,13 @@ export function buildDigestBody(params: {
   if (params.warn.length > 0) {
     lines.push(`Expiring soon (${params.warn.length}) - will auto-cancel at expiry:`);
     params.warn.forEach((r) => lines.push(line(r)));
+    lines.push("");
+  }
+  if (params.chargeNotDelayed && params.chargeNotDelayed.length > 0) {
+    lines.push(
+      `ACTION: first charge not delayed (${params.chargeNotDelayed.length}) - they kept their plan, but Lemon Squeezy did not accept the new trial end. Set their trial end to the comp end date in Lemon Squeezy so they are not charged early:`,
+    );
+    params.chargeNotDelayed.forEach((r) => lines.push(line(r)));
     lines.push("");
   }
   if (params.needsMonths.length > 0) {
@@ -68,6 +77,7 @@ export async function sendCompDigest(params: {
   cancelled: CompRow[];
   warn: CompRow[];
   needsMonths: CompRow[];
+  chargeNotDelayed?: CompRow[];
 }): Promise<boolean> {
   const text = buildDigestBody(params);
   const subject = `Comps: ${params.cancelled.length} cancelled, ${params.warn.length} expiring`;

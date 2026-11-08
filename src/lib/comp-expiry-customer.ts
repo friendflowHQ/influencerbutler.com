@@ -123,12 +123,12 @@ export function buildCustomerEmail(
   }
 
   const subject = creator
-    ? `Your free ${plan} access ends tomorrow (thank you!)`
-    : `Your free ${plan} access ends tomorrow`;
+    ? `Last reminder: your free ${plan} access ends ${date} (thank you!)`
+    : `Last reminder: your free ${plan} access ends ${date}`;
   const body = creator
     ? [
         hi,
-        `A gentle reminder: your complimentary ${plan} access ends tomorrow, ${date}.`,
+        `A gentle last reminder: your complimentary ${plan} access ends on ${date}.`,
         `If you would like to keep it, you can add a card here. Your first charge would be on ${date}:`,
         `Keep my plan: ${link}`,
         FREE_LINE,
@@ -137,7 +137,7 @@ export function buildCustomerEmail(
       ].join("\n\n")
     : [
         hi,
-        `Just a reminder: your free ${plan} access ends tomorrow, ${date}.`,
+        `Just a last reminder: your free ${plan} access ends on ${date}.`,
         `To keep your butlers running, add a card here. Your first charge is on ${date}:`,
         `Keep my plan: ${link}`,
         FREE_LINE,
@@ -162,12 +162,19 @@ export async function sendCustomerCompEmail(row: CompRow, notice: CustomerNotice
   return res.ok;
 }
 
-/** Owner alert: one creator comp ends in about 7 days; extend it from the Comps page. */
+function daysPhrase(row: CompRow): string {
+  const d = row.daysRemaining;
+  if (d == null) return "soon";
+  if (d <= 0) return "within a day";
+  return d === 1 ? "in 1 day" : `in ${d} days`;
+}
+
+/** Owner alert: one creator comp ends within about 7 days; extend it from the Comps page. */
 export async function sendOwnerCreatorAlert(row: CompRow): Promise<boolean> {
   const who = row.name ? `${row.name} (${row.email ?? "no email"})` : row.email ?? row.lsSubscriptionId;
   const extendLink = `${siteUrl()}/dashboard/admin/comps?q=${encodeURIComponent(row.email ?? row.discountCode ?? "")}`;
   const body = [
-    `A creator comp ends in ${row.daysRemaining ?? 7} days.`,
+    `A creator comp ends ${formatCompDate(row.expiresAt)} (${daysPhrase(row)}).`,
     `Who: ${who}`,
     `Code: ${row.discountCode ?? "none"}`,
     `Plan: ${row.planLabel ?? "Pro"}`,
@@ -180,7 +187,7 @@ export async function sendOwnerCreatorAlert(row: CompRow): Promise<boolean> {
     const res = await sendEmail({
       from: transactionalFrom(),
       to,
-      subject: `Creator comp ending in 7 days: ${row.name ?? row.email ?? row.discountCode ?? "creator"}`,
+      subject: `Creator comp ending ${daysPhrase(row)}: ${row.name ?? row.email ?? row.discountCode ?? "creator"}`,
       text: body,
       html: bodyToHtml(body),
       category: "comp_creator_owner_alert",

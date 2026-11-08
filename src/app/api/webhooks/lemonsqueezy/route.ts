@@ -1072,7 +1072,8 @@ export async function POST(request: Request) {
       );
 
       // Record the comp conversion and, for a running win-back / creator comp,
-      // move the first charge to the comp end date. Best-effort, never throws.
+      // move the first charge to the comp end date. Throws only when that delay
+      // could not be applied, so LS redelivers (everything here is idempotent).
       if (compSource) {
         await applyCompConversion(
           supabase,

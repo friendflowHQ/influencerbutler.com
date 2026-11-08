@@ -15,7 +15,7 @@ import { NextResponse } from "next/server";
 import { adminService } from "@/lib/admin-service";
 import { lsApi, resolveVariantId } from "@/lib/lemonsqueezy";
 import { siteUrl, verifyKeepPlanToken, formatCompDate } from "@/lib/comp-expiry-customer";
-import { compGrantsForUser, isCompSubscriptionId } from "@/lib/comp-conversion";
+import { compGrantsForUser, isCompSubscriptionId, variantHasFreeTrial } from "@/lib/comp-conversion";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,8 +27,6 @@ function page(title: string, message: string, status = 200): Response {
 <body><main id="main-content"><h1>${esc(title)}</h1><p>${esc(message)}</p><p><a href="${siteUrl()}/dashboard/subscription">Go to my account</a></p></main></body></html>`;
   return new Response(html, { status, headers: { "Content-Type": "text/html; charset=utf-8" } });
 }
-
-type LsVariant = { data?: { attributes?: { has_free_trial?: boolean } } };
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -63,6 +61,12 @@ export async function GET(request: Request) {
   if (livePaid || grant.converted_at) {
     return page("You are all set", "Your plan is already active. Thank you!");
   }
+  // An admin-revoked comp (cancelled well before its end date) has no free days
+  // left to protect, so its link no longer opens a delayed-charge checkout.
+  if (typeof grant.cancelled_at === "string" && typeof grant.expires_at === "string" &&
+      new Date(grant.cancelled_at).getTime() < new Date(grant.expires_at).getTime() - 2 * 24 * 60 * 60 * 1000) {
+    return page("This link has expired", "Please sign in to your account to choose a plan.", 410);
+  }
 
   const profile = (await svc.from("profiles").select("email").eq("id", userId).maybeSingle()).data;
   const email = typeof profile?.email === "string" ? profile.email : typeof grant.user_email === "string" ? grant.user_email : null;
@@ -83,20 +87,12 @@ export async function GET(request: Request) {
   // Within the last ~36h a same-day charge is effectively "on the end date".
   const msLeft = expiresAt != null ? new Date(expiresAt).getTime() - Date.now() : 0;
   const compStillRunning = msLeft > 36 * 60 * 60 * 1000;
-  if (compStillRunning) {
-    try {
-      const vr = await lsApi(`/variants/${variantId}`, { method: "GET" });
-      const vj = (await vr.json().catch(() => null)) as LsVariant | null;
-      if (vr.ok && vj?.data?.attributes?.has_free_trial === false) {
-        console.error("comps/keep: variant has no free trial, cannot delay first charge", { variantId, compId });
-        return page(
-          "Almost there",
-          `Your free access runs until ${formatCompDate(expiresAt)}. We will email you a link to keep your plan the day before it ends, so you are never charged early.`,
-        );
-      }
-    } catch (error) {
-      console.warn("comps/keep: variant trial lookup failed, continuing", error);
-    }
+  if (compStillRunning && (await variantHasFreeTrial(variantId)) === false) {
+    console.error("comps/keep: variant has no free trial, cannot delay first charge", { variantId, compId });
+    return page(
+      "Almost there",
+      `Your free access runs until ${formatCompDate(expiresAt)}. We will email you a link to keep your plan the day before it ends, so you are never charged early.`,
+    );
   }
 
   const res = await lsApi("/checkouts", {

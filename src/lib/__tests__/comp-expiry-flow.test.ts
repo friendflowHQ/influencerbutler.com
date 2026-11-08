@@ -83,7 +83,7 @@ describe("customer emails", () => {
 
   it("win-back copy is plainer and says the end date", () => {
     const { subject, body } = buildCustomerEmail(row({ kind: "winback" }), "warn1");
-    expect(subject).toMatch(/ends tomorrow/);
+    expect(subject).toMatch(/Last reminder/);
     expect(subject).not.toMatch(/thank/i);
     expect(body).toMatch(/Hi Jenna,/);
   });
@@ -136,6 +136,36 @@ describe("comp conversion source", () => {
     expect(src?.keeper).toBe(false);
   });
 
+  it("any running comp gets the delay, even with no kind yet (pre-migration)", async () => {
+    const svc = svcWith([
+      { ls_subscription_id: "comp:n", expires_at: new Date(now + 28 * DAY).toISOString() },
+    ]);
+    expect((await compConversionSource(svc, "u1", "ls-4", now))?.keeper).toBe(true);
+    const aff = svcWith([
+      { ls_subscription_id: "comp:a2", expires_at: new Date(now + 20 * DAY).toISOString(), kind: "affiliate" },
+    ]);
+    expect((await compConversionSource(aff, "u1", "ls-5", now))?.keeper).toBe(true);
+  });
+
+  it("a pre-migration no-card trial (FREE14D code) is not a conversion source", async () => {
+    const svc = svcWith([
+      { ls_subscription_id: "comp:t2", expires_at: new Date(now + 5 * DAY).toISOString(), discount_code: "JANEFREE14D" },
+    ]);
+    expect(await compConversionSource(svc, "u1", "ls-6", now)).toBeNull();
+  });
+
+  it("an admin-revoked comp gives no delay and no conversion credit", async () => {
+    const svc = svcWith([
+      {
+        ls_subscription_id: "comp:r",
+        expires_at: new Date(now + 40 * DAY).toISOString(),
+        cancelled_at: new Date(now - 1 * DAY).toISOString(),
+        kind: "creator",
+      },
+    ]);
+    expect(await compConversionSource(svc, "u1", "ls-7", now)).toBeNull();
+  });
+
   it("drops comps that ended long ago", async () => {
     const svc = svcWith([
       { ls_subscription_id: "comp:old", expires_at: new Date(now - 200 * DAY).toISOString(), kind: "winback" },
@@ -155,9 +185,9 @@ describe("helpers", () => {
     const now = Date.parse("2026-11-08T00:00:00Z");
     const end = pendingCompEnd(
       [
-        { lsSubscriptionId: "a", expiresAt: new Date(now + DAY).toISOString(), kind: null, discountCode: null },
-        { lsSubscriptionId: "b", expiresAt: new Date(now + 3 * DAY).toISOString(), kind: null, discountCode: null },
-        { lsSubscriptionId: "c", expiresAt: new Date(now - DAY).toISOString(), kind: null, discountCode: null },
+        { lsSubscriptionId: "a", expiresAt: new Date(now + DAY).toISOString(), kind: null, discountCode: null, cancelledAt: null },
+        { lsSubscriptionId: "b", expiresAt: new Date(now + 3 * DAY).toISOString(), kind: null, discountCode: null, cancelledAt: null },
+        { lsSubscriptionId: "c", expiresAt: new Date(now - DAY).toISOString(), kind: null, discountCode: null, cancelledAt: null },
       ],
       now,
     );
