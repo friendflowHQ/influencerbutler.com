@@ -23,6 +23,7 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isMissingTableError } from "@/lib/extension-api";
+import { scanNewestFirst } from "@/lib/email-sends-scan";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,7 +50,6 @@ export type TrendPoint = {
 export type TrendTotals = Record<Metric, number>;
 
 type SendRow = {
-  id: string;
   created_at: string;
   delivered_at: string | null;
   opened_at: string | null;
@@ -116,69 +116,63 @@ export async function GET(request: Request) {
     index.set(date, { date, sent: 0, delivered: 0, opened: 0, clicked: 0, bounced: 0 });
   }
 
-  // Keyset paging on (created_at, id): OFFSET paging rescans every earlier row
-  // per batch and can hit the statement timeout on the 100k+ row windows.
-  let fetched = 0;
-  let cursor: { created_at: string; id: string } | null = null;
-  let truncated = false;
-  for (;;) {
-    let q = db
-      .from("email_sends")
-      .select("id, created_at, delivered_at, opened_at, clicked_at, bounced_at")
-      .gte("created_at", cutoff)
-      .order("created_at", { ascending: false })
-      .order("id", { ascending: false })
-      .limit(BATCH);
-    if (cursor) {
-      q = q.or(
-        `created_at.lt."${cursor.created_at}",and(created_at.eq."${cursor.created_at}",id.lt.${cursor.id})`,
-      );
-    }
-    // At most one scope filter is expected; apply whichever was passed.
-    if (category) q = q.eq("category", category);
-    else if (prefix) q = q.like("category", `${prefix}%`);
-    else if (broadcastId) q = q.eq("broadcast_id", broadcastId);
-    else if (funnel) q = q.eq("funnel", funnel);
-
-    const { data, error } = await q;
-    if (error) {
-      console.error("admin emails/timeseries: query failed", error);
-      return NextResponse.json({
-        days,
-        from: dayList[dayList.length - days] ?? todayKey,
-        to: todayKey,
-        points: [],
-        totals: blankTotals(),
-        prevTotals: blankTotals(),
-        migrationPending: isMissingTableError(error),
-        loadError: !isMissingTableError(error),
-      });
-    }
-    const rows = (data ?? []) as SendRow[];
-    for (const row of rows) {
-      // Each event counts on the day it occurred, when that day is in-window.
-      const sentDay = dayKey(row.created_at);
-      const bumps: Array<[string | null, Metric]> = [
-        [sentDay, "sent"],
-        [dayKey(row.delivered_at), "delivered"],
-        [dayKey(row.opened_at), "opened"],
-        [dayKey(row.clicked_at), "clicked"],
-        [dayKey(row.bounced_at), "bounced"],
-      ];
-      for (const [key, metric] of bumps) {
-        if (!key) continue;
-        const point = index.get(key);
-        if (point) point[metric] += 1;
+  // Newest-first scan without OFFSET (see scanNewestFirst): OFFSET rescans
+  // every earlier row per batch and can hit the statement timeout on the
+  // 100k+ row windows. Every query carries the same scope filter.
+  const cols = "created_at, delivered_at, opened_at, clicked_at, bounced_at";
+  // At most one scope filter is expected; apply whichever was passed.
+  const scope: { col: string; op: "eq" | "like"; value: string } | null = category
+    ? { col: "category", op: "eq", value: category }
+    : prefix
+      ? { col: "category", op: "like", value: `${prefix}%` }
+      : broadcastId
+        ? { col: "broadcast_id", op: "eq", value: broadcastId }
+        : funnel
+          ? { col: "funnel", op: "eq", value: funnel }
+          : null;
+  const { error, truncated } = await scanNewestFirst<SendRow>(
+    (before, limit) => {
+      let q = db.from("email_sends").select(cols).gte("created_at", cutoff);
+      if (scope) q = scope.op === "eq" ? q.eq(scope.col, scope.value) : q.like(scope.col, scope.value);
+      if (before) q = q.lt("created_at", before);
+      return q.order("created_at", { ascending: false }).limit(limit).returns<SendRow[]>();
+    },
+    (at, from, to) => {
+      let q = db.from("email_sends").select(cols).eq("created_at", at);
+      if (scope) q = scope.op === "eq" ? q.eq(scope.col, scope.value) : q.like(scope.col, scope.value);
+      return q.order("id").range(from, to).returns<SendRow[]>();
+    },
+    (rows) => {
+      for (const row of rows) {
+        // Each event counts on the day it occurred, when that day is in-window.
+        const bumps: Array<[string | null, Metric]> = [
+          [dayKey(row.created_at), "sent"],
+          [dayKey(row.delivered_at), "delivered"],
+          [dayKey(row.opened_at), "opened"],
+          [dayKey(row.clicked_at), "clicked"],
+          [dayKey(row.bounced_at), "bounced"],
+        ];
+        for (const [key, metric] of bumps) {
+          if (!key) continue;
+          const point = index.get(key);
+          if (point) point[metric] += 1;
+        }
       }
-    }
-    fetched += rows.length;
-    if (rows.length < BATCH) break;
-    const last = rows[rows.length - 1];
-    cursor = { created_at: last.created_at, id: last.id };
-    if (fetched >= MAX_ROWS) {
-      truncated = true;
-      break;
-    }
+    },
+    { batch: BATCH, maxRows: MAX_ROWS },
+  );
+  if (error) {
+    console.error("admin emails/timeseries: query failed", error);
+    return NextResponse.json({
+      days,
+      from: dayList[dayList.length - days] ?? todayKey,
+      to: todayKey,
+      points: [],
+      totals: blankTotals(),
+      prevTotals: blankTotals(),
+      migrationPending: isMissingTableError(error),
+      loadError: !isMissingTableError(error),
+    });
   }
 
   // Split into current (last `days`) and prior (`days` before that) windows.
