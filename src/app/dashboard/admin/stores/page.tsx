@@ -264,7 +264,7 @@ function ProductCards({ products, days }: { products: Item[]; days: number }) {
         ) : null}
       </div>
       <p className="mt-1 text-xs text-slate-600">
-        Views, buy clicks and downloads cover the last {days} days. Downloads are counted from Nov 8, 2026; before that, &quot;people with access&quot; is the best measure.
+        {`Views, buy clicks and downloads cover the last ${days} days.`} Downloads are counted from Nov 8, 2026; before that, &quot;people with access&quot; is the best measure.
         Opening a product page from here doesn&apos;t count as a view.
       </p>
       {shown.length === 0 ? <p className="mt-2 text-sm text-slate-600">None yet.</p> : null}
