@@ -16,6 +16,7 @@ import { sendMetaEvent } from "@/lib/meta-capi";
 import { applyCompConversion, compConversionSource } from "@/lib/comp-conversion";
 import { sendOwnerChargeAlert } from "@/lib/comp-expiry-customer";
 import { syncPlanLevelFromLsSubscription } from "@/lib/plan-level";
+import { isRealTrialConversion } from "@/lib/trial-conversion";
 
 /** The plan-level hook takes the full supabase-js client type. */
 type FunnelDb = Parameters<typeof syncPlanLevelFromLsSubscription>[0];
@@ -1189,7 +1190,16 @@ export async function POST(request: Request) {
 
       // A trial reporting 'active' has just converted to paid. Best-effort
       // analytics stamp; guards inside make it idempotent and trials-only.
-      if (getString(attrs.status) === "active") {
+      // LS can also say 'active' mid-trial, so require the trial to be over
+      // (see isRealTrialConversion); a real charge is caught by
+      // subscription_payment_success regardless.
+      if (
+        isRealTrialConversion(
+          getString(attrs.status),
+          getString(attrs.trial_ends_at),
+          Date.now(),
+        )
+      ) {
         await stampTrialConversion(supabase, recordId);
         // A referred friend's trial just converted to paid: reward the referrer.
         await rewardReferrerForSubscription(recordId);
