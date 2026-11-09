@@ -2293,8 +2293,15 @@ function formatSocials(socials: SocialHandles | null): string | null {
   return entries.map(([k, v]) => `${k}: ${v}`).join(" · ");
 }
 
+// Mirrors resolveDurationMonths in src/lib/affiliate-commissions.ts: no rate
+// set means the default 30% for 12 months; any explicit rate with no duration
+// means lifetime.
+function isDefaultTerms(percent: number | null, months: number | null): boolean {
+  return percent === null || (percent === 30 && months === 12);
+}
+
 function termsSummary(percent: number | null, months: number | null): string {
-  if (percent === null || percent === 30) return "30% (default)";
+  if (isDefaultTerms(percent, months)) return "30% · 12 mo (default)";
   return `${percent}% · ${months === null ? "Lifetime" : `${months} mo`}`;
 }
 
@@ -2320,38 +2327,47 @@ function TermsCell({
   const [percent, setPercent] = useState<string>(
     row.commissionPercent !== null ? String(row.commissionPercent) : "",
   );
-  const [durationMode, setDurationMode] = useState<"lifetime" | "months">(
-    row.commissionDurationMonths === null ? "lifetime" : "months",
-  );
-  const [months, setMonths] = useState<string>(
-    row.commissionDurationMonths !== null ? String(row.commissionDurationMonths) : "12",
-  );
+  // A row with no custom rate is on the default 12-month window, so open the
+  // editor on "Months / 12" rather than implying it is already lifetime.
+  const initialMode = (): "lifetime" | "months" =>
+    row.commissionPercent !== null && row.commissionDurationMonths === null ? "lifetime" : "months";
+  const initialMonths = () =>
+    row.commissionDurationMonths !== null ? String(row.commissionDurationMonths) : "12";
+
+  const [durationMode, setDurationMode] = useState<"lifetime" | "months">(initialMode);
+  const [months, setMonths] = useState<string>(initialMonths);
 
   const working = state.kind === "working";
-  const custom = row.commissionPercent !== null && row.commissionPercent !== 30;
+  const custom = !isDefaultTerms(row.commissionPercent, row.commissionDurationMonths);
 
   const startEdit = () => {
     setPercent(row.commissionPercent !== null ? String(row.commissionPercent) : "");
-    setDurationMode(row.commissionDurationMonths === null ? "lifetime" : "months");
-    setMonths(row.commissionDurationMonths !== null ? String(row.commissionDurationMonths) : "12");
+    setDurationMode(initialMode());
+    setMonths(initialMonths());
     setEditing(true);
   };
 
   const save = async () => {
     const trimmed = percent.trim();
-    const pctNum = trimmed === "" ? null : Number(trimmed);
+    let pctNum = trimmed === "" ? null : Number(trimmed);
     if (pctNum !== null && (!Number.isFinite(pctNum) || pctNum < 0 || pctNum > 100)) {
       window.alert("Rate must be a number between 0 and 100 (or blank for the 30% default).");
       return;
     }
     let durationMonths: number | null = null;
-    if (pctNum !== null && durationMode === "months") {
+    if (durationMode === "months") {
       const m = Number(months.trim());
       if (!Number.isFinite(m) || m <= 0) {
         window.alert("Duration months must be a positive number.");
         return;
       }
       durationMonths = Math.round(m);
+    }
+    // Blank rate: store the 30% default explicitly when the duration differs
+    // from the default 12 months (e.g. 30% lifetime), otherwise clear it.
+    if (pctNum === null) {
+      if (durationMonths === 12) durationMonths = null;
+      else pctNum = 30;
     }
     const ok = await onSave(row.userId, pctNum === null ? null : Math.round(pctNum), durationMonths);
     if (ok) setEditing(false);
@@ -2394,6 +2410,7 @@ function TermsCell({
           value={percent}
           onChange={(e) => setPercent(e.target.value)}
           placeholder="30"
+          aria-label="Commission rate percent"
           className="w-16 rounded border border-slate-300 px-2 py-1 text-xs focus:border-[#f97316] focus:outline-none"
         />
         <span className="text-xs text-slate-500">%</span>
@@ -2401,6 +2418,7 @@ function TermsCell({
       <select
         value={durationMode}
         onChange={(e) => setDurationMode(e.target.value as "lifetime" | "months")}
+        aria-label="Commission duration"
         className="rounded border border-slate-300 px-2 py-1 text-xs focus:border-[#f97316] focus:outline-none"
       >
         <option value="lifetime">Lifetime</option>
@@ -2413,6 +2431,7 @@ function TermsCell({
           value={months}
           onChange={(e) => setMonths(e.target.value)}
           placeholder="12"
+          aria-label="Duration in months"
           className="w-20 rounded border border-slate-300 px-2 py-1 text-xs focus:border-[#f97316] focus:outline-none"
         />
       ) : null}
@@ -2421,9 +2440,9 @@ function TermsCell({
           type="button"
           onClick={save}
           disabled={working}
-          className="rounded bg-[#f97316] px-2 py-1 text-xs font-semibold text-white hover:bg-[#ea580c] disabled:opacity-60"
+          className="rounded bg-[#c2410c] px-2 py-1 text-xs font-semibold text-white hover:bg-[#9a3412] disabled:opacity-60"
         >
-          {working ? "…" : "Save"}
+          {working ? "Saving" : "Save"}
         </button>
         <button
           type="button"
