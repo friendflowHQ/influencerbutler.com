@@ -18,9 +18,10 @@ SET start_min = 630, end_min = 900,
     fixed_slots = '[{"start_min":630},{"start_min":720},{"start_min":840,"types":["support"]}]'::jsonb
 WHERE weekday = 1 AND timezone = 'America/Denver' AND effective_to IS NULL;
 
--- Friday (Mountain): 10:30 and 11:30 only, every call done by 12:45 for the
--- 1:00pm school pickup.
+-- Friday (Mountain): 10:30 Setup or Priority, 12:00 Priority only, every call
+-- done by 12:45 for the 1:00pm school pickup (Setup calls hold a 15-minute
+-- break after them, so a 10:30 Setup frees the calendar at 12:00).
 UPDATE call_availability_rules
 SET start_min = 630, end_min = 780,
-    fixed_slots = '[{"start_min":630},{"start_min":690}]'::jsonb
+    fixed_slots = '[{"start_min":630},{"start_min":720,"types":["support"]}]'::jsonb
 WHERE weekday = 5 AND timezone = 'America/Denver' AND effective_to IS NULL;

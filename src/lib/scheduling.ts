@@ -37,7 +37,7 @@ export const CALL_TYPES: Record<CallTypeKey, {
     key: "demo",
     label: "Setup call",
     userMinutes: 75,
-    blockMinutes: 75,
+    blockMinutes: 90,  // 75-minute call + 15-minute break before the next one
     requiresSubscription: false,
     description: "A free 1-hour-15-minute 1:1 where we set up Influencer Butler with you, any butler you want (YouTube Butler, Amazon Butler, and more).",
     busyPadMinutes: 0,

@@ -60,11 +60,14 @@ describe("computeDaySlots", () => {
     }
   });
 
-  it("every weekday has a demo slot (reserved setup-length window), all 75-minute blocks", () => {
+  it("every weekday has a demo slot (reserved setup-length window), all 90-minute blocks (75 + 15 break)", () => {
     for (const d of week) {
       const slots = computeDaySlots({ ...base, dateISO: d, callType: "demo", nowMs: past });
       expect(slots.length).toBeGreaterThan(0);
-      for (const s of slots) expect(s.endMs - s.startMs).toBe(75 * 60_000);
+      for (const s of slots) {
+        expect(s.endMs - s.startMs).toBe(90 * 60_000);
+        expect(s.userEndMs - s.startMs).toBe(75 * 60_000);
+      }
     }
   });
 
@@ -145,7 +148,7 @@ describe("fixed_slots (hand-picked times per weekday)", () => {
   };
   const friday: AvailabilityRule = {
     weekday: 5, start_min: 630, end_min: 780, timezone: "America/Denver", effective_from: "2026-08-16", effective_to: null,
-    fixed_slots: [{ start_min: 630 }, { start_min: 690 }],
+    fixed_slots: [{ start_min: 630 }, { start_min: 720, types: ["support"] }],
   };
   const base = { rules: [monday, friday], busy: [], leadHours: 0, decoyOpts: { minPerDay: 2, maxPerDay: 4 } };
   const past = Date.parse("2026-11-01T00:00:00Z");
@@ -157,12 +160,23 @@ describe("fixed_slots (hand-picked times per weekday)", () => {
     expect(localTimes(computeDaySlots({ ...base, dateISO: "2026-11-16", callType: "support", nowMs: past }))).toEqual(["10:30 AM", "12:00 PM", "2:00 PM"]);
   });
 
-  it("Friday offers only 10:30 and 11:30, all ending by 12:45 (before 1:00 pickup)", () => {
-    for (const callType of ["demo", "support"] as const) {
-      const slots = computeDaySlots({ ...base, dateISO: "2026-11-13", callType, nowMs: past });
-      expect(localTimes(slots)).toEqual(["10:30 AM", "11:30 AM"]);
-      expect(slots.every((s) => s.endMs <= Date.parse("2026-11-13T19:45:00Z"))).toBe(true); // 12:45 MST
-    }
+  it("Friday: 10:30 for either call, 12:00 Priority only, every call done by 12:45 (1:00 pickup)", () => {
+    const demo = computeDaySlots({ ...base, dateISO: "2026-11-13", callType: "demo", nowMs: past });
+    const support = computeDaySlots({ ...base, dateISO: "2026-11-13", callType: "support", nowMs: past });
+    expect(localTimes(demo)).toEqual(["10:30 AM"]);
+    expect(localTimes(support)).toEqual(["10:30 AM", "12:00 PM"]);
+    const pickup = Date.parse("2026-11-13T19:45:00Z"); // 12:45 MST
+    expect([...demo, ...support].every((s) => s.userEndMs <= pickup)).toBe(true);
+  });
+
+  it("a Setup call leaves a 15-minute break before the next call", () => {
+    // Monday 10:30 Setup ends 11:45; the 12:00 slot stays open, nothing earlier would.
+    const tenThirty = Date.parse("2026-11-16T17:30:00Z");
+    const [first] = computeDaySlots({ ...base, dateISO: "2026-11-16", callType: "demo", nowMs: past });
+    expect(first.startMs).toBe(tenThirty);
+    expect(first.endMs - first.userEndMs).toBe(15 * 60_000);
+    const after = computeDaySlots({ ...base, busy: [{ startMs: first.startMs, endMs: first.endMs }], dateISO: "2026-11-16", callType: "support", nowMs: past });
+    expect(localTimes(after)).toEqual(["12:00 PM", "2:00 PM"]);
   });
 
   it("places no decoys on fixed-slot days", () => {
@@ -171,7 +185,7 @@ describe("fixed_slots (hand-picked times per weekday)", () => {
 
   it("drops a fixed time that is already booked", () => {
     const tenThirty = Date.parse("2026-11-13T17:30:00Z");
-    const slots = computeDaySlots({ ...base, busy: [{ startMs: tenThirty, endMs: tenThirty + 75 * 60_000 }], dateISO: "2026-11-13", callType: "demo", nowMs: past });
-    expect(localTimes(slots)).toEqual([]); // 11:30 overlaps the 10:30-11:45 booking
+    const slots = computeDaySlots({ ...base, busy: [{ startMs: tenThirty, endMs: tenThirty + 90 * 60_000 }], dateISO: "2026-11-13", callType: "support", nowMs: past });
+    expect(localTimes(slots)).toEqual(["12:00 PM"]);
   });
 });
