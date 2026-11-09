@@ -137,7 +137,52 @@ export async function accessTokenFrom(refreshToken: string): Promise<string | nu
   } catch (err) { console.error("[google] refresh threw", err); return null; }
 }
 
-export type MeetResult = { joinUrl: string; meetingId: string; provider: "google_meet" };
+/**
+ * Live check of the saved connection: mints an access token and reads the
+ * primary calendar. A saved refresh token alone says nothing (Google revokes
+ * them on password change, manual revoke, or after 7 days while the OAuth app
+ * is in Testing mode), and createMeetEvent fails silently, so the admin
+ * "Connected" label must come from this.
+ */
+export async function checkGoogleConnection(refreshToken: string): Promise<{ ok: true } | { ok: false; reason: string }> {
+  if (!isGoogleConfigured()) return { ok: false, reason: "Google OAuth client env vars are missing on the server." };
+  try {
+    const res = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        client_id: process.env.GOOGLE_OAUTH_CLIENT_ID || "",
+        client_secret: process.env.GOOGLE_OAUTH_CLIENT_SECRET || "",
+        refresh_token: refreshToken,
+        grant_type: "refresh_token",
+      }),
+    });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => ({}))) as { error?: string; error_description?: string };
+      if (body.error === "invalid_grant") {
+        return { ok: false, reason: "Google no longer accepts the saved sign-in (expired or revoked). If the OAuth app is in Testing mode, publish it so this stops expiring every 7 days." };
+      }
+      return { ok: false, reason: `Google token refresh failed (${res.status}${body.error ? `: ${body.error}` : ""}).` };
+    }
+    const token = ((await res.json()) as { access_token?: string }).access_token;
+    if (!token) return { ok: false, reason: "Google returned no access token." };
+    const cal = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary", { headers: { Authorization: `Bearer ${token}` } });
+    if (!cal.ok) {
+      const t = await cal.text().catch(() => "");
+      if (cal.status === 403 && /accessNotConfigured|has not been used|disabled/i.test(t)) {
+        return { ok: false, reason: "The Google Calendar API is disabled for this Google Cloud project. Enable it in Google Cloud Console." };
+      }
+      if (cal.status === 403) return { ok: false, reason: "Signed in, but without Calendar permission. Reconnect and tick the Calendar box." };
+      return { ok: false, reason: `Google Calendar check failed (${cal.status}).` };
+    }
+    return { ok: true };
+  } catch (err) {
+    console.error("[google] connection check threw", err);
+    return { ok: false, reason: "Could not reach Google to check the connection." };
+  }
+}
+
+export type MeetResult ={ joinUrl: string; meetingId: string; provider: "google_meet" };
 
 /**
  * Create a Calendar event with a Google Meet link. Returns null on any failure

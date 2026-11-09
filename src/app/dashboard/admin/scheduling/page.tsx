@@ -97,7 +97,7 @@ export default function SchedulingAdminPage() {
   const [busy, setBusy] = useState(false);
   const [notes, setNotes] = useState("");
   const [tab, setTab] = useState<"calls" | "settings">("calls");
-  const [settings, setSettings] = useState<{ config: Config | null; rules: Rule[]; blocks: Block[]; recurringBlocks: RecurringBlock[]; googleConnected?: boolean; googleEmail?: string | null } | null>(null);
+  const [settings, setSettings] = useState<{ config: Config | null; rules: Rule[]; blocks: Block[]; recurringBlocks: RecurringBlock[]; googleConnected?: boolean; googleHealthy?: boolean; googleError?: string | null; googleEmail?: string | null } | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [addMsg, setAddMsg] = useState<string | null>(null);
   const [actMsg, setActMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -429,7 +429,16 @@ export default function SchedulingAdminPage() {
             {/* Google Meet connection */}
             <div className="mt-4 border-t border-slate-100 pt-3">
               <div className="text-xs font-medium text-slate-500">Google Meet</div>
-              {settings.googleConnected ? (
+              {settings.googleConnected && settings.googleHealthy === false ? (
+                <div className="mt-1 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm" role="alert">
+                  <div className="font-medium text-rose-800">Connection broken{settings.googleEmail ? ` (${settings.googleEmail})` : ""}: new calls and events get no Meet link.</div>
+                  {settings.googleError && <div className="mt-1 text-rose-700">{settings.googleError}</div>}
+                  <div className="mt-2 flex items-center gap-3">
+                    <a href="/api/admin/scheduling/google/connect" className="inline-block rounded-lg bg-[#c2410c] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#9a3412]">Reconnect Google Calendar</a>
+                    <button type="button" disabled={busy} onClick={() => mutateSettings({ action: "disconnectGoogle" })} className="text-xs text-slate-500 hover:text-rose-700">Disconnect</button>
+                  </div>
+                </div>
+              ) : settings.googleConnected ? (
                 <div className="mt-1 flex items-center gap-3 text-sm">
                   <span className="text-emerald-700">Connected{settings.googleEmail ? ` as ${settings.googleEmail}` : ""}. A Meet link is created for each booking. This account handles calls (Meet + Calendar) only; YouTube uploads use a separate account connected in Events.</span>
                   <button type="button" disabled={busy} onClick={() => mutateSettings({ action: "disconnectGoogle" })} className="text-xs text-slate-400 hover:text-rose-600">Disconnect</button>

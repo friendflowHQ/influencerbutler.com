@@ -8,6 +8,7 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { logAdminAction } from "@/lib/admin-audit";
 import { getAdmin } from "@/lib/scheduling-server";
+import { checkGoogleConnection } from "@/lib/google-meet";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,10 +27,16 @@ export async function GET(request: Request) {
   ]);
   // Never return the refresh token to the client; expose only connection state.
   const raw = (config.data ?? null) as Record<string, unknown> | null;
-  const googleConnected = !!raw?.google_refresh_token;
+  const refreshToken = (raw?.google_refresh_token as string) || null;
+  const googleConnected = !!refreshToken;
   const googleEmail = (raw?.google_calendar_email as string) ?? null;
+  // A saved token is not proof it works: ask Google so the UI never says
+  // "Connected" while every Meet link silently fails.
+  const health = refreshToken ? await checkGoogleConnection(refreshToken) : null;
+  const googleHealthy = health?.ok === true;
+  const googleError = health && !health.ok ? health.reason : null;
   if (raw) { delete raw.google_refresh_token; delete raw.google_calendar_email; }
-  return NextResponse.json({ config: raw, rules: rules.data ?? [], blocks: blocks.data ?? [], recurringBlocks: recurringBlocks.data ?? [], googleConnected, googleEmail });
+  return NextResponse.json({ config: raw, rules: rules.data ?? [], blocks: blocks.data ?? [], recurringBlocks: recurringBlocks.data ?? [], googleConnected, googleHealthy, googleError, googleEmail });
 }
 
 type Body = {
