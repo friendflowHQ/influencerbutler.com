@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { requirePermission, createAdminClient } from "@/lib/admin";
 import { logAdminAction } from "@/lib/admin-audit";
+import { resolveDurationMonths, resolveRatePercent } from "@/lib/affiliate-commissions";
+import { sendLifetimeTermsEmail } from "@/lib/affiliate-lifetime-email";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,6 +23,14 @@ export const dynamic = "force-dynamic";
 
 type TermsClient = {
   from: (table: string) => {
+    select: (cols: string) => {
+      eq: (
+        col: string,
+        value: string,
+      ) => {
+        maybeSingle: () => Promise<{ data: Record<string, unknown> | null; error: unknown }>;
+      };
+    };
     update: (payload: Record<string, unknown>) => {
       eq: (col: string, value: string) => Promise<{ error: unknown }>;
     };
@@ -79,6 +89,50 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
   }
 
+  // Read the current terms + contact details first so we can email the
+  // affiliate when they are newly granted lifetime terms. Best-effort: a read
+  // failure only skips the email.
+  let wasLifetime = true;
+  let recipientEmail: string | null = null;
+  let recipientName: string | null = null;
+  let affiliateCode: string | null = null;
+  try {
+    const { data: before } = await supabase
+      .from("profiles")
+      .select("email,display_name,affiliate_code,commission_percent,commission_duration_months")
+      .eq("id", userId)
+      .maybeSingle();
+    if (before) {
+      wasLifetime =
+        resolveDurationMonths({
+          commissionPercent:
+            typeof before.commission_percent === "number" ? before.commission_percent : null,
+          commissionDurationMonths:
+            typeof before.commission_duration_months === "number"
+              ? before.commission_duration_months
+              : null,
+        }) === null;
+      recipientEmail = typeof before.email === "string" ? before.email : null;
+      recipientName =
+        typeof before.display_name === "string" && before.display_name.trim()
+          ? before.display_name
+          : null;
+      affiliateCode = typeof before.affiliate_code === "string" ? before.affiliate_code : null;
+    }
+    if (!recipientName) {
+      const { data: app } = await supabase
+        .from("affiliate_applications")
+        .select("full_name")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (app && typeof app.full_name === "string" && app.full_name.trim()) {
+        recipientName = app.full_name;
+      }
+    }
+  } catch (err) {
+    console.warn("admin-terms: pre-read skipped", err);
+  }
+
   const { error } = await supabase
     .from("profiles")
     .update({
@@ -94,13 +148,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Update failed" }, { status: 500 });
   }
 
+  // Newly lifetime (was capped, now never expires): thank the affiliate.
+  const newTerms = { commissionPercent, commissionDurationMonths };
+  const isLifetime = resolveDurationMonths(newTerms) === null;
+  let lifetimeEmailSent = false;
+  if (!wasLifetime && isLifetime && recipientEmail) {
+    lifetimeEmailSent = await sendLifetimeTermsEmail({
+      to: recipientEmail,
+      name: recipientName,
+      ratePercent: resolveRatePercent(newTerms),
+      affiliateCode,
+    });
+  }
+
   await logAdminAction({
     actor,
     action: "affiliate.commission.terms",
     targetType: "user",
     targetId: userId,
-    details: { commissionPercent, commissionDurationMonths },
+    details: { commissionPercent, commissionDurationMonths, lifetimeEmailSent },
   });
 
-  return NextResponse.json({ ok: true, commissionPercent, commissionDurationMonths });
+  return NextResponse.json({
+    ok: true,
+    commissionPercent,
+    commissionDurationMonths,
+    lifetimeEmailSent,
+  });
 }

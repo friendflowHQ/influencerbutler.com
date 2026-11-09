@@ -1033,7 +1033,7 @@ export default function AdminAffiliatesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId, commissionPercent, commissionDurationMonths }),
       });
-      const json = (await res.json()) as { error?: string };
+      const json = (await res.json()) as { error?: string; lifetimeEmailSent?: boolean };
       if (!res.ok) {
         setTermsRow((prev) => ({
           ...prev,
@@ -1041,7 +1041,8 @@ export default function AdminAffiliatesPage() {
         }));
         return false;
       }
-      setTermsRow((prev) => ({ ...prev, [userId]: { kind: "success", message: "Saved." } }));
+      const savedMsg = json.lifetimeEmailSent ? "Saved. Lifetime terms email sent." : "Saved.";
+      setTermsRow((prev) => ({ ...prev, [userId]: { kind: "success", message: savedMsg } }));
       // Reflect the new terms in the roster without a full refetch.
       setRoster((prev) =>
         prev.map((r) =>
