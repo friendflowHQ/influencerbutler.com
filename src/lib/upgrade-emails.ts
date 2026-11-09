@@ -17,7 +17,7 @@
 //
 // Fact notes (keep copy honest):
 //   - The 45-minute "Priority 1:1 call" needs Power (or legacy); Beginner gets a
-//     403. The free 2-hour "Setup call" is open to every signed-in user, so the
+//     403. The free 75-minute "Setup call" is open to every signed-in user, so the
 //     copy never says setup calls are Power-only.
 //   - Upgrading swaps the plan on the existing subscription (Lemon Squeezy
 //     prorates: they pay the difference for the rest of the period) and keeps

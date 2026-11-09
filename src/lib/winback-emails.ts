@@ -100,7 +100,7 @@ export function winbackCheckoutUrl(code: string): string {
 }
 
 /** Login-gated booking page. Offered to the "couldn't set it up" crowd for the
- * free 2-hour Setup call, which any signed-in user can book, churned included
+ * free 75-minute Setup call, which any signed-in user can book, churned included
  * (scheduling.ts `demo`, requiresSubscription: false). The 45-minute Priority
  * 1:1 is Power-only, so the copy never promises that one here. */
 function setupCallUrl(): string {
@@ -136,7 +136,7 @@ function setupCallLines(v: WinbackVars, lead: string): string[] {
   if (!v.isTechnical) return [];
   return [
     ``,
-    `${lead} Book a free 2-hour setup call and we'll set it up with you, any butler you want. Sign in with the email you used before, then pick a time: ${setupCallUrl()}`,
+    `${lead} Book a free 1-hour-15-minute setup call and we'll set it up with you, any butler you want. Sign in with the email you used before, then pick a time: ${setupCallUrl()}`,
   ];
 }
 

@@ -168,7 +168,7 @@ describe("Win-back", () => {
     expect(WINBACK_COPY.comp.t1.build(vars(null))).not.toContain("/dashboard/book");
     const tech = WINBACK_COPY.comp.t1.build(vars("technical_issues"));
     expect(tech).toContain("/dashboard/book");
-    expect(tech).toMatch(/free 2-hour setup call/);
+    expect(tech).toMatch(/free 1-hour-15-minute setup call/);
   });
 
   it("discount t1 leads with the Beginner price from the track vars", () => {

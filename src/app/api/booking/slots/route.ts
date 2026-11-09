@@ -5,7 +5,7 @@
  */
 import { NextResponse } from "next/server";
 import { resolveAuth } from "@/lib/license-auth";
-import { getAdmin, availabilityForType } from "@/lib/scheduling-server";
+import { getAdmin, availabilityWithTypes } from "@/lib/scheduling-server";
 import { CALL_TYPES, type CallTypeKey } from "@/lib/scheduling";
 
 export const runtime = "nodejs";
@@ -25,7 +25,8 @@ export async function GET(request: Request) {
   const admin = getAdmin();
   if (!admin) return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
 
-  const days = await availabilityForType(admin, type as CallTypeKey, Date.now());
+  // Each slot carries `types`: every call type open at that start (for the badge).
+  const days = await availabilityWithTypes(admin, type as CallTypeKey, Date.now());
   return NextResponse.json({
     callType: type,
     userMinutes: CALL_TYPES[type as CallTypeKey].userMinutes,

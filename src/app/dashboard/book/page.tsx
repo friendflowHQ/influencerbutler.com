@@ -12,7 +12,17 @@ import { CALL_TYPES, type CallTypeKey } from "@/lib/scheduling";
 import { getTopic } from "@/lib/call-topics";
 import { TopicPicker } from "@/components/scheduling/TopicChips";
 
-type Slot = { startMs: number; endMs: number; userEndMs: number };
+type Slot = { startMs: number; endMs: number; userEndMs: number; types?: ("support" | "demo")[] };
+
+// Badge under each time so customers see which call that time is for.
+function slotBadge(types: Slot["types"]): { text: string; cls: string } | null {
+  if (!types?.length) return null;
+  const demo = types.includes("demo");
+  const support = types.includes("support");
+  if (demo && support) return { text: "Setup or Priority", cls: "bg-slate-100 text-slate-700" };
+  if (support) return { text: "Priority 1:1 only", cls: "bg-indigo-50 text-indigo-800" };
+  return { text: "Setup call only", cls: "bg-orange-50 text-[#9a3412]" };
+}
 type DaySlots = { date: string; timezone: string; slots: Slot[] };
 type MyBooking = {
   id: string; call_type: CallTypeKey; starts_at: string; user_ends_at: string;
@@ -264,7 +274,11 @@ export default function BookCallPage() {
             {daySlots.map((s) => (
               <button key={s.startMs} type="button" onClick={() => setSelectedSlot(s)}
                 className={`rounded-lg border px-2 py-2 text-sm ${selectedSlot?.startMs === s.startMs ? "border-[#f97316] bg-orange-50 text-[#c2410c]" : "border-slate-200 text-slate-700 hover:border-slate-300"}`}>
-                {fmtTime(s.startMs)}
+                <span className="block">{fmtTime(s.startMs)}</span>
+                {(() => {
+                  const b = slotBadge(s.types);
+                  return b ? <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${b.cls}`}>{b.text}</span> : null;
+                })()}
               </button>
             ))}
           </div>

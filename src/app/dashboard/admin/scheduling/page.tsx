@@ -29,7 +29,14 @@ type Prep = {
     fixedHighlights: { id: string; title: string; resolvedVersion: string | null; fixCommitSha: string | null; note: string }[];
   };
 };
-type Rule = { id: string; weekday: number; start_min: number; end_min: number; timezone: string; effective_from: string | null; effective_to: string | null };
+type Rule = { id: string; weekday: number; start_min: number; end_min: number; timezone: string; effective_from: string | null; effective_to: string | null; fixed_slots?: { start_min: number; types?: string[] | null }[] | null };
+
+const FIXED_TYPE_LABEL: Record<string, string> = { demo: "Setup", support: "Priority" };
+function fixedSlotsText(r: Rule): string {
+  if (!r.fixed_slots?.length) return "";
+  const parts = r.fixed_slots.map((f) => `${hhmm(f.start_min)}${f.types?.length ? ` (${f.types.map((t) => FIXED_TYPE_LABEL[t] ?? t).join("/")} only)` : ""}`);
+  return ` · only at ${parts.join(", ")}`;
+}
 type Block = { id: string; starts_at: string; ends_at: string; label: string | null };
 type RecurringBlock = { id: string; weekday: number; start_min: number; end_min: number; timezone: string; label: string | null };
 type Config = { booking_horizon_days: number; lead_time_hours: number; decoy_min_per_day: number; decoy_max_per_day: number; default_join_url: string | null };
@@ -442,7 +449,7 @@ export default function SchedulingAdminPage() {
             <ul className="mt-2 divide-y divide-slate-100 text-sm">
               {settings.rules.filter((r) => showExpired || !isExpired(r)).map((r) => (
                 <li key={r.id} className="flex items-center justify-between py-1.5">
-                  <span className={isExpired(r) ? "text-slate-500" : "text-slate-700"}>{WD[r.weekday]} {hhmm(r.start_min)}–{hhmm(r.end_min)} · {r.timezone} {r.effective_from ? `from ${r.effective_from}` : ""}{r.effective_to ? ` until ${r.effective_to}` : ""}{isExpired(r) ? " (expired)" : ""}</span>
+                  <span className={isExpired(r) ? "text-slate-500" : "text-slate-700"}>{WD[r.weekday]} {hhmm(r.start_min)}–{hhmm(r.end_min)} · {r.timezone} {r.effective_from ? `from ${r.effective_from}` : ""}{r.effective_to ? ` until ${r.effective_to}` : ""}{fixedSlotsText(r)}{isExpired(r) ? " (expired)" : ""}</span>
                   <button type="button" disabled={busy} onClick={() => mutateSettings({ action: "deleteRule", id: r.id })} className="text-xs text-slate-400 hover:text-rose-600">remove</button>
                 </li>
               ))}

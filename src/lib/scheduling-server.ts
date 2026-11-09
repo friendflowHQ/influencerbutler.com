@@ -55,9 +55,12 @@ export function getAdmin(): Admin | null {
 }
 
 export async function loadRules(admin: Admin): Promise<AvailabilityRule[]> {
-  const { data, error } = await admin
-    .from("call_availability_rules")
-    .select("weekday,start_min,end_min,timezone,effective_from,effective_to");
+  const cols = "weekday,start_min,end_min,timezone,effective_from,effective_to";
+  const withStarts = await admin.from("call_availability_rules").select(`${cols},fixed_slots`);
+  if (!withStarts.error) return (withStarts.data ?? []) as AvailabilityRule[];
+  // fixed_slots (20261109) is applied by hand in prod; until it is, read the
+  // rules without it so booking never goes dark.
+  const { data, error } = await admin.from("call_availability_rules").select(cols);
   if (error) { console.error("[scheduling] loadRules", error.message); return []; }
   return (data ?? []) as AvailabilityRule[];
 }
@@ -218,6 +221,27 @@ export async function loadBusy(
 }
 
 export type DaySlots = { date: string; timezone: string; slots: Slot[] };
+
+/** A customer slot plus which bookable call types are open at that same start. */
+export type TypedSlot = Slot & { types: CallTypeKey[] };
+export type TypedDaySlots = { date: string; timezone: string; slots: TypedSlot[] };
+
+const PUBLIC_TYPES: CallTypeKey[] = ["demo", "support"];
+
+/**
+ * availabilityForType, with each slot tagged by every public call type that is
+ * also open at that start, so the picker can badge a time "Priority only" or
+ * "Setup or Priority". Same availability as before; the tags are display only.
+ */
+export async function availabilityWithTypes(admin: Admin, callType: CallTypeKey, nowMs: number): Promise<TypedDaySlots[]> {
+  const all = await Promise.all(PUBLIC_TYPES.map((t) => availabilityForType(admin, t, nowMs)));
+  const openAt = new Map<number, CallTypeKey[]>();
+  PUBLIC_TYPES.forEach((t, i) => {
+    for (const d of all[i]) for (const s of d.slots) openAt.set(s.startMs, [...(openAt.get(s.startMs) ?? []), t]);
+  });
+  const mine = all[PUBLIC_TYPES.indexOf(callType)] ?? [];
+  return mine.map((d) => ({ ...d, slots: d.slots.map((s) => ({ ...s, types: openAt.get(s.startMs) ?? [callType] })) }));
+}
 
 /** Per-day available slots across the booking horizon for a call type. */
 export type MoveOpts = { excludeBookingId?: string | null; ownEvent?: { startMs: number; endMs: number } | null };

@@ -14,7 +14,7 @@ const RULES: AvailabilityRule[] = [
   ...[1, 2, 3, 4, 5].map((wd) => ({ weekday: wd, start_min: 600, end_min: 1020, timezone: "America/Denver", effective_from: "2026-08-16", effective_to: null })),
 ];
 
-describe("activeRuleForDate — Eastern -> Mountain phase switch", () => {
+describe("activeRuleForDate: Eastern -> Mountain phase switch", () => {
   it("uses Eastern before 2026-08-16", () => {
     const r = activeRuleForDate(RULES, "2026-08-10"); // a Monday
     expect(r?.timezone).toBe("America/New_York");
@@ -60,11 +60,11 @@ describe("computeDaySlots", () => {
     }
   });
 
-  it("every weekday has a demo slot (reserved 2h window), all 120-minute blocks", () => {
+  it("every weekday has a demo slot (reserved setup-length window), all 75-minute blocks", () => {
     for (const d of week) {
       const slots = computeDaySlots({ ...base, dateISO: d, callType: "demo", nowMs: past });
       expect(slots.length).toBeGreaterThan(0);
-      for (const s of slots) expect(s.endMs - s.startMs).toBe(120 * 60_000);
+      for (const s of slots) expect(s.endMs - s.startMs).toBe(75 * 60_000);
     }
   });
 
@@ -100,7 +100,7 @@ describe("wrap-by-2pm window (Denver 10:00-14:00)", () => {
     expect(slots.every((s) => s.startMs < twoPmStartUtc)).toBe(true);
   });
 
-  it("still offers a 2h demo that ends by 2:00pm", () => {
+  it("still offers a setup call that ends by 2:00pm", () => {
     const twoPmUtc = Date.parse(`${day}T20:00:00Z`);
     const slots = computeDaySlots({ ...base, dateISO: day, callType: "demo", nowMs: past });
     expect(slots.length).toBeGreaterThan(0);
@@ -135,5 +135,43 @@ describe("recurringBlockBusyRanges", () => {
     const sat: RecurringBlock = { ...block, weekday: 6 };
     const narrow = recurringBlockBusyRanges([sat], Date.parse("2026-08-24T00:00:00Z"), Date.parse("2026-08-25T00:00:00Z"));
     expect(narrow).toEqual([]);
+  });
+});
+
+describe("fixed_slots (hand-picked times per weekday)", () => {
+  const monday: AvailabilityRule = {
+    weekday: 1, start_min: 630, end_min: 900, timezone: "America/Denver", effective_from: "2026-08-16", effective_to: null,
+    fixed_slots: [{ start_min: 630 }, { start_min: 720 }, { start_min: 840, types: ["support"] }],
+  };
+  const friday: AvailabilityRule = {
+    weekday: 5, start_min: 630, end_min: 780, timezone: "America/Denver", effective_from: "2026-08-16", effective_to: null,
+    fixed_slots: [{ start_min: 630 }, { start_min: 690 }],
+  };
+  const base = { rules: [monday, friday], busy: [], leadHours: 0, decoyOpts: { minPerDay: 2, maxPerDay: 4 } };
+  const past = Date.parse("2026-11-01T00:00:00Z");
+  const localTimes = (slots: { startMs: number }[]) =>
+    slots.map((s) => new Intl.DateTimeFormat("en-US", { timeZone: "America/Denver", hour: "numeric", minute: "2-digit" }).format(new Date(s.startMs)));
+
+  it("Monday offers 10:30 and 12:00 for setup calls, plus 2:00 for priority only", () => {
+    expect(localTimes(computeDaySlots({ ...base, dateISO: "2026-11-16", callType: "demo", nowMs: past }))).toEqual(["10:30 AM", "12:00 PM"]);
+    expect(localTimes(computeDaySlots({ ...base, dateISO: "2026-11-16", callType: "support", nowMs: past }))).toEqual(["10:30 AM", "12:00 PM", "2:00 PM"]);
+  });
+
+  it("Friday offers only 10:30 and 11:30, all ending by 12:45 (before 1:00 pickup)", () => {
+    for (const callType of ["demo", "support"] as const) {
+      const slots = computeDaySlots({ ...base, dateISO: "2026-11-13", callType, nowMs: past });
+      expect(localTimes(slots)).toEqual(["10:30 AM", "11:30 AM"]);
+      expect(slots.every((s) => s.endMs <= Date.parse("2026-11-13T19:45:00Z"))).toBe(true); // 12:45 MST
+    }
+  });
+
+  it("places no decoys on fixed-slot days", () => {
+    expect(decoyRangesForDay("2026-11-16", monday, { minPerDay: 2, maxPerDay: 4 })).toEqual([]);
+  });
+
+  it("drops a fixed time that is already booked", () => {
+    const tenThirty = Date.parse("2026-11-13T17:30:00Z");
+    const slots = computeDaySlots({ ...base, busy: [{ startMs: tenThirty, endMs: tenThirty + 75 * 60_000 }], dateISO: "2026-11-13", callType: "demo", nowMs: past });
+    expect(localTimes(slots)).toEqual([]); // 11:30 overlaps the 10:30-11:45 booking
   });
 });

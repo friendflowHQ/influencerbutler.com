@@ -1,5 +1,5 @@
 /**
- * Call scheduling engine — pure, timezone-correct (luxon). Powers both the
+ * Call scheduling engine - pure, timezone-correct (luxon). Powers both the
  * customer slot picker and the owner calendar, so availability is computed the
  * same way everywhere. All returned instants are UTC epoch-ms; render per
  * viewer in their own IANA zone.
@@ -36,10 +36,10 @@ export const CALL_TYPES: Record<CallTypeKey, {
   demo: {
     key: "demo",
     label: "Setup call",
-    userMinutes: 120,
-    blockMinutes: 120,
+    userMinutes: 75,
+    blockMinutes: 75,
     requiresSubscription: false,
-    description: "A free 2-hour 1:1 where we set up Influencer Butler with you, any butler you want (YouTube Butler, Amazon Butler, and more).",
+    description: "A free 1-hour-15-minute 1:1 where we set up Influencer Butler with you, any butler you want (YouTube Butler, Amazon Butler, and more).",
     busyPadMinutes: 0,
   },
   event_followup: {
@@ -60,7 +60,14 @@ export type AvailabilityRule = {
   timezone: string;     // IANA
   effective_from: string | null; // 'YYYY-MM-DD'
   effective_to: string | null;   // 'YYYY-MM-DD' exclusive
+  // Optional hand-picked start times. When set, the day offers ONLY these
+  // starts (each must still fit the window and be free), no decoys are placed,
+  // and `types` (when given) limits which call types may book that start,
+  // e.g. Monday 2:00pm for the Priority 1:1 only.
+  fixed_slots?: FixedSlot[] | null;
 };
+
+export type FixedSlot = { start_min: number; types?: CallTypeKey[] | null };
 
 export type BusyRange = { startMs: number; endMs: number };
 
@@ -83,7 +90,8 @@ const GRID_MIN = 30;   // slots start on a 30-minute grid
 const DECOY_LENGTHS = [45, 60];
 const FIXED_DECOY_START = 900;  // 15:00 local (minutes)
 const FIXED_DECOY_END = 1020;   // 17:00 local
-const PROTECT_MIN = 120;        // keep one demo-length window decoy-free each day
+// Keep one Setup-call-length window decoy-free each day.
+const PROTECT_MIN = CALL_TYPES.demo.blockMinutes;
 
 // luxon weekday is 1=Mon..7=Sun; DB weekday is 0=Sun..6=Sat.
 function luxonToDbWeekday(luxonWeekday: number): number {
@@ -133,6 +141,9 @@ export function decoyRangesForDay(
   rule: AvailabilityRule,
   opts: { minPerDay: number; maxPerDay: number },
 ): Array<{ startMin: number; endMin: number }> {
+  // Fixed-start days already offer only a couple of hand-picked times; a
+  // decoy there would just hide one of them.
+  if (rule.fixed_slots?.length) return [];
   const ranges: Array<{ startMin: number; endMin: number }> = [];
   // Fixed afternoon block (3-5pm) when it falls inside the window.
   if (FIXED_DECOY_START < rule.end_min) {
@@ -167,6 +178,26 @@ export function decoyRangesForDay(
     if (!overlaps) ranges.push({ startMin, endMin });
   }
   return ranges;
+}
+
+/**
+ * Candidate start minutes for a day: the rule's fixed slots (filtered to
+ * `callType` when one is given), or the 30-minute grid.
+ */
+export function candidateStarts(rule: AvailabilityRule, blockMinutes: number, callType?: CallTypeKey): number[] {
+  const out: number[] = [];
+  if (rule.fixed_slots?.length) {
+    const starts = rule.fixed_slots
+      .filter((f) => !callType || !f.types?.length || f.types.includes(callType))
+      .map((f) => f.start_min)
+      .sort((a, b) => a - b);
+    for (const m of starts) {
+      if (m >= rule.start_min && m + blockMinutes <= rule.end_min && !out.includes(m)) out.push(m);
+    }
+    return out;
+  }
+  for (let m = rule.start_min; m + blockMinutes <= rule.end_min; m += GRID_MIN) out.push(m);
+  return out;
 }
 
 function localMinToUtcMs(dateISO: string, minutes: number, tz: string): number {
@@ -217,7 +248,7 @@ export function computeDaySlots(args: {
   const leadFloorMs = args.nowMs + args.leadHours * 3600_000;
 
   const slots: Slot[] = [];
-  for (let m = rule.start_min; m + ct.blockMinutes <= rule.end_min; m += GRID_MIN) {
+  for (const m of candidateStarts(rule, ct.blockMinutes, args.callType)) {
     const startMs = localMinToUtcMs(args.dateISO, m, tz);
     const endMs = startMs + ct.blockMinutes * 60_000;
     const userEndMs = startMs + ct.userMinutes * 60_000;
@@ -294,7 +325,7 @@ export function suggestSlots(args: {
     const rule = activeRuleForDate(args.rules, dateISO);
     if (!rule) continue;
     const tz = rule.timezone;
-    for (let m = rule.start_min; m + args.durationMinutes <= rule.end_min; m += GRID_MIN) {
+    for (const m of candidateStarts(rule, args.durationMinutes)) {
       if (out.length >= args.count) break;
       const startMs = localMinToUtcMs(dateISO, m, tz);
       if (startMs < leadFloorMs) continue;
