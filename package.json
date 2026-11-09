@@ -16,6 +16,7 @@
     "inject:meta-pixel": "node scripts/inject-meta-pixel.mjs",
     "inject:tiktok-pixel": "node scripts/inject-tiktok-pixel.mjs",
     "generate:sitemap": "node scripts/generate-sitemap.mjs",
+    "indexnow": "node scripts/indexnow-submit.mjs",
     "generate:lastmod": "node scripts/generate-page-lastmod.mjs",
     "test:a11y": "node scripts/check-a11y.mjs",
     "sync:videos": "node scripts/generate-transcripts.mjs",

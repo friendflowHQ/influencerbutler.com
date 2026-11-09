@@ -13,6 +13,7 @@ const SITE_ORIGIN = "https://www.influencerbutler.com";
 // Mirrors the rewrite rules in next.config.ts. Add new public pages here.
 const ROOT_PAGES = {
   "index.html": { url: "/", priority: "0.9", changefreq: "weekly" },
+  "download.html": { url: "/download", priority: "0.8", changefreq: "weekly" },
   "landing-page.html": { url: "/landing", priority: "0.7", changefreq: "weekly" },
   "email-sequences.html": { url: "/email-sequences", priority: "0.7", changefreq: "weekly" },
   "brand-deal-rates.html": { url: "/brand-deal-rates", priority: "0.8", changefreq: "monthly" },
@@ -167,6 +168,20 @@ async function main() {
     changefreq: "monthly",
     priority: "0.3",
   });
+
+  // Evergreen public Next routes (src/app/*) that the .html walk never sees.
+  // These are the pages search engines and AI answer engines (ChatGPT search,
+  // Claude, Perplexity) need to describe the company and its programs.
+  // /pricing is deliberately absent: it is noindex (promo-dependent prices).
+  for (const [route, priority, changefreq] of [
+    ["/about", "0.6", "monthly"],
+    ["/contact", "0.4", "monthly"],
+    ["/affiliates", "0.6", "monthly"],
+    ["/leaderboard", "0.4", "daily"],
+    ["/developers", "0.4", "monthly"],
+  ]) {
+    entries.push({ loc: `${SITE_ORIGIN}${route}`, lastmod: fmtDate(new Date()), changefreq, priority });
+  }
 
   // /events is a public Next route (src/app/events) backed by live DB data,
   // not a static .html page, so the walk above never sees it either.
