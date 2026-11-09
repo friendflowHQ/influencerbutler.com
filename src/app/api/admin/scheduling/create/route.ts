@@ -111,6 +111,18 @@ export async function POST(request: Request) {
     if (error || !data) { console.error("[scheduling/create] insert", error?.message); return NextResponse.json({ error: "Could not add that call." }, { status: 500 }); }
     bookingId = data.id as string;
   } else {
+    // The book_call RPC knows nothing about group events, so check those first.
+    const { data: clash } = await admin
+      .from("events")
+      .select("title")
+      .eq("status", "scheduled")
+      .lt("starts_at", new Date(endMs).toISOString())
+      .gt("ends_at", startsAtISO)
+      .limit(1)
+      .maybeSingle();
+    if (clash) {
+      return NextResponse.json({ error: `That time overlaps the event "${clash.title}". Check "Force" to add it anyway.` }, { status: 409 });
+    }
     // Respect existing bookings/blocks: the RPC rejects overlaps atomically.
     const { data, error } = await admin.rpc("book_call", {
       p_user_id: userId,
