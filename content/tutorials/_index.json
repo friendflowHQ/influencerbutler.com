@@ -1620,6 +1620,19 @@
         "fr-FR"
       ],
       "audience": ""
+    },
+    {
+      "id": "instagram-follow-butler",
+      "title": "Instagram Follow Butler: grow by following the right people in your niche",
+      "category": "Instagram",
+      "summary": "Follow the newest followers of growing accounts in your niche, then unfollow them a few days later, so the right people notice you first.",
+      "order": 1002,
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
+      "audience": "power"
     }
   ]
 }
