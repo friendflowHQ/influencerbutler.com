@@ -188,7 +188,13 @@ export async function POST(request: Request) {
     const urlCode =
       (typeof rawAffiliateSource === "string" && rawAffiliateSource.trim().length > 0
         ? rawAffiliateSource.trim()
-        : null) ?? readAffiliateSourceCookie(cookieStore);
+        : null) ??
+      readAffiliateSourceCookie(cookieStore) ??
+      // Durable fallback: the referral stamped on the account at signup or at a
+      // no-card trial. The ib_aff_src cookie lasts 30 days and lives in one
+      // browser, so a referred trialer who upgrades later (or elsewhere) would
+      // otherwise credit nobody. Skipped for add-ons, which never attribute.
+      (isAddon ? null : await readProfileReferralCode(userId));
 
     // Belt 1: when the variant is an add-on, skip the entire resolver call
     // so no discount or attribution can attach to the checkout. The
@@ -330,5 +336,26 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Checkout API error", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+/**
+ * The affiliate code stamped on this account's profile (profiles.ref_affiliate_code),
+ * or null. Service-role read; best-effort, so a lagging schema or any error just
+ * means no fallback attribution.
+ */
+async function readProfileReferralCode(userId: string): Promise<string | null> {
+  try {
+    const admin = createAdminClient();
+    const { data, error } = await admin
+      .from("profiles")
+      .select("ref_affiliate_code")
+      .eq("id", userId)
+      .maybeSingle();
+    if (error) return null;
+    const code = (data as { ref_affiliate_code?: unknown } | null)?.ref_affiliate_code;
+    return typeof code === "string" && code.trim().length > 0 ? code.trim() : null;
+  } catch {
+    return null;
   }
 }

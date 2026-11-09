@@ -4,6 +4,7 @@ import { issueInHouseComp } from "@/lib/comp-issue";
 import { isBotUserAgent } from "@/lib/affiliate-clicks";
 import { AFFILIATE_COMP_PLAN, AFFILIATE_COMP_SEATS } from "@/lib/affiliate-comps";
 import { enrollAppTrialLead } from "@/lib/app-trial-enroll";
+import { attributeExtensionReferral } from "@/lib/extension-affiliate-attribution";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -131,6 +132,23 @@ export async function POST(request: Request) {
   if (!result.ok) {
     // 409 = already has a live subscription (issueInHouseComp guard); surface as-is.
     return NextResponse.json({ error: result.error }, { status: result.status });
+  }
+
+  // Credit the affiliate whose link brought them here. A no-card trial never
+  // touches Lemon Squeezy, so without this stamp the referral is invisible: no
+  // order, no subscription attribution, and nothing for a later checkout to
+  // carry once the 30-day ib_aff_src cookie is gone. The profile stamp makes it
+  // count as a referred signup + trial on the affiliate's dashboard, and the
+  // authed checkout reads it back so the eventual paid conversion pays out.
+  // First-touch, self-referral-guarded and best-effort inside the helper.
+  if (affCode) {
+    await attributeExtensionReferral({
+      userId: result.userId,
+      userEmail: email,
+      code: affCode,
+      capturedAtMs: null,
+      channel: "web",
+    });
   }
 
   // Put them on the app-trial drip. Without this a no-card trial is a silent

@@ -145,11 +145,89 @@ export async function loadReferredSignups(
     console.warn("referred-signups: comp make-whole read skipped", error);
   }
 
+  // No-card trials (/api/trial/no-card) are in-house comps, not Lemon Squeezy
+  // subscriptions, so they never carry subscriptions.ref_affiliate_user_id.
+  // The referral lives on the profile stamp; read those accounts' trial grants
+  // and surface each as a "trial started". Appended after the LS rows so a
+  // real subscription for the same user wins the per-user dedupe.
+  const noCardTrials = await loadNoCardTrialRows(admin, profileRows);
+
   const { funnel, events, insights } = deriveReferredSignups(
     profileRows,
-    subRows,
+    [...subRows, ...noCardTrials],
     Date.now(),
     compMakeWholes,
   );
   return { migrationPending, funnel, events, insights };
+}
+
+/** Discount-code shape issueInHouseComp gives the 14-day no-card trial, used to
+ *  recognize trial grants while comp_grants.kind (20261108) is not yet applied. */
+const NO_CARD_TRIAL_CODE_RE = /FREE14D$/i;
+
+/**
+ * Synthetic subscription rows for referred accounts that started a no-card
+ * trial: trial_started_at = when the grant was issued, no status (a free trial
+ * is never "paying" or "cancelled"). Best-effort: any read error yields none.
+ */
+export async function loadNoCardTrialRows(
+  admin: SupabaseClient,
+  profiles: ReferredProfileRow[],
+): Promise<ReferredSubscriptionRow[]> {
+  const userIds = [
+    ...new Set(profiles.map((p) => p.user_id).filter((id): id is string => Boolean(id))),
+  ];
+  if (userIds.length === 0) return [];
+
+  try {
+    let rows: Record<string, unknown>[] = [];
+    const full = await admin
+      .from("comp_grants")
+      .select("user_id,issued_at,discount_code,kind")
+      .in("user_id", userIds);
+    if (full.error) {
+      // comp_grants.kind is a hand-applied migration; fall back to the code shape.
+      const reduced = await admin
+        .from("comp_grants")
+        .select("user_id,issued_at,discount_code")
+        .in("user_id", userIds);
+      if (reduced.error) {
+        console.warn("referred-signups: no-card trial read skipped", reduced.error);
+        return [];
+      }
+      rows = (reduced.data ?? []) as Record<string, unknown>[];
+    } else {
+      rows = (full.data ?? []) as Record<string, unknown>[];
+    }
+    return noCardTrialRowsFromGrants(rows);
+  } catch (error) {
+    console.warn("referred-signups: no-card trial read skipped", error);
+    return [];
+  }
+}
+
+/** Pure mapping, exported for tests. */
+export function noCardTrialRowsFromGrants(
+  rows: Record<string, unknown>[],
+): ReferredSubscriptionRow[] {
+  const out: ReferredSubscriptionRow[] = [];
+  for (const r of rows) {
+    const userId = typeof r.user_id === "string" ? r.user_id : null;
+    const issuedAt = typeof r.issued_at === "string" ? r.issued_at : null;
+    if (!userId || !issuedAt) continue;
+    const kind = typeof r.kind === "string" ? r.kind : null;
+    const code = typeof r.discount_code === "string" ? r.discount_code : "";
+    const isTrial = kind ? kind === "trial" : NO_CARD_TRIAL_CODE_RE.test(code);
+    if (!isTrial) continue;
+    out.push({
+      user_id: userId,
+      status: null,
+      trial_started_at: issuedAt,
+      trial_converted_at: null,
+      pro_started_at: null,
+      ends_at: null,
+      billing_interval: null,
+    });
+  }
+  return out;
 }

@@ -57,8 +57,9 @@ type OrderRow = {
 };
 
 /** Lead source recorded on the referral. Defaults to the extension; the desktop
- *  app reuses this same function with "desktop" (Phase 2). */
-export type ReferralChannel = "extension" | "desktop";
+ *  app reuses this same function with "desktop" (Phase 2), and the website's
+ *  no-card trial with "web" (the code comes from the ib_aff_src cookie). */
+export type ReferralChannel = "extension" | "desktop" | "web";
 
 export async function attributeExtensionReferral(args: {
   userId: string;
