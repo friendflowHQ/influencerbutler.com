@@ -114,7 +114,7 @@ export async function loadConfig(admin: Admin): Promise<SchedConfig> {
 /**
  * Everything that makes the owner busy in [fromMs, toMs], as UTC busy ranges:
  * confirmed bookings, one-off manual blocks, weekly recurring protected blocks,
- * open event-followup offers, and (when connected) the owner's Google Calendar
+ * open event-followup offers, scheduled group events (padded 15 min), and (when connected) the owner's Google Calendar
  * free/busy. Google is folded in here so both availability listing and
  * booking re-validation subtract it.
  *
@@ -180,6 +180,21 @@ export async function loadBusy(
   if (!o.error) for (const r of o.data ?? []) {
     const pad = padFor("event_followup");
     busy.push({ startMs: Date.parse(r.starts_at as string) - pad, endMs: Date.parse(r.ends_at as string) + pad });
+  }
+
+  // Scheduled group events (Admin > Events). These used to reach availability
+  // only via Google free/busy, which misses any event created without a Meet
+  // link ("no link"). Read them directly, with a 15-min buffer each side for
+  // setup and overrun.
+  const EVENT_PAD_MS = 15 * 60_000;
+  const ev = await admin
+    .from("events")
+    .select("starts_at,ends_at")
+    .eq("status", "scheduled")
+    .lt("starts_at", new Date(toMs + EVENT_PAD_MS).toISOString())
+    .gt("ends_at", new Date(fromMs - EVENT_PAD_MS).toISOString());
+  if (!ev.error) for (const r of ev.data ?? []) {
+    busy.push({ startMs: Date.parse(r.starts_at as string) - EVENT_PAD_MS, endMs: Date.parse(r.ends_at as string) + EVENT_PAD_MS });
   }
 
   // Weekly recurring protected blocks, expanded across the window.
