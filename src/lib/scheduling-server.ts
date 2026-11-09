@@ -21,6 +21,7 @@ import {
 } from "@/lib/scheduling";
 import { isGoogleConfigured } from "@/lib/google-meet";
 import { freeBusy } from "@/lib/google-calendar";
+import { partnerHoldRanges } from "@/lib/partner-call-slots";
 
 export type SchedConfig = {
   bookingHorizonDays: number;
@@ -140,6 +141,8 @@ export async function loadBusy(
     excludeBookingId?: string | null;
     ownEvent?: { startMs: number; endMs: number } | null;
     callType?: CallTypeKey;
+    /** Booking a partner-reserved slot itself: do not treat the holds as busy. */
+    skipPartnerHolds?: boolean;
   },
 ): Promise<BusyRange[]> {
   const fromIso = new Date(fromMs).toISOString();
@@ -199,6 +202,10 @@ export async function loadBusy(
   if (!ev.error) for (const r of ev.data ?? []) {
     busy.push({ startMs: Date.parse(r.starts_at as string) - EVENT_PAD_MS, endMs: Date.parse(r.ends_at as string) + EVENT_PAD_MS });
   }
+
+  // Partner-reserved Setup-call slots (partner-call-slots.ts) stay off the
+  // public calendar; only the partner's referred customers can book them.
+  if (!opts?.skipPartnerHolds) busy.push(...partnerHoldRanges(fromMs, toMs));
 
   // Weekly recurring protected blocks, expanded across the window.
   const recurring = await loadRecurringBlocks(admin);

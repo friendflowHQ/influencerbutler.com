@@ -16,11 +16,17 @@ import { createMeetEvent, isGoogleConfigured } from "@/lib/google-meet";
 import { scheduleBot, isRecallConfigured, shouldScheduleRecordingBot } from "@/lib/recall";
 import { sendBookingConfirmation, sendOwnerNotification, type BookingEmailData } from "@/lib/call-emails";
 import { sanitizeTopics, isMissingTopicsColumn } from "@/lib/call-topics";
+import { findProgram, PARTNER_CALL_TYPE } from "@/lib/partner-call-slots";
+import {
+  isPartnerAudience,
+  openPartnerSlots,
+  partnerBookingsForUser,
+} from "@/lib/partner-call-slots-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type Body = { type?: string; startMs?: number; timezone?: string; topic?: string; topics?: unknown; name?: string };
+type Body = { type?: string; startMs?: number; timezone?: string; topic?: string; topics?: unknown; name?: string; partner?: string };
 
 export async function POST(request: Request) {
   // Dual-mode auth so the in-chat booking card books from the website cookie AND
@@ -61,7 +67,25 @@ export async function POST(request: Request) {
     }
   }
 
-  const v = await validateSlot(admin, type, startMs, Date.now());
+  // Partner-reserved slot (e.g. Tanner's students): only the affiliate's
+  // referred customers, one per person, and only the exact configured times.
+  // These are held off the public calendar, so they skip validateSlot.
+  const program = body.partner ? findProgram(body.partner) : null;
+  if (body.partner && !program) return NextResponse.json({ error: "Unknown reserved call." }, { status: 400 });
+  let v: Awaited<ReturnType<typeof validateSlot>>;
+  if (program) {
+    if (type !== PARTNER_CALL_TYPE) return NextResponse.json({ error: "Reserved times are for the Setup call." }, { status: 400 });
+    if (!(await isPartnerAudience(admin, userId, program))) {
+      return NextResponse.json({ error: `This time is reserved for ${program.partnerName}'s students. Pick any other open time instead.` }, { status: 403 });
+    }
+    if ((await partnerBookingsForUser(admin, userId, program)) >= program.perCustomerLimit) {
+      return NextResponse.json({ error: `You already have a reserved ${program.label} call. Pick any other open time for another call.` }, { status: 409 });
+    }
+    const open = (await openPartnerSlots(admin, program, Date.now())).find((sl) => sl.startMs === startMs);
+    v = open ? { ok: true, endMs: open.endMs, userEndMs: open.userEndMs } : { ok: false, reason: "That reserved time was just taken. Please pick another." };
+  } else {
+    v = await validateSlot(admin, type, startMs, Date.now());
+  }
   if (!v.ok) return NextResponse.json({ error: v.reason }, { status: 409 });
 
   const topic = (body.topic || "").trim().slice(0, 2000);
@@ -133,6 +157,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Could not book that time." }, { status: 500 });
   }
 
+  // Flag the reserved partner call for the owner (calendar + admin list).
+  if (program) {
+    const { error: notesErr } = await admin.from("call_bookings")
+      .update({ host_notes: `Reserved ${program.label} slot: ${program.partnerName} student (code ${program.affiliateCode}).` })
+      .eq("id", bookingId);
+    if (notesErr) console.error("[booking/create] partner host_notes", notesErr.message);
+  }
+
   // Chips ride a follow-up update (not the book_call RPC) so booking keeps
   // working before the topics migration is applied in prod.
   if (topics.length > 0) {
@@ -185,7 +217,8 @@ export async function POST(request: Request) {
   try {
     const { data: sub } = await admin.from("subscriptions").select("status,plan_name").eq("user_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle();
     const tier = tierForSubscriptionStatus((sub?.status as string) ?? null);
-    await sendOwnerNotification(emailData, `Subscription: ${tier}${sub?.plan_name ? ` (${sub.plan_name})` : ""}.`);
+    const partnerLine = program ? ` Reserved ${program.label} slot (${program.partnerName} student).` : "";
+    await sendOwnerNotification(emailData, `Subscription: ${tier}${sub?.plan_name ? ` (${sub.plan_name})` : ""}.${partnerLine}`);
   } catch (e) { console.error("[booking] owner email", e); }
 
   return NextResponse.json({ ok: true, id: bookingId, joinUrl });

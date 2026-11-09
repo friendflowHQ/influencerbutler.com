@@ -12,7 +12,28 @@ import { CALL_TYPES, type CallTypeKey } from "@/lib/scheduling";
 import { getTopic } from "@/lib/call-topics";
 import { TopicPicker } from "@/components/scheduling/TopicChips";
 
-type Slot = { startMs: number; endMs: number; userEndMs: number; types?: ("support" | "demo")[] };
+type Slot = { startMs: number; endMs: number; userEndMs: number; types?: ("support" | "demo")[]; partner?: string };
+
+// Partner-reserved Setup-call times (src/lib/partner-call-slots.ts), offered
+// only to accounts the partner referred. `preview` = admin view-only.
+type PartnerProgram = {
+  key: string; label: string; partnerName: string; url: string; note: string;
+  preview: boolean; limitReached: boolean;
+  slots: { startMs: number; endMs: number; userEndMs: number }[];
+};
+
+// Rose palette taken from the partner's community cover art. Ribbon text is
+// white on #8f4f61 (6.1:1, WCAG AA).
+const PARTNER_RIBBON = "bg-[#8f4f61] text-white";
+const PARTNER_CARD = "border-[#e7c3cb] bg-[#fbeef0] text-[#5c2f3b]";
+
+function InfoIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 16 16" className="h-3 w-3" fill="currentColor">
+      <path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM8 5a.9.9 0 1 1 0-1.8A.9.9 0 0 1 8 5Zm.75 6.5h-1.5V6.75h1.5v4.75Z" />
+    </svg>
+  );
+}
 
 // Badge under each time so customers see which call that time is for.
 function slotBadge(types: Slot["types"]): { text: string; cls: string } | null {
@@ -69,6 +90,15 @@ export default function BookCallPage() {
   const [msg, setMsg] = useState<string>("");
   const [confirmed, setConfirmed] = useState<{ joinUrl: string | null } | null>(null);
   const [mine, setMine] = useState<MyBooking[]>([]);
+  const [partners, setPartners] = useState<PartnerProgram[]>([]);
+
+  const loadPartners = useCallback(async () => {
+    try {
+      const res = await fetch("/api/booking/partner-slots", { cache: "no-store" });
+      if (res.ok) { const j = await res.json(); setPartners(Array.isArray(j.programs) ? j.programs : []); }
+    } catch { /* partner slots are optional */ }
+  }, []);
+  useEffect(() => { loadPartners(); }, [loadPartners]);
 
   // Subscriber check (best-effort; the server is the real gate).
   useEffect(() => {
@@ -158,14 +188,28 @@ export default function BookCallPage() {
 
   // Flatten all slots and regroup by the CUSTOMER's local day.
   const byDay = useMemo(() => {
-    const map = new Map<string, { label: string; slots: Slot[] }>();
-    for (const d of days) for (const s of d.slots) {
+    const map = new Map<string, { label: string; slots: Slot[]; partner: boolean }>();
+    const add = (s: Slot) => {
       const key = fmtDayKey(s.startMs);
-      if (!map.has(key)) map.set(key, { label: fmtDayLabel(s.startMs), slots: [] });
-      map.get(key)!.slots.push(s);
+      if (!map.has(key)) map.set(key, { label: fmtDayLabel(s.startMs), slots: [], partner: false });
+      const day = map.get(key)!;
+      day.slots.push(s);
+      if (s.partner) day.partner = true;
+    };
+    for (const d of days) for (const s of d.slots) add(s);
+    // Partner-reserved Setup times ride alongside the public ones.
+    if (callType === "demo") {
+      for (const p of partners) {
+        if (p.limitReached) continue;
+        for (const s of p.slots) add({ ...s, types: ["demo"], partner: p.key });
+      }
     }
+    for (const day of map.values()) day.slots.sort((a, b) => a.startMs - b.startMs);
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [days]);
+  }, [days, partners, callType]);
+
+  const partnerFor = useCallback((key: string | undefined) => partners.find((p) => p.key === key) ?? null, [partners]);
+  const selectedPartner = partnerFor(selectedSlot?.partner);
 
   // Guides for the picked topics, so a self-serve answer is one click away.
   const helpLinks = useMemo(
@@ -181,15 +225,15 @@ export default function BookCallPage() {
     try {
       const res = await fetch("/api/booking/create", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ type: callType, startMs: selectedSlot.startMs, timezone: USER_TZ, topic, topics, name }),
+        body: JSON.stringify({ type: callType, startMs: selectedSlot.startMs, timezone: USER_TZ, topic, topics, name, ...(selectedSlot.partner ? { partner: selectedSlot.partner } : {}) }),
       });
       const j = await res.json();
       if (!res.ok || !j.ok) { setMsg(j.error || "Could not book that time."); return; }
       setConfirmed({ joinUrl: j.joinUrl ?? null });
-      await Promise.all([loadSlots(callType), loadMine()]);
+      await Promise.all([loadSlots(callType), loadMine(), loadPartners()]);
     } catch (e) { setMsg(e instanceof Error ? e.message : "Could not book."); }
     finally { setSubmitting(false); }
-  }, [selectedSlot, callType, topic, topics, name, loadSlots, loadMine]);
+  }, [selectedSlot, callType, topic, topics, name, loadSlots, loadMine, loadPartners]);
 
   const cancel = useCallback(async (id: string) => {
     if (!confirm("Cancel this call?")) return;
@@ -261,6 +305,7 @@ export default function BookCallPage() {
               <button key={key} type="button" onClick={() => { setSelectedDay(key); setSelectedSlot(null); }}
                 className={`rounded-lg px-3 py-1.5 text-sm ${selectedDay === key ? "bg-[#f97316] text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>
                 {d.label}
+                {d.partner && <span aria-label="includes a reserved time" className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-[#8f4f61] align-middle" />}
               </button>
             ))}
           </div>}
@@ -271,16 +316,41 @@ export default function BookCallPage() {
         <div>
           <h2 className="text-sm font-semibold text-slate-700">Pick a time</h2>
           <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
-            {daySlots.map((s) => (
-              <button key={s.startMs} type="button" onClick={() => setSelectedSlot(s)}
-                className={`rounded-lg border px-2 py-2 text-sm ${selectedSlot?.startMs === s.startMs ? "border-[#f97316] bg-orange-50 text-[#c2410c]" : "border-slate-200 text-slate-700 hover:border-slate-300"}`}>
-                <span className="block">{fmtTime(s.startMs)}</span>
-                {(() => {
-                  const b = slotBadge(s.types);
-                  return b ? <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${b.cls}`}>{b.text}</span> : null;
-                })()}
-              </button>
-            ))}
+            {daySlots.map((s) => {
+              const p = partnerFor(s.partner);
+              const selected = selectedSlot?.startMs === s.startMs && selectedSlot?.partner === s.partner;
+              if (p) {
+                const tipId = `partner-tip-${p.key}-${s.startMs}`;
+                return (
+                  <div key={`${p.key}-${s.startMs}`} className="group relative">
+                    <button type="button" onClick={() => setSelectedSlot(s)} aria-describedby={tipId}
+                      className={`w-full rounded-lg border px-2 pb-2 pt-3 text-sm ${PARTNER_CARD} ${selected ? "ring-2 ring-[#8f4f61]" : "hover:border-[#8f4f61]"}`}>
+                      <span className="block font-medium">{fmtTime(s.startMs)}</span>
+                      <span className="mt-1 inline-block rounded-full bg-white/70 px-2 py-0.5 text-[11px] font-medium text-[#5c2f3b]">Reserved Setup call</span>
+                    </button>
+                    <a href={p.url} target="_blank" rel="noreferrer" aria-describedby={tipId}
+                      className={`absolute -right-1.5 -top-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold shadow-sm ${PARTNER_RIBBON} hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#8f4f61] focus-visible:ring-offset-2`}>
+                      {p.label}<InfoIcon />
+                      <span className="sr-only"> (opens {p.partnerName}&apos;s website in a new tab)</span>
+                    </a>
+                    <span id={tipId} role="tooltip"
+                      className="pointer-events-none invisible absolute right-0 top-5 z-20 w-60 rounded-lg bg-slate-900 px-3 py-2 text-left text-xs leading-snug text-white opacity-0 shadow-lg transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+                      {p.note}
+                    </span>
+                  </div>
+                );
+              }
+              return (
+                <button key={s.startMs} type="button" onClick={() => setSelectedSlot(s)}
+                  className={`rounded-lg border px-2 py-2 text-sm ${selected ? "border-[#f97316] bg-orange-50 text-[#c2410c]" : "border-slate-200 text-slate-700 hover:border-slate-300"}`}>
+                  <span className="block">{fmtTime(s.startMs)}</span>
+                  {(() => {
+                    const b = slotBadge(s.types);
+                    return b ? <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${b.cls}`}>{b.text}</span> : null;
+                  })()}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -291,6 +361,13 @@ export default function BookCallPage() {
           <div className="text-sm text-slate-700">
             {CALL_TYPES[callType].label} on <strong>{fmtDayLabel(selectedSlot.startMs)}</strong> at <strong>{fmtTime(selectedSlot.startMs)}</strong> ({tzFriendly()})
           </div>
+          {selectedPartner && (
+            <p className={`mt-2 rounded-lg border px-3 py-2 text-xs ${PARTNER_CARD}`}>
+              <strong>Reserved for {selectedPartner.partnerName}&apos;s students.</strong> {selectedPartner.preview
+                ? "Admin preview: only accounts referred by this partner can book this time."
+                : "Thanks for joining the live training! One reserved call per student."}
+            </p>
+          )}
           <label className="mt-3 block text-sm">
             <span className="text-slate-500">Your name (optional)</span>
             <input value={name} onChange={(e) => setName(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm" />
@@ -317,7 +394,7 @@ export default function BookCallPage() {
             <span>This call is recorded, transcribed, and summarized by AI so we can prepare notes to review afterward. Any product issues or feature requests raised may be logged to our support queue so we can follow up. Check the box to confirm you understand.</span>
           </label>
           {msg && <div className="mt-2 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{msg}</div>}
-          <button type="button" disabled={submitting || !consent || topics.length === 0} onClick={book} className="mt-3 rounded-lg bg-[#f97316] px-4 py-2 text-sm font-medium text-white hover:bg-[#ea580c] disabled:opacity-50">
+          <button type="button" disabled={submitting || !consent || topics.length === 0 || selectedPartner?.preview === true} onClick={book} className="mt-3 rounded-lg bg-[#f97316] px-4 py-2 text-sm font-medium text-white hover:bg-[#ea580c] disabled:opacity-50">
             {submitting ? "Booking…" : "Confirm booking"}
           </button>
         </div>
