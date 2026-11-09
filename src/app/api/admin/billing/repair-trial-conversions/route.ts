@@ -8,10 +8,14 @@
  * so affiliate dashboards and the trial funnel showed "Converted to paid" for
  * customers who never paid.
  *
- * A row is repaired (trial_converted_at cleared) when it has a trial start, a
- * conversion stamp, and the customer has NO order above $0 created at or after
- * the trial started. Anyone who really paid keeps their stamp. A later genuine
- * conversion re-stamps through the normal webhook path. Audit-logged.
+ * A row is repaired (trial_converted_at cleared) only when BOTH hold:
+ *   - the stamp landed within 24 hours of the trial start (no real trial can
+ *     convert that fast; the bug stamped 0-2 minutes in), and
+ *   - the customer has NO order above $0 created at or after the trial start.
+ * The time rule matters: some genuine early conversions (3-day trials in mid
+ * 2026) have no charge row in `orders`, and those must keep their stamp. A
+ * later genuine conversion re-stamps through the normal webhook path.
+ * Audit-logged.
  */
 import { NextResponse } from "next/server";
 import { requirePermission, createAdminClient } from "@/lib/admin";
@@ -19,6 +23,9 @@ import { logAdminAction } from "@/lib/admin-audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+/** A conversion stamped this soon after the trial started cannot be real. */
+const MAX_BOGUS_GAP_MS = 24 * 60 * 60 * 1000;
 
 type AnyClient = {
   from: (table: string) => any; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -92,6 +99,8 @@ export async function POST(request: Request) {
     if (!s.user_id) return false;
     const startMs = Date.parse(s.trial_started_at as string);
     if (Number.isNaN(startMs)) return false;
+    const convertedMs = Date.parse(s.trial_converted_at as string);
+    if (Number.isNaN(convertedMs) || convertedMs - startMs > MAX_BOGUS_GAP_MS) return false;
     const paid = paidAtByUser.get(s.user_id) ?? [];
     return !paid.some((at) => at >= startMs - 60 * 60 * 1000);
   });
