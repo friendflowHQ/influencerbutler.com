@@ -7,7 +7,11 @@
       "category": "Getting Started",
       "summary": "Pair your phone with the Influencer Butler desktop app to watch it, pause or resume butlers, share products to it from any shopping app, and ask Butler AI, all from your pocket.",
       "order": 2,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "tiktok-creator-stats",
@@ -15,7 +19,11 @@
       "category": "TikTok",
       "summary": "See your TikTok profile, follower and like counts, and how your recent videos are performing, all in one dashboard.",
       "order": 700,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -24,7 +32,11 @@
       "category": "TikTok",
       "summary": "Send a video straight to your connected TikTok account, either to your drafts to finish in the app or as a direct post once TikTok approves the app.",
       "order": 701,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -33,7 +45,11 @@
       "category": "TikTok",
       "summary": "Pull your TikTok Shop affiliate orders into one dashboard and see projected vs settled commission at a glance.",
       "order": 702,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -42,7 +58,11 @@
       "category": "TikTok",
       "summary": "Send personalized DMs to your new TikTok followers, or to a custom list of usernames, with rotating message templates, follow-ups, and safety-first rate limits.",
       "order": 703,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -51,7 +71,11 @@
       "category": "TikTok",
       "summary": "Add TikTok usernames and Like Butler taps the heart on each account's recent videos, on demand or on a schedule, to keep your engagement steady.",
       "order": 704,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -60,7 +84,11 @@
       "category": "TikTok",
       "summary": "Add a list of TikTok usernames and let the butler open each profile and tap Follow for you, with delays, a daily cap, and a scheduler to keep it steady.",
       "order": 705,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -69,7 +97,11 @@
       "category": "TikTok",
       "summary": "Pick the TikTok accounts you want to engage, write a pool of comments, and let the butler post one on each account recent videos, rotating through your lines.",
       "order": 706,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -78,7 +110,11 @@
       "category": "TikTok",
       "summary": "A research-only crawler that walks TikTok creators and their suggested-account graph to surface qualifying videos (#ad, paid partnerships, brand mentions) plus creator contact info.",
       "order": 707,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -87,7 +123,11 @@
       "category": "Getting Started",
       "summary": "Brand new? Start here with this onboarding walkthrough: sign in, connect your Amazon storefront, and run your first Butler. No experience needed.",
       "order": 0.5,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "beginner-start-here",
@@ -95,7 +135,11 @@
       "category": "Getting Started",
       "summary": "What the Beginner plan includes, which butlers you see, how the included AI works, the guided fast track to your first posts, and how to move up to Power User whenever you are ready.",
       "order": 0.8,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "beginner"
     },
     {
@@ -104,7 +148,11 @@
       "category": "Getting Started",
       "summary": "What the Power User plan includes, why it runs AI on your own OpenAI key, how to pick a fast track by goal, and how to book a 1:1 call with the team.",
       "order": 0.9,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -113,7 +161,11 @@
       "category": "Other",
       "summary": "How to move from the Beginner plan to Power User in one click from the desktop app, the Chrome extension or the phone app, what it costs today, what changes, and how to go back.",
       "order": 347.5,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "beginner"
     },
     {
@@ -122,7 +174,11 @@
       "category": "Getting Started",
       "summary": "Get a live product walkthrough or setup help right now, by voice or text, from an AI concierge that knows Influencer Butler. Available 24/7, no waiting for a call.",
       "order": 0.7,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "aip-course-01-start-here",
@@ -130,7 +186,11 @@
       "category": "Beginner Course",
       "summary": "What the free Amazon Influencer course covers, how the check-off system works, and what to honestly expect in your first months.",
       "order": 1,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "series": "amazon-influencer-course",
       "seriesOrder": 1
     },
@@ -140,7 +200,11 @@
       "category": "Beginner Course",
       "summary": "The difference between the Influencer Program and Associates, what onsite placement means, and where the money actually comes from.",
       "order": 2,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "series": "amazon-influencer-course",
       "seriesOrder": 2
     },
@@ -150,7 +214,11 @@
       "category": "Beginner Course",
       "summary": "Which social account to apply with, what Amazon looks for, the application walkthrough, and what to do if you get rejected.",
       "order": 3,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "series": "amazon-influencer-course",
       "seriesOrder": 3
     },
@@ -160,7 +228,11 @@
       "category": "Beginner Course",
       "summary": "The three-video review gate explained: what Amazon checks, the most common rejection reasons, and how to pass on your first try.",
       "order": 4,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "series": "amazon-influencer-course",
       "seriesOrder": 4
     },
@@ -170,7 +242,11 @@
       "category": "Beginner Course",
       "summary": "A phone, a window, and a 3-part script: how to film simple product videos that convert shoppers, plus the mistakes that waste your time.",
       "order": 5,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "series": "amazon-influencer-course",
       "seriesOrder": 5
     },
@@ -180,7 +256,11 @@
       "category": "Beginner Course",
       "summary": "How to upload videos, tag the right products, write titles that help you get watched, and avoid the tagging mistakes that cost commissions.",
       "order": 6,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "series": "amazon-influencer-course",
       "seriesOrder": 6
     },
@@ -190,7 +270,11 @@
       "category": "Beginner Course",
       "summary": "Set up your Amazon storefront: name, photo, idea lists, and how to organize products so visitors buy instead of bouncing.",
       "order": 7,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "series": "amazon-influencer-course",
       "seriesOrder": 7
     },
@@ -200,7 +284,11 @@
       "category": "Beginner Course",
       "summary": "The three numbers that matter in your Amazon earnings reports, what normal looks like for a beginner, and a healthy check-in cadence.",
       "order": 8,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "series": "amazon-influencer-course",
       "seriesOrder": 8
     },
@@ -210,7 +298,11 @@
       "category": "Beginner Course",
       "summary": "A concrete four-week action plan from application to a 20-video library, sized for a few hours per week.",
       "order": 9,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "series": "amazon-influencer-course",
       "seriesOrder": 9
     },
@@ -220,7 +312,11 @@
       "category": "Beginner Course",
       "summary": "The growth levers after your first months: Creator Connections, deal posting, and which repetitive tasks are worth automating.",
       "order": 9.1,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "series": "amazon-influencer-course",
       "seriesOrder": 10
     },
@@ -230,7 +326,11 @@
       "category": "Beginner Course",
       "summary": "Quick answers on followers, approval times, earnings, international programs, taxes, and the other questions beginners ask most.",
       "order": 9.2,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "series": "amazon-influencer-course",
       "seriesOrder": 11
     },
@@ -240,7 +340,11 @@
       "category": "Amazon",
       "summary": "Set up automated Creator Connections outreach for the brands behind your top-selling ASINs.",
       "order": 10,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "ai-keyword-generator",
@@ -248,7 +352,11 @@
       "category": "Amazon",
       "summary": "Set the keyword and brand filters for your outreach in one place, generate seasonal product keywords with AI, rank them against your CC catalog, and send them straight into your Message Brands keyword list.",
       "order": 15,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "dailycommissionbutler",
@@ -256,7 +364,11 @@
       "category": "Amazon",
       "summary": "Auto-accept the right Amazon Creator Connections campaigns based on what you actually sold yesterday.",
       "order": 20,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "daily-performance",
@@ -264,7 +376,11 @@
       "category": "Amazon",
       "summary": "A once-a-day snapshot of your verified Amazon numbers, on your dashboard and in your inbox, with plain guidance when a month dips.",
       "order": 21,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "cc-check",
@@ -272,7 +388,11 @@
       "category": "Amazon",
       "summary": "Check your ASINs against the live catalogs, accept campaigns, submit content, and extract brands from one results table.",
       "order": 30,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "filled-campaign-recovery",
@@ -280,7 +400,11 @@
       "category": "Amazon",
       "summary": "Find Creator Connections campaigns that filled up before you could join, but feature products you already made content for, then message the brand with proof and ask them to open another slot.",
       "order": 31,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "campaign-alert-butler",
@@ -288,7 +412,11 @@
       "category": "Amazon",
       "summary": "Follow the Creator Connections brands you care about, get alerted the moment they post a new campaign, and optionally auto-accept those campaigns on a schedule so you get in before they fill up.",
       "order": 32,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "cc-deals",
@@ -296,7 +424,11 @@
       "category": "Amazon",
       "summary": "See which products in the campaigns you're in are on sale right now. Refresh on demand or on a schedule.",
       "order": 35,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -305,7 +437,11 @@
       "category": "Amazon",
       "summary": "Pull your purchase + commission history straight from Amazon so the rest of the app has accurate ASIN signal.",
       "order": 40,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "pricecrashbutler",
@@ -313,7 +449,11 @@
       "category": "Amazon",
       "summary": "Scan Amazon on a schedule for products discounted ≥99% off and hand the catches to Deal Posting as drafts or auto-scheduled posts.",
       "order": 45,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -322,7 +462,11 @@
       "category": "Amazon",
       "summary": "Pull photos, videos, idea lists, and media collections from your Amazon storefront into one searchable feed enriched with Creators API data.",
       "order": 50,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "share-products-manually",
@@ -330,7 +474,11 @@
       "category": "Amazon",
       "summary": "How to share your Amazon links by hand on Instagram, Facebook, TikTok, and Pinterest. Add each platform to your Amazon site list first, then disclose on every post. Copy-paste examples included.",
       "order": 55,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "deals",
@@ -338,7 +486,11 @@
       "category": "Amazon",
       "summary": "End-to-end automation: filter Amazon deals on price + discount + commission, build your post template, pick social destinations, and let the scheduler do the rest.",
       "order": 70,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "deals-guided-setup",
@@ -346,7 +498,11 @@
       "category": "Amazon",
       "summary": "The fastest way to start posting Amazon deals to your Facebook group: connect your group, pick a niche, press Start. Or use Advanced setup for Walmart, more destinations, and finer control.",
       "order": 71,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "social-posting-butler",
@@ -354,7 +510,11 @@
       "category": "Other",
       "summary": "Load your own posts once (your photo or an AI-generated one, your caption, your link or a link in the first comment) and let them publish on a schedule. AI caption and hashtag help, real delivery reporting, content recycling, and team approvals included.",
       "order": 72,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -363,7 +523,11 @@
       "category": "Amazon",
       "summary": "Connect an inbox with an app password, pick which seller senders to watch, and the promo codes and prices they email you land in a filterable table ready to send to the Deals Scheduler.",
       "order": 72,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -372,7 +536,11 @@
       "category": "Amazon",
       "summary": "Paste storefront links, set a like cap and delay, and Like Butler keeps you top-of-mind with brands by liking their CC storefront content on a cadence.",
       "order": 80,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "goldminebutler",
@@ -380,7 +548,11 @@
       "category": "Amazon",
       "summary": "Scan other creators' Amazon storefronts for #ad / #partner content to identify brands you should pitch.",
       "order": 90,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -389,7 +561,11 @@
       "category": "Amazon",
       "summary": "Follow the Amazon brands you care about, get alerted the moment they list a product you have not seen before, and hand each new release straight to Build Your Post so you can be first to promote it.",
       "order": 33,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "earnings-intelligence",
@@ -397,7 +573,11 @@
       "category": "Amazon",
       "summary": "Track your Amazon commissions by source, storefront, and ASIN over time, so you can tell which products made money versus which just drove clicks.",
       "order": 92,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -406,7 +586,11 @@
       "category": "Amazon",
       "summary": "Best Seller Butler measures which Amazon products get the most engagement on your social posts, scores them over a recency window, and promotes the top performers into your always-post pool so they get reposted automatically.",
       "order": 95,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -415,7 +599,11 @@
       "category": "Amazon",
       "summary": "A visual Monday to Sunday week where you write your own colour-coded plans for each day and see every roundup, deal and automation your butlers have scheduled, all in one grid.",
       "order": 96,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -424,7 +612,11 @@
       "category": "Amazon",
       "summary": "Connect a Google Sheet once per source, pick your columns, and push Facebook Group Builder posts and Deal Posting results into it, on demand or automatically.",
       "order": 97,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -433,7 +625,11 @@
       "category": "Amazon",
       "summary": "Convert, re-encode, and re-upload your Amazon storefront videos with fresh metadata across 13 marketplaces, translating the title and adding translated captions or an AI dub for each country.",
       "order": 100,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "photo-reload-butler",
@@ -441,7 +637,11 @@
       "category": "Amazon",
       "summary": "Re-post your existing Amazon storefront photos to Canada, the UK, Australia, and Singapore with fresh tags, and reload photos that were removed from Amazon.",
       "order": 101,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "youtube-butler",
@@ -449,7 +649,11 @@
       "category": "Amazon",
       "summary": "Cross-post your shoppable Amazon videos to YouTube with affiliate links and automatic Shorts detection.",
       "order": 110,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -458,7 +662,11 @@
       "category": "Amazon",
       "summary": "Find every video, photo, and idea-list item pointing to an unavailable product and tag a replacement automatically.",
       "order": 120,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -467,7 +675,11 @@
       "category": "Amazon",
       "summary": "Turn any product link into a branded Calling Card that opens the Amazon app, then see where you posted it, how it is trending, and whether it is still healthy, all in one ledger.",
       "order": 125,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "foyer-butler",
@@ -475,7 +687,11 @@
       "category": "Amazon",
       "summary": "Build a shoppable link-in-bio page from your tracked products and deals, collect subscribers, and send them a newsletter. The page and subscriber list are always free; sending newsletters needs Pro after your trial.",
       "order": 126,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "foyer-butler-stan-migration",
@@ -483,7 +699,11 @@
       "category": "Getting Started",
       "summary": "Rebuild your Stan Store page in Foyer Butler, then cancel your Stan Store subscription yourself. We never ask for or store your Stan Store login.",
       "order": 126.5,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "relink-butler",
@@ -491,7 +711,11 @@
       "category": "Amazon",
       "summary": "Rewrite affiliate links in your already-published Deal Posting, YouTube, Pinterest, and Benable content without re-editing each post.",
       "order": 130,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -500,7 +724,11 @@
       "category": "Amazon",
       "summary": "Generate Amazon-Shoppable-compliant voiceover scripts for any ASIN, validated against Amazon's video rules and FTC disclosure requirements.",
       "order": 140,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -509,7 +737,11 @@
       "category": "Amazon",
       "summary": "Install the free Chrome extension: Butler Scores, price and video intel, Campaign Radar and SPCC scoring on Creator Connections, Video Money on Creator Hub, deals and idea-list signals, Walmart and Benable support, deep links, Global Maximizer, and dashboard sync.",
       "order": 145,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "extension-assistant",
@@ -517,7 +749,11 @@
       "category": "Amazon",
       "summary": "Open the Influencer Butler AI assistant straight from the Chrome extension. Ask how any tool works, get exact click paths, or talk it through by voice, without leaving Amazon.",
       "order": 146,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "levanta",
@@ -525,7 +761,11 @@
       "category": "Partnerships",
       "summary": "Two-tab workspace that pitches Levanta-approved brands on autopilot and harvests brand contact emails during runs.",
       "order": 150,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -534,7 +774,11 @@
       "category": "Partnerships",
       "summary": "Unified registry of brands you're prospecting, pitching, or negotiating with - sent in from Goldmine, Ads Goldmine, and the Levanta extractor, or imported from Creator Connections and Instagram. Connect Gmail to send pitches and auto-track replies.",
       "order": 160,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -543,7 +787,11 @@
       "category": "Partnerships",
       "summary": "Type a niche keyword, pick a marketplace, and Benable Butler researches Amazon, picks matching ASINs, writes the collection, and publishes it.",
       "order": 170,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -552,7 +800,11 @@
       "category": "Partnerships",
       "summary": "A filterable table of every product Benable Butler published, with the reason it was picked, its Creator Connections and SPCC status, campaign end, caption, and collection.",
       "order": 172,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -561,7 +813,11 @@
       "category": "Partnerships",
       "summary": "Paste a Benable list URL and get a prioritized, ready-to-use set of improvements, computed locally with no OpenAI cost.",
       "order": 175,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -570,7 +826,11 @@
       "category": "Partnerships",
       "summary": "Paste Benable profile URLs, set max likes and delay, and Like Butler keeps you visible on those creators' recent-activity feeds.",
       "order": 180,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "benable-comment-butler",
@@ -578,7 +838,11 @@
       "category": "Partnerships",
       "summary": "Drop short, friendly, product-specific comments on Benable list items - AI-written from Amazon product details, canned fallback if the model fails.",
       "order": 190,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -587,7 +851,11 @@
       "category": "Partnerships",
       "summary": "One board for every collab - pitched, in-production, posted, paid - with drag-to-update stages, filters, exports, and per-card payout + deadline detail.",
       "order": 195,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -596,7 +864,11 @@
       "category": "Instagram",
       "summary": "Send first-touch outreach DMs to brands and creators on Instagram using rotating templates, follower-count filters, and a do-not-message list.",
       "order": 200,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -605,7 +877,11 @@
       "category": "Instagram",
       "summary": "Send personalized opening DMs to the creators you've added to Instagram Butler's queue.",
       "order": 210,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -614,7 +890,11 @@
       "category": "Instagram",
       "summary": "Automate adding new Instagram followers to your Close Friends list with strict per-hour and per-day rate limits and a do-not-add list.",
       "order": 220,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -623,7 +903,11 @@
       "category": "Instagram",
       "summary": "Get the desktop URL for your Instagram broadcast channel so Deal Posting can post to it. Walks through the mobile share link, a one-line console snippet to read the channel ID, and building the final link.",
       "order": 225,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "instagram-email",
@@ -631,7 +915,11 @@
       "category": "Instagram",
       "summary": "Scan your Instagram DMs for email addresses brands have shared in conversation, then export them to a reusable contact list.",
       "order": 230,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -640,7 +928,11 @@
       "category": "Instagram",
       "summary": "Research-only crawler: seed with Instagram usernames, walk the suggested-accounts graph, and harvest posts tagged #ad / paid-partnership.",
       "order": 240,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -649,7 +941,11 @@
       "category": "Instagram",
       "summary": "Add Instagram usernames, set max likes and delay, and Instagram Like Butler likes each account's recent posts and reels on a schedule.",
       "order": 245,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "youtube-like-butler",
@@ -657,7 +953,11 @@
       "category": "Other",
       "summary": "Add YouTube channels, set max likes and delay, and YouTube Like Butler likes each channel's recent videos on a schedule.",
       "order": 246,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "api-integrations",
@@ -665,7 +965,11 @@
       "category": "Other",
       "summary": "Central panel for connecting Amazon Creators API, Levanta, Archer, Logie, deeplink providers, OpenAI, YouTube, and more.",
       "order": 300,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "openai-api-setup",
@@ -673,7 +977,11 @@
       "category": "Other",
       "summary": "The AI butlers need an OpenAI API key from platform.openai.com, not a ChatGPT subscription. How to create a key, add billing, and connect it.",
       "order": 302,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "telegram-bot",
@@ -681,7 +989,11 @@
       "category": "Other",
       "summary": "Create a bot with BotFather, add it to your channel, and connect it on the API Integrations panel so Deal Posting can post automatically.",
       "order": 305,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "actionqueue",
@@ -689,7 +1001,11 @@
       "category": "Other",
       "summary": "When any workspace hits a fork - approve a message, pick between options, accept a campaign - the decision lands here instead of blocking the run.",
       "order": 310,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -698,7 +1014,11 @@
       "category": "Other",
       "summary": "Schedule the products you want to shoot on a Monthly / Weekly / Daily calendar. Drag from Orders Butler or add manually, tag by content type.",
       "order": 320,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -707,7 +1027,11 @@
       "category": "Other",
       "summary": "Monitor your Amazon storefront on a cadence and log every Black-Friday-flagged or time-limited deal with timestamps.",
       "order": 330,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -716,7 +1040,11 @@
       "category": "Other",
       "summary": "Find Prime Day deals from content you already made, products you already own, and fresh Creators-API discoveries. Ranked by estimated earnings, split into quick wins and last-minute picks, with a tracked-keyword watchlist and CSV export.",
       "order": 335,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -725,7 +1053,11 @@
       "category": "Other",
       "summary": "Score the products you have access to across four signal tiers - Lightning Deals, Creator Connections, SPCC offers, brand-search density - to find which ones to feature or pitch next.",
       "order": 340,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -734,7 +1066,11 @@
       "category": "Other",
       "summary": "See price history, sales-rank history, estimated monthly sales, and seasonal signals for Amazon products, built automatically from your own browsing with the extension.",
       "order": 341,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -743,7 +1079,11 @@
       "category": "Other",
       "summary": "See price history, rank history, and estimated monthly sales for Walmart products, built automatically as the app looks products up, with a daily check that keeps every one fresh.",
       "order": 342,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -752,7 +1092,11 @@
       "category": "Other",
       "summary": "Repost your Amazon storefront videos and photos to your Walmart Creator storefront automatically, only when the product is the exact same item on Walmart. Use the Set it up wizard to sign in and configure it in under a minute.",
       "order": 342.3,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "walmart-collection-builder",
@@ -760,7 +1104,11 @@
       "category": "Other",
       "summary": "Paste one of your Amazon lists and Collection Builder creates a matching Walmart collection with a similar name, a similar description and Walmart products picked to match, after you review everything.",
       "order": 342.4,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -769,7 +1117,11 @@
       "category": "Other",
       "summary": "Read your own Walmart Creator numbers (sales, commissionable sales, commission, storefront visits, each collection and post) into the app, once or every day, so you can see what is earning without opening the portal.",
       "order": 342.5,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -778,7 +1130,11 @@
       "category": "Other",
       "summary": "Group your products into themed Idea Lists, make a styled collage photo for each one, post it as a shoppable photo, file everything into curations and pin a list and photo mix to the top. You review every list before it is built.",
       "order": 342.5,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -787,7 +1143,11 @@
       "category": "Other",
       "summary": "Invite harvested creator emails into your Facebook group, one at a time, at a human pace. Load a CSV or hand off from a Goldmine, set pacing and daily caps, and Butler skips anyone it already invited.",
       "order": 342,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -796,7 +1156,11 @@
       "category": "Other",
       "summary": "Read your Facebook group's join requests, capture the email each person submits, optionally approve them, and hand the list to Pitch Butler with a Facebook source chip.",
       "order": 342.5,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -805,7 +1169,11 @@
       "category": "Other",
       "summary": "Use AI to plan a Facebook group by niche, generate its cover, description, welcome post, and engagement posts, then build the group and hand it to Deal Posting so deals post automatically.",
       "order": 343,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -814,7 +1182,11 @@
       "category": "Other",
       "summary": "Walk the Facebook groups you belong to, open each post's reaction list, and invite those people to follow your Page, with a per-post cap, skip list, and daily schedule.",
       "order": 343.5,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -823,7 +1195,11 @@
       "category": "Other",
       "summary": "Message the members of a Facebook group or the followers of a Page, one at a time at a human pace with a unique message each time, set up comment-to-DM rules that reply to commenters automatically, and check for replies to collect email addresses people send back.",
       "order": 343.7,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -832,7 +1208,11 @@
       "category": "Other",
       "summary": "Clear out old deal drops and expired promo comments on a schedule, with a preview, per-run cap, and protect list so nothing important is ever removed.",
       "order": 344,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -841,7 +1221,11 @@
       "category": "Other",
       "summary": "Search Facebook for groups in your niche by keyword, filter them by size and type, join the ones you are not in yet, and automatically accept the admin role when an adminless group offers it to you.",
       "order": 344.2,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -850,7 +1234,11 @@
       "category": "Other",
       "summary": "Find Facebook groups that fit your Benable lists and Walmart collections, read each group's rules, join the ones you pick, and share one list per group the way the group allows, so posts are not removed.",
       "order": 344.3,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -859,7 +1247,11 @@
       "category": "Other",
       "summary": "Scan the Facebook groups you belong to, collect the posts already going viral, then approve the best ones to repost to your Page and reshare into your groups on rotation.",
       "order": 344.4,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -868,7 +1260,11 @@
       "category": "Other",
       "summary": "Withdraw the pending invites you sent into a Facebook group you manage, one at a time, at a natural pace. Choose whether to clear all of them, only profile and Page invites, or only email invites, with a delay between each so the activity looks human.",
       "order": 344.6,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -877,7 +1273,11 @@
       "category": "Other",
       "summary": "Find every deal post whose deal has expired and remove it, or, when a creator campaign was attached, edit it in place so it stops advertising a dead price. Card and table views, filters, an action history, and one-click Post again.",
       "order": 344.5,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "focus-mode",
@@ -885,7 +1285,11 @@
       "category": "Other",
       "summary": "Turn on Focus mode (Ctrl+.) to strip distractions, plus reduced motion and run-one-task-at-a-time so the HUD stays calm and responsive.",
       "order": 345,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "global-controls",
@@ -893,7 +1297,11 @@
       "category": "Other",
       "summary": "Use the bar under the header to pause every running butler in one click, resume just the ones you want, and flip \"Watch it run\" for all butlers at the same time.",
       "order": 346,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "manage-subscription",
@@ -901,7 +1309,11 @@
       "category": "Other",
       "summary": "Where your plan lives, how to change billing, and how to cancel in one click from your dashboard. You keep access until the end of your billing period, with no support ticket.",
       "order": 348,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "app-slow-freezing",
@@ -909,7 +1321,11 @@
       "category": "Other",
       "summary": "Is Influencer Butler dragging, lagging, or freezing up? Turn on Low resource mode, stop butlers from auto-restarting, pause automations, and try Safe Mode. Step-by-step for Windows and Mac.",
       "order": 349,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "update-troubleshooting",
@@ -917,7 +1333,11 @@
       "category": "Other",
       "summary": "If an update shows \"Failed to uninstall old application files\", your antivirus is briefly locking app files. The app now retries on its own; here is the 1-minute manual fix and the always-works reinstall path.",
       "order": 350,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "run-in-cloud",
@@ -925,7 +1345,11 @@
       "category": "Other",
       "summary": "Put Influencer Butler on a free, always-on cloud computer (AWS) so your butlers keep running even when your laptop is slow, closed, or traveling. Step-by-step, no tech skills needed.",
       "order": 351,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "telegram-compose",
@@ -933,7 +1357,11 @@
       "category": "Other",
       "summary": "Connect a Telegram bot, then compose, schedule, and manage posts to your Telegram channel without leaving Influencer Butler.",
       "order": 360,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -942,7 +1370,11 @@
       "category": "Other",
       "summary": "Watch your Facebook group and copy every new post, with its photo and links, to your Telegram channel automatically. Perfect when Facebook is hiding your posts.",
       "order": 361,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -951,7 +1383,11 @@
       "category": "Other",
       "summary": "Connect your Reddit app and account, then submit link or text posts to a subreddit, schedule them, and edit or delete them from Influencer Butler.",
       "order": 361,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -960,7 +1396,11 @@
       "category": "Other",
       "summary": "Post to your Threads feed using your Instagram login. Compose, schedule, and delete Threads posts from Influencer Butler.",
       "order": 362,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -969,7 +1409,11 @@
       "category": "Other",
       "summary": "Beta workspace: the panel is a preview and nothing posts to Pinterest yet. What the pin engine will do once it is wired up, what you can do today, and how to follow the rollout.",
       "order": 999,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -978,7 +1422,11 @@
       "category": "Amazon",
       "summary": "Type what you are shopping for and Shopping Butler searches Amazon and Walmart, then ranks the results by price, product quality, the commission you would earn, and how crowded each product already is with creator videos.",
       "order": 34,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "ai-influencer-butler",
@@ -986,7 +1434,11 @@
       "category": "Other",
       "summary": "Turn a style into a ready-to-post outfit look with your AI model, real Amazon and Walmart products, and your branding. Run it on autopilot with a daily spend cap, and make a celebration video like \"1k Members\" from a photo of you.",
       "order": 73,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -995,7 +1447,11 @@
       "category": "Other",
       "summary": "A short questionnaire sets up your AI model, products, posting and schedule. Pick Fast track or Guide me, then add your photos and sign-ins. Your first looks always wait for your approval.",
       "order": 72,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -1004,7 +1460,11 @@
       "category": "Other",
       "summary": "Make a short vertical celebration video of you, like a champagne pop with a big \"1k Members\" at the end. Check the key pictures first, then make the video.",
       "order": 74,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -1013,7 +1473,11 @@
       "category": "Collage",
       "summary": "Answer a few questions and Collage Butler makes a framed, editorial product collage each day, with every product linked, and posts it for you.",
       "order": 74,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -1022,7 +1486,11 @@
       "category": "Collage",
       "summary": "Set the keywords and price filters that decide which Amazon products get pulled in when Collage Butler builds a multi-product image.",
       "order": 74.1,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -1031,7 +1499,11 @@
       "category": "Collage",
       "summary": "See every collage you have generated in one grid, check whether each one was posted, and pick a look worth remaking or reposting.",
       "order": 74.2,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -1040,7 +1512,11 @@
       "category": "Collage",
       "summary": "Set one reusable look for your product collages, a default layout, font, brand colors, and headline and call-to-action presets, so every collage you generate starts from the same on-brand style.",
       "order": 74.3,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -1049,7 +1525,11 @@
       "category": "Amazon",
       "summary": "Put your own web address on your Foyer page and your Butler Links, with step-by-step DNS help for GoDaddy, Namecheap, Cloudflare and Squarespace, and fixes for the most common problems.",
       "order": 125.5,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "move-to-a-new-computer",
@@ -1057,7 +1537,11 @@
       "category": "Other",
       "summary": "Switching to a new laptop, Mac or Windows PC? Save your setup to one file on your old computer, open it on the new one, and finish with a short checklist. Your settings, templates, images and saved connections come along. Your browser logins do not, so you sign in to those again. Steps for Mac and for Windows.",
       "order": 126,
-      "locales": ["en-US", "es-ES", "fr-FR"]
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     },
     {
       "id": "ai-clone-butler",
@@ -1065,7 +1549,11 @@
       "category": "Other",
       "summary": "Train a personal AI clone from your own photos, then generate new lifestyle photos of yourself holding or using a real product, with the actual product photo composited in for accuracy.",
       "order": 708,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -1074,7 +1562,11 @@
       "category": "Other",
       "summary": "Share your storefront and social links with other Support Circle members, opt in to having your own Like and Follow butlers support theirs, and get engagement back once you've proven you're an active member.",
       "order": 709,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -1083,7 +1575,11 @@
       "category": "Amazon",
       "summary": "Scan your Amazon Creator Hub for every published video or photo flagged \"Improve reach,\" see why it is held back from product detail pages, and fix it with Download, Diagnose and Re-upload. A daily scan keeps the list current and confirms your fixes.",
       "order": 710,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -1092,7 +1588,11 @@
       "category": "Amazon",
       "summary": "Watch other creators' Amazon storefronts and get alerted the moment one of them adds a new product, ranked by whether you can earn on it too.",
       "order": 711,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
     },
     {
@@ -1101,8 +1601,25 @@
       "category": "Foyer",
       "summary": "Answer a few questions and Digital Product Butler decides what digital product to sell in your niche, writes it as an ebook (PDF and EPUB) with AI cover art, estimates a price, and attaches it to your Foyer page ready to sell. Power User only.",
       "order": 1000,
-      "locales": ["en-US", "es-ES", "fr-FR"],
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
       "audience": "power"
+    },
+    {
+      "id": "group-launch",
+      "title": "Launch Butler: build a whole deals community from one questionnaire",
+      "category": "Other",
+      "summary": "Answer a few questions and Launch Butler sets up your Facebook Page and deals group, a posting schedule, cross-links, a product funnel and your Foyer shop, then starts posting for you.",
+      "order": 1001,
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
+      "audience": ""
     }
   ]
 }
