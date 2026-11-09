@@ -40,6 +40,9 @@ const SYSTEM_PROMPT = [
   "relevant hashtags at the end. Do not invent specific prices, discounts, or",
   "claims you were not given. Never use em dashes; use a colon for a label and its",
   "description, or a hyphen or comma for a break in a sentence.",
+  "Every caption must be ready to post as-is: never use placeholders or fill-in",
+  "blanks such as [Product Name], [link], {price} or <brand>. If you do not know",
+  "the product, write a caption that does not name it.",
   "Respond ONLY with a JSON object of this exact shape:",
   '{"caption": string, "alts": string[]}. caption is your best single caption.',
   "alts is 2-3 alternative captions. Use an empty array if you have no good",
@@ -61,8 +64,19 @@ function buildUserPrompt(input: SocialCaptionInput): string {
 
 const MAX_CAPTION_LEN = 600;
 
+// A fill-in-the-blank token the model sometimes leaves when it does not know the
+// product: [Product Name], [link], {price}, {{brand}}, <your link>. A caption
+// carrying one would post literally, so it is dropped instead of returned.
+const PLACEHOLDER_RE = /\[[^\]\n]{1,40}\]|\{\{?[^}\n]{1,40}\}?\}|<[^>\n]{1,40}>/;
+
+export function hasCaptionPlaceholder(text: string): boolean {
+  return PLACEHOLDER_RE.test(text);
+}
+
 function cleanText(value: unknown): string {
-  return typeof value === "string" ? value.trim().slice(0, MAX_CAPTION_LEN) : "";
+  if (typeof value !== "string") return "";
+  const text = value.trim().slice(0, MAX_CAPTION_LEN);
+  return hasCaptionPlaceholder(text) ? "" : text;
 }
 
 function normalize(raw: unknown): { caption: string | null; alts: string[] } {

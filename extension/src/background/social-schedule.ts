@@ -93,6 +93,7 @@ function buildCaptionPrompt(input: SocialCaptionInput): string {
   lines.push(
     "Keep it a sentence or two, warm and human, a tasteful emoji or two is fine, and end with 2-4 relevant hashtags.",
     "Do not invent prices, discounts, or claims you were not given. Do not use em dashes.",
+    "The caption must be ready to post as-is: never use placeholders such as [Product Name], [link] or {price}. If you do not know the product, do not name it.",
     "Reply with the caption text only, no preamble.",
   );
   return lines.join(" ");
