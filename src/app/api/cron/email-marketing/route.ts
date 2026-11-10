@@ -47,10 +47,10 @@ import {
 import { personalizePathBody } from "@/lib/email-path-select";
 import { personalizeBundleSubmitBody } from "@/lib/grow-together-submit";
 import {
+  DRIP_STATUSES,
   INVITE_SEQUENCE_ID,
   INVITE_PREVIEW_DAYS,
-  countPayingCreators,
-  creatorCountPhrase,
+  hasWrittenStep,
   inviteValuesFor,
   invitesByEmail,
   markInviteSent,
@@ -621,16 +621,13 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
       last_step_sent: number;
     }[];
 
-    // Invite pilot (done-for-you Foyer page): every enrollment carries its own
-    // researched opener + private preview link from foyer_invites, dropped into
-    // the shared copy through {{INVITE_*}} placeholders. Prefetched once per run.
+    // Invite pilot (Storefront Score pages): every creator has their own
+    // written emails in foyer_invites.email_steps; the shared steps are only
+    // {{INVITE_SUBJECT_n}} / {{INVITE_BODY_n}} slots. Prefetched once per run.
     const isInviteSequence = seq.id === INVITE_SEQUENCE_ID;
     let invites = new Map<string, InviteRow>();
-    let creatorCount = "";
     if (isInviteSequence && enrollments.length > 0) {
       invites = await invitesByEmail(db, enrollments.map((e) => e.email));
-      const paying = await countPayingCreators(db);
-      creatorCount = paying == null ? "" : creatorCountPhrase(paying);
     }
 
     // Recent failed sends for this sequence's steps, so a recipient Resend keeps
@@ -736,26 +733,30 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
       let invite: InviteRow | null = null;
       if (isInviteSequence) {
         invite = invites.get(enrollment.email.trim().toLowerCase()) ?? null;
-        // No invite row, or the creator already claimed / declined: the drip is done.
-        if (!invite || !["drafted", "sent", "viewed"].includes(invite.status)) {
+        // No invite row, or the creator claimed, replied, removed the page or
+        // declined (or the page was deleted at 90 days): the drip is done.
+        if (!invite || !DRIP_STATUSES.includes(invite.status) || invite.content_deleted_at) {
           await db
             .from("email_sequence_enrollments")
             .update({ cancelled_at: new Date().toISOString() })
             .eq("id", enrollment.id);
           continue;
         }
+        // No email written for this step yet (the monthly "your score changed"
+        // notes are written only after a rescore): hold quietly, send nothing.
+        if (!hasWrittenStep(invite, nextStep.position)) continue;
         if (!invite.expires_at) {
           invite = {
             ...invite,
             expires_at: new Date(Date.now() + INVITE_PREVIEW_DAYS * 24 * 60 * 60 * 1000).toISOString(),
           };
         }
-        const values = inviteValuesFor(invite, creatorCount);
+        const values = inviteValuesFor(invite);
         const pSubject = personalizeInviteText(subject, values);
         const pBody = personalizeInviteText(body, values);
         if (pSubject == null || pBody == null) {
-          // A placeholder would go out empty (e.g. the paying-creator count
-          // lookup failed). Hold the enrollment for the next run.
+          // A placeholder would go out empty or unresolved (e.g. a typo in a
+          // written email). Hold the enrollment rather than send a broken email.
           reportError("invite personalization", {
             message: `unresolved placeholder for ${enrollment.email} step ${nextStep.position}`,
           });

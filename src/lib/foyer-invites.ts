@@ -1,18 +1,21 @@
 /**
- * Invite-only "done-for-you Foyer page" pilot (see
- * supabase/migrations/20261111_foyer_invites.sql).
+ * Invite-only Foyer page pilot: Storefront Score pages for Amazon / Walmart
+ * creators (see supabase/migrations/20261111_foyer_invites.sql and
+ * 20261112_foyer_invites_v2.sql).
  *
  * Owns:
- *   - the invite record shape + lookups (by code, by email, by id);
- *   - the {{INVITE_*}} / {{CREATOR_COUNT}} placeholder fill the email-marketing
- *     cron applies to the "Invite: Foyer page (Instagram)" cold sequence, so one
- *     shared sequence carries a unique, researched opener per creator;
- *   - the truthful social-proof phrase (paying subscribers right now, rounded
- *     DOWN, comps excluded).
+ *   - the invite record shape + funnel status rules;
+ *   - the per-creator email fill the email-marketing cron applies to the
+ *     "Invite: Storefront Score (Instagram)" cold sequence. Each creator's own
+ *     written emails live in foyer_invites.email_steps; the shared sequence
+ *     steps are only {{INVITE_SUBJECT_n}} / {{INVITE_BODY_n}} slots, and the
+ *     written bodies carry {{INVITE_PREVIEW_URL}} (the private page link, known
+ *     only after upload). A step with no written email HOLDS (the two monthly
+ *     "your score changed" notes wait until one is written);
+ *   - preview lifetime (90 days from the first email) and content deletion.
  *
- * Every write goes through the service-role client; callers gate public routes
- * with the invite code (a random capability) and admin routes with
- * requirePermission.
+ * No invented numbers: the old live "creators use it" count is gone; only
+ * figures Liz supplies may appear, and they are written into the emails.
  */
 import { randomBytes } from "crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -21,8 +24,9 @@ import { createAdminClient } from "@/lib/admin";
 export const INVITE_SEQUENCE_ID = "f0e10001-0000-4000-a000-000000000001";
 export const INVITE_COMP_DAYS = 14;
 export const INVITE_COMP_PLAN = "power-solo-monthly";
-/** How long the preview stays up after the first email goes out. */
-export const INVITE_PREVIEW_DAYS = 14;
+/** Unclaimed pages are deleted this long after the first email. */
+export const INVITE_PREVIEW_DAYS = 90;
+export const INVITE_STEP_COUNT = 6;
 
 export type InviteStatus =
   | "drafted"
@@ -32,15 +36,40 @@ export type InviteStatus =
   | "activated"
   | "published"
   | "converted"
-  | "declined";
+  | "declined"
+  | "replied"
+  | "removed";
 
 export const INVITE_STATUSES: readonly InviteStatus[] = [
-  "drafted", "sent", "viewed", "claimed", "activated", "published", "converted", "declined",
+  "drafted", "sent", "viewed", "claimed", "activated", "published", "converted", "replied", "declined", "removed",
 ];
 
-/** Funnel rank: a status only ever moves forward (declined is terminal). */
+/** Statuses that still receive the drip. Anything else stops it. */
+export const DRIP_STATUSES: readonly InviteStatus[] = ["drafted", "sent", "viewed"];
+
+/** Funnel rank: a status only ever moves forward. Terminal states never move. */
 const RANK: Record<InviteStatus, number> = {
-  drafted: 0, sent: 1, viewed: 2, claimed: 3, activated: 4, published: 5, converted: 6, declined: 99,
+  drafted: 0, sent: 1, viewed: 2, claimed: 3, activated: 4, published: 5, converted: 6,
+  replied: 50, declined: 98, removed: 99,
+};
+const TERMINAL: ReadonlySet<InviteStatus> = new Set(["declined", "removed"]);
+
+export type EmailStep = { subject: string; body: string };
+
+export type ScoreFix = {
+  id: string;
+  title: string;
+  why: string;
+  withButler: string;
+  butlers: string[];
+  byHandNote?: string;
+};
+
+export type InviteScore = {
+  score: number;
+  components: Record<string, { points: number; max: number; value: unknown; known?: boolean }>;
+  fixes: ScoreFix[];
+  facts?: Record<string, unknown>;
 };
 
 export type InviteRow = {
@@ -68,11 +97,19 @@ export type InviteRow = {
   declined_at: string | null;
   license_key: string | null;
   existing_customer: boolean;
+  email_steps: EmailStep[];
+  score: InviteScore | null;
+  storefront_url: string;
+  time_on_page_ms: number;
+  claim_clicked_at: string | null;
+  replied_at: string | null;
+  removed_at: string | null;
+  content_deleted_at: string | null;
 };
 
 /** Columns safe to list (no page_doc / preview_html blobs). */
 export const INVITE_LIST_COLUMNS =
-  "id, code, ig_handle, email, first_name, niche, followers, opener, batch, source, status, notes, created_at, sent_at, expires_at, viewed_at, view_count, claimed_at, activated_at, published_at, converted_at, declined_at, license_key, existing_customer";
+  "id, code, ig_handle, email, first_name, niche, followers, opener, batch, source, status, notes, created_at, sent_at, expires_at, viewed_at, view_count, claimed_at, activated_at, published_at, converted_at, declined_at, license_key, existing_customer, email_steps, score, storefront_url, time_on_page_ms, claim_clicked_at, replied_at, removed_at, content_deleted_at";
 
 export function inviteDb(): SupabaseClient | null {
   try {
@@ -105,41 +142,20 @@ export function openInAppUrlFor(code: string): string {
 
 /** True when moving from `from` to `to` is forward progress in the funnel. */
 export function advances(from: InviteStatus, to: InviteStatus): boolean {
-  if (from === "declined") return false;
+  if (TERMINAL.has(from)) return false;
   return RANK[to] > RANK[from];
 }
 
-export function isExpired(row: Pick<InviteRow, "expires_at" | "status">, now = Date.now()): boolean {
-  if (RANK[row.status] >= RANK.claimed && row.status !== "declined") return false;
+/** An unclaimed page whose 90 days are up (or whose content is already gone). */
+export function isExpired(
+  row: Pick<InviteRow, "expires_at" | "status"> & { content_deleted_at?: string | null },
+  now = Date.now(),
+): boolean {
+  if (row.content_deleted_at) return true;
+  if (RANK[row.status] >= RANK.claimed && RANK[row.status] <= RANK.converted) return false;
   if (!row.expires_at) return false;
   const t = new Date(row.expires_at).getTime();
   return Number.isFinite(t) && t <= now;
-}
-
-/**
- * The social-proof phrase that starts a sentence: "300+" style, always rounded
- * DOWN so it is never an overstatement; under 20 we say "Creators" (no number).
- */
-export function creatorCountPhrase(n: number): string {
-  if (!Number.isFinite(n) || n < 20) return "Creators";
-  const step = n >= 1000 ? 100 : n >= 100 ? 50 : 10;
-  return `${Math.floor(n / step) * step}+`;
-}
-
-/** Paying subscribers right now: active, not a comp, not the Deals add-on. */
-export async function countPayingCreators(db: SupabaseClient): Promise<number | null> {
-  const { data, error } = await db
-    .from("subscriptions")
-    .select("ls_subscription_id, ls_variant_id, status")
-    .eq("status", "active");
-  if (error || !data) return null;
-  const addon = process.env.LEMONSQUEEZY_VARIANT_DAILY_DEALS_ADDON ?? "";
-  return (data as { ls_subscription_id: string | null; ls_variant_id: string | null }[]).filter((r) => {
-    const id = String(r.ls_subscription_id ?? "");
-    if (!id || id.startsWith("comp:")) return false;
-    if (addon && String(r.ls_variant_id ?? "") === addon) return false;
-    return true;
-  }).length;
 }
 
 export function formatInviteDate(iso: string | null): string {
@@ -149,62 +165,74 @@ export function formatInviteDate(iso: string | null): string {
   return d.toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "America/New_York" });
 }
 
+/** Normalize the written emails from an upload: up to 6 {subject, body} pairs. */
+export function normalizeEmailSteps(raw: unknown): EmailStep[] | null {
+  if (!Array.isArray(raw)) return null;
+  const out: EmailStep[] = [];
+  for (const s of raw.slice(0, INVITE_STEP_COUNT)) {
+    const o = (s ?? {}) as Record<string, unknown>;
+    const subject = typeof o.subject === "string" ? o.subject.trim().slice(0, 120) : "";
+    const body = typeof o.body === "string" ? o.body.trim().slice(0, 4000) : "";
+    if (!subject || !body) return null;
+    if (subject.includes("\u2014") || body.includes("\u2014")) return null;
+    out.push({ subject, body });
+  }
+  return out;
+}
+
 export type InvitePlaceholderValues = {
   firstName: string;
   handle: string;
-  opener: string;
   previewUrl: string;
   expires: string;
-  creatorCount: string;
+  steps: EmailStep[];
 };
 
-export const INVITE_PLACEHOLDERS = [
-  "INVITE_FIRST_NAME",
-  "INVITE_HANDLE",
-  "INVITE_OPENER",
-  "INVITE_PREVIEW_URL",
-  "INVITE_EXPIRES",
-  "CREATOR_COUNT",
-] as const;
-
 export function inviteValuesFor(
-  row: Pick<InviteRow, "first_name" | "ig_handle" | "opener" | "code" | "expires_at">,
-  creatorCount: string,
+  row: Pick<InviteRow, "first_name" | "ig_handle" | "code" | "expires_at"> & { email_steps?: EmailStep[] | null },
 ): InvitePlaceholderValues {
-  const first = (row.first_name || "").trim();
   return {
-    firstName: first || "there",
+    firstName: (row.first_name || "").trim() || "there",
     handle: row.ig_handle,
-    opener: (row.opener || "").trim(),
     previewUrl: previewUrlFor(row.code),
     expires: formatInviteDate(row.expires_at),
-    creatorCount,
+    steps: Array.isArray(row.email_steps) ? row.email_steps : [],
   };
 }
 
 /**
- * Fill every invite placeholder. Returns null when any placeholder would be
- * left empty or unresolved, so the cron skips the send instead of mailing a
- * broken email.
+ * Fill a step: first the per-creator {{INVITE_SUBJECT_n}} / {{INVITE_BODY_n}}
+ * slots, then the inner {{INVITE_*}} tokens the written email carries. Returns
+ * null when anything would go out empty or unresolved (the cron then holds the
+ * enrollment instead of sending a broken email).
  */
 export function personalizeInviteText(text: string, v: InvitePlaceholderValues): string | null {
-  const map: Record<(typeof INVITE_PLACEHOLDERS)[number], string> = {
+  let out = text.replace(/\{\{INVITE_(SUBJECT|BODY)_(\d)\}\}/g, (_m, kind: string, n: string) => {
+    const step = v.steps[Number(n) - 1];
+    const value = step ? (kind === "SUBJECT" ? step.subject : step.body) : "";
+    return value || "\u0000MISSING\u0000";
+  });
+  if (out.includes("\u0000MISSING\u0000")) return null;
+  const map: Record<string, string> = {
     INVITE_FIRST_NAME: v.firstName,
     INVITE_HANDLE: v.handle,
-    INVITE_OPENER: v.opener,
     INVITE_PREVIEW_URL: v.previewUrl,
     INVITE_EXPIRES: v.expires,
-    CREATOR_COUNT: v.creatorCount,
   };
-  let out = text;
-  for (const key of INVITE_PLACEHOLDERS) {
+  for (const [key, value] of Object.entries(map)) {
     const token = `{{${key}}}`;
     if (!out.includes(token)) continue;
-    if (!map[key]) return null;
-    out = out.split(token).join(map[key]);
+    if (!value) return null;
+    out = out.split(token).join(value);
   }
-  if (/\{\{[A-Z_]+\}\}/.test(out)) return null;
+  if (/\{\{[A-Z_0-9]+\}\}/.test(out)) return null;
   return out;
+}
+
+/** Does the creator have a written email for this sequence step (1-based)? */
+export function hasWrittenStep(row: { email_steps?: EmailStep[] | null }, position: number): boolean {
+  const s = Array.isArray(row.email_steps) ? row.email_steps[position - 1] : null;
+  return Boolean(s && s.subject && s.body);
 }
 
 /** Load invites for a set of (lowercased) emails, keyed by email. */
@@ -227,8 +255,8 @@ export async function invitesByEmail(
 }
 
 /**
- * Stamp the first send: status drafted -> sent and start the preview clock.
- * Returns the row with expires_at filled so the email can show the date.
+ * Stamp the first send: status drafted -> sent and start the 90-day clock.
+ * Returns the row with expires_at filled.
  */
 export async function markInviteSent(db: SupabaseClient, row: InviteRow, now = new Date()): Promise<InviteRow> {
   if (row.sent_at && row.expires_at) return row;
@@ -265,7 +293,7 @@ export async function advanceInvite(
   return true;
 }
 
-/** Stop the invite drip for an email (claimed, declined, or already a customer). */
+/** Stop the invite drip for an email (claimed, replied, removed or declined). */
 export async function cancelInviteEnrollment(db: SupabaseClient, email: string): Promise<void> {
   const { error } = await db
     .from("email_sequence_enrollments")
@@ -273,4 +301,27 @@ export async function cancelInviteEnrollment(db: SupabaseClient, email: string):
     .eq("sequence_id", INVITE_SEQUENCE_ID)
     .eq("email", email.trim().toLowerCase());
   if (error) console.error("foyer-invites: cancel enrollment failed", error);
+}
+
+/** The page content columns, cleared on removal and at the 90-day mark. */
+export const CLEARED_CONTENT = {
+  page_doc: null,
+  preview_html: null,
+  score: null,
+  email_steps: [],
+  opener: "",
+} as const;
+
+/** True for a live paying or trialing account (never invite existing customers). */
+export async function isExistingCustomer(db: SupabaseClient, email: string): Promise<boolean> {
+  const { data: prof } = await db.from("profiles").select("id").eq("email", email.trim().toLowerCase()).maybeSingle();
+  const userId = (prof as { id?: string } | null)?.id;
+  if (!userId) return false;
+  const { data: subs } = await db
+    .from("subscriptions")
+    .select("id")
+    .eq("user_id", userId)
+    .in("status", ["active", "on_trial", "past_due", "paused"])
+    .limit(1);
+  return Array.isArray(subs) && subs.length > 0;
 }

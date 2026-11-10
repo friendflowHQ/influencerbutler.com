@@ -33,11 +33,13 @@ function ipOf(request: Request): string {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";
 }
 
-function links(code: string) {
+/** What a successful claim unlocks: the app links plus the FULL report (every fix). */
+function links(code: string, invite: InviteRow) {
   const site = siteBase();
   return {
     openUrl: openInAppUrlFor(code),
     downloads: { windows: `${site}/dl/win`, macAppleSilicon: `${site}/dl/mac`, macIntel: `${site}/dl/mac-intel` },
+    fixes: invite.score && Array.isArray(invite.score.fixes) ? invite.score.fixes : [],
   };
 }
 
@@ -62,7 +64,7 @@ export async function POST(request: Request) {
   const { data } = await db.from("foyer_invites").select(INVITE_LIST_COLUMNS).eq("code", code).maybeSingle();
   const invite = data as unknown as InviteRow | null;
   if (!invite) return NextResponse.json({ error: "We could not find that invite." }, { status: 404 });
-  if (invite.status === "declined") {
+  if (invite.status === "declined" || invite.status === "removed") {
     return NextResponse.json({ error: "This invite was closed. Reply to Liz's email if you would like it back." }, { status: 410 });
   }
   if (isExpired(invite)) {
@@ -79,7 +81,7 @@ export async function POST(request: Request) {
       key: invite.license_key,
       existingCustomer: invite.existing_customer,
       email: invite.email,
-      ...links(code),
+      ...links(code, invite),
     });
   }
 
@@ -97,7 +99,7 @@ export async function POST(request: Request) {
     // with their own key (redeem matches the key's owner email to the invite).
     await advanceInvite(db, invite, "claimed", { existing_customer: true });
     await cancelInviteEnrollment(db, invite.email);
-    return NextResponse.json({ ok: true, key: null, existingCustomer: true, email: invite.email, ...links(code) });
+    return NextResponse.json({ ok: true, key: null, existingCustomer: true, email: invite.email, ...links(code, invite) });
   }
   if (!issued.ok) {
     console.error("invites/claim: comp issue failed", { code, status: issued.status, error: issued.error });
@@ -112,6 +114,6 @@ export async function POST(request: Request) {
     existingCustomer: false,
     email: invite.email,
     expiresAt: issued.expiresAt,
-    ...links(code),
+    ...links(code, invite),
   });
 }
