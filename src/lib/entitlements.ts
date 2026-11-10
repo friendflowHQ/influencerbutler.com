@@ -38,7 +38,9 @@ export type PlanLevel = "beginner" | "power" | "legacy";
 /**
  * The desktop butlers that are free forever, keyed by their feature-catalog
  * slug (see src/lib/mcp/feature-catalog.ts). These run on any account state:
- * trial, paid, expired, or cancelled.
+ * trial, paid, expired, or cancelled. Mirrors FREE_FOREVER_WORKSPACES in the
+ * desktop app (InfluencerButler/app/backend.js), which is the real gate; a
+ * butler missing here is still free in the app, but the site under-sells it.
  *
  * The wedge: free tools let a creator SEE and organize (import order history,
  * grab ASINs, audit a storefront, auto-like at a safe pace). The Pro butlers
@@ -49,9 +51,14 @@ export const FREE_BUTLER_SLUGS = [
   "like-butler",
   "benable-like-butler",
   "instagram-like-butler",
+  "youtube-like-butler",
   "cc-check",
   "orders-butler",
   "storefront-butler",
+  "link-butler",
+  "campaign-alert-butler",
+  "brand-release-butler",
+  "shopping-butler",
 ] as const;
 
 export type FreeButlerSlug = (typeof FREE_BUTLER_SLUGS)[number];
@@ -67,9 +74,14 @@ const FREE_SLUG_SET: ReadonlySet<string> = new Set(FREE_BUTLER_SLUGS);
 export const BEGINNER_BUTLER_SLUGS = [
   ...FREE_BUTLER_SLUGS,
   "deals-butler",
+  "posted-deals-log",
+  "expired-butler",
   "amazon-butler",
+  "ai-keyword-generator",
   "daily-commission-butler",
   "video-reload-butler",
+  "photo-reload-butler",
+  "foyer-butler",
   "api-integrations",
   "feedback",
 ] as const;

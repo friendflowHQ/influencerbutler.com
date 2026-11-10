@@ -14,7 +14,7 @@ export const PRODUCT_FACTS = `Influencer Butler is automation software for Amazo
 
 Pricing: a Free tier (forever), a free Pro trial with no auto-charge, and paid Pro plans. Do not state specific prices; link to /pricing instead.
 
-FREE FOREVER butlers (work on any account, even lapsed): Orders Butler, Storefront Butler, CC Check, Like Butler, Benable Like Butler, Instagram Like Butler. Everything else needs the Pro trial or a Pro plan.
+FREE FOREVER butlers (work on any account, even lapsed): Orders Butler, Storefront Butler, CC Check, Like Butler, Benable Like Butler, Instagram Like Butler, YouTube Like Butler, Campaign Alert Butler (alerts when a followed brand posts a new Creator Connections campaign), Brand Release Butler (alerts when a followed brand lists a new product), Shopping Butler (compares Amazon and Walmart products by price, quality and commission), and branded deep links. Everything else needs the Pro trial or a Pro plan.
 
 Desktop butlers (accurate one-liners; never claim capabilities beyond these):
 - Orders Butler (free): pulls your real Amazon purchase and commission history so the rest of the app has accurate ASIN signal.

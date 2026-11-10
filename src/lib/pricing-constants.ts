@@ -122,10 +122,13 @@ export const FREE_TIER_NAME = "Free forever";
 export const FREE_TIER_TAGLINE = "The whole extension plus See & Organize butlers. No card, no expiry.";
 export const FREE_TIER_FEATURES: readonly string[] = [
   "The whole Chrome extension, no login: video counts, content gaps, Butler Approved seals, storefront checks",
-  "Like Butler, Benable Like Butler & Instagram Like Butler: auto-like at a safe pace",
+  "Like Butler, Benable Like Butler, Instagram Like Butler & YouTube Like Butler: auto-like at a safe pace",
   "CC Check: grab every ASIN from any page",
   "Orders Butler: pull your full Amazon order history",
   "Storefront Butler: audit your photo & video coverage",
+  "Campaign Alert Butler: get alerted the moment a brand you follow posts a new campaign",
+  "Brand Release Butler: get alerted when a brand you follow lists a new product",
+  "Shopping Butler: compare Amazon and Walmart picks by price, quality and commission",
   "Influencer Butler branded deep links + Link Performance click dashboard",
   "Optional AI butlers need your own OpenAI key (you pay OpenAI directly)",
 ];
@@ -155,7 +158,7 @@ export const LEVEL_TAGLINE: Record<PlanLevel, string> = {
 // What the LEVEL changes; the seat tier adds its device count on top.
 export const LEVEL_FEATURES: Record<PlanLevel, readonly string[]> = {
   beginner: [
-    "The starter butlers: Amazon Deals, Message Brands, Daily Commission Butler, Video and Photo Reload, your Foyer page, plus every free tool",
+    "The starter butlers: Amazon Deals with Expired Butler cleanup, Message Brands with Keywords & Filters, Daily Commission Butler, Video and Photo Reload, your Foyer page, plus every free tool",
     "AI included: 150 actions a month on Influencer Butler's own key, no OpenAI account needed",
     "A guided fast track to your first posts",
     "Upgrade to Power User in one click, any time, no new key",

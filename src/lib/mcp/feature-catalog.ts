@@ -102,7 +102,7 @@ export const PRICING_TIERS: PricingTier[] = [
     seats: null,
     highlights: [
       "The whole Chrome extension, no login: video counts, content gaps, Butler Approved seals, storefront checks",
-      "Desktop free butlers: Like Butler, Benable Like Butler, Instagram Like Butler, CC Check, Orders Butler, Storefront Butler",
+      "Desktop free butlers: Like Butler, Benable Like Butler, Instagram Like Butler, YouTube Like Butler, CC Check, Orders Butler, Storefront Butler, Campaign Alert Butler, Brand Release Butler, Shopping Butler, branded deep links",
       "No card, no expiry",
       "Optional AI butlers need your own OpenAI API key (you pay OpenAI directly); the AI Assistant and free caption engine need no key",
     ],
