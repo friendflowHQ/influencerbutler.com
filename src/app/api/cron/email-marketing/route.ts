@@ -32,6 +32,11 @@ import {
   SEQUENCE_RUNS_PER_HOUR,
   nextSendTime,
   plainTextToTrackableHtml,
+  SEQUENCE_SEND_FAILURE_LOOKBACK_MS,
+  sendFailureKey,
+  sequenceRetryDecision,
+  summarizeSendFailures,
+  type SendFailureStats,
 } from "@/lib/email-marketing";
 import { sendMarketingEmail } from "@/lib/marketing-email";
 import {
@@ -123,6 +128,10 @@ type Summary = {
   campaignFailed: number;
   sequenceSent: number;
   sequenceStoppedSubscribed: number;
+  // Due steps held back because the recipient's last send failed recently.
+  sequenceRetryWaiting: number;
+  // Enrollments cancelled after repeated failed sends (see sequenceRetryDecision).
+  sequenceGaveUp: number;
   sequencesAutoPaused: number;
   autoEnrolled: number;
   // Sequences/campaigns skipped this run because they are on the cold stream
@@ -601,6 +610,24 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
       last_step_sent: number;
     }[];
 
+    // Recent failed sends for this sequence's steps, so a recipient Resend keeps
+    // rejecting backs off and is eventually given up on instead of being retried
+    // every run forever. One indexed lookup per sequence (category, created_at).
+    // On error, fall back to the old behavior (retry every run).
+    let failures = new Map<string, SendFailureStats>();
+    const stepCats = steps.map((s) => stepCategory(seq.id, s.position));
+    if (stepCats.length > 0 && enrollments.length > 0) {
+      const { data: failRows, error: failErr } = await db
+        .from("email_sends")
+        .select("recipient, category, created_at")
+        .in("category", stepCats)
+        .eq("status", "failed")
+        .gte("created_at", new Date(Date.now() - SEQUENCE_SEND_FAILURE_LOOKBACK_MS).toISOString())
+        .limit(5000);
+      if (failErr) reportError("sequence failed-sends lookup", failErr);
+      else failures = summarizeSendFailures(failRows ?? []);
+    }
+
     for (const enrollment of enrollments) {
       if (seqBudget <= 0 || globalRemaining <= 0) break;
 
@@ -655,6 +682,25 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
 
       const dueAt = nextSendTime(enrollment.enrolled_at, nextStep.day_offset, seq.send_hour);
       if (!Number.isFinite(dueAt) || dueAt > Date.now()) continue;
+
+      // Retry cap: back off after a failed send, give up after repeated ones.
+      const retry = sequenceRetryDecision(
+        failures.get(sendFailureKey(enrollment.email, stepCategory(seq.id, nextStep.position))),
+        Date.now(),
+      );
+      if (retry === "wait") {
+        summary.sequenceRetryWaiting += 1;
+        continue;
+      }
+      if (retry === "give_up") {
+        const { error: giveUpErr } = await db
+          .from("email_sequence_enrollments")
+          .update({ cancelled_at: new Date().toISOString() })
+          .eq("id", enrollment.id);
+        if (giveUpErr) reportError("sequence give-up cancel", giveUpErr);
+        else summary.sequenceGaveUp += 1;
+        continue;
+      }
 
       // The review sequence's stored copy offers 99% off Pro for the feedback
       // survey, which is meaningless to someone who already has Pro. Decide per
@@ -908,6 +954,8 @@ export async function GET(request: Request) {
     campaignFailed: 0,
     sequenceSent: 0,
     sequenceStoppedSubscribed: 0,
+    sequenceRetryWaiting: 0,
+    sequenceGaveUp: 0,
     sequencesAutoPaused: 0,
     autoEnrolled: 0,
     coldPaused: 0,

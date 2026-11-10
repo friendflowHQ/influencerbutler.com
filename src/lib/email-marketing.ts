@@ -113,6 +113,82 @@ export const DEFAULT_SENDS_PER_HOUR = 120;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+// ---------------------------------------------------------------------------
+// Sequence send retry cap
+// ---------------------------------------------------------------------------
+//
+// A sequence step that fails to send stamps nothing on the enrollment, so it is
+// retried on the next cron run. Without a cap, a recipient Resend permanently
+// rejects was retried every run forever (144 failed rows a day per recipient).
+// Retries now back off exponentially, and the enrollment is cancelled once it
+// has failed enough times over a long enough span. The span floor means a
+// short Resend outage (or a missing API key) delays everyone but never
+// mass-cancels a list.
+
+/** Failed attempts on one step before the enrollment may be given up on. */
+export const SEQUENCE_SEND_MAX_FAILURES = 5;
+/** ...and the first of those failures must be at least this old. */
+export const SEQUENCE_SEND_GIVE_UP_AFTER_MS = DAY_MS;
+/** First retry waits this long after a failure, doubling per failure... */
+export const SEQUENCE_SEND_RETRY_BASE_MS = 10 * 60 * 1000;
+/** ...up to this ceiling. */
+export const SEQUENCE_SEND_RETRY_MAX_MS = 6 * 60 * 60 * 1000;
+/** How far back the cron looks for failed sends when deciding. */
+export const SEQUENCE_SEND_FAILURE_LOOKBACK_MS = 3 * DAY_MS;
+
+export type SendFailureStats = { count: number; firstAt: number; lastAt: number };
+
+/** Map key for a (recipient, step category) pair. */
+export function sendFailureKey(recipient: string, category: string): string {
+  return `${recipient.trim().toLowerCase()}|${category}`;
+}
+
+/** Folds failed email_sends rows into per (recipient, category) stats. */
+export function summarizeSendFailures(
+  rows: { recipient: string | null; category: string | null; created_at: string | null }[],
+): Map<string, SendFailureStats> {
+  const out = new Map<string, SendFailureStats>();
+  for (const row of rows) {
+    if (!row.recipient || !row.category || !row.created_at) continue;
+    const at = Date.parse(row.created_at);
+    if (!Number.isFinite(at)) continue;
+    const key = sendFailureKey(row.recipient, row.category);
+    const prev = out.get(key);
+    if (!prev) {
+      out.set(key, { count: 1, firstAt: at, lastAt: at });
+    } else {
+      prev.count += 1;
+      if (at < prev.firstAt) prev.firstAt = at;
+      if (at > prev.lastAt) prev.lastAt = at;
+    }
+  }
+  return out;
+}
+
+/**
+ * What to do with a due sequence step given its past failures: "send" (no
+ * failures, or the backoff has elapsed), "wait" (still inside the backoff), or
+ * "give_up" (failed SEQUENCE_SEND_MAX_FAILURES times over at least
+ * SEQUENCE_SEND_GIVE_UP_AFTER_MS, so cancel the enrollment).
+ */
+export function sequenceRetryDecision(
+  stats: SendFailureStats | undefined,
+  now: number,
+): "send" | "wait" | "give_up" {
+  if (!stats || stats.count <= 0) return "send";
+  if (
+    stats.count >= SEQUENCE_SEND_MAX_FAILURES &&
+    now - stats.firstAt >= SEQUENCE_SEND_GIVE_UP_AFTER_MS
+  ) {
+    return "give_up";
+  }
+  const backoff = Math.min(
+    SEQUENCE_SEND_RETRY_BASE_MS * 2 ** (stats.count - 1),
+    SEQUENCE_SEND_RETRY_MAX_MS,
+  );
+  return now - stats.lastAt >= backoff ? "send" : "wait";
+}
+
 /**
  * Timezone a sequence's fixed send hour is interpreted in. The business is in
  * Utah (Mountain Time), so a "9" send hour means 9am MT year-round, DST and all.
