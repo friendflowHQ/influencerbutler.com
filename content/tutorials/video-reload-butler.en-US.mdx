@@ -242,14 +242,20 @@ Applying the formula asks you to type RELOAD in an agree dialog that spells out 
 
 ## The Great Video Purge (delete everything, bring back only the sellers)
 
-This is Start Fresh with a filter on the way back in. Under **Preferred Formulas**, click **The Great Video Purge: delete everything, bring back only the sellers**. Every video on your US storefront is deleted (each one is saved to your computer first), and only the videos worth keeping are re-uploaded:
+This is Start Fresh with a filter on the way back in. Under **Preferred Formulas**, click **The Great Video Purge: delete everything, bring back only the sellers**. Every video on your US storefront is deleted, top-viewed first (each one is saved to your computer first), and only the videos worth keeping are re-uploaded:
 
 - The product, or its parent product, sells at least **100 a month** (from Amazon's "bought in past month" figure).
 - The product has at most **10 influencer videos** on it. Your own video counts while it is still live.
 
 Videos that come back are converted to horizontal, and videos under 31 seconds are padded to 31 seconds. Everything that fails stays deleted, and you can restore any of it later from the **Deleted from Amazon** tab. To use different numbers, change them under **Only re-upload products that pass these rules** after applying the formula.
 
-Applying the formula asks you to type **RELOAD**, then asks you to load a video of about 30 seconds (an outro, a brand bumper, a how-to) and opens the file picker. That video is added to the end of every short clip so it clears Amazon's 30 second minimum. No video handy? Choose **Loop the video itself** instead. Pacing is the same as Start Fresh: about 25 videos per run, re-uploaded after a 15 minute wait, so keep running it until the whole library is done.
+It leaves two kinds of video alone: videos edited in the last 45 days, and videos under 35% average viewed. Each video that comes back gets a fresh title with the words shoppers search for (written with your OpenAI key) and a thumbnail of your AI clone with the product, and it is also posted to Canada, the UK, Australia and Singapore.
+
+Applying the formula first checks that you have a ready AI clone in **AI Clone Butler**, and offers to open it if you don't (AI Clone Butler is part of the Power User plan). Then you type **RELOAD**, and it asks you to load a video of about 30 seconds (an outro, a brand bumper, a how-to) and opens the file picker. That video is added to the end of every short clip so it clears Amazon's 30 second minimum. No video handy? Choose **Loop the video itself** instead.
+
+There is no daily limit: one run works through your whole library, so a big library can take many hours. Each deleted video is re-uploaded in the same run as soon as Amazon allows. The butler measures how soon Amazon accepts a re-upload without calling it a duplicate, and shortens the wait as it learns.
+
+If your Creator Hub video list shows no videos, Video Reload Butler reads them from **My content** on Amazon instead, with nothing for you to change. Turn on **Watch it run** for the first few deletes so you can see them go through. If Amazon asks you to confirm you are human, the run stops: tick the box in the app's browser, run it again, and it picks up where it left off.
 
 ## Reload my proven winners (best sellers + high % viewed)
 
