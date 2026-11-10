@@ -1,38 +1,51 @@
 ---
 title: "AI Clone Butler: put yourself in product photos with AI"
-summary: Train a personal AI clone from your own photos, then generate new lifestyle photos of yourself holding or using a real product, with the actual product photo composited in for accuracy.
+summary: Make a personal AI clone from your own photos, with no training step, then create new lifestyle photos of yourself holding or using a real product, with the actual product photo used for accuracy.
 category: Other
 ---
 
 ## What AI Clone Butler does
 
-AI Clone Butler trains a personal AI model, a "clone," from photos of you. Once trained, it can generate new photos of that clone in any scene you describe, holding or wearing a real product. The product itself isn't AI-hallucinated: your actual product photo (pulled from the ASIN or Walmart item ID you give it) is composited into the generated scene, so the item stays accurate.
+AI Clone Butler makes a personal AI "clone" from photos of you. It can then create new photos of you in any scene you describe, holding or wearing a real product. The product itself isn't AI-invented: your actual product photo (pulled from the ASIN or Walmart item ID you give it) is used in the scene, so the item stays accurate.
+
+There is no training step. Your photos are used directly every time you create a picture, so a new clone is ready to use as soon as you add a photo.
 
 This is a manual, on-demand tool. It creates and saves images for you to download; it doesn't post anything on its own.
 
 ## Before you start
 
-- A fal.ai API key, added in **AI & Data Keys** in Settings. Training a clone and generating each photo runs on your own key, so both cost you a small amount directly.
-- 10 to 20 clear photos of yourself for training.
+- An OpenAI API key, added in **AI & Data Keys** in Settings. Each photo you create runs on your own key.
+- Optional: a fal.ai key in the same place, if you want finished photos enlarged to about 4K.
+- A few clear photos of yourself: face close-ups, waist-up and full-body shots. More and clearer photos give a stronger likeness.
 
-## Training your clone
+## Setting up your clone
 
 1. Open **Your clone**, create and name a clone.
-2. Click **Add photos** and upload 10 to 20 clear photos of your face and body.
+2. Use **Add photos** under each slot (Face close-ups, Waist up, Full body) to add clear photos of yourself from different angles and lighting.
 3. Check the likeness-consent box.
-4. Click **Train this clone**. Training runs in the background and takes a few minutes.
 
-You can train more than one clone if you want different looks or personas.
+That's it. You can make more than one clone if you want different looks or personas, and photos you add later apply to your very next picture.
 
 ## Creating a photo
 
-1. Open **Create a photo** and pick a trained clone.
+1. Open **Create a photo** and pick a clone.
 2. Describe the scene: what you're doing and where. The more specific, the better the result.
 3. Add your product's Amazon ASIN or Walmart item ID, or upload or paste a product photo URL.
 4. Click **Create photo**.
 
 Optional settings under **Options** let you adjust shape, quality, and upscaling before you generate.
 
+## Moving your clone to another computer
+
+You never have to add your photos again on a new computer.
+
+1. On the computer that has your clone, pick it in **Your clone** and click **Export clone**. Save the file somewhere you can reach from the other computer, like a USB drive or your own cloud folder.
+2. On the other computer, open AI Clone Butler, click **Import clone**, and pick that file.
+
+The clone arrives with all its photos, ready to use. Importing costs nothing and makes no AI calls. If that computer already has the same clone, the copy gets a new name instead of replacing it.
+
+The file holds your photos, so keep it private. To move your whole setup at once, including every clone, use **Move to a new computer** in Settings, under **Data & Backup**.
+
 ## A note on cost
 
-Every trained clone and every generated photo uses your own fal.ai key's credits. Check fal.ai's own pricing for current rates before training or generating in bulk.
+Each photo you create uses your own OpenAI key's credits, and the optional 4K enlargement uses your own fal.ai key. Making a clone, adding photos, and exporting or importing a clone cost nothing. Check OpenAI's and fal.ai's own pricing for current rates before creating photos in bulk.

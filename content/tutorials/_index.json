@@ -1547,7 +1547,7 @@
       "id": "ai-clone-butler",
       "title": "AI Clone Butler: put yourself in product photos with AI",
       "category": "Other",
-      "summary": "Train a personal AI clone from your own photos, then generate new lifestyle photos of yourself holding or using a real product, with the actual product photo composited in for accuracy.",
+      "summary": "Make a personal AI clone from your own photos, with no training step, then create new lifestyle photos of yourself holding or using a real product, with the actual product photo used for accuracy.",
       "order": 708,
       "locales": [
         "en-US",

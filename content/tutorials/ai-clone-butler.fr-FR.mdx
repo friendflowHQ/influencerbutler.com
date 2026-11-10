@@ -1,38 +1,51 @@
 ---
 title: "AI Clone Butler : apparaissez dans vos photos produit avec l'IA"
-summary: Entraînez un clone IA personnel à partir de vos propres photos, puis générez de nouvelles photos de style de vie de vous-même tenant ou utilisant un vrai produit, avec la vraie photo du produit intégrée pour rester fidèle.
+summary: Créez un clone IA personnel à partir de vos propres photos, sans étape d'entraînement, puis générez de nouvelles photos de style de vie de vous-même tenant ou utilisant un vrai produit, avec la vraie photo du produit pour rester fidèle.
 category: Other
 ---
 
 ## Ce que fait AI Clone Butler
 
-AI Clone Butler entraîne un modèle d'IA personnel, un « clone », à partir de vos photos. Une fois entraîné, il peut générer de nouvelles photos de ce clone dans n'importe quelle scène que vous décrivez, tenant ou portant un vrai produit. Le produit lui-même n'est pas inventé par l'IA : votre vraie photo produit (récupérée à partir de l'ASIN ou de l'identifiant d'article Walmart que vous indiquez) est intégrée à la scène générée, pour que l'article reste fidèle.
+AI Clone Butler crée un « clone » IA personnel à partir de vos photos. Il peut ensuite créer de nouvelles photos de vous dans n'importe quelle scène que vous décrivez, tenant ou portant un vrai produit. Le produit lui-même n'est pas inventé par l'IA : votre vraie photo produit (récupérée à partir de l'ASIN ou de l'identifiant d'article Walmart que vous indiquez) est utilisée dans la scène, pour que l'article reste fidèle.
+
+Il n'y a pas d'étape d'entraînement. Vos photos sont utilisées directement chaque fois que vous créez une image, donc un nouveau clone est prêt dès que vous ajoutez une photo.
 
 C'est un outil manuel, à la demande. Il crée et enregistre des images que vous téléchargez ; il ne publie rien de lui-même.
 
 ## Avant de commencer
 
-- Une clé API fal.ai, ajoutée dans **Clés d'IA et de données**. Entraîner un clone et générer chaque photo utilise votre propre clé, donc les deux vous coûtent directement un petit montant.
-- 10 à 20 photos nettes de vous-même pour l'entraînement.
+- Une clé API OpenAI, ajoutée dans **Clés d'IA et de données** dans Paramètres. Chaque photo que vous créez utilise votre propre clé.
+- Facultatif : une clé fal.ai au même endroit, si vous voulez agrandir les photos terminées à environ 4K.
+- Quelques photos nettes de vous : gros plans du visage, en buste et en pied. Plus de photos, et plus nettes, donnent une meilleure ressemblance.
 
-## Entraîner votre clone
+## Configurer votre clone
 
 1. Ouvrez **Votre clone**, créez et nommez un clone.
-2. Cliquez sur **Ajouter des photos** et chargez 10 à 20 photos nettes de votre visage et de votre corps.
+2. Utilisez **Ajouter des photos** sous chaque emplacement (Gros plans du visage, En buste, En pied) pour ajouter des photos nettes de vous sous différents angles et éclairages.
 3. Cochez la case de consentement à la ressemblance.
-4. Cliquez sur **Entraîner ce clone**. L'entraînement s'exécute en arrière-plan et prend quelques minutes.
 
-Vous pouvez entraîner plusieurs clones pour différents looks ou personnages.
+C'est tout. Vous pouvez créer plusieurs clones pour différents looks ou personnages, et les photos ajoutées plus tard s'appliquent dès votre prochaine image.
 
 ## Créer une photo
 
-1. Ouvrez **Créer une photo** et choisissez un clone entraîné.
+1. Ouvrez **Créer une photo** et choisissez un clone.
 2. Décrivez la scène : ce que vous faites et où. Plus c'est précis, meilleur est le résultat.
 3. Ajoutez l'ASIN Amazon ou l'identifiant d'article Walmart de votre produit, ou chargez ou collez l'URL d'une photo du produit.
 4. Cliquez sur **Créer la photo**.
 
 Les réglages optionnels dans **Options** permettent d'ajuster la silhouette, la qualité et l'agrandissement avant de générer.
 
+## Déplacer votre clone vers un autre ordinateur
+
+Vous n'avez jamais à ajouter vos photos à nouveau sur un nouvel ordinateur.
+
+1. Sur l'ordinateur qui a votre clone, choisissez-le dans **Votre clone** et cliquez sur **Exporter le clone**. Enregistrez le fichier à un endroit accessible depuis l'autre ordinateur, comme une clé USB ou votre propre dossier cloud.
+2. Sur l'autre ordinateur, ouvrez AI Clone Butler, cliquez sur **Importer un clone**, puis choisissez ce fichier.
+
+Le clone arrive avec toutes ses photos, prêt à l'emploi. L'importation ne coûte rien et ne fait aucun appel à l'IA. Si cet ordinateur a déjà le même clone, la copie reçoit un nouveau nom au lieu de le remplacer.
+
+Le fichier contient vos photos, gardez-le donc privé. Pour déplacer toute votre configuration en une fois, y compris chaque clone, utilisez **Passer à un nouvel ordinateur** dans Paramètres, sous **Données et sauvegarde**.
+
 ## Une note sur le coût
 
-Chaque clone entraîné et chaque photo générée utilise les crédits de votre propre clé fal.ai. Vérifiez les tarifs actuels de fal.ai avant d'entraîner ou de générer en grande quantité.
+Chaque photo que vous créez utilise les crédits de votre propre clé OpenAI, et l'agrandissement facultatif en 4K utilise votre propre clé fal.ai. Créer un clone, ajouter des photos et exporter ou importer un clone ne coûtent rien. Vérifiez les tarifs actuels d'OpenAI et de fal.ai avant de créer des photos en grande quantité.
