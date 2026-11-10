@@ -403,3 +403,36 @@ Live policy "Last Updated: October 29, 2026" already covers the phone app (§2.1
 - Phone app: Deals-tab expansion, Watch it run switch, and "make an AI image" (runs on the desktop with the user's own OpenAI key, local-only): covered by §2.11 and the local-only language; no new vendor.
 - `keys-for-email` licenses route (worker-secret only) and affiliate PayPal reminder emails: covered by §2.2 and §2.9.
 - Subprocessor list: no new SDK or vendor in either repo's diffs. Terms: no obligation changes.
+
+## Update 2026-11-10: weekly audit (nothing mechanical; nothing auto-published; two items for a human)
+
+Not legal advice; have counsel review. No live legal file was touched. Live privacy.html is "Last Updated: November 8, 2026" (already covers phone app §2.11, Foyer Commerce/Stripe §2.12, onboarding-answer email tailoring). Earlier open items (TikTok Pixel and Google Ads tags, Concierge ticket filing, TestFlight feedback, `product_market_history` retention, Appendix D enforcement status) remain open and unchanged.
+
+### New this week
+
+1. **Admin "Creator stores" page (website repo `29f22713`, `9d9efcb7`).** Staff can now view every creator's Foyer/Digital Product Butler products, files, downloads, views, sales and newsletter subscribers in one admin page. Section 2.12 says we keep order records to deliver purchases and provide support, but does not say that staff can browse a creator's subscriber list. Not mechanical: a new internal-access use of existing data, tied to the Stripe/subscriber data. Proposed sentence for §2.12:
+
+```html
+<li><strong>Staff access</strong>: a small number of our staff can view your store's products, sales, and newsletter subscriber list in an admin tool, only to provide support, investigate abuse, and keep the marketplace working.</li>
+```
+
+   [CONFIRM: this matches how access is actually limited (admin role only, audit-logged), and whether a retention period for subscriber data belongs in §7.]
+
+2. **Complimentary (comp) plans can convert to paid with a delayed first charge (website repo `20982ba7`, `86811eb4`, `f9c90b34`).** Customers on a comp now get end-of-comp emails and a "Keep my plan" checkout whose first charge starts only when the comp ends; comps otherwise cancel without charging the card. Terms §5(b) to §5(d) describe trial conversion and recurring billing but say nothing about comped access or this conversion path. Not mechanical: it changes how billing authorization is characterized. Draft clause for terms.html §5:
+
+```html
+<p>Complimentary access. If we grant you free access to a paid plan for a set period, it ends automatically on its end date and your card is not charged. If you choose "Keep my plan" before it ends, you authorize recurring billing under §5b starting on the end date, at the price shown at checkout, and you can cancel as described in §5c.</p>
+```
+
+   [CONFIRM: wording with counsel, and that no refund/chargeback language in §5d to §5f needs adjusting for comp-converted subscriptions.]
+
+### Checked, no action needed
+
+- **Subprocessors/SDKs:** no new dependencies in either repo's `package.json` or `mobile-web/package.json`. New website script `indexnow` submits public page URLs to search engines only (no personal data).
+- **Booking/scheduling (setup calls, reserved slots for a partner's students, Google Meet token check, slot-overlap fixes):** same data (name, email, time, topic) already covered by §2.7; no new vendor.
+- **Funnels v2 emails (tailored lifecycle funnels, A/B winners, goal tracking):** uses onboarding answers and email events already disclosed Nov 8 and §7 (24-month email events). The new `email_sends` rollup migration is an internal aggregation.
+- **Affiliate lifetime-commission email, billing backfills, trial-conversion fixes:** covered by §2.9 and §2.5; no new data category.
+- **Phone app (hold/roll back desktop updates, deals-attention bridge):** commands and counts over the existing pairing channel; covered by §2.11.
+- **Desktop app:** Launch Butler fixes, The Great Video Purge (uses the user's own OpenAI key, files kept on the user's computer), chat-bubble big-screenshot attach and expanded reports window (same support attachments already in §2.8), Black Friday mode, Butler Links tap handling: no new off-device flow or vendor found.
+- **Extension privacy page:** no extension changes found this week; no drift detected.
+- **Retention enforcement:** no new cleanup jobs this week.
