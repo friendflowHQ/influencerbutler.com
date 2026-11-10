@@ -53,7 +53,7 @@ const ROWS: Row[] = [
     oink: { v: "text", t: "$29.99/mo (free tier)" },
     vue: { v: "text", t: "Free / $33+/mo" },
     cha: { v: "text", t: "$20/mo" },
-    logie: { v: "text", t: "$0 free / $49.75+/mo" },
+    logie: { v: "text", t: "$0 free / $59+/mo ($49.75+/mo yearly)" },
     joy: { v: "text", t: "$20/mo + usage (free)" },
     many: { v: "text", t: "Free / $17+/mo" },
     deep: { v: "text", t: "Free / ~$14/mo" },
@@ -413,7 +413,7 @@ const COMPETITORS: Competitor[] = [
   },
   {
     name: "Logie",
-    tag: "Extension + web portal · $0 free, up to $166/mo (credits)",
+    tag: "Extension + web portal · $0 free, $59 to $199/mo or $49.75 to $166/mo yearly (credits)",
     pitch:
       "AI-first Amazon suite (now branded logie5): X-Ray Super Search, an Opportunity Score + Sales Rank, Creator Connections visibility and reminders, a brand Inbox CRM, sample requests, AI shoppable photos/collages/thumbnails, AI Pinterest posts, auto-publish to YouTube/Pinterest/Amazon CA-UK, smart deep links, and weekly Zoom training. Everything is credit-metered with a per-tier score cap, and the AI creation tools unlock only on Gold and Platinum.",
     credit:
