@@ -46,6 +46,17 @@ import {
 } from "@/lib/extension-review";
 import { personalizePathBody } from "@/lib/email-path-select";
 import { personalizeBundleSubmitBody } from "@/lib/grow-together-submit";
+import {
+  INVITE_SEQUENCE_ID,
+  INVITE_PREVIEW_DAYS,
+  countPayingCreators,
+  creatorCountPhrase,
+  inviteValuesFor,
+  invitesByEmail,
+  markInviteSent,
+  personalizeInviteText,
+  type InviteRow,
+} from "@/lib/foyer-invites";
 import { logSuppressedSkip, sendEmail } from "@/lib/email-send";
 import { coldFrom, coldStreamEnabled } from "@/lib/email-senders";
 import { isEmailSuppressed } from "@/lib/email-unsubscribe";
@@ -610,6 +621,18 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
       last_step_sent: number;
     }[];
 
+    // Invite pilot (done-for-you Foyer page): every enrollment carries its own
+    // researched opener + private preview link from foyer_invites, dropped into
+    // the shared copy through {{INVITE_*}} placeholders. Prefetched once per run.
+    const isInviteSequence = seq.id === INVITE_SEQUENCE_ID;
+    let invites = new Map<string, InviteRow>();
+    let creatorCount = "";
+    if (isInviteSequence && enrollments.length > 0) {
+      invites = await invitesByEmail(db, enrollments.map((e) => e.email));
+      const paying = await countPayingCreators(db);
+      creatorCount = paying == null ? "" : creatorCountPhrase(paying);
+    }
+
     // Recent failed sends for this sequence's steps, so a recipient Resend keeps
     // rejecting backs off and is eventually given up on instead of being retried
     // every run forever. One indexed lookup per sequence (category, created_at).
@@ -710,6 +733,37 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
       // than risk sending the offer to a paying customer.
       let subject = nextStep.subject;
       let body = nextStep.body;
+      let invite: InviteRow | null = null;
+      if (isInviteSequence) {
+        invite = invites.get(enrollment.email.trim().toLowerCase()) ?? null;
+        // No invite row, or the creator already claimed / declined: the drip is done.
+        if (!invite || !["drafted", "sent", "viewed"].includes(invite.status)) {
+          await db
+            .from("email_sequence_enrollments")
+            .update({ cancelled_at: new Date().toISOString() })
+            .eq("id", enrollment.id);
+          continue;
+        }
+        if (!invite.expires_at) {
+          invite = {
+            ...invite,
+            expires_at: new Date(Date.now() + INVITE_PREVIEW_DAYS * 24 * 60 * 60 * 1000).toISOString(),
+          };
+        }
+        const values = inviteValuesFor(invite, creatorCount);
+        const pSubject = personalizeInviteText(subject, values);
+        const pBody = personalizeInviteText(body, values);
+        if (pSubject == null || pBody == null) {
+          // A placeholder would go out empty (e.g. the paying-creator count
+          // lookup failed). Hold the enrollment for the next run.
+          reportError("invite personalization", {
+            message: `unresolved placeholder for ${enrollment.email} step ${nextStep.position}`,
+          });
+          continue;
+        }
+        subject = pSubject;
+        body = pBody;
+      }
       if (isReviewSequence) {
         if (!liveEmails) continue;
         const copy = reviewStepForRecipient(
@@ -755,6 +809,7 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
       });
       // On failure, stamp nothing: the enrollment retries next run.
       if (!ok) continue;
+      if (invite) await markInviteSent(db, invite);
 
       const isLastStep = !steps.some((s) => s.position === nextStep.position + 1);
       const update: Record<string, unknown> = {

@@ -14,7 +14,7 @@ import { logAdminAction } from "@/lib/admin-audit";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const KINDS = new Set(["winback", "creator", "affiliate", "trial", "referral"]);
+const KINDS = new Set(["winback", "creator", "affiliate", "trial", "referral", "invite"]);
 
 export async function POST(request: Request) {
   const actor = await requirePermission("licenses.view", request);

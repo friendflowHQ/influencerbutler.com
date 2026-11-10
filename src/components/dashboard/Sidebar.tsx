@@ -175,6 +175,7 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
       { href: "/dashboard/admin/cancellations", label: "Cancellations", perm: "reports.view", built: true },
       { href: "/dashboard/admin/users", label: "Users", perm: "users.view", built: true },
       { href: "/dashboard/admin/comps", label: "Comps", perm: "licenses.view", built: true },
+      { href: "/dashboard/admin/invites", label: "Invites", perm: "licenses.view", built: true },
       { href: "/dashboard/admin/webhooks", label: "Webhooks", perm: "webhooks.view", built: true },
       { href: "/dashboard/admin/audit", label: "Audit log", perm: "audit.view", built: true },
       { href: "/dashboard/admin/staff", label: "Assistants", perm: "staff.manage", built: true },

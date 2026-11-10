@@ -86,7 +86,7 @@ export type IssueCompInput = {
   kind?: CompKind;
 };
 
-export type CompKind = "winback" | "creator" | "affiliate" | "trial" | "referral";
+export type CompKind = "winback" | "creator" | "affiliate" | "trial" | "referral" | "invite";
 
 export type IssueCompResult =
   | {

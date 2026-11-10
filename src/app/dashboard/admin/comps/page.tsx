@@ -52,6 +52,7 @@ const KIND_OPTIONS = [
   { value: "affiliate", label: "Affiliate" },
   { value: "trial", label: "Trial" },
   { value: "referral", label: "Referral" },
+  { value: "invite", label: "Invite (Foyer page)" },
 ] as const;
 
 type ListResponse = {
