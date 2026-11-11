@@ -695,9 +695,9 @@
     },
     {
       "id": "foyer-butler-stan-migration",
-      "title": "Switching from Stan Store to Foyer Butler",
+      "title": "Switching from Stan Store, Linktree or Beacons to Foyer Butler",
       "category": "Getting Started",
-      "summary": "Rebuild your Stan Store page in Foyer Butler, then cancel your Stan Store subscription yourself. We never ask for or store your Stan Store login.",
+      "summary": "Import your Stan Store, Linktree or Beacons page into Foyer Butler in about a minute, then cancel your old plan yourself. We never ask for or store your login there.",
       "order": 126.5,
       "locales": [
         "en-US",
