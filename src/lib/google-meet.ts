@@ -34,8 +34,13 @@ export const CALENDAR_SCOPES = [
 
 // youtube.upload: publish the finished event recording to the dedicated YouTube
 // account's channel (src/lib/youtube.ts). Needs the YouTube Data API v3 enabled
-// on the same Google Cloud project.
-export const YOUTUBE_SCOPES = ["https://www.googleapis.com/auth/youtube.upload"].join(" ");
+// on the same Google Cloud project. youtube.readonly: channels.list?mine=true
+// (which channel the token is bound to) is refused with upload-only access, and
+// uploads with an expected channel are blocked until that check passes.
+export const YOUTUBE_SCOPES = [
+  "https://www.googleapis.com/auth/youtube.upload",
+  "https://www.googleapis.com/auth/youtube.readonly",
+].join(" ");
 
 const SCHEDULING_CALLBACK_PATH = "/api/admin/scheduling/google/callback";
 const YOUTUBE_CALLBACK_PATH = "/api/admin/events/youtube/callback";
