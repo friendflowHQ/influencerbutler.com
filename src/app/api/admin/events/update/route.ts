@@ -12,6 +12,7 @@ import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { logAdminAction } from "@/lib/admin-audit";
 import { getAdmin, getEvent } from "@/lib/events";
+import { sendEventJoinLink } from "@/lib/event-emails";
 import {
   parseInvitePlan,
   parseReplayPlan,
@@ -71,10 +72,59 @@ export async function POST(request: Request) {
     patch.meeting_provider = "manual";
   }
 
+  const { data: prevRow } = await admin
+    .from("events")
+    .select("join_url,image_url")
+    .eq("id", id)
+    .maybeSingle();
+  const prevJoinUrl = (prevRow as { join_url?: string | null } | null)?.join_url ?? null;
+
   const { error } = await admin.from("events").update(patch).eq("id", id);
   if (error) {
     console.error("[admin/events/update] update", error.message);
     return NextResponse.json({ error: "Could not update event." }, { status: 500 });
+  }
+
+  // Join link added or changed after the 1h reminder already went out: that
+  // reminder told registrants "the join link will be emailed shortly", and the
+  // hourly cron never sends it again, so email it now (fb-cd749461).
+  let joinLinkSent = 0;
+  const nowMs = Date.now();
+  if (
+    input.joinUrl &&
+    input.joinUrl !== prevJoinUrl &&
+    nowMs >= startMs - 75 * 60_000 &&
+    nowMs < endMs
+  ) {
+    try {
+      const { data: regs } = await admin
+        .from("event_registrations")
+        .select("user_email,user_name,user_timezone")
+        .eq("event_id", id)
+        .is("cancelled_at", null)
+        .not("reminded_1h_at", "is", null);
+      for (const r of (regs ?? []) as {
+        user_email: string;
+        user_name: string | null;
+        user_timezone: string | null;
+      }[]) {
+        const ok = await sendEventJoinLink({
+          id,
+          title: input.title,
+          description: input.description,
+          startMs,
+          endMs,
+          joinUrl: input.joinUrl,
+          toEmail: r.user_email,
+          toName: r.user_name,
+          timezone: r.user_timezone || input.timezone,
+          imageUrl: (prevRow as { image_url?: string | null } | null)?.image_url ?? null,
+        });
+        if (ok) joinLinkSent++;
+      }
+    } catch (e) {
+      console.error("[admin/events/update] join-link follow-up", e);
+    }
   }
 
   // Email lifecycle (best-effort): persist the replay plan, and schedule an
@@ -111,8 +161,8 @@ export async function POST(request: Request) {
     action: "event.update",
     targetType: "event",
     targetId: id,
-    details: { title: input.title, bannerEnabled: input.banner.enabled },
+    details: { title: input.title, bannerEnabled: input.banner.enabled, joinLinkSent },
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, joinLinkSent });
 }

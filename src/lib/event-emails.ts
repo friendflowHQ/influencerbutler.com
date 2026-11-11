@@ -157,6 +157,33 @@ export async function sendEventReminder(e: EventEmailData, which: "24h" | "1h"):
 }
 
 /**
+ * Join-link follow-up: sent when the join link is added (or changed) after the
+ * 1h reminder already went out, since that reminder promised "the join link will
+ * be emailed shortly" and nothing else ever sent it (support ticket fb-cd749461:
+ * a registrant got the link 30 minutes into the session).
+ */
+export async function sendEventJoinLink(e: EventEmailData): Promise<boolean> {
+  if (!e.joinUrl) return false;
+  const tz = e.timezone || "UTC";
+  const body = [
+    `Hi ${firstName(e.toName, e.toEmail)},`,
+    ``,
+    `Here is your join link for ${e.title}:`,
+    ``,
+    `Join link: ${e.joinUrl}`,
+    ``,
+    whenLine(e.startMs, e.endMs, tz),
+    ``,
+    `See you there.`,
+    ``,
+    `Warmly,`,
+    `Your Influencer Butler Team`,
+  ].join("\n");
+  const html = imageBlock(e.imageUrl) + htmlFrom(body, [{ phrase: e.joinUrl, href: e.joinUrl }]);
+  return sendResend(e.toEmail, `Join link: ${e.title}`, body, "event_join_link", undefined, html);
+}
+
+/**
  * Post-call recap: highlights, action items, and tips discussed on the call.
  * `notes` comes from the AI summarizer; sections with nothing are omitted.
  */
