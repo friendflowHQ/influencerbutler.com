@@ -5,8 +5,10 @@
  * Edits an existing event's details + banner config. Always targets exactly one
  * occurrence row (only dateOptions[0] is used) - sibling time options on a
  * multi-date event, if any, are untouched. Does not re-provision the Meet link
- * or Recall bot (those are set at create time); a manual joinUrl edit is
- * honored. Gated by events.manage; audit-logged.
+ * (set at create time); a manual joinUrl edit is honored, and when that link is
+ * a Google Meet room on a recording-enabled event that has not ended, the Recall
+ * bot is (re)scheduled for it so the call is recorded without a separate retry.
+ * Gated by events.manage; audit-logged.
  */
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
@@ -19,6 +21,7 @@ import {
   scheduleEventInvite,
   saveReplayPlan,
 } from "@/lib/event-email-lifecycle";
+import { scheduleBotResult, stopBot, isRecallConfigured, shouldScheduleRecordingBot } from "@/lib/recall";
 import { parseEventInput } from "../shared";
 
 export const runtime = "nodejs";
@@ -49,6 +52,10 @@ export async function POST(request: Request) {
 
   const admin = getAdmin();
   if (!admin) return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+
+  // Snapshot before the update, to tell whether the join link or recording
+  // setting changed and whether a bot is already armed.
+  const before = await getEvent(admin, id);
 
   const patch: Record<string, unknown> = {
     title: input.title,
@@ -125,6 +132,44 @@ export async function POST(request: Request) {
     } catch (e) {
       console.error("[admin/events/update] join-link follow-up", e);
     }
+  }
+
+  // Recording (best-effort): a pasted Meet link used to leave recording at
+  // 'skipped_no_meet' with no bot, and the call went unrecorded. Arm the bot
+  // when the event now has a recordable link and either the link changed,
+  // recording was just turned on, or no bot is armed yet.
+  let recordingStatus: string | null = null;
+  try {
+    const joinUrl = input.joinUrl ?? before?.joinUrl ?? null;
+    const provider = input.joinUrl ? "manual" : before?.meetingProvider ?? null;
+    const linkChanged = !!input.joinUrl && input.joinUrl !== before?.joinUrl;
+    const turnedOn = input.recordEnabled && !before?.recordEnabled;
+    const armed = before?.recordingStatus === "scheduled" && !!before?.recallBotId;
+    if (
+      input.recordEnabled &&
+      endMs > Date.now() &&
+      shouldScheduleRecordingBot(provider, joinUrl) &&
+      isRecallConfigured() &&
+      (linkChanged || turnedOn || !armed)
+    ) {
+      if (before?.recallBotId) {
+        try { await stopBot(before.recallBotId); } catch (e) { console.error("[admin/events/update] stop stale bot", e); }
+      }
+      const result = await scheduleBotResult({
+        meetingUrl: joinUrl as string, // shouldScheduleRecordingBot guarantees non-null
+        joinAtISO: new Date(startMs).toISOString(),
+        botName: "Influencer Butler Notetaker",
+        metadata: { eventId: id },
+      });
+      recordingStatus = result.bot ? "scheduled" : "failed";
+      const { error: recErr } = await admin
+        .from("events")
+        .update({ recall_bot_id: result.bot?.id ?? null, recording_status: recordingStatus })
+        .eq("id", id);
+      if (recErr) console.error("[admin/events/update] recording status", recErr.message);
+    }
+  } catch (e) {
+    console.error("[admin/events/update] recording", e);
   }
 
   // Email lifecycle (best-effort): persist the replay plan, and schedule an

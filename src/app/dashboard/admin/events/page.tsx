@@ -1547,7 +1547,7 @@ export default function AdminEventsPage() {
                       {e.replayEmailedAt ? "Resend replay" : "Send replay now"}
                     </button>
                   ) : null}
-                  {e.status === "scheduled" && e.recordEnabled && e.recordingStatus === "failed" ? (
+                  {e.status === "scheduled" && e.recordEnabled && (e.recordingStatus === "failed" || e.recordingStatus === "skipped_no_meet") && Date.parse(e.endsAt) > Date.now() ? (
                     <button
                       type="button"
                       onClick={() => rearmRecording(e.id)}
