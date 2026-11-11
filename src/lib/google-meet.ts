@@ -40,8 +40,17 @@ export const YOUTUBE_SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
 const SCHEDULING_CALLBACK_PATH = "/api/admin/scheduling/google/callback";
 const YOUTUBE_CALLBACK_PATH = "/api/admin/events/youtube/callback";
 
+// Trimmed: a value pasted into Vercel with a trailing space or newline makes
+// Google answer 401 invalid_client on every token call.
+function googleClientId(): string {
+  return (process.env.GOOGLE_OAUTH_CLIENT_ID || "").trim();
+}
+function googleClientSecret(): string {
+  return (process.env.GOOGLE_OAUTH_CLIENT_SECRET || "").trim();
+}
+
 export function isGoogleConfigured(): boolean {
-  return !!(process.env.GOOGLE_OAUTH_CLIENT_ID && process.env.GOOGLE_OAUTH_CLIENT_SECRET);
+  return !!(googleClientId() && googleClientSecret());
 }
 
 export function redirectUri(originFallback?: string): string {
@@ -70,7 +79,7 @@ export function authUrl(
   opts?: { scope?: string; redirect?: string },
 ): string {
   const params = new URLSearchParams({
-    client_id: process.env.GOOGLE_OAUTH_CLIENT_ID || "",
+    client_id: googleClientId(),
     redirect_uri: opts?.redirect ?? redirectUri(origin),
     response_type: "code",
     scope: opts?.scope ?? CALENDAR_SCOPES,
@@ -100,8 +109,8 @@ export async function exchangeCode(
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
         code,
-        client_id: process.env.GOOGLE_OAUTH_CLIENT_ID || "",
-        client_secret: process.env.GOOGLE_OAUTH_CLIENT_SECRET || "",
+        client_id: googleClientId(),
+        client_secret: googleClientSecret(),
         redirect_uri: redirect ?? redirectUri(origin),
         grant_type: "authorization_code",
       }),
@@ -128,8 +137,8 @@ export async function accessTokenFrom(refreshToken: string): Promise<string | nu
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
-        client_id: process.env.GOOGLE_OAUTH_CLIENT_ID || "",
-        client_secret: process.env.GOOGLE_OAUTH_CLIENT_SECRET || "",
+        client_id: googleClientId(),
+        client_secret: googleClientSecret(),
         refresh_token: refreshToken,
         grant_type: "refresh_token",
       }),
@@ -153,8 +162,8 @@ export async function checkGoogleConnection(refreshToken: string): Promise<{ ok:
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
-        client_id: process.env.GOOGLE_OAUTH_CLIENT_ID || "",
-        client_secret: process.env.GOOGLE_OAUTH_CLIENT_SECRET || "",
+        client_id: googleClientId(),
+        client_secret: googleClientSecret(),
         refresh_token: refreshToken,
         grant_type: "refresh_token",
       }),
