@@ -133,9 +133,15 @@ Note: live Test Connection currently makes a real read-only call for OpenAI and 
 
 ## Amazon native deep link
 
-At the top of **DeepLink Routing** is the **Amazon native deep link** switch, on by default. When it's on, every Amazon product link your tools build opens straight in the Amazon app on a phone instead of a mobile browser, which is a smoother tap-to-buy for your shoppers. It's separate from the provider list below: the provider picks the redirect/shortener, while this switch controls the in-app open. Turn it off if you'd rather post plain browser links.
+**Amazon native deep link** is the default choice in **DeepLink Routing**. With it picked, your Amazon product links post as Amazon's own short link, `amzn.to/...` or the newer `link.amazon.com/...`, with your tag inside. On a phone the link opens in the Amazon app. Which of the two you get is up to Amazon: it is rolling `link.amazon.com` out to accounts a few at a time.
 
-One thing to know: for the link to actually open the app, your Amazon Associates account also needs "Deep linking enabled" in SiteStripe. The switch adds the right link format; your account setting is what tells Amazon to honor it.
+Amazon makes each short link from your Amazon sign-in in the app, so stay signed in to Amazon there with your Associates account and keep your Store ID filled in. Each product's short link is made once and reused.
+
+It works in every tool that posts: Deal Posting (Facebook, Instagram, Threads and Telegram), Social Posting, Orders Butler, YouTube Butler, Group Mirror and DMs. Pinterest and Reddit keep the full link, because those sites do not accept short links.
+
+If Amazon can't make a short link (you are signed out, Amazon asks the app to slow down, or the account is not an Associates account), the full tagged Amazon link posts instead and the Console Log says why. Your commission tracks either way.
+
+Want branded links with click tracking instead? Pick **Influencer Butler** in **DeepLink Routing**.
 
 ## Per-country affiliate tags
 

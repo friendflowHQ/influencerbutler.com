@@ -133,9 +133,15 @@ Nota: la prueba de conexión en vivo hace ahora una llamada real de solo lectura
 
 ## Enlace profundo nativo de Amazon
 
-En la parte superior de **DeepLink Routing** está el interruptor **Enlace profundo nativo de Amazon**, activado por defecto. Cuando está activado, cada enlace de producto de Amazon que crean tus herramientas se abre directamente en la app de Amazon en el móvil en lugar de en el navegador, lo que hace la compra más fluida para tus compradores. Es independiente de la lista de proveedores de abajo: el proveedor elige la redirección/acortador, mientras que este interruptor controla la apertura en la app. Desactívalo si prefieres publicar enlaces normales de navegador.
+**Enlace profundo nativo de Amazon** es la opción predeterminada en **DeepLink Routing**. Con ella elegida, tus enlaces de productos de Amazon se publican como el enlace corto propio de Amazon, `amzn.to/...` o el nuevo `link.amazon.com/...`, con tu etiqueta dentro. En el móvil el enlace se abre en la app de Amazon. Cuál de los dos recibes lo decide Amazon: está activando `link.amazon.com` en las cuentas poco a poco.
 
-Ten en cuenta una cosa: para que el enlace abra realmente la app, tu cuenta de Amazon Associates también necesita "Deep linking enabled" en SiteStripe. El interruptor añade el formato de enlace correcto; el ajuste de tu cuenta es lo que le dice a Amazon que lo respete.
+Amazon crea cada enlace corto con tu sesión de Amazon en la app, así que mantén la sesión de Amazon iniciada allí con tu cuenta de Associates y tu Store ID rellenado. El enlace corto de cada producto se crea una vez y se reutiliza.
+
+Funciona en todas las herramientas que publican: Deal Posting (Facebook, Instagram, Threads y Telegram), Social Posting, Orders Butler, YouTube Butler, Group Mirror y los mensajes directos. Pinterest y Reddit mantienen el enlace completo, porque esos sitios no aceptan enlaces cortos.
+
+Si Amazon no puede crear un enlace corto (no has iniciado sesión, Amazon pide a la app que vaya más despacio o la cuenta no es de Associates), se publica el enlace completo de Amazon con tu etiqueta y el registro de la consola explica el motivo. Tu comisión se registra igualmente.
+
+¿Prefieres enlaces de marca con seguimiento de clics? Elige **Influencer Butler** en **DeepLink Routing**.
 
 ## Etiquetas de afiliado por país
 

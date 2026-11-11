@@ -133,9 +133,15 @@ Remarque : le test de connexion en direct effectue désormais un vrai appel en l
 
 ## Lien profond natif Amazon
 
-En haut de **DeepLink Routing** se trouve l'interrupteur **Lien profond natif Amazon**, activé par défaut. Quand il est activé, chaque lien de produit Amazon que vos outils créent s'ouvre directement dans l'application Amazon sur téléphone plutôt que dans un navigateur mobile, ce qui rend l'achat plus fluide pour vos acheteurs. C'est indépendant de la liste de fournisseurs ci-dessous : le fournisseur choisit la redirection/le raccourcisseur, tandis que cet interrupteur contrôle l'ouverture dans l'application. Désactivez-le si vous préférez publier des liens de navigateur simples.
+**Lien profond natif Amazon** est le choix par défaut dans **DeepLink Routing**. Avec ce choix, vos liens de produits Amazon sont publiés sous la forme du lien court d'Amazon, `amzn.to/...` ou le nouveau `link.amazon.com/...`, avec votre balise à l'intérieur. Sur téléphone, le lien s'ouvre dans l'application Amazon. Lequel des deux vous obtenez dépend d'Amazon : `link.amazon.com` arrive sur les comptes petit à petit.
 
-À savoir : pour que le lien ouvre réellement l'application, votre compte Amazon Associates doit aussi avoir « Deep linking enabled » dans SiteStripe. L'interrupteur ajoute le bon format de lien ; c'est le réglage de votre compte qui indique à Amazon de le respecter.
+Amazon crée chaque lien court à partir de votre connexion Amazon dans l'application. Restez donc connecté à Amazon dans l'application avec votre compte Associates et gardez votre Store ID renseigné. Le lien court de chaque produit est créé une seule fois puis réutilisé.
+
+Cela fonctionne dans tous les outils qui publient : Deal Posting (Facebook, Instagram, Threads et Telegram), Social Posting, Orders Butler, YouTube Butler, Group Mirror et les messages privés. Pinterest et Reddit gardent le lien complet, car ces sites n'acceptent pas les liens courts.
+
+Si Amazon ne peut pas créer de lien court (vous êtes déconnecté, Amazon demande à l'application de ralentir, ou le compte n'est pas un compte Associates), le lien Amazon complet avec votre balise est publié à la place et le journal de la console en donne la raison. Votre commission est suivie dans tous les cas.
+
+Vous préférez des liens de marque avec suivi des clics ? Choisissez **Influencer Butler** dans **DeepLink Routing**.
 
 ## Balises d'affiliation par pays
 
