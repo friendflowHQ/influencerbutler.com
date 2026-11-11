@@ -1023,9 +1023,9 @@
     },
     {
       "id": "black-friday",
-      "title": "Black Friday Butler: never miss a time-limited Amazon deal on your storefront",
+      "title": "Black Friday Butler: find Black Friday deals with the Deal Finder",
       "category": "Other",
-      "summary": "Monitor your Amazon storefront on a cadence and log every Black-Friday-flagged or time-limited deal with timestamps.",
+      "summary": "The Black Friday radar is now part of the Deal Finder. During Black Friday season it shows as Black Friday Deal Finder under Black Friday Butler.",
       "order": 330,
       "locales": [
         "en-US",

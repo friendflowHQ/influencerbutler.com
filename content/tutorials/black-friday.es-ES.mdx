@@ -1,82 +1,27 @@
 ---
-title: Black Friday Butler: no te pierdas ninguna oferta de Amazon con tiempo limitado en tu tienda
-summary: Monitoriza tu tienda de Amazon con una cadencia (5 minutos a 7 días) y registra cada oferta marcada como Black Friday o tiempo limitado con marcas de tiempo.
+title: "Black Friday Butler: encuentra ofertas de Black Friday con el buscador de ofertas"
+summary: El radar de Black Friday ahora forma parte del buscador de ofertas. Durante la temporada de Black Friday aparece como Buscador de ofertas de Black Friday dentro de Black Friday Butler.
 category: Other
 ---
 
-## Qué hace Black Friday Butler
+## Dónde está Black Friday Butler
 
-En el Q4 - Black Friday, Cyber Monday, Lightning Deals - Amazon marca las ofertas con cuentas atrás. Son ventanas de alta conversión para creadores porque la urgencia mueve a la audiencia más rápido que un post normal. Pero detectarlas manualmente por toda tu tienda es imposible: aparecen y caducan mientras no miras.
+El antiguo radar de Black Friday, que revisaba tu tienda cada cierto tiempo, se ha retirado. Todo lo que hacía, y mucho más, ahora está en el **buscador de ofertas**.
 
-Black Friday Butler vigila tu tienda con una cadencia y registra cada oferta time-flagged que ve, con la marca de tiempo en que apareció y en que caducó. Obtienes un log estructurado de cada ventana que podrías haber promocionado, lo que alimenta tus decisiones de publicación el resto de la temporada.
+Del 10 de noviembre al Cyber Monday, abre **Amazon Butler**, luego **Black Friday Butler** y luego **Buscador de ofertas de Black Friday**. Revisa el contenido de tu tienda, los productos que compraste (desde Orders Butler) y el Deals Hub de Amazon, y ordena cada oferta por ganancias estimadas.
 
-A pesar del nombre, funciona todo el año para cualquier marcador de oferta con tiempo limitado - Black Friday sólo es la temporada pico.
+## Inicio rápido
 
-## Antes de empezar
+1. Ejecuta primero **Storefront Butler** y **Orders Butler**, para que el buscador de ofertas conozca tu contenido y los productos que tienes.
+2. Abre **Buscador de ofertas de Black Friday** y haz clic en **Ejecutar ahora**.
+3. Deja marcado **Solo ofertas de Black Friday** para ver solo las ofertas que Amazon ha etiquetado para la Black Friday Week. Desmárcalo para ver todas las ofertas. A principios de noviembre la lista puede ser corta, porque Amazon etiqueta las ofertas del evento a medida que las anuncia.
+4. Marca las ofertas que quieras y envíalas a tu cola de **Ofertas Black Friday** para publicarlas.
 
-- **La URL de tu tienda de Amazon Creator** en la barra superior (o pega otra en el espacio).
-- **Una sesión activa de Amazon** en Chrome - Butler usa tu sesión existente.
+Si no ves Black Friday Butler en el menú, abre **Ajustes**, luego **Mostrar / Ocultar Butlers**, y actívalo.
 
-## Tu primera vigilancia
-
-1. Abre **Black Friday Butler** en el menú lateral.
-2. Confirma el campo **URL de la tienda**.
-3. Establece **Cadencia de refresco**:
-   - **5 minutos**: sólo durante el pico de BFCM. El presupuesto de rate-limit del lado Amazon es real.
-   - **15 minutos** (recomendado por defecto) - la mayor parte del Q4. Pilla Lightning Deals que suelen durar 4-12 horas.
-   - **1 hora a 7 días**: monitorización fuera del pico. Útil para captar eventos estacionales fuera del Q4.
-4. Deja **Debug slow-mo** en 0. El slider de slow-mo existe para diagnosticar problemas de selectores; subirlo añade retardos visibles sólo para depurar.
-5. Pulsa **Iniciar ejecución**.
-
-Se abre una ventana de Chrome que recorre el contenido marcado como oferta de tu tienda y registra cada entrada con tiempo limitado con marcas de primera vista y de caducidad. La tabla se llena en tiempo real; puedes dejar la ventana abierta y que corra durante horas.
-
-## Trabajar con los resultados
-
-La tabla de resultados tiene una fila por oferta marcada:
-
-- **Producto**: título + ASIN.
-- **Tipo de oferta**: Lightning Deal, Black Friday, Cyber Monday, Tiempo Limitado, etc. (clasificación de Amazon).
-- **Vista por primera vez**: cuándo Butler detectó el flag por primera vez.
-- **Expira**: cuándo se programa que se levante el flag (cuenta atrás de Amazon).
-- **Descuento**: el % de descuento en la primera detección.
-- **Estado**: Activa / Expirada / Agotada.
-
-Usa los datos para planificar posts:
-
-- **Ofertas activas que caducan en las próximas 2-4 horas**: máxima urgencia, postea primero.
-- **Ofertas activas con 12+ horas restantes**: programa un post a mitad de ventana.
-- **Ofertas caducadas**: manténlas en el log para análisis de tendencias (¿qué categorías sacaron más ofertas el BFCM pasado?).
-
-**Exportar CSV** vuelca la tabla filtrada para uso fuera de Butler.
-
-## Por qué importa la cadencia
-
-La cadencia de refresco es el trade-off entre frescura y riesgo de rate-limit:
-
-- **A cadencia de 5 minutos**, Butler pega a la tienda 288 veces/día. Amazon lo tolera para ventanas cortas (unos días) pero marcar una cuenta por polling sostenido a este ritmo es un riesgo real.
-- **A cadencia de 15 minutos**, 96 hits/día. Sostenible indefinidamente.
-- **A cadencia de 1 hora**, 24 hits/día. Casi gratis.
-
-El ritmo de 5 min es un setting "tirar sólo durante el pico de BFCM". No lo dejes activado todo el año.
-
-## Ajustes con el tiempo
-
-- **Cadencia por temporada**: 15 minutos durante el Q4, 1 hora el resto del año. Actualiza una vez por trimestre.
-- **Qué hacer con datos de ofertas caducadas**: exporta a hoja de cálculo trimestralmente. Busca patrones: qué categorías sacaron más ofertas, qué marcas ofrecieron descuentos más profundos, qué días de la semana tuvieron mayor densidad de ofertas.
-- **Debug slow-mo**: sólo tócalo si estás investigando un problema de selectores y quieres ver la página interactuar despacio. Si no, déjalo en 0.
-
-## Dónde van los datos
-
-El historial por oferta (con timeline completa de cambios de estado) vive en la caché preseed. La exportación CSV desde la barra de herramientas de la tabla es la salida.
-
-## Tropiezos comunes
-
-- **"Se requiere iniciar sesión en Amazon"**: tu sesión caducó. Inicia sesión en la ventana de Chrome abierta, pulsa Reanudar.
-- **La tabla se llena con el mismo producto una y otra vez**: la oferta alternó activa/expirada/activa entre refrescos. Es preciso a lo que mostró Amazon; no es bug.
-- **No se encuentran ofertas**: tu tienda quizá no tenga contenido marcado ahora mismo. Comprueba directamente en Amazon; si Amazon no muestra ninguna, Butler tampoco.
-- **CPU alta durante cadencia de 5 minutos**: Chrome queda abierto entre refrescos por defecto. Algunos setups lo cierran entre ejecuciones para bajar el suelo de CPU; alterna en ajustes si lo necesitas.
+Fuera de la temporada de Black Friday, la misma herramienta se llama Prime Day Butler. La guía completa, los filtros y los consejos están en el [tutorial de Prime Day Butler](/help/tutorials/prime-day-butler).
 
 ## Relacionado
 
-- [Tutorial de Deal Posting](/help/tutorials/deals) - el espacio más amplio de hunting + publicación de ofertas. Black Friday Butler es puramente *tu* tienda; Deal Posting caza ofertas en toda Amazon.
-- [Tutorial de Storefront Butler](/help/tutorials/storefrontbutler) - sincroniza tu catálogo completo de tienda (sin foco en ofertas con tiempo).
+- [Tutorial de Prime Day Butler](/help/tutorials/prime-day-butler): el buscador de ofertas completo.
+- [Tutorial de Deal Posting](/help/tutorials/deals): pon en cola y publica tus ofertas de Black Friday.
