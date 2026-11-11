@@ -75,7 +75,9 @@ export function authUrl(
     response_type: "code",
     scope: opts?.scope ?? CALENDAR_SCOPES,
     access_type: "offline",
-    prompt: "consent",
+    // select_account: always show the account chooser, so a browser signed in
+    // to several Google accounts does not silently connect the default one.
+    prompt: "consent select_account",
     include_granted_scopes: "true",
     state,
   });
