@@ -115,29 +115,26 @@ export async function loadPriceLockPeople(db: SupabaseClient): Promise<PriceLock
     (await pageAll<{ user_id: string | null; status: string | null; ls_subscription_id: string | null }>((a, b) =>
       db.from("subscriptions").select("user_id, status, ls_subscription_id").order("ls_subscription_id").range(a, b),
     )) ?? fail("subscriptions");
+  type GrantRow = {
+    user_id: string | null;
+    user_email: string | null;
+    ls_subscription_id: string | null;
+    expires_at: string | null;
+    cancelled_at: string | null;
+    converted_at?: string | null;
+    kind?: string | null;
+  };
+  // select("*"): kind / converted_at are later migrations that prod may lack.
   const grants =
-    (await pageAll<{
-      user_id: string | null;
-      user_email: string | null;
-      ls_subscription_id: string | null;
-      expires_at: string | null;
-      cancelled_at: string | null;
-      converted_at: string | null;
-      kind: string | null;
-    }>((a, b) =>
-      db
-        .from("comp_grants")
-        .select("user_id, user_email, ls_subscription_id, expires_at, cancelled_at, converted_at, kind")
-        .order("ls_subscription_id")
-        .range(a, b),
-    )) ?? fail("comp_grants");
+    (await pageAll<GrantRow>((a, b) => db.from("comp_grants").select("*").order("ls_subscription_id").range(a, b))) ??
+    fail("comp_grants");
   const orders =
     (await pageAll<{ user_id: string | null; total: number | null }>((a, b) =>
       db.from("orders").select("user_id, total").eq("status", "paid").gt("total", 0).order("created_at").range(a, b),
     )) ?? fail("orders");
   const reasons =
-    (await pageAll<{ user_id: string | null; would_return: string | null; completed_at: string | null }>((a, b) =>
-      db.from("subscription_cancel_reasons").select("user_id, would_return, completed_at").order("id").range(a, b),
+    (await pageAll<{ user_id: string | null; would_return?: string | null; completed_at?: string | null }>((a, b) =>
+      db.from("subscription_cancel_reasons").select("*").order("id").range(a, b),
     )) ?? [];
   const contacts =
     (await pageAll<{ email: string; source: string | null; tags: string[] | null; unsubscribed_at: string | null }>(
@@ -236,7 +233,7 @@ export async function loadPriceLockPeople(db: SupabaseClient): Promise<PriceLock
     if (!email) continue;
     const at = r.completed_at ? Date.parse(r.completed_at) : 0;
     const prev = latest.get(email);
-    if (!prev || at >= prev.at) latest.set(email, { at, v: r.would_return });
+    if (!prev || at >= prev.at) latest.set(email, { at, v: r.would_return ?? null });
   }
 
   const segmentOf = new Map<string, PriceLockSegment>();

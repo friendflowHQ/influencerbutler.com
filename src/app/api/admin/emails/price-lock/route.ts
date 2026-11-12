@@ -76,7 +76,15 @@ export async function GET(request: Request) {
   const svc = db();
   if (!svc) return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
   try {
-    const [people, cold, campaigns] = await Promise.all([loadPriceLockPeople(svc), coldReport(svc), existingCampaigns(svc)]);
+    const settle = <T,>(p: Promise<T>) => p.then((v) => ({ ok: true as const, v })).catch((e: Error) => ({ ok: false as const, e: e.message }));
+    const [peopleR, coldR, campaignsR] = await Promise.all([
+      settle(loadPriceLockPeople(svc)),
+      settle(coldReport(svc)),
+      settle(existingCampaigns(svc)),
+    ]);
+    const campaigns = campaignsR.ok ? campaignsR.v : [];
+    const people = peopleR.ok ? peopleR.v : null;
+    const cold = coldR.ok ? coldR.v : { error: coldR.e };
     const emails = PRICE_LOCK_EMAILS.map((e) => {
       const c = campaigns.find((row) => row.name === priceLockCampaignName(e));
       return {
@@ -87,7 +95,13 @@ export async function GET(request: Request) {
         campaign: c ?? null,
       };
     });
-    return NextResponse.json({ ok: true, segments: segmentCounts(people), aOrigins: segmentAOrigins(people), cold, emails });
+    return NextResponse.json({
+      ok: true,
+      segments: people ? segmentCounts(people) : { error: peopleR.ok ? null : peopleR.e },
+      aOrigins: people ? segmentAOrigins(people) : null,
+      cold,
+      emails,
+    });
   } catch (err) {
     return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }

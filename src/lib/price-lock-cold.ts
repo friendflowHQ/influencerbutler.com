@@ -73,9 +73,11 @@ type SendRow = {
 };
 
 export async function coldReport(db: SupabaseClient, opts: { write?: boolean } = {}): Promise<ColdReport> {
-  const seqRes = await db.from("email_sequences").select("id, name, stream, trigger, track_opens, status");
+  // select("*"): optional columns (stream, track_opens, apply_tag) may not be
+  // migrated in prod yet.
+  const seqRes = await db.from("email_sequences").select("*");
   if (seqRes.error) throw new Error("could not read email_sequences");
-  const campRes = await db.from("email_campaigns").select("id, name, stream, apply_tag, status");
+  const campRes = await db.from("email_campaigns").select("*");
   const sequences = (seqRes.data ?? []) as Record<string, unknown>[];
   const campaigns = (campRes.data ?? []) as Record<string, unknown>[];
 

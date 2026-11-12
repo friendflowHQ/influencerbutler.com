@@ -78,8 +78,8 @@ export async function GET(request: Request) {
       pageAll<Order>((a, b) =>
         db.from("orders").select("user_id, ls_subscription_id, total, created_at").eq("status", "paid").gt("total", 0).order("created_at").range(a, b),
       ),
-      pageAll<{ user_id: string | null; ls_subscription_id: string | null; kind: string | null; issued_at: string | null; converted_at: string | null }>(
-        (a, b) => db.from("comp_grants").select("user_id, ls_subscription_id, kind, issued_at, converted_at").order("ls_subscription_id").range(a, b),
+      pageAll<{ user_id: string | null; ls_subscription_id: string | null; kind?: string | null; issued_at?: string | null; converted_at?: string | null }>(
+        (a, b) => db.from("comp_grants").select("*").order("ls_subscription_id").range(a, b),
       ),
       pageAll<{ id: string; email: string | null }>((a, b) => db.from("profiles").select("id, email").order("id").range(a, b)),
     ]);
