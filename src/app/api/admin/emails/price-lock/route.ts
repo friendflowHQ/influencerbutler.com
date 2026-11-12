@@ -18,7 +18,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { requirePermission } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EMAIL_RE } from "@/lib/email-audience";
-import { MARKETING_FROM } from "@/lib/email-marketing";
+import { priceLockSender } from "@/lib/email-senders";
 import { sendMarketingEmail } from "@/lib/marketing-email";
 import { buildCampaignEmail } from "@/lib/campaign-email";
 import { loadPriceLockPeople, segmentAOrigins, segmentCounts } from "@/lib/price-lock-audience";
@@ -161,25 +161,34 @@ export async function POST(request: Request) {
     if (body.action === "test") {
       const toEmail = typeof body.toEmail === "string" ? body.toEmail.trim().toLowerCase() : "";
       if (!EMAIL_RE.test(toEmail)) return NextResponse.json({ error: "A valid toEmail is required" }, { status: 400 });
-      const results: { key: string; ok: boolean }[] = [];
+      const results: { key: string; ok: boolean; from?: string; skipped?: string }[] = [];
       for (const e of pick(PRICE_LOCK_EMAILS)) {
+        // Same sender and stream the real push uses: A-D from the main address,
+        // cold E1-E3 only from the cold sender (skipped while it is unset).
+        const sender = priceLockSender(e.segments);
+        if (!sender) {
+          results.push({ key: e.key, ok: true, skipped: "cold stream paused (EMAIL_FROM_COLD unset)" });
+          continue;
+        }
         const sample = annualOfferFor(process.env.LEMONSQUEEZY_VARIANT_MONTHLY ?? null);
         const text = personalizePriceLockBody(e.body, {
           keepPlanUrl: `${SITE}/dashboard/subscription?src=${e.key}-test`,
           annualOffer: sample ? annualOfferLines(sample) : "✨ (your plan's annual numbers go here)",
         });
         const built = buildCampaignEmail({ body: text ?? e.body, attachments: [], inlineImages: [] });
+        const from = fromLiz(sender.from);
         const ok = await sendMarketingEmail({
-          from: fromLiz(MARKETING_FROM),
+          from,
           to: toEmail,
           subject: `[TEST ${e.key}] ${e.subject}`,
           text: built.text,
           html: built.html,
           category: "campaign_test",
           funnel: "campaign",
+          stream: sender.stream,
           bypassSuppression: true,
         });
-        results.push({ key: e.key, ok });
+        results.push({ key: e.key, ok, from });
         await new Promise((resolve) => setTimeout(resolve, 600)); // stay under Resend's rate limit
       }
       return NextResponse.json({ ok: results.every((r) => r.ok), results });

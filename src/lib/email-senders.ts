@@ -63,6 +63,26 @@ export function fromForStream(stream: EmailStream): string {
 }
 
 /**
+ * Sender for the Nov 2026 price lock push (owner decision, 2026-11-12):
+ *
+ *   - Segments A-D (leads, paying, comps, cancelled) are people who already
+ *     know us, so they go out from the MAIN address, the same sender and Resend
+ *     key as receipts-style transactional mail (license keys, sign-in links),
+ *     never from the lifecycle/news subdomain.
+ *   - Any audience that touches a cold segment (E1, E2, E3) is cold: it uses the
+ *     cold sender only, and is PAUSED (null) while no cold sender is configured.
+ *     It never falls back to the main domain.
+ *
+ * The send itself still goes through sendMarketingEmail, so the unsubscribe
+ * footer, one-click List-Unsubscribe headers and daily gates are unchanged.
+ */
+export function priceLockSender(segments: readonly string[]): { from: string; stream: EmailStream } | null {
+  const cold = segments.some((s) => /^E/i.test(s));
+  if (cold) return coldStreamEnabled() ? { from: coldFrom(), stream: "cold" } : null;
+  return { from: transactionalFrom(), stream: "transactional" };
+}
+
+/**
  * Resend API key for a stream. Transactional uses a dedicated key when set so
  * it sends from its own verified domain and reputation; lifecycle and cold use
  * the main key (cold can gain its own later without touching callers).

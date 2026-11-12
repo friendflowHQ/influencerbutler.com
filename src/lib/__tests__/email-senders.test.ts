@@ -15,6 +15,7 @@ import {
   coldStreamEnabled,
   fromForStream,
   resendKeyFor,
+  priceLockSender,
 } from "../email-senders";
 
 const KEYS = [
@@ -105,5 +106,31 @@ describe("resendKeyFor", () => {
   it("returns undefined when no key is configured at all", () => {
     expect(resendKeyFor("transactional")).toBeUndefined();
     expect(resendKeyFor("lifecycle")).toBeUndefined();
+  });
+});
+
+describe("priceLockSender", () => {
+  it("sends A-D from the main transactional address, never the lifecycle/news sender", () => {
+    process.env.EMAIL_FROM_LIFECYCLE = "Influencer Butler <hello@news.influencerbutler.com>";
+    for (const segs of [["A"], ["B"], ["C"], ["D"], ["A", "D"]]) {
+      expect(priceLockSender(segs)).toEqual({ from: DEFAULT_BRAND_FROM, stream: "transactional" });
+    }
+  });
+
+  it("follows EMAIL_FROM_TRANSACTIONAL when it is set", () => {
+    process.env.EMAIL_FROM_TRANSACTIONAL = "Influencer Butler <hi@influencerbutler.com>";
+    expect(priceLockSender(["B"])?.from).toBe("Influencer Butler <hi@influencerbutler.com>");
+  });
+
+  it("holds cold E1-E3 while no cold sender is configured, with no main-domain fallback", () => {
+    process.env.EMAIL_FROM_LIFECYCLE = "Influencer Butler <hello@news.influencerbutler.com>";
+    expect(priceLockSender(["E1"])).toBeNull();
+    expect(priceLockSender(["E2"])).toBeNull();
+    expect(priceLockSender(["E3"])).toBeNull();
+  });
+
+  it("sends cold E1-E3 only from the cold sender once one is configured", () => {
+    process.env.EMAIL_FROM_COLD = "Liz <liz@news.influencerbutler.com>";
+    expect(priceLockSender(["E2"])).toEqual({ from: "Liz <liz@news.influencerbutler.com>", stream: "cold" });
   });
 });

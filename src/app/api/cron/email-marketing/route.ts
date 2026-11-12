@@ -58,7 +58,7 @@ import {
   type InviteRow,
 } from "@/lib/foyer-invites";
 import { logSuppressedSkip, sendEmail } from "@/lib/email-send";
-import { coldFrom, coldStreamEnabled } from "@/lib/email-senders";
+import { coldFrom, coldStreamEnabled, priceLockSender, type EmailStream } from "@/lib/email-senders";
 import { isEmailSuppressed } from "@/lib/email-unsubscribe";
 import { isMissingTable } from "@/lib/growth-goals";
 import { buildCampaignEmail } from "@/lib/campaign-email";
@@ -443,20 +443,29 @@ async function sendCampaignRecipients(db: SupabaseClient, summary: Summary): Pro
     // Cold campaigns are paused until a cold sender is configured: leave their
     // recipients queued (they resume when cold is enabled) rather than sending
     // from the brand domain.
+    const parsedAudience = parseAudience(campaign.audience);
+    const push = parsedAudience?.kind === "price_lock" ? parsedAudience : null;
     const campaignStream: DripStream = campaign.stream === "cold" ? "cold" : "lifecycle";
     if (campaignStream === "cold" && !coldStreamEnabled()) {
       summary.coldPaused += 1;
       continue;
     }
-    const campaignFrom = campaignStream === "cold" ? coldFrom() : MARKETING_FROM;
+    // Price lock push (owner decision 2026-11-12): A-D go from the main
+    // transactional address; E1-E3 are cold whatever the stream column says
+    // (prod has no stream column yet) and stay held until a cold sender exists.
+    const pushSender = push ? priceLockSender(push.segments) : null;
+    if (push && !pushSender) {
+      summary.coldPaused += 1;
+      continue;
+    }
+    const campaignFrom = pushSender ? pushSender.from : campaignStream === "cold" ? coldFrom() : MARKETING_FROM;
+    const sendStream: EmailStream = pushSender ? pushSender.stream : campaignStream;
 
     const built = buildCampaignEmail({
       body: campaign.body,
       attachments: campaign.attachments ?? [],
       inlineImages: campaign.inline_images ?? [],
     });
-    const parsedAudience = parseAudience(campaign.audience);
-    const push = parsedAudience?.kind === "price_lock" ? parsedAudience : null;
     const people = push ? await loadPushPeople() : null;
     // Fail closed for a push: no fresh segment read, no send this run.
     if (push && !people) continue;
@@ -543,7 +552,7 @@ async function sendCampaignRecipients(db: SupabaseClient, summary: Summary): Pro
         text: mail.text,
         html: mail.html,
         attachments: mail.attachments,
-        stream: campaignStream,
+        stream: sendStream,
         category: campaignCategory(campaign.id),
         funnel: "campaign",
         skipGate: true,
