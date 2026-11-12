@@ -36,6 +36,13 @@ export type PriceLockEmail = {
   maxButtons?: number;
 };
 
+/**
+ * Big partner lists that sit in segment A only because they were enrolled
+ * into a sequence (counts on 2026-11-11: Instagram Posse 33,461, Dani Austin
+ * giveaway 23,772). Left out of every A send until the owner decides.
+ */
+export const DEFAULT_EXCLUDED_ORIGINS: readonly string[] = ["instagram-posse", "dani-austin-giveaway"];
+
 const pricing = (src: string) => `${SITE}/pricing?src=${src}`;
 
 const PRICES_TODAY = `- Beginner: $24.99 a month today, $29.99 after Nov 30

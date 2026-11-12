@@ -24,6 +24,7 @@ import { buildCampaignEmail } from "@/lib/campaign-email";
 import { loadPriceLockPeople, segmentAOrigins, segmentCounts } from "@/lib/price-lock-audience";
 import { coldReport } from "@/lib/price-lock-cold";
 import {
+  DEFAULT_EXCLUDED_ORIGINS,
   PRICE_LOCK_EMAILS,
   fromLiz,
   personalizePriceLockBody,
@@ -51,6 +52,7 @@ function audienceFor(e: PriceLockEmail) {
     segments: e.segments,
     ...(e.excludeClickersOf ? { excludeClickersOf: e.excludeClickersOf } : {}),
     ...(e.allowSecondToday ? { allowSecondToday: true } : {}),
+    ...(e.segments.includes("A") ? { excludeOrigins: [...DEFAULT_EXCLUDED_ORIGINS] } : {}),
   };
 }
 
@@ -175,6 +177,20 @@ export async function POST(request: Request) {
         await new Promise((resolve) => setTimeout(resolve, 600)); // stay under Resend's rate limit
       }
       return NextResponse.json({ ok: results.every((r) => r.ok), results });
+    }
+
+    // Re-apply each draft's planned audience (e.g. after the list exclusion
+    // default changes). Drafts only; never touches a campaign that started.
+    if (body.action === "sync-audiences") {
+      const existing = await existingCampaigns(svc);
+      const updated: string[] = [];
+      for (const e of pick(PRICE_LOCK_EMAILS)) {
+        const c = existing.find((row) => row.name === priceLockCampaignName(e));
+        if (!c || c.status !== "draft") continue;
+        const { error } = await svc.from("email_campaigns").update({ audience: audienceFor(e) }).eq("id", c.id);
+        if (!error) updated.push(e.key);
+      }
+      return NextResponse.json({ ok: true, updated });
     }
 
     if (body.action === "snapshot-cold") {

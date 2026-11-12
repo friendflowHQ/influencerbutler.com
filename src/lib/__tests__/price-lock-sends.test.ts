@@ -71,6 +71,11 @@ describe("segments", () => {
   it("validates the price_lock audience", () => {
     expect(parseAudience({ kind: "price_lock", segments: ["A", "D"] })).toEqual({ kind: "price_lock", segments: ["A", "D"] });
     expect(parseAudience({ kind: "price_lock", segments: ["Z"] })).toBeNull();
+    expect(parseAudience({ kind: "price_lock", segments: ["A"], excludeOrigins: ["instagram-posse", "BAD ONE!"] })).toEqual({
+      kind: "price_lock",
+      segments: ["A"],
+      excludeOrigins: ["instagram-posse"],
+    });
     expect(
       parseAudience({ kind: "price_lock", segments: ["C"], excludeClickersOf: ["pl-1130am-c"], allowSecondToday: true }),
     ).toEqual({ kind: "price_lock", segments: ["C"], excludeClickersOf: ["pl-1130am-c"], allowSecondToday: true });

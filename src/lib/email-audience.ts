@@ -44,6 +44,8 @@ export type Audience = (
       excludeClickersOf?: string[];
       /** The Nov 30 6pm exception to one marketing email per day. */
       allowSecondToday?: boolean;
+      /** Leave whole lists out by origin label (e.g. "instagram-posse"), see originLabel. */
+      excludeOrigins?: string[];
     }
 ) & {
   split?: AudienceSplit;
@@ -240,11 +242,15 @@ function parseAudienceBase(input: unknown): Audience | null {
       const excludeClickersOf = Array.isArray(raw.excludeClickersOf)
         ? raw.excludeClickersOf.filter((k): k is string => typeof k === "string" && /^pl-[a-z0-9-]{1,40}$/.test(k))
         : [];
+      const excludeOrigins = Array.isArray(raw.excludeOrigins)
+        ? raw.excludeOrigins.filter((k): k is string => typeof k === "string" && /^[a-z0-9:_-]{1,60}$/.test(k))
+        : [];
       return {
         kind: "price_lock",
         segments,
         ...(excludeClickersOf.length ? { excludeClickersOf } : {}),
         ...(raw.allowSecondToday === true ? { allowSecondToday: true } : {}),
+        ...(excludeOrigins.length ? { excludeOrigins } : {}),
       };
     }
     case "pasted": {
@@ -637,6 +643,10 @@ async function resolveAudienceBase(
       try {
         const people = await loadPriceLockPeople(db);
         let emails = audience.segments.flatMap((seg) => emailsForSegment(people, seg));
+        if (audience.excludeOrigins?.length) {
+          const drop = new Set(audience.excludeOrigins);
+          emails = emails.filter((e) => !drop.has(people.originOf.get(e) ?? "other"));
+        }
         if (audience.excludeClickersOf?.length) {
           const ids = await campaignIdsForPriceLockKeys(db, audience.excludeClickersOf);
           if (!ids) return { emails: [], migrationPending: true };

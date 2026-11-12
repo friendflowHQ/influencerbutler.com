@@ -493,7 +493,11 @@ async function sendCampaignRecipients(db: SupabaseClient, summary: Summary): Pro
       // card added since the list was built).
       let mail = built;
       if (push && people) {
-        if (!push.segments.some((seg) => stillInSegment(people, email, seg))) {
+        const origin = people.originOf.get(email.trim().toLowerCase()) ?? "other";
+        if (
+          !push.segments.some((seg) => stillInSegment(people, email, seg)) ||
+          (push.excludeOrigins ?? []).includes(origin)
+        ) {
           await db.from("email_campaign_recipients").update({ status: "skipped" }).eq("id", recipient.id);
           summary.campaignSkipped += 1;
           continue;
