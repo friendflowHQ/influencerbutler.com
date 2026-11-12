@@ -132,8 +132,8 @@ export default function PriceLockBanner() {
                   {PRICE_ROWS.map((r, i) => (
                     <span key={r.name}>
                       {i > 0 ? " \u00b7 " : ""}
-                      {r.name} <s className="mr-0.5 font-medium text-slate-400">{money(r.next)}</s>
-                      <b className="font-extrabold text-amber-200">{money(r.today)}</b>/mo
+                      {r.name} <b className="font-extrabold text-amber-200">{money(r.today)}</b>/mo now,{" "}
+                      <span className="font-medium text-slate-300">then {money(r.next)}</span>
                     </span>
                   ))}
                 </p>

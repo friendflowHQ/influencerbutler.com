@@ -154,7 +154,7 @@
     "#ib-price-lock-banner .ibpl-eyebrow.ibpl-urgent{color:#fca5a5;animation:ibpl-pulse 1.2s ease-in-out infinite}" +
     "#ib-price-lock-banner .ibpl-head{display:block;font-size:17px;font-weight:800;letter-spacing:-.01em}" +
     "#ib-price-lock-banner .ibpl-prices{display:block;margin-top:3px;font-size:12.5px;font-weight:600;color:#e5e7eb}" +
-    "#ib-price-lock-banner .ibpl-prices s{color:#9ca3af;font-weight:500;margin-right:3px}" +
+    "#ib-price-lock-banner .ibpl-prices i{font-style:normal;color:#cbd5e1;font-weight:500}" +
     "#ib-price-lock-banner .ibpl-prices b{color:#fde68a;font-weight:800}" +
     "#ib-price-lock-banner .ibpl-clock{display:flex;align-items:center;gap:6px}" +
     "#ib-price-lock-banner .ibpl-tile{min-width:54px;padding:5px 6px 4px;border-radius:9px;text-align:center;" +
@@ -224,8 +224,8 @@
     var head = el("span", "ibpl-head", "Lock today's price forever 🔒");
     words.appendChild(eyebrow);
     words.appendChild(head);
-    // Today's price as the deal, the post-deadline price crossed out. Visual
-    // only; screen readers get the sentence version below.
+    // "Beginner $24.99/mo now, then $29.99". No strikethrough: crossing out the
+    // higher price read like a discount. Screen readers get the sentence below.
     var prices = el("span", "ibpl-prices");
     prices.setAttribute("aria-hidden", "true");
     var plans = [
@@ -235,9 +235,9 @@
     for (var pi = 0; pi < plans.length; pi++) {
       if (pi > 0) prices.appendChild(document.createTextNode(" \u00b7 "));
       prices.appendChild(document.createTextNode(plans[pi][0] + " "));
-      prices.appendChild(el("s", null, plans[pi][1]));
       prices.appendChild(el("b", null, plans[pi][2]));
-      prices.appendChild(document.createTextNode("/mo"));
+      prices.appendChild(document.createTextNode("/mo now, "));
+      prices.appendChild(el("i", null, "then " + plans[pi][1]));
     }
     words.appendChild(prices);
     words.appendChild(
