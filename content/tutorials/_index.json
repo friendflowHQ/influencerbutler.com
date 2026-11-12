@@ -1099,6 +1099,19 @@
       ]
     },
     {
+      "id": "walmart-event-finder",
+      "title": "Black Friday Event Finder: prep Walmart Black Friday and Cyber Monday deals",
+      "category": "Other",
+      "summary": "A separate Walmart list for Black Friday and Cyber Monday. Search only Walmart's event deals, queue them ahead of time, and choose whether your Walmart posts switch to that list on Walmart's event days.",
+      "order": 342.3,
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ],
+      "audience": "power"
+    },
+    {
       "id": "walmart-collection-builder",
       "title": "Collection Builder: turn an Amazon list into a Walmart collection",
       "category": "Other",
