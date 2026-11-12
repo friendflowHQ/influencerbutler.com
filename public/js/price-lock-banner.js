@@ -122,14 +122,71 @@
     }
   }
 
-  function left(ms) {
+  function parts(ms) {
     var s = Math.max(0, Math.floor(ms / 1000));
-    var d = Math.floor(s / 86400);
-    var h = Math.floor((s % 86400) / 3600);
-    var m = Math.floor((s % 3600) / 60);
-    var sec = s % 60;
-    if (d > 0) return d + "d " + h + "h " + m + "m";
-    return h + "h " + (m < 10 ? "0" : "") + m + "m " + (sec < 10 ? "0" : "") + sec + "s";
+    return {
+      d: Math.floor(s / 86400),
+      h: Math.floor((s % 86400) / 3600),
+      m: Math.floor((s % 3600) / 60),
+      s: s % 60
+    };
+  }
+
+  function pad(n) {
+    return (n < 10 ? "0" : "") + n;
+  }
+
+  var CSS =
+    "#ib-price-lock-banner{position:relative;z-index:60;overflow:hidden;color:#fff;" +
+    "font:500 14px/1.35 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;" +
+    "background:radial-gradient(circle at 12% 30%,rgba(251,191,36,.18) 0 2px,transparent 3px)," +
+    "radial-gradient(circle at 78% 70%,rgba(249,115,22,.22) 0 2px,transparent 3px)," +
+    "radial-gradient(circle at 45% 15%,rgba(255,255,255,.12) 0 1.5px,transparent 2.5px)," +
+    "linear-gradient(100deg,#111827 0%,#1c1336 45%,#3b1206 100%);background-size:140px 60px,180px 70px,90px 50px,100% 100%;" +
+    "border-bottom:2px solid #f59e0b;padding:10px 48px 10px 16px}" +
+    "#ib-price-lock-banner .ibpl-shine{position:absolute;inset:0;pointer-events:none;" +
+    "background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.10) 50%,transparent 60%);background-size:250% 100%;" +
+    "animation:ibpl-shine 6s ease-in-out infinite}" +
+    "#ib-price-lock-banner .ibpl-row{position:relative;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 22px;max-width:1120px;margin:0 auto}" +
+    "#ib-price-lock-banner .ibpl-copy{display:flex;align-items:center;gap:10px;text-align:left}" +
+    "#ib-price-lock-banner .ibpl-hat{font-size:28px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4))}" +
+    "#ib-price-lock-banner .ibpl-eyebrow{display:block;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#fbbf24}" +
+    "#ib-price-lock-banner .ibpl-eyebrow.ibpl-urgent{color:#fca5a5;animation:ibpl-pulse 1.2s ease-in-out infinite}" +
+    "#ib-price-lock-banner .ibpl-head{display:block;font-size:17px;font-weight:800;letter-spacing:-.01em}" +
+    "#ib-price-lock-banner .ibpl-clock{display:flex;align-items:center;gap:6px}" +
+    "#ib-price-lock-banner .ibpl-tile{min-width:54px;padding:5px 6px 4px;border-radius:9px;text-align:center;" +
+    "background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.04));border:1px solid rgba(251,191,36,.45);" +
+    "box-shadow:inset 0 -2px 0 rgba(0,0,0,.25),0 2px 8px rgba(0,0,0,.25)}" +
+    "#ib-price-lock-banner .ibpl-num{display:block;font-size:24px;font-weight:800;line-height:1.05;color:#fbbf24;" +
+    "font-variant-numeric:tabular-nums;text-shadow:0 0 12px rgba(251,191,36,.35)}" +
+    "#ib-price-lock-banner .ibpl-num.ibpl-tick{animation:ibpl-tick .35s ease-out}" +
+    "#ib-price-lock-banner .ibpl-lbl{display:block;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#e5e7eb}" +
+    "#ib-price-lock-banner .ibpl-sep{font-size:20px;font-weight:800;color:rgba(251,191,36,.7);margin-top:-12px}" +
+    "#ib-price-lock-banner .ibpl-cta{display:inline-flex;align-items:center;gap:6px;background:#facc15;color:#111827;" +
+    "border-radius:999px;padding:9px 18px;text-decoration:none;font-weight:800;white-space:nowrap;" +
+    "box-shadow:0 0 0 0 rgba(250,204,21,.6);animation:ibpl-glow 2.4s ease-in-out infinite;transition:transform .15s}" +
+    "#ib-price-lock-banner .ibpl-cta:hover{transform:translateY(-1px) scale(1.03)}" +
+    "#ib-price-lock-banner .ibpl-cta:focus-visible,#ib-price-lock-banner .ibpl-x:focus-visible{outline:3px solid #fff;outline-offset:2px}" +
+    "#ib-price-lock-banner .ibpl-x{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.08);" +
+    "border:0;border-radius:999px;color:#fff;font-size:20px;line-height:1;width:30px;height:30px;cursor:pointer}" +
+    "#ib-price-lock-banner .ibpl-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}" +
+    "@keyframes ibpl-shine{0%{background-position:150% 0}60%,100%{background-position:-50% 0}}" +
+    "@keyframes ibpl-tick{0%{transform:translateY(-35%);opacity:.2}100%{transform:none;opacity:1}}" +
+    "@keyframes ibpl-pulse{50%{opacity:.55}}" +
+    "@keyframes ibpl-glow{0%,100%{box-shadow:0 0 0 0 rgba(250,204,21,.55)}50%{box-shadow:0 0 0 7px rgba(250,204,21,0)}}" +
+    "@media (max-width:640px){#ib-price-lock-banner{padding:9px 40px 10px 10px}" +
+    "#ib-price-lock-banner .ibpl-row{gap:8px 10px}#ib-price-lock-banner .ibpl-hat{font-size:22px}" +
+    "#ib-price-lock-banner .ibpl-head{font-size:14px}#ib-price-lock-banner .ibpl-eyebrow{font-size:10px}" +
+    "#ib-price-lock-banner .ibpl-tile{min-width:40px;padding:4px 3px 3px}#ib-price-lock-banner .ibpl-num{font-size:18px}" +
+    "#ib-price-lock-banner .ibpl-lbl{font-size:8px;letter-spacing:.06em}#ib-price-lock-banner .ibpl-sep{display:none}" +
+    "#ib-price-lock-banner .ibpl-cta{padding:7px 12px;font-size:13px}}" +
+    "@media (prefers-reduced-motion:reduce){#ib-price-lock-banner *{animation:none!important}}";
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
   }
 
   function mount() {
@@ -141,40 +198,66 @@
     if (document.getElementById("ib-price-lock-banner")) return;
     if (dismissedToday()) return;
 
-    var bar = document.createElement("div");
+    if (!document.getElementById("ib-price-lock-style")) {
+      var style = el("style");
+      style.id = "ib-price-lock-style";
+      style.textContent = CSS;
+      document.head.appendChild(style);
+    }
+
+    var bar = el("div");
     bar.id = "ib-price-lock-banner";
     bar.setAttribute("role", "region");
     bar.setAttribute("aria-label", "Price change notice");
-    bar.style.cssText =
-      "position:relative;z-index:60;background:#9a3412;color:#fff;font:600 14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;" +
-      "padding:10px 44px 10px 16px;text-align:center;display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:center;";
+    bar.appendChild(el("div", "ibpl-shine"));
 
-    var msg = document.createElement("span");
-    msg.textContent = "Prices go up Nov 30. Lock today's price forever.";
+    var row = el("div", "ibpl-row");
+    var copy = el("div", "ibpl-copy");
+    var hat = el("span", "ibpl-hat", "🎩"); // top hat
+    hat.setAttribute("aria-hidden", "true");
+    var words = el("div");
+    var eyebrow = el("span", "ibpl-eyebrow", "Prices go up Nov 30");
+    var head = el("span", "ibpl-head", "Lock today's price forever 🔒");
+    words.appendChild(eyebrow);
+    words.appendChild(head);
+    copy.appendChild(hat);
+    copy.appendChild(words);
 
-    var clock = document.createElement("span");
-    clock.style.cssText = "font-variant-numeric:tabular-nums;font-weight:500;opacity:.95;";
+    var clockWrap = el("div", "ibpl-clock");
+    clockWrap.setAttribute("aria-hidden", "true");
+    var units = [
+      ["d", "Days"],
+      ["h", "Hours"],
+      ["m", "Mins"],
+      ["s", "Secs"]
+    ];
+    var nums = {};
+    for (var u = 0; u < units.length; u++) {
+      if (u > 0) clockWrap.appendChild(el("span", "ibpl-sep", ":"));
+      var tile = el("div", "ibpl-tile");
+      nums[units[u][0]] = el("span", "ibpl-num", "00");
+      tile.appendChild(nums[units[u][0]]);
+      tile.appendChild(el("span", "ibpl-lbl", units[u][1]));
+      clockWrap.appendChild(tile);
+    }
+    var srClock = el("span", "ibpl-sr");
 
-    var cta = document.createElement("a");
+    var cta = el("a", "ibpl-cta", "Start free trial →");
     cta.href = "/pricing?src=pl-banner";
-    cta.textContent = "Start free trial";
-    cta.style.cssText =
-      "background:#fff;color:#9a3412;border-radius:999px;padding:5px 14px;text-decoration:none;font-weight:700;white-space:nowrap;";
 
-    var close = document.createElement("button");
+    var close = el("button", "ibpl-x", "×");
     close.type = "button";
     close.setAttribute("aria-label", "Dismiss price notice");
-    close.textContent = "×";
-    close.style.cssText =
-      "position:absolute;right:8px;top:50%;transform:translateY(-50%);background:transparent;border:0;color:#fff;font-size:22px;line-height:1;cursor:pointer;padding:4px 8px;";
     close.addEventListener("click", function () {
       remember();
       removeBar();
     });
 
-    bar.appendChild(msg);
-    bar.appendChild(clock);
-    bar.appendChild(cta);
+    row.appendChild(copy);
+    row.appendChild(clockWrap);
+    row.appendChild(srClock);
+    row.appendChild(cta);
+    bar.appendChild(row);
     bar.appendChild(close);
     document.body.insertBefore(bar, document.body.firstChild);
 
@@ -218,6 +301,8 @@
       if (bar.parentNode) bar.parentNode.removeChild(bar);
     };
 
+    var lastShown = {};
+    var lastSr = "";
     function tick() {
       var ms = END - now();
       if (ms <= 0) {
@@ -225,8 +310,29 @@
         swapPrices();
         return;
       }
-      clock.textContent = left(ms) + " left";
-      window.setTimeout(tick, ms < 86400000 ? 1000 : 30000);
+      var p = parts(ms);
+      for (var k in nums) {
+        var v = pad(p[k]);
+        if (lastShown[k] !== v) {
+          nums[k].textContent = v;
+          if (lastShown[k] !== undefined) {
+            nums[k].classList.remove("ibpl-tick");
+            void nums[k].offsetWidth; // restart the flip animation
+            nums[k].classList.add("ibpl-tick");
+          }
+          lastShown[k] = v;
+        }
+      }
+      if (p.d === 0) {
+        eyebrow.textContent = "\u23F0 Last day: prices go up tonight";
+        eyebrow.className = "ibpl-eyebrow ibpl-urgent";
+      }
+      var sr = p.d + " days " + p.h + " hours " + p.m + " minutes left";
+      if (sr !== lastSr) {
+        srClock.textContent = sr;
+        lastSr = sr;
+      }
+      window.setTimeout(tick, 1000 - (now() % 1000) + 5);
     }
     tick();
   }
