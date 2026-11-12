@@ -88,14 +88,21 @@ export type PriceLockPeople = {
 /** Coarse origin label for the size report and for leaving whole lists out. */
 export function originLabel(hasAccount: boolean, tags: readonly string[], source: string | null): string {
   if (hasAccount) return "account";
-  const t = tags.map((x) => x.toLowerCase());
+  // Sequence enrollment tags look like "seq-<sequence-tag>": read through them.
+  const t = tags.map((x) => x.toLowerCase().replace(/^seq-/, ""));
   if (t.some((x) => x.startsWith("dani-austin"))) return "dani-austin-giveaway";
   if (t.some((x) => x.startsWith("instagram-posse"))) return "instagram-posse";
   if (t.some((x) => x.startsWith("live-sweet"))) return "live-sweet";
   if (t.some((x) => x.startsWith("fluencer-fruit"))) return "fluencer-fruit";
   if (t.some((x) => x.startsWith("grow-together") || x.startsWith("bundle-"))) return "grow-together";
+  if (t.some((x) => x.startsWith("cold-") || x.startsWith("cold_"))) return "cold";
   if (source === "download-app") return "download";
   if (source && /newsletter|foyer|footer|blog/i.test(source)) return "newsletter";
+  if (source === "sequence-enroll") {
+    // Name the list by its first non-platform tag so the owner can decide per list.
+    const list = t.find((x) => !["instagram", "tiktok", "facebook", "youtube"].includes(x));
+    return list ? `list:${list}`.slice(0, 48) : "list:untagged";
+  }
   return source ? `source:${source}`.slice(0, 40) : "other";
 }
 

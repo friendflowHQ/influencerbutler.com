@@ -120,9 +120,9 @@ export async function coldReport(db: SupabaseClient, opts: { write?: boolean } =
         .from("email_sends")
         .select("recipient, category, subject, status, resend_id, opened_at, clicked_at, bounced_at, complained_at")
         .like("category", `${prefix}%`)
-        .order("id")
+        .order("created_at")
         .range(from, from + PAGE - 1);
-      if (error) throw new Error("could not read email_sends");
+      if (error) throw new Error(`could not read email_sends (${prefix}): ${error.message ?? error.code ?? "unknown"}`);
       rows.push(...((data ?? []) as SendRow[]));
       if (!data || data.length < PAGE) break;
     }
