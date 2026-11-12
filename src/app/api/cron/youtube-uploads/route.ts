@@ -18,6 +18,7 @@ import { getAdmin } from "@/lib/events";
 import { loadConfig } from "@/lib/scheduling-server";
 import { uploadVideoFromUrl, getBoundChannel } from "@/lib/youtube";
 import { verifyBearer } from "@/lib/auth-secret";
+import { freshRecordingUrl } from "@/lib/recall";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,6 +36,7 @@ type Row = {
   title: string;
   description: string | null;
   recording_url: string | null;
+  recall_bot_id?: string | null;
   image_url: string | null;
 };
 
@@ -76,7 +78,7 @@ export async function GET(request: Request) {
   // Oldest waiting recording that actually has a video to push.
   const { data, error } = await admin
     .from("events")
-    .select("id,title,description,recording_url,image_url")
+    .select("id,title,description,recording_url,image_url,recall_bot_id")
     .eq("youtube_status", "pending")
     .not("recording_url", "is", null)
     .order("recorded_at", { ascending: true })
@@ -120,7 +122,8 @@ export async function GET(request: Request) {
 
   const res = await uploadVideoFromUrl({
     refreshToken: ytToken,
-    videoUrl: row.recording_url as string,
+    // The stored URL is a short-lived signed link; mint a fresh one from Recall.
+    videoUrl: (await freshRecordingUrl(row.recall_bot_id, row.recording_url)) as string,
     title: row.title,
     description: buildDescription(row),
     privacyStatus: "public",

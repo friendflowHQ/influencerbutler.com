@@ -421,6 +421,22 @@ export function recordingUrlOf(bot: Record<string, unknown> | null): string | nu
 }
 
 /**
+ * A freshly signed recording download URL for a bot. The URL stored on the event
+ * at finalize time is a short-lived signed link that 403s a few hours later, so
+ * anything that downloads the video later (YouTube upload) should mint a new one
+ * here. Falls back to the stored URL when the bot cannot be read.
+ */
+export async function freshRecordingUrl(botId: string | null | undefined, fallback: string | null): Promise<string | null> {
+  if (!botId) return fallback;
+  try {
+    return recordingUrlOf(await getBot(botId)) ?? fallback;
+  } catch (e) {
+    console.error("[recall] fresh recording url", e);
+    return fallback;
+  }
+}
+
+/**
  * Fetch and flatten the transcript to plain text. Handles two shapes:
  *  1) the bot's media_shortcuts.transcript download URL (JSON of segments), and
  *  2) the legacy GET /bot/{id}/transcript/ endpoint (array of segments).

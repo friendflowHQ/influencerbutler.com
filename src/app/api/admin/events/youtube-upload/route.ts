@@ -23,6 +23,7 @@ import { getAdmin, getEvent } from "@/lib/events";
 import { loadConfig } from "@/lib/scheduling-server";
 import { uploadVideoFromUrl, type YouTubePrivacy } from "@/lib/youtube";
 import { resolveLoomMp4Url, isLoomCdnUrl } from "@/lib/loom";
+import { freshRecordingUrl } from "@/lib/recall";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -94,6 +95,11 @@ export async function POST(request: Request) {
     // A loom share link landed in videoUrl by mistake; resolve it rather than fail.
     const resolved = await resolveLoomMp4Url(videoUrl);
     if (resolved) videoUrl = resolved;
+  }
+  // No source given: use this event's own Recall recording, freshly signed (the
+  // stored recording_url expires a few hours after the call).
+  if (!videoUrl && !loomUrl && event.recallBotId) {
+    videoUrl = (await freshRecordingUrl(event.recallBotId, event.recordingUrl)) || "";
   }
   if (!videoUrl) {
     return NextResponse.json({ error: "Provide videoUrl or loomUrl." }, { status: 400 });
