@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Influencer Butler",
-  "version": "0.1.35",
+  "version": "0.1.36",
   "description": "Free money signals, video counts and content gaps for Amazon, Walmart and Target creators, plus Butler Approved seals.",
   "permissions": [
     "storage",

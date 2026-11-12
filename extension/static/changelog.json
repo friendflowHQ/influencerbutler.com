@@ -1,6 +1,33 @@
 {
-  "lastUpdated": "2026-10-29",
+  "lastUpdated": "2026-11-11",
   "releases": [
+    {
+      "version": "0.1.36",
+      "date": "November 11, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "Paste or attach a screenshot of a collage or outfit board in the chat and ask for a template. It builds a matching look template and adds it to the Community catalog",
+            "Importing a deals sheet now also brings in each deal's Creator Connections flag, promo count, star rating and product image"
+          ]
+        },
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "Drafted Social Posting captions no longer come back with fill-in blanks like [Product Name] or [link]. Every caption is ready to post as written",
+            "On Manage content, the YouTube status chips now stay under the right video instead of piling up at the top of the list"
+          ]
+        },
+        {
+          "heading": "Other Notable Changes",
+          "items": [
+            "Product video scans on search results, brand stores and Trend Radar check three products at a time, so results show up faster",
+            "If Amazon shows a robot check during a video scan, the scan pauses instead of pushing through it"
+          ]
+        }
+      ]
+    },
     {
       "version": "0.1.35",
       "date": "October 29, 2026",
