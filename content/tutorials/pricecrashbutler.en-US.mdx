@@ -18,20 +18,26 @@ The threshold is yours - 99% is the default because that's where real pricing er
 ## First run
 
 1. Open **Pricecrash Butler** in the left nav (it lives in the Deals Butler group).
+   ![Deals Butler group in the left nav and the Run button at the top of the Pricecrash Butler panel](/assets/tutorials/pricecrashbutler/{locale}/01-open-and-run.webp "1: click Deals Butler in the left nav, then Pricecrash. 6: click Run when your settings are ready.")
 2. Pick at least one **category** to scan. "All" sweeps every Amazon department; otherwise multi-select the ones that match your niche.
 3. (Optional) Under **Marketplaces to scan**, tick the Amazon regions you want to sweep (UK, DE, FR and more). Leave them all unchecked to scan only your home marketplace. A box unlocks once you connect that region's Creators API credentials in Settings: US and CA use your default credentials; UK, DE, FR, IT and ES use your EU credentials; and JP, AU and IN use your FE credentials.
+   ![Category grid and the Marketplaces to scan checkboxes in Pricecrash Butler](/assets/tutorials/pricecrashbutler/{locale}/03-categories-marketplaces.webp "2: pick at least one category. 3: optionally tick extra Amazon marketplaces (leave them blank to scan your home store only).")
 4. Decide what should happen when a deal is found:
    - **Draft for review**: safer; sits in Deal Posting → Search until you approve it.
    - **Auto-schedule**: fastest; drops straight into Deal Posting → Schedule. Pick the timing below it: **Post right away** publishes each catch the moment it's found (even with the auto-fire schedule off), or **On the next scheduled deal post time** queues it for your Deal Posting posting schedule.
    - **No hand-off**: just log it in the panel; you act manually.
 5. Choose which deals workspaces receive the catches under **Send finds to**. Tick your base Deal Posting and any extra deals workspaces you have added. Each ticked workspace delivers the catch to its own channels. The post copy always comes from your Pricecrash Butler **Build Your Post** composer (see below), so one pricing error can go out across several audiences at once in one consistent voice. This row is hidden when you pick No hand-off.
+   ![Run settings card with the minimum discount slider, the When a deal is found choices and the Send finds to workspace list](/assets/tutorials/pricecrashbutler/{locale}/02-threshold-and-handoff.webp "The boxed slider sets the minimum discount (99% catches true pricing errors). 4: pick what happens when a deal is found. 5: tick the deals workspaces that receive the catches.")
 6. Click **Run**. With the **Bait keywords** field empty, the runner browses each selected category by Amazon's root browse-node sorted price-ascending - no title-text filter, so it catches mispriced items even when the seller never typed "clearance" in the listing. Hits land in the table at the bottom of the panel.
+   ![Pricecrash results table where every pricing error caught by a scan is listed](/assets/tutorials/pricecrashbutler/{locale}/07-results-table.webp "Catches land in this table at the bottom of the panel, with a status pill and a Send to schedule button on each row.")
 
 When Deal Posting deliberately does not post a catch (a filter hold, a missing sign-in, a link that would not earn commission), its pill reads **Held in Deal Posting** instead of Failed, and the row waits for your decision in Deal Posting. **Stop** also stops sweeps that run on a schedule or from **Run now**, and a find that Stop kept from being handed over shows its **Send to schedule** button again. That button posts right away when your timing is set to **Post right away**, so it is the same as the sweep would have done.
 
 ## Recurring scans
 
 Below the run-settings card is the **Auto-scan schedule** row. Pick a preset - `1h`, `3h`, `6h`, `12h`, or `24h` - or set your own with the **Or every** field (any number of minutes, hours, or days), then flip the **Run automatically** switch. The runner will fire on that cadence even when the panel is closed, and your choice (preset or custom) is remembered across restarts.
+
+![Auto-scan schedule presets and the Run automatically switch](/assets/tutorials/pricecrashbutler/{locale}/04-auto-scan-schedule.webp "1: pick how often to scan (or set your own interval). 2: flip Run automatically on.")
 
 The 6h default is a deliberate compromise: frequent enough to catch a glitch before the seller fixes it, infrequent enough to stay polite to the Amazon Creators API rate limit (which is shared across every Butler that talks to PA-API - Daily Commission, CC Check, Deal Posting, Storefront, Levanta, and now Pricecrash).
 
@@ -57,6 +63,8 @@ If Amazon's API rejects a keyword-less browse for one of your categories (rare -
 
 Pricecrash Butler has its own **Build Your Post** composer, right in the panel, so every catch posts in one consistent voice no matter which deals workspaces receive it. It is laid out exactly like the one in Deal Posting, with three pages: **Caption**, **First comment** and **Options**.
 
+![Pricecrash Build Your Post composer with the Caption, First comment and Options pages, ready-made styles and the Insert chips](/assets/tutorials/pricecrashbutler/{locale}/06-build-your-post.webp "1: switch between Caption, First comment and Options. 2: start from a ready-made style. 3: click or drag chips like % off and Price-crash hype into your caption.")
+
 - **Pick a style.** The first step on the Caption page offers ready-made layouts (Deal post basics, Telegram and Deal drops). Click one to fill your caption and first comment, then edit anything. You can also drag a style onto any editor, and save your own current post as a formula with **Save current as formula**.
 - **Insert chips.** The **Insert** panel on the right holds the chips: deal fields (Image, Title, ASIN, Link, Sale price, Was price, % off, Store, Reviews, Stars, Ends in), rotating lines (Hook, Call to action, Hashtags, Urgency) and the red **Price-crash hype** chip. It starts with the essentials; click **More chips** to see everything and search by name. Click a chip to add it where your cursor is, or drag it in. Dropped chips can be dragged around or clicked to remove. There is no promo code chip here: a pricing error never comes with a code or a coupon.
 - **The Image chip.** Drop the purple **Image** chip, then click it to choose what publishes with each post: the caught deal's **Amazon** photo (the default), an image you **Upload**, or **None** for a caption-only post.
@@ -71,6 +79,8 @@ Pricecrash Butler has its own **Build Your Post** composer, right in the panel, 
 ## Posting limits and best first
 
 A big scan can find dozens of deals at once. The **Posting limits and best first** card keeps that under control:
+
+![Posting limits per scan, hour and day, with the Pick the best by menu](/assets/tutorials/pricecrashbutler/{locale}/05-posting-limits.webp "1: cap posts per scan, hour or day (blank means no limit). 2: choose which catches go first.")
 
 - **Posts per scan, per hour and per day.** Set any of the three, or leave them blank for no limit. The per-hour and per-day numbers look back over the last 60 minutes and the last 24 hours across all your scans, so a scan that runs every few hours will not go past them. A deal sent to several deals workspaces counts as one post.
 - **Pick the best by.** When a limit leaves room for only some of the catches, this decides which go first: **Best deal** (weighs the percent off and the dollars saved together, so a big saving on a real product beats a 99% cut on a 50 cent item), **Cheapest price**, **Biggest % off**, or **First found** (hand them off in the order the scan found them, which is how Pricecrash worked before).

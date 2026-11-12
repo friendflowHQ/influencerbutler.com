@@ -80,7 +80,10 @@ type Item = {
   paidOrders?: number;
   peopleWithAccess?: number;
   events?: { views: number; checkouts: number; downloads: number };
+  shownOn?: string[];
 };
+
+type PageInfo = { handle: string; published: boolean; productsShown: number };
 
 type Detail = {
   ok?: boolean;
@@ -90,6 +93,7 @@ type Detail = {
   products: Item[];
   memberships: Item[];
   eventsDays?: number;
+  pages?: PageInfo[];
   newsletter: { byStatus: Record<string, number>; bySource: Record<string, number>; growth90d: { day: string; added: number }[] };
 };
 
@@ -246,33 +250,12 @@ function Metric({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-const STATUS_ORDER: Record<string, number> = { active: 0, draft: 1, archived: 2 };
 
-function ProductCards({ products, days }: { products: Item[]; days: number }) {
-  const [showArchived, setShowArchived] = useState(false);
-  const sorted = [...products].sort((a, b) => (STATUS_ORDER[a.status] ?? 3) - (STATUS_ORDER[b.status] ?? 3) || b.createdAt - a.createdAt);
-  const archived = sorted.filter((p) => p.status === "archived").length;
-  const shown = showArchived ? sorted : sorted.filter((p) => p.status !== "archived");
+function ProductCard({ p }: { p: Item }) {
+  const ev = p.events ?? { views: 0, checkouts: 0, downloads: 0 };
+  const files = p.files ?? [];
+  const onPage = (p.shownOn ?? []).length > 0;
   return (
-    <section className="mt-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-slate-900">Products ({products.length})</h3>
-        {archived ? (
-          <button type="button" onClick={() => setShowArchived(!showArchived)} className="text-sm font-medium text-slate-700 underline">
-            {showArchived ? "Hide" : "Show"} {archived} archived
-          </button>
-        ) : null}
-      </div>
-      <p className="mt-1 text-xs text-slate-600">
-        {`Views, buy clicks and downloads cover the last ${days} days.`} Downloads are counted from Nov 8, 2026; before that, &quot;people with access&quot; is the best measure.
-        Opening a product page from here doesn&apos;t count as a view.
-      </p>
-      {shown.length === 0 ? <p className="mt-2 text-sm text-slate-600">None yet.</p> : null}
-      <div className="mt-3 grid gap-4 lg:grid-cols-2">
-        {shown.map((p) => {
-          const ev = p.events ?? { views: 0, checkouts: 0, downloads: 0 };
-          const files = p.files ?? [];
-          return (
             <article key={p.id} className="flex gap-4 rounded-xl border border-slate-200 bg-white p-4">
               <div className="h-28 w-24 flex-none overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
                 {p.hasCover ? (
@@ -286,6 +269,13 @@ function ProductCards({ products, days }: { products: Item[]; days: number }) {
                 <div className="flex flex-wrap items-center gap-2">
                   <h4 className="font-semibold text-slate-900">{p.title || "(untitled)"}</h4>
                   <StatusPill status={p.status} />
+                  {p.status === "active" ? (
+                    onPage ? (
+                      <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-800">On the page</span>
+                    ) : (
+                      <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-900">Not on the page</span>
+                    )
+                  ) : null}
                   {p.source === "digital_product_butler" ? (
                     <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-800">Digital Product Butler</span>
                   ) : null}
@@ -354,9 +344,80 @@ function ProductCards({ products, days }: { products: Item[]; days: number }) {
                 </div>
               </div>
             </article>
-          );
-        })}
+  );
+}
+
+function Bucket({ title, note, items }: { title: string; note?: string; items: Item[] }) {
+  if (!items.length) return null;
+  return (
+    <div className="mt-4">
+      <h5 className="text-sm font-semibold text-slate-800">
+        {title} ({items.length})
+      </h5>
+      {note ? <p className="text-xs text-slate-600">{note}</p> : null}
+      <div className="mt-2 grid gap-4 lg:grid-cols-2">
+        {items.map((p) => (
+          <ProductCard key={p.id} p={p} />
+        ))}
       </div>
+    </div>
+  );
+}
+
+function ProductCards({ products, pages, days }: { products: Item[]; pages: PageInfo[]; days: number }) {
+  const [showArchived, setShowArchived] = useState(false);
+  const newestFirst = (a: Item, b: Item) => b.createdAt - a.createdAt;
+  // One section per Foyer page (a creator can run several), in the order the Worker gave.
+  const handles = [...new Set([...pages.map((pg) => pg.handle), ...products.map((p) => p.handle)])].filter((h) =>
+    products.some((p) => p.handle === h),
+  );
+  const archivedCount = products.filter((p) => p.status === "archived").length;
+  return (
+    <section className="mt-6">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-slate-900">Products ({products.length})</h3>
+        {archivedCount ? (
+          <button type="button" onClick={() => setShowArchived(!showArchived)} className="text-sm font-medium text-slate-700 underline">
+            {showArchived ? "Hide" : "Show"} {archivedCount} archived
+          </button>
+        ) : null}
+      </div>
+      <p className="mt-1 text-xs text-slate-600">
+        {`Views, buy clicks and downloads cover the last ${days} days.`} Downloads are counted from Nov 8, 2026; before that, &quot;people with access&quot; is the best measure.
+        Opening a product page from here doesn&apos;t count as a view.
+      </p>
+      {products.length === 0 ? <p className="mt-2 text-sm text-slate-600">None yet.</p> : null}
+      {handles.map((h) => {
+        const mine = products.filter((p) => p.handle === h);
+        const page = pages.find((pg) => pg.handle === h);
+        const onPage = mine.filter((p) => p.status === "active" && (p.shownOn ?? []).length > 0).sort(newestFirst);
+        const offPage = mine.filter((p) => p.status === "active" && !(p.shownOn ?? []).length).sort(newestFirst);
+        const drafts = mine.filter((p) => p.status === "draft").sort(newestFirst);
+        const archived = mine.filter((p) => p.status === "archived").sort(newestFirst);
+        return (
+          <div key={h} className="mt-6 rounded-xl border border-slate-200 bg-slate-100/60 p-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h4 className="text-base font-semibold text-slate-900">@{h} Foyer page</h4>
+              <a href={`https://links.influencerbutler.com/@${encodeURIComponent(h)}`} target="_blank" rel="noreferrer" className="text-sm font-medium text-orange-700 underline">
+                Open page
+              </a>
+            </div>
+            <p className="text-xs text-slate-600">
+              {page && !page.published
+                ? "This page isn't published, so none of its products show anywhere except by direct link."
+                : `${onPage.length} shown on the page, ${offPage.length} live but not on it, ${drafts.length} draft${drafts.length === 1 ? "" : "s"}, ${archived.length} archived.`}
+            </p>
+            <Bucket title="On the page" items={onPage} />
+            <Bucket
+              title="Live but not on the page"
+              note="Active and buyable by direct link, but the creator hasn't added these to their Foyer page."
+              items={offPage}
+            />
+            <Bucket title="Drafts" note="Not for sale yet." items={drafts} />
+            {showArchived ? <Bucket title="Archived" note="Removed from sale; past buyers keep access." items={archived} /> : null}
+          </div>
+        );
+      })}
     </section>
   );
 }
@@ -443,7 +504,7 @@ function DetailPanel({ owner, rangeKey, onClose }: { owner: string; rangeKey: Ra
 
       {detail ? (
         <>
-          <ProductCards products={detail.products} days={detail.eventsDays ?? 30} />
+          <ProductCards products={detail.products} pages={detail.pages ?? []} days={detail.eventsDays ?? 30} />
           <ItemsTable title="Memberships" items={detail.memberships} kind="membership" />
 
           <section className="mt-6 grid gap-6 md:grid-cols-2">

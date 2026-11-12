@@ -25,6 +25,8 @@ Abre la tarjeta **Mensajes iniciales**. Aquí viven tus DMs de primer contacto. 
 
 Pon **initialMessageMode** en `random` (por defecto) para que Butler escoja una variación por objetivo en vez de usar siempre la primera.
 
+![Tarjeta Mensajes iniciales con el menú Selección, el botón para añadir mensajes y los chips de marcadores {address} y {mediakit}](/assets/tutorials/instagram/{locale}/01-initial-messages.webp "1: usa el botón de añadir mensaje para escribir 3-5 variaciones de tu apertura y deja Selección en Aleatorio para que cada persona reciba una distinta. 2: haz clic en los chips {address} y {mediakit} para insertar tus valores guardados en un mensaje.")
+
 ## Elegir objetivos
 
 El desplegable **Modo de objetivos** decide a quién mensajea Instagram Butler:
@@ -35,6 +37,8 @@ El desplegable **Modo de objetivos** decide a quién mensajea Instagram Butler:
 
 La mayoría de usuarios al empezar usa **new-followers** + **manual-handles** las primeras semanas hasta encontrar su ritmo.
 
+![Menú Modo de mensaje en la tarjeta Ajustes y filtros, con Mensaje a nuevos seguidores elegido](/assets/tutorials/instagram/{locale}/02-message-mode.webp "El menú Modo de mensaje elige a quién se escribe: tus nuevos seguidores o una lista de usuarios que pegas en la tarjeta Mensaje a usuarios elegidos.")
+
 ## Filtros que importan
 
 - **followersLimitMin / followersLimitMax**: salta cuentas fuera de este rango. Útil para quedarse en micro-influencers (p. ej. 1K-50K) y evitar tanto cuentas spam como mega-cuentas inalcanzables.
@@ -42,9 +46,13 @@ La mayoría de usuarios al empezar usa **new-followers** + **manual-handles** la
 - **skipTitleRaw**: palabras clave separadas por línea. Si la bio o títulos de posts recientes del objetivo contienen alguna, salta. Ayuda a evitar objetivos de nicho equivocado.
 - **excludeAlreadyMessaged**: déjalo activado. Evita que Butler vuelva a mensajear el mismo handle.
 
+![Lista Omitir usuarios y la casilla Excluir seguidores a los que ya enviaste mensajes en la tarjeta Ajustes y filtros](/assets/tutorials/instagram/{locale}/03-filters.webp "Omitir usuarios guarda las cuentas a las que nunca escribir, una por línea. Deja marcada la casilla Excluir seguidores a los que ya enviaste mensajes para que nadie reciba un segundo primer DM.")
+
 ## Tu cuenta se detecta automáticamente
 
 Nunca escribes tu propio nombre de usuario de Instagram. Inicia sesión en Instagram una vez desde el control de inicio de sesión del panel, e Instagram Butler mostrará **Sesión iniciada como @tuusuario** y usará esa cuenta para encontrar a tus seguidores. Si alguna vez muestra la cuenta equivocada, abre **¿No es tu cuenta? Introdúcela manualmente** para indicarla tú.
+
+![Control de inicio de sesión en Instagram y la fila Tu cuenta de Instagram con la cuenta detectada y el enlace para introducirla a mano](/assets/tutorials/instagram/{locale}/04-account-detected.webp "Inicia sesión una vez con el control de arriba. La fila de abajo muestra entonces tu cuenta detectada, con ¿No es tu cuenta? Introdúcela manualmente al lado.")
 
 ## Tu primera ejecución de contacto
 
@@ -52,7 +60,9 @@ Nunca escribes tu propio nombre de usuario de Instagram. Inicia sesión en Insta
 2. Confirma tus variaciones de mensaje en **Mensajes iniciales**.
 3. Elige un modo de objetivo y confirma filtros.
 4. Pon un **cap diario** conservador (empieza en 15-25 DMs/día en una cuenta nueva).
+   ![Menú Modo de mensaje y el rango Mensajes por día en la tarjeta Ajustes y filtros](/assets/tutorials/instagram/{locale}/06-mode-and-daily-cap.webp "3: elige un modo de objetivo. 4: pon un cap diario conservador en Mensajes por día (15-25 en una cuenta nueva).")
 5. Pulsa **Ejecutar**.
+   ![Parte superior del panel de Instagram Butler con el botón Ejecutar y la tarjeta Mensajes iniciales](/assets/tutorials/instagram/{locale}/05-open-and-run.webp "2: confirma tus variaciones en Mensajes iniciales. 5: pulsa Ejecutar cuando los pasos 3 y 4 estén listos.")
 
 Se abre una ventana de Chrome. Butler recorre cada objetivo, abre su perfil, abre los DMs y envía una de tus variaciones. El ritmo está integrado - típicamente 2-5 minutos por DM con jitter aleatorio.
 
@@ -70,10 +80,13 @@ Los valores por defecto de Butler (jitter, cooldowns, ritmo) están afinados par
 
 El historial de outreach por DM se guarda en la caché preseed. Una vez enviado un DM, el handle pasa automáticamente a la lista de no-mensajear (asumiendo que `excludeAlreadyMessaged` está activado).
 
+![Tabla Resultados / Historial con cada DM, su fecha, usuario, tipo de plantilla y mensaje](/assets/tutorials/instagram/{locale}/08-results-history.webp "Cada DM enviado aparece en Resultados / Historial al final del panel, agrupado por ejecución.")
+
 ## Tropiezos comunes
 
 - **Inicias sesion en Instagram pero Butler sigue diciendo que no esta conectado**: la ventana de Chrome que abre Butler es un navegador normal a proposito, para que Instagram la trate como un inicio de sesion normal y respete **Trust this device**. Chrome solo guarda esa sesion en el disco cuando la ventana se cierra, asi que iniciar sesion y dejarla abierta parece exactamente una conexion fallida. Inicia sesion, marca **Trust this device** y despues cierra esa ventana de Chrome por completo, no solo la pestana, y vuelve a Butler. Abrir el inicio de sesion otra vez antes de cerrar el anterior empieza de cero, asi que deja que uno termine.
 - **Banner "Acción bloqueada por Instagram"**: enviaste demasiados DMs demasiado rápido. Butler detecta el bloqueo, detiene la ejecución y pausa TODOS los envíos de Instagram (mensajes, publicaciones de ofertas, me gusta, cambios de mejores amigos) durante un periodo de descanso para que el bloqueo no empeore; las herramientas de solo recolección siguen funcionando, y recibes un correo. Por defecto el descanso dura 3 días; cámbialo con **Pausa tras un bloqueo de Instagram (días)** en los ajustes de Instagram Butler, y los bloqueos repetidos descansan más tiempo por su cuenta. Los envíos se reanudan automáticamente, o reanuda antes con el botón **Reanudar envíos de Instagram** del aviso del Panel. Cuando se reanude, baja tu cap diario.
+  ![Ajuste Pausa tras un bloqueo de Instagram (días) en Instagram Butler](/assets/tutorials/instagram/{locale}/07-block-pause.webp "Pausa tras un bloqueo de Instagram (días) fija cuánto descansan todos los envíos de Instagram tras un bloqueo. Por defecto son 3 días.")
 - **El primer DM llega a solicitudes de mensaje, no a bandeja**: Instagram enruta DMs de no-seguidores a "Solicitudes" en vez de la bandeja. Fuera del control de Butler.
 - **Las plantillas se sienten guionizadas**: incluso rotando 5 variaciones se vuelve viejo a escala. Refresca tus variaciones cada 2-3 semanas.
 - **La ejecución sigue pero no se envían DMs**: si tu mensaje tiene un enlace que no puede generarte comisión, como una tienda de Etsy o un blog, Butler se niega a enviarlo y lo anota en el registro. Quita el enlace o añade el sitio en **Deeplink Butler > Configuración de enlaces > Enlaces permitidos (avanzado)** (consulta el [tutorial de Deeplink Butler](/help/tutorials/link-butler)). El enlace de tu tienda de Amazon siempre se envía.

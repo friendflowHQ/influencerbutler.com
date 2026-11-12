@@ -10,6 +10,7 @@ import { DateTime } from "luxon";
 import { CALL_TYPES } from "@/lib/scheduling";
 import { CALL_TOPICS, topicsForBooking } from "@/lib/call-topics";
 import { TopicChips } from "@/components/scheduling/TopicChips";
+import { PartnerChip } from "@/components/scheduling/PartnerChip";
 import { EVENTS_HREF, EVENT_PILL_CLASS, callPillClass, eventDayKey, fmtTime, fmtWhen, hasPassed, relTime, statusPillClass, type Booking, type CalEvent } from "./shared";
 
 const HOUR_PX = 56;
@@ -122,7 +123,7 @@ export function CalendarDayView({ anchor, items, events = [], onOpen, onSlot }: 
               style={pos}>
               <div className="truncate font-medium">{fmtTime(b.starts_at)} · {CALL_TYPES[b.call_type].label}</div>
               <div className="truncate">{b.user_name || b.user_email}</div>
-              {height > 56 && <div className="mt-0.5"><TopicChips booking={b} size="xs" /></div>}
+              {height > 56 && <div className="mt-0.5 flex flex-wrap gap-1"><PartnerChip booking={b} size="xs" /><TopicChips booking={b} size="xs" /></div>}
             </button>
           );
         })}
@@ -191,7 +192,7 @@ function CallCard({ b, a }: { b: Booking; a: CardActions }) {
         {typeof prior === "number" ? <span className="text-xs text-slate-500">{prior === 0 ? "First call" : `${prior} prior ${prior === 1 ? "call" : "calls"}`}</span> : null}
       </div>
 
-      <div className="mt-2"><TopicChips booking={b} /></div>
+      <div className="mt-2 flex flex-wrap gap-1"><PartnerChip booking={b} /><TopicChips booking={b} /></div>
       {b.topic ? <p className="mt-2 line-clamp-2 text-xs text-slate-600">{b.topic}</p> : null}
 
       <div className="mt-auto flex flex-wrap gap-1.5 pt-3">

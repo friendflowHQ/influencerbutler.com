@@ -21,12 +21,16 @@ If any of these are missing, the **Start** button stays disabled and the workspa
 ## Running your first outreach pass
 
 1. Open **Amazon Butler** in the left nav.
+   ![Message Brands open from the Amazon Butler group in the left nav, with the Run button at the top of the panel](/assets/tutorials/amazonbutler/{locale}/01-open-and-run.webp "1: open Amazon Butler in the left nav, then Message Brands. 5: click Run when your message and filters are ready.")
 2. In the **Targeting** card, pick the **lookback window** - start with **30 days** to keep the brand list small and high-signal.
 3. Leave **Daily cap** at the default of 25 for your first run. You can raise it later once you've seen what the messages look like in your CC inbox.
 4. In the **Message** card, pick a template. Built-in starters are in English, Spanish, and French - Amazon Butler auto-picks based on your locale. Each line break in your message goes out as its own separate message to the brand (Amazon squashes line breaks inside a single message, so this keeps your formatting readable). Short, punchy lines work best.
+   ![Default Message card with the message box and the Daily message cap field below it](/assets/tutorials/amazonbutler/{locale}/02-message-and-daily-cap.webp "3: set the daily cap (0 means unlimited). 4: write or paste your message. Each line break goes out as its own message.")
 5. Click **Start Amazon Butler**.
 
 The runner opens a Chrome window in the background, navigates to each brand's CC page, and posts your message. You'll see progress in the **Recent activity** stream and the topbar **Hours Saved** stat tick up as it runs.
+
+![Run status cards showing brands messaged all time, sends in the current run, the current brand, search term and reason](/assets/tutorials/amazonbutler/{locale}/03-run-status.webp "While the run works, progress shows here: sends this run, the brand being messaged and the reason for each skip or pause.")
 
 ## Tuning what gets sent
 
@@ -46,6 +50,8 @@ Tired of samples piling up for listings nobody buys? Two filters in the **Campai
 
 Set both and they must both pass. A campaign with several products passes as soon as one of them clears the bar, so a strong seller isn't blocked by a weak sibling product.
 
+![Campaign value filters card with the Only message brands that meet these thresholds switch, the Minimum product reviews field and the Best Sellers Rank switch](/assets/tutorials/amazonbutler/{locale}/04-campaign-value-filters.webp "The top switch turns the thresholds on. The other two boxes skip dead products: Minimum product reviews and Only if the product has a Best Sellers Rank.")
+
 Two things worth knowing:
 
 - These two checks read product data from the **Creators API**, so connect it under **Amazon Butler > Amazon Settings** first. Without it, Butler warns you and simply skips these two checks for that run - your other thresholds still apply.
@@ -57,6 +63,7 @@ If you live outside the US (say the UK, Australia, or Canada), a campaign full o
 
 1. Pick your country in **Country to check**. Countries are grayed out until the matching Creators API region is connected under **Amazon Butler > Amazon Settings**: US, CA, MX and BR use your default credentials, the UK and other European countries use EU credentials, and AU, JP, SG and IN use FE credentials.
 2. Turn on **Only message brands with products available in your country**.
+   ![Country availability filter card opened, with the Country to check menu and the on switch](/assets/tutorials/amazonbutler/{locale}/05-country-availability.webp "1: pick your country in Country to check. 2: turn on Only message brands with products available in your country.")
 
 During a run, Butler checks each campaign's products against that country's Amazon store and skips brands with nothing buyable there, telling you why in the skip list. A campaign passes as soon as one product is available. Verdicts are cached for two days, so repeat runs stay fast.
 

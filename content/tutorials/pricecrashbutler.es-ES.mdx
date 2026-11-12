@@ -17,11 +17,15 @@ El umbral es tuyo: 99 % es el valor por defecto porque ahí viven los errores de
 ## Primera ejecución
 
 1. Abre **Pricecrash Butler** en el menú lateral (está en el grupo Deals Butler).
+   ![Grupo Deals Butler en el menú izquierdo y el botón Ejecutar en la parte superior del panel de Pricecrash Butler](/assets/tutorials/pricecrashbutler/{locale}/01-open-and-run.webp "1: haz clic en Deals Butler en el menú izquierdo y luego en Pricecrash. 6: haz clic en Ejecutar cuando tu configuración esté lista.")
 2. Elige al menos una **categoría** para escanear. "All" recorre todos los departamentos de Amazon.
 3. (Opcional) En **Mercados para escanear**, marca las regiones de Amazon que quieras recorrer (UK, DE, FR y más). Déjalas todas sin marcar para escanear solo tu mercado principal. Una casilla se desbloquea cuando conectas las credenciales de la API de Creators de esa región en Ajustes: US y CA usan tus credenciales predeterminadas; UK, DE, FR, IT y ES usan tus credenciales EU; y JP, AU e IN usan tus credenciales FE.
+   ![Cuadrícula de categorías y casillas de mercados para escanear en Pricecrash Butler](/assets/tutorials/pricecrashbutler/{locale}/03-categories-marketplaces.webp "2: elige al menos una categoría. 3: opcionalmente marca otros mercados de Amazon (déjalos vacíos para escanear solo tu tienda).")
 4. Decide qué pasa cuando se encuentra una oferta: **Borrador para revisión**, **Programar automáticamente** (elige el momento debajo: **Publicar de inmediato** o **En la próxima hora de publicación programada**) o **Sin entrega**.
 5. Elige qué espacios de ofertas reciben los hallazgos en **Enviar hallazgos a**. Marca tu Deal Posting base y cualquier espacio de ofertas adicional que hayas añadido. Cada espacio marcado entrega el hallazgo en sus propios canales. El texto siempre proviene de tu compositor **Crea tu publicación** de Pricecrash Butler (más abajo), así un mismo error de precio puede salir a varias audiencias a la vez con una voz coherente. Esta fila se oculta cuando eliges Sin entrega.
+   ![Tarjeta de ajustes con el control de descuento mínimo, las opciones de qué hacer al encontrar una oferta y la lista de espacios de destino](/assets/tutorials/pricecrashbutler/{locale}/02-threshold-and-handoff.webp "El control enmarcado fija el descuento mínimo (99% atrapa errores de precio reales). 4: elige qué pasa cuando se encuentra una oferta. 5: marca los espacios de ofertas que reciben los hallazgos.")
 6. Pulsa **Ejecutar**. Con el campo **Palabras clave señuelo** vacío, el runner recorre cada categoría seleccionada por su nodo raíz de Amazon ordenado por precio ascendente - sin filtro de texto del título, así captura artículos mal tarificados aunque el vendedor no haya escrito "clearance" en la ficha.
+   ![Tabla de resultados de Pricecrash donde aparece cada error de precio encontrado](/assets/tutorials/pricecrashbutler/{locale}/07-results-table.webp "Los hallazgos aparecen en esta tabla al final del panel, con un estado y un botón para programar en cada fila.")
 
 Cuando Deal Posting decide a propósito no publicar un hallazgo (una retención por filtro, un inicio de sesión que falta, un enlace que no generaría comisión), su etiqueta dice **Retenida en Deal Posting** en lugar de Fallido, y la fila espera tu decisión en Deal Posting. **Detener** también detiene los barridos programados o lanzados con **Ejecutar ahora**, y un hallazgo que Detener impidió entregar vuelve a mostrar su botón **Enviar a programación**. Ese botón publica de inmediato cuando tu momento está en **Publicar de inmediato**, igual que habría hecho el barrido.
 
@@ -37,6 +41,8 @@ Si la API de Amazon rechaza la búsqueda sin palabras clave para alguna categor�
 
 Activa la programación automática (1h / 3h / 6h / 12h / 24h) o define tu propio intervalo con el campo **O cada** (minutos, horas o días). El valor por defecto de 6h es un equilibrio entre velocidad y los límites compartidos de la PA-API. Tu elección (preajuste o personalizada) se conserva tras reiniciar.
 
+![Intervalos del escaneo automático y el interruptor para ejecutar automáticamente](/assets/tutorials/pricecrashbutler/{locale}/04-auto-scan-schedule.webp "1: elige cada cuánto escanear (o define tu propio intervalo). 2: activa la ejecución automática.")
+
 ## Cómo funciona en realidad
 
 La Creators API no expone un filtro de "descuento mínimo" del lado del servidor. Pricecrash itera cada categoría con `sortBy: Price:LowToHigh` y filtra después por `savingsPercent`. Los aciertos al 99 % son raros - esa es la idea.
@@ -44,6 +50,8 @@ La Creators API no expone un filtro de "descuento mínimo" del lado del servidor
 ## Crea tu publicación
 
 Pricecrash Butler tiene su propio compositor **Crea tu publicación**, dentro del panel, así cada captura se publica con una voz coherente sin importar qué espacios de ofertas la reciban. Está organizado exactamente igual que el de Deal Posting, con tres páginas: **Texto**, **Primer comentario** y **Opciones**.
+
+![Editor Build Your Post de Pricecrash con las páginas de texto, primer comentario y opciones, estilos listos y los chips para insertar](/assets/tutorials/pricecrashbutler/{locale}/06-build-your-post.webp "1: cambia entre texto, primer comentario y opciones. 2: empieza con un estilo listo. 3: haz clic o arrastra chips como % de descuento al texto.")
 
 - **Elige un estilo.** El primer paso de la página Texto ofrece diseños listos (Básicos de publicación de ofertas, Telegram y Lanzamientos de ofertas). Haz clic en uno para rellenar tu texto y tu primer comentario, y luego edita lo que quieras. También puedes arrastrar un estilo a cualquier editor y guardar tu publicación actual como fórmula con **Guardar como fórmula**.
 - **Fichas de Insertar.** El panel **Insertar** de la derecha contiene las fichas: campos de la oferta (Imagen, Título, ASIN, Enlace, Precio de oferta, Precio anterior, % de descuento, Tienda, Reseñas, Estrellas, Termina en), líneas rotativas (Gancho, Llamada a la acción, Hashtags, Urgencia) y la ficha roja **Urgencia de error de precio**. Empieza con lo esencial; haz clic en **Más fichas** para verlas todas y buscar por nombre. Haz clic en una ficha para añadirla donde está el cursor, o arrástrala. Las fichas soltadas se pueden mover o quitar con un clic. Aquí no hay ficha de código promocional: un error de precio nunca viene con código ni cupón.
@@ -59,6 +67,8 @@ Pricecrash Butler tiene su propio compositor **Crea tu publicación**, dentro de
 ## Límites de publicación y lo mejor primero
 
 Un escaneo grande puede encontrar decenas de ofertas de golpe. La tarjeta **Límites de publicación y lo mejor primero** lo mantiene bajo control:
+
+![Límites de publicación por escaneo, hora y día, con el menú para elegir las mejores ofertas](/assets/tutorials/pricecrashbutler/{locale}/05-posting-limits.webp "1: limita publicaciones por escaneo, hora o día (vacío significa sin límite). 2: elige qué hallazgos salen primero.")
 
 - **Publicaciones por escaneo, por hora y por día.** Fija uno, dos o los tres, o déjalos en blanco para no tener límite. Los límites por hora y por día miran atrás los últimos 60 minutos y las últimas 24 horas sumando todos tus escaneos, así que un escaneo que corre cada pocas horas no los superará. Una oferta enviada a varios workspaces de ofertas cuenta como una sola publicación.
 - **Elegir lo mejor por.** Cuando un límite deja sitio solo para algunas capturas, esto decide cuáles salen primero: **Mejor oferta** (pondera a la vez el porcentaje de descuento y los dólares ahorrados, así que un gran ahorro en un producto real gana a un 99 % de descuento en algo de 50 centavos), **Precio más bajo**, **Mayor % de descuento** o **La primera encontrada** (se entregan en el orden en que el escaneo las encontró, como funcionaba Pricecrash antes).

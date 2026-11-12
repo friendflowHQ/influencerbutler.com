@@ -25,6 +25,8 @@ Open the **Initial messages** card. This is where your first-touch DMs live. Two
 
 Set **initialMessageMode** to `random` (the default) so Butler picks a variation per-target rather than always using the first.
 
+![Initial messages card with the Selection menu, the Add message button and the {address} and {mediakit} placeholder chips](/assets/tutorials/instagram/{locale}/01-initial-messages.webp "1: click Add message to write 3-5 variations of your opener, and keep Selection on Random so each person gets a different one. 2: click the {address} and {mediakit} chips to drop your saved values into a message.")
+
 ## Choosing targets
 
 The **Target mode** dropdown picks who Instagram Butler messages:
@@ -35,6 +37,8 @@ The **Target mode** dropdown picks who Instagram Butler messages:
 
 Most starting users pick **new-followers** + **manual-handles** for the first few weeks until they find their rhythm.
 
+![Message Mode menu in the Settings and Filters card, set to Message New Followers](/assets/tutorials/instagram/{locale}/02-message-mode.webp "The Message Mode menu picks who gets messaged: your new followers, or a list of usernames you paste in the Message Select Usernames card.")
+
 ## Filters that matter
 
 - **followersLimitMin / followersLimitMax**: skip accounts outside this range. Useful for staying on micro-influencers (e.g. 1K-50K) and avoiding both spam accounts and unreachable mega-accounts.
@@ -42,9 +46,13 @@ Most starting users pick **new-followers** + **manual-handles** for the first fe
 - **skipTitleRaw**: newline-separated keywords. If a target's bio or recent post titles contain any of these, skip. Helps avoid wrong-niche targets.
 - **excludeAlreadyMessaged**: leave on. Prevents Butler from re-messaging the same handle.
 
+![Skip Usernames list and the Exclude followers with messages already sent checkbox in the Settings and Filters card](/assets/tutorials/instagram/{locale}/03-filters.webp "Skip Usernames holds the accounts to never message, one per line. Leave Exclude followers with messages already sent checked so nobody gets a second first DM.")
+
 ## Your account is detected automatically
 
 You never type your own Instagram username. Sign in to Instagram once from the sign-in control in the panel, and Instagram Butler shows **Signed in as @yourhandle** and uses that account to find your followers. If it ever shows the wrong account, open **Not your account? Enter it manually** to set it yourself.
+
+![Instagram sign-in control and the Your Instagram account row showing the detected account and the manual entry link](/assets/tutorials/instagram/{locale}/04-account-detected.webp "Sign in once with the top control. The row below then shows Signed in as @yourhandle, with Not your account? Enter it manually next to it.")
 
 ## Running your first outreach pass
 
@@ -52,7 +60,9 @@ You never type your own Instagram username. Sign in to Instagram once from the s
 2. Confirm your message variations in **Initial messages**.
 3. Pick a target mode and confirm filters.
 4. Set a conservative **daily cap** (start at 15-25 DMs/day on a new account).
+   ![Message Mode menu and the Messages per day range in the Settings and Filters card](/assets/tutorials/instagram/{locale}/06-mode-and-daily-cap.webp "3: pick a target mode. 4: set a conservative daily cap in Messages per day (15-25 on a new account).")
 5. Click **Run**.
+   ![Top of the Instagram Butler panel with the Run button and the Initial messages card](/assets/tutorials/instagram/{locale}/05-open-and-run.webp "2: confirm your variations in Initial messages. 5: click Run when steps 3 and 4 are set.")
 
 A Chrome window opens. Butler walks each target, opens their profile, opens DMs, and sends one of your message variations. Pacing is built in - typical pace is 2-5 minutes per DM with random jitter.
 
@@ -70,10 +80,13 @@ Butler's defaults (jitter, cooldowns, pacing) are tuned for safety - don't overr
 
 Per-DM outreach history is logged in the preseed cache. Once a DM is sent, the recipient handle moves into the do-not-message list automatically (assuming `excludeAlreadyMessaged` is on).
 
+![Results / History table listing each DM with its date, username, template type and message](/assets/tutorials/instagram/{locale}/08-results-history.webp "Every DM sent lands in Results / History at the bottom of the panel, grouped by run.")
+
 ## Common gotchas
 
 - **You sign in to Instagram but Butler still says it is not connected**: the Chrome window Butler opens is a plain browser on purpose, so Instagram treats it as a normal sign-in and honours **Trust this device**. Chrome only writes that session to disk when the window closes, so signing in and leaving it open looks exactly like a failed connection. Sign in, tick **Trust this device**, then close that Chrome window completely, not just the tab, and come back to Butler. Opening the sign-in again before closing the previous one starts over, so let one finish.
 - **"Instagram action blocked"** banner - you sent too many DMs too fast. Butler detects the block, stops the run, and pauses ALL Instagram sending (messages, deal posts, likes, close friends changes) for a rest period so the block does not get worse; harvest-only tools keep running, and you get an email. By default the rest lasts 3 days; change it with **Pause after an Instagram block (days)** in the Instagram Butler settings, and repeat blocks rest longer on their own. Sending resumes automatically, or resume early with the Dashboard banner's **Resume Instagram sending** button. When it resumes, lower your daily cap.
+  ![Pause after an Instagram block (days) setting in Instagram Butler](/assets/tutorials/instagram/{locale}/07-block-pause.webp "Pause after an Instagram block (days) sets how long every Instagram sender rests after a block. The default is 3 days.")
 - **First DM sent to message requests, not inbox**: Instagram routes DMs from non-followers to "Requests" rather than inbox. Out of Butler's control.
 - **Templates feel scripted**: even rotating 5 variations gets old at scale. Refresh your variations every 2-3 weeks.
 - **Run is going but no DMs send**: if your message has a link that cannot earn you commission, like an Etsy shop or a blog, Butler refuses to send it and notes that in the log. Take the link out, or add the site under **Deeplink Butler > Link Settings > Allowed links (advanced)** (see the [Deeplink Butler tutorial](/help/tutorials/link-butler)). Your Amazon storefront link always sends.

@@ -144,13 +144,62 @@ function escapeHtml(value: string): string {
   });
 }
 
+// Set for the duration of one renderMarkdown() call so renderInline can
+// resolve `{locale}` image paths without threading opts through every caller.
+let imageResolver: ((src: string) => string) | null = null;
+
+// Default image resolver: swap the `{locale}` token for the page locale. When
+// the set of captured screenshots is known (content/tutorials/_screenshots.json,
+// written by the desktop repo's tutorials/screens.mjs), fall back to the en-US
+// file if the localized one has not been captured yet. A manifest is used
+// instead of an fs check under public/ so Vercel's file tracer does not pull
+// the whole public/ tree into the serverless function.
+export function makeImageResolver(locale: string, available?: Set<string> | null): (src: string) => string {
+  return (src: string) => {
+    if (!src.includes("{locale}")) return src;
+    const localized = src.split("{locale}").join(locale);
+    if (!available || locale === DEFAULT_LOCALE || available.has(localized)) return localized;
+    return src.split("{locale}").join(DEFAULT_LOCALE);
+  };
+}
+
+let cachedShots: { set: Set<string> | null; at: number } | null = null;
+async function readScreenshotSet(): Promise<Set<string> | null> {
+  if (cachedShots && Date.now() - cachedShots.at < MANIFEST_CACHE_MS) return cachedShots.set;
+  let set: Set<string> | null = null;
+  try {
+    const raw = await readFile(path.join(CONTENT_ROOT, "_screenshots.json"), "utf8");
+    const parsed = JSON.parse(raw) as { files?: string[] };
+    set = Array.isArray(parsed.files) ? new Set(parsed.files) : null;
+  } catch {
+    set = null;
+  }
+  cachedShots = { set, at: Date.now() };
+  return set;
+}
+
+// Screenshot on its own line: `![alt](/assets/x.webp "Optional caption")`,
+// optionally indented under a numbered step. Rendered as a clickable figure.
+const FIGURE_LINE = /^(\s*)!\[([^\]]*)\]\((\/assets\/[^\s)]+)(?:\s+"([^"]*)")?\)\s*$/;
+
+function renderFigure(alt: string, src: string, caption: string | undefined): string {
+  const resolved = imageResolver ? imageResolver(src) : src;
+  if (!resolved.startsWith("/assets/") || resolved.includes("..")) return "";
+  const safeSrc = escapeHtml(resolved);
+  const cap = caption ? `<figcaption>${renderInline(caption)}</figcaption>` : "";
+  return `<figure class="tut-shot"><a href="${safeSrc}" target="_blank" rel="noopener" aria-label="${escapeHtml(alt || "Screenshot")} (open full size)"><img src="${safeSrc}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async" /></a>${cap}</figure>`;
+}
+
 function renderInline(line: string): string {
   let out = escapeHtml(line);
   out = out.replace(/`([^`]+)`/g, (_, code: string) => `<code>${code}</code>`);
   // ![alt](path) - must run BEFORE the link regex so the leading `!`
   // isn't consumed by it. Only same-origin /assets/ paths render.
-  out = out.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt: string, src: string) => {
-    const safeSrc = src.startsWith("/assets/") ? src : "";
+  // An optional "title" after the path (escaped to &quot;...&quot; above) is
+  // dropped inline; standalone image lines render it as a figcaption instead.
+  out = out.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+&quot;[^)]*?&quot;)?\)/g, (_, alt: string, src: string) => {
+    const resolved = imageResolver ? imageResolver(src) : src;
+    const safeSrc = resolved.startsWith("/assets/") ? resolved : "";
     if (!safeSrc) return "";
     return `<img src="${safeSrc}" alt="${alt}" loading="lazy" />`;
   });
@@ -187,7 +236,24 @@ export function renderMarkdown(
     docId?: string;
     videoTitle?: string;
     transcripts?: Record<string, VideoTranscript>;
+    /** Page locale, used to resolve `{locale}` in screenshot paths. */
+    locale?: string;
+    /** Custom image path resolver (defaults to a plain `{locale}` swap). */
+    resolveImage?: (src: string) => string;
   } = {},
+): string {
+  const prevResolver = imageResolver;
+  imageResolver = opts.resolveImage || makeImageResolver(opts.locale || DEFAULT_LOCALE);
+  try {
+    return renderMarkdownInner(source, opts);
+  } finally {
+    imageResolver = prevResolver;
+  }
+}
+
+function renderMarkdownInner(
+  source: string,
+  opts: { docId?: string; videoTitle?: string; transcripts?: Record<string, VideoTranscript> },
 ): string {
   const docId = opts.docId && /^[a-z0-9][a-z0-9-]{0,80}$/i.test(opts.docId) ? opts.docId : "";
   const lines = source.split(/\r?\n/);
@@ -197,10 +263,15 @@ export function renderMarkdown(
   let listType: "ul" | "ol" | "task" | null = null;
   let taskCounter = 0;
   let videoCounter = 0;
+  // Ordered-list continuity across screenshots: a figure between "2." and
+  // "3." must not restart the numbering at 1.
+  let olCount = 0;
+  let olResumable = false;
 
   function closeList() {
     if (listType) {
       out.push(`</${listType === "task" ? "ul" : listType}>`);
+      if (listType === "ol") olResumable = true;
       listType = null;
     }
   }
@@ -225,9 +296,24 @@ export function renderMarkdown(
       closeList();
       continue;
     }
+    const fig = line.match(FIGURE_LINE);
+    if (fig) {
+      const html = renderFigure(fig[2], fig[3], fig[4]);
+      if (!html) continue;
+      // Indented under a list item: attach to that item.
+      if (fig[1].length > 0 && listType && out.length && out[out.length - 1].endsWith("</li>")) {
+        out[out.length - 1] = out[out.length - 1].replace(/<\/li>$/, `${html}</li>`);
+        continue;
+      }
+      closeList();
+      out.push(html);
+      continue;
+    }
     const heading = line.match(/^(#{1,6})\s+(.*)$/);
     if (heading) {
       closeList();
+      olResumable = false;
+      olCount = 0;
       const level = heading[1].length;
       out.push(`<h${level}>${renderInline(heading[2])}</h${level}>`);
       continue;
@@ -307,10 +393,13 @@ export function renderMarkdown(
     const ordered = line.match(/^\s*\d+\.\s+(.*)$/);
     if (ordered) {
       if (listType !== "ol") {
+        const resume = olResumable && /^\s*([2-9]|\d{2,})\./.test(line);
         closeList();
-        out.push("<ol>");
+        if (!resume) olCount = 0;
+        out.push(olCount > 0 ? `<ol start="${olCount + 1}">` : "<ol>");
         listType = "ol";
       }
+      olCount += 1;
       out.push(`<li>${renderInline(ordered[1])}</li>`);
       continue;
     }
@@ -361,6 +450,8 @@ export async function loadTutorial(id: string, requestedLocale?: string): Promis
     docId: id,
     videoTitle: typeof frontmatter.title === "string" ? frontmatter.title : undefined,
     transcripts: await readTranscripts(),
+    locale: resolvedLocale,
+    resolveImage: makeImageResolver(resolvedLocale, await readScreenshotSet()),
   });
   return {
     id,

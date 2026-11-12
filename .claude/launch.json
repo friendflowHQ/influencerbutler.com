@@ -4,15 +4,39 @@
     {
       "name": "ext-popup-static",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["--yes", "http-server", "extension/dist", "-p", "8734", "-c-1"],
+      "runtimeArgs": [
+        "--yes",
+        "http-server",
+        "extension/dist",
+        "-p",
+        "8734",
+        "-c-1"
+      ],
       "port": 8734
     },
     {
       "name": "dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 3000,
       "autoPort": true
+    },
+    {
+      "name": "screens-review",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "--yes",
+        "http-server",
+        "out/screens-review",
+        "-p",
+        "8736",
+        "-c-1",
+        "-s"
+      ],
+      "port": 8736
     }
   ]
 }

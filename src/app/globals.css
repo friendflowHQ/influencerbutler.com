@@ -307,6 +307,38 @@ body {
   border: 1px solid #e2e8f0;
 }
 
+/* Annotated screenshots: `![alt](/assets/... "caption")` on its own line. */
+.help-tutorial-body .tut-shot {
+  margin: 1rem 0 1.5rem;
+}
+
+.help-tutorial-body li > .tut-shot {
+  margin: 0.75rem 0 1rem;
+}
+
+.help-tutorial-body .tut-shot a {
+  display: block;
+  border-radius: 0.5rem;
+  cursor: zoom-in;
+}
+
+.help-tutorial-body .tut-shot a:focus-visible {
+  outline: 3px solid #c2410c;
+  outline-offset: 3px;
+}
+
+.help-tutorial-body .tut-shot img {
+  display: block;
+  width: 100%;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.help-tutorial-body .tut-shot figcaption {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #475569;
+}
+
 .help-tutorial-body hr {
   border: 0;
   border-top: 1px solid #e2e8f0;

@@ -12,6 +12,8 @@ import { DateTime } from "luxon";
 import { CALL_TYPES } from "@/lib/scheduling";
 import { topicsForBooking } from "@/lib/call-topics";
 import { TopicChips, TopicPicker } from "@/components/scheduling/TopicChips";
+import { PartnerChip } from "@/components/scheduling/PartnerChip";
+import { partnerProgramForBooking } from "@/lib/partner-call-slots";
 import { WD, hhmm, fmtWhen, fmtTime, startOfWeekSun, callPillClass, toLocalInput, eventDayKey, EVENTS_HREF, EVENT_PILL_CLASS, type Booking, type CalEvent } from "./shared";
 import { CalendarDayView, CallCards, TopicFilterBar } from "./views";
 
@@ -387,8 +389,8 @@ export default function SchedulingAdminPage() {
                         <td className="px-3 py-2 text-slate-600">{b.user_email}</td>
                         <td className="px-3 py-2"><span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{b.status}</span>{b.recording_status === "ready" ? <span className="ml-1 text-xs" title="Recorded, transcript + notes ready">🎙</span> : null}</td>
                         <td className="max-w-sm px-3 py-2 text-slate-500">
-                          <TopicChips booking={b} size="xs" />
-                          {b.topic ? <div className="mt-0.5 truncate">{b.topic}</div> : (topicsForBooking(b).length === 0 ? "-" : null)}
+                          <span className="inline-flex flex-wrap gap-1"><PartnerChip booking={b} size="xs" /><TopicChips booking={b} size="xs" /></span>
+                          {b.topic ? <div className="mt-0.5 truncate">{b.topic}</div> : (topicsForBooking(b).length === 0 && !partnerProgramForBooking(b) ? "-" : null)}
                         </td>
                       </tr>
                     ) : null)}
@@ -524,10 +526,10 @@ export default function SchedulingAdminPage() {
               <div><dt className="text-slate-400">Join</dt><dd>{prep.booking.join_url ? <a className="text-[#f97316] hover:underline" href={prep.booking.join_url} target="_blank" rel="noreferrer">link ↗</a> : <span className="text-slate-400">none</span>}{prep.booking.join_url && prep.booking.meeting_provider === "google_meet" && settings?.googleEmail ? <span className="ml-1 text-xs text-slate-400">({settings.googleEmail})</span> : null}</dd></div>
             </dl>
 
-            {(topicsForBooking(prep.booking).length > 0 || prep.booking.topic) && (
+            {(topicsForBooking(prep.booking).length > 0 || prep.booking.topic || partnerProgramForBooking(prep.booking)) && (
               <section className="mt-3">
                 <h3 className="text-xs font-semibold uppercase text-slate-500">What they want to cover</h3>
-                <div className="mt-1"><TopicChips booking={prep.booking} /></div>
+                <div className="mt-1 flex flex-wrap gap-1"><PartnerChip booking={prep.booking} /><TopicChips booking={prep.booking} /></div>
                 {prep.booking.topic && <p className="mt-1 rounded-lg bg-slate-50 p-2 text-sm text-slate-700">{prep.booking.topic}</p>}
               </section>
             )}
@@ -678,7 +680,7 @@ function CalendarWeekView({ anchor, byDay, eventsByDay, onOpen, onAddDay }: { an
                 {items.map((b) => (
                   <button key={b.id} type="button" onClick={() => onOpen(b.id)} className={`block w-full rounded-lg px-1.5 py-1 text-left text-xs hover:opacity-80 ${callPillClass(b)}`}>
                     <span className="block truncate">{fmtTime(b.starts_at)} · {b.user_email}</span>
-                    {topicsForBooking(b).length > 0 && <span className="mt-0.5 block"><TopicChips booking={b} size="xs" /></span>}
+                    {(topicsForBooking(b).length > 0 || partnerProgramForBooking(b)) && <span className="mt-0.5 flex flex-wrap gap-1"><PartnerChip booking={b} size="xs" /><TopicChips booking={b} size="xs" /></span>}
                   </button>
                 ))}
               </div>
@@ -721,6 +723,8 @@ function CalendarMonthView({ anchor, byDay, eventsByDay, onOpen, onMore }: { anc
                   ))}
                   {items.slice(0, callBudget).map((b) => (
                     <button key={b.id} type="button" onClick={() => onOpen(b.id)} title={topicsForBooking(b).map((t) => t.label).join(", ") || undefined} className={`block w-full truncate rounded px-1 py-0.5 text-left text-[11px] hover:opacity-80 ${callPillClass(b)}`}>
+                      {partnerProgramForBooking(b) && <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-[#8f4f61] align-middle" aria-hidden="true" />}
+                      {partnerProgramForBooking(b) && <span className="sr-only">{partnerProgramForBooking(b)?.label} reserved slot: </span>}
                       {fmtTime(b.starts_at)} {b.user_email}
                     </button>
                   ))}

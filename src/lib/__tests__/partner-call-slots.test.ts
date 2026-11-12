@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PARTNER_PROGRAMS, findProgram, partnerHoldRanges, programSlots } from "@/lib/partner-call-slots";
+import { PARTNER_PROGRAMS, findProgram, partnerHoldRanges, partnerProgramForBooking, programSlots } from "@/lib/partner-call-slots";
 import { CALL_TYPES } from "@/lib/scheduling";
 
 describe("partner call slots", () => {
@@ -28,5 +28,20 @@ describe("partner call slots", () => {
     expect(findProgram("nope")).toBeNull();
     expect(findProgram(null)).toBeNull();
     expect(new Set(PARTNER_PROGRAMS.map((p) => p.key)).size).toBe(PARTNER_PROGRAMS.length);
+  });
+});
+
+describe("partnerProgramForBooking", () => {
+  const tanner = findProgram("tanner")!;
+  const slotIso = new Date(programSlots(tanner)[0].startMs).toISOString();
+  it("matches the host_notes stamp", () => {
+    expect(partnerProgramForBooking({ call_type: "support", starts_at: "2026-01-01T00:00:00Z", host_notes: "Reserved Tanner slot: Tanner Clemens student (code TANNER)." })?.key).toBe("tanner");
+  });
+  it("matches a Setup call at a reserved time", () => {
+    expect(partnerProgramForBooking({ call_type: "demo", starts_at: slotIso, host_notes: null })?.key).toBe("tanner");
+  });
+  it("ignores other calls", () => {
+    expect(partnerProgramForBooking({ call_type: "support", starts_at: slotIso, host_notes: null })).toBeNull();
+    expect(partnerProgramForBooking({ call_type: "demo", starts_at: "2026-11-13T20:00:00Z", host_notes: "" })).toBeNull();
   });
 });

@@ -17,11 +17,15 @@ Le seuil vous appartient : 99 % par défaut parce que c'est là que vivent les v
 ## Premier passage
 
 1. Ouvrez **Pricecrash Butler** dans le menu latéral (groupe Deals Butler).
+   ![Groupe Deals Butler dans le menu de gauche et bouton Lancer en haut du panneau Pricecrash Butler](/assets/tutorials/pricecrashbutler/{locale}/01-open-and-run.webp "1 : cliquez sur Deals Butler dans le menu de gauche, puis sur Pricecrash. 6 : cliquez sur Lancer quand vos réglages sont prêts.")
 2. Sélectionnez au moins une **catégorie** à scanner. « All » couvre tous les rayons.
 3. (Facultatif) Sous **Marchés à analyser**, cochez les régions Amazon à parcourir (UK, DE, FR et plus). Laissez tout décoché pour n'analyser que votre marché principal. Une case se débloque une fois que vous connectez les identifiants de l'API Creators de cette région dans les Réglages : US et CA utilisent vos identifiants par défaut ; UK, DE, FR, IT et ES utilisent vos identifiants EU ; et JP, AU et IN utilisent vos identifiants FE.
+   ![Grille des catégories et cases des marketplaces à analyser dans Pricecrash Butler](/assets/tutorials/pricecrashbutler/{locale}/03-categories-marketplaces.webp "2 : choisissez au moins une catégorie. 3 : cochez si besoin d'autres marketplaces Amazon (laissez vide pour votre boutique seulement).")
 4. Choisissez le comportement à la détection : **Brouillon pour relecture**, **Planifier automatiquement** (choisissez le moment en dessous : **Publier tout de suite** ou **À la prochaine heure de publication programmée**) ou **Sans transfert**.
 5. Choisissez quels espaces d'offres reçoivent les trouvailles dans **Envoyer les trouvailles à**. Cochez votre Deal Posting de base et tout espace d'offres supplémentaire que vous avez ajouté. Chaque espace coché livre la trouvaille sur ses propres canaux. Le texte provient toujours de votre composeur **Composez votre publication** de Pricecrash Butler (plus bas), ainsi une même erreur de prix peut toucher plusieurs audiences à la fois d'une seule voix cohérente. Cette ligne est masquée si vous choisissez Sans transfert.
+   ![Carte des réglages avec le curseur de remise minimale, les choix quand une offre est trouvée et la liste des espaces de destination](/assets/tutorials/pricecrashbutler/{locale}/02-threshold-and-handoff.webp "Le curseur encadré fixe la remise minimale (99 % attrape les vraies erreurs de prix). 4 : choisissez ce qui se passe quand une offre est trouvée. 5 : cochez les espaces d'offres qui reçoivent les trouvailles.")
 6. Cliquez sur **Lancer**. Avec le champ **Mots-clés appâts** vide, le runner parcourt chaque catégorie sélectionnée par son nœud racine Amazon trié par prix croissant - aucun filtre sur le titre, donc il attrape les articles mal tarifés même si le vendeur n'a jamais écrit « clearance » dans la fiche.
+   ![Tableau des résultats de Pricecrash où chaque erreur de prix trouvée est listée](/assets/tutorials/pricecrashbutler/{locale}/07-results-table.webp "Les trouvailles arrivent dans ce tableau en bas du panneau, avec un statut et un bouton de programmation sur chaque ligne.")
 
 Quand Deal Posting choisit volontairement de ne pas publier une trouvaille (une retenue par filtre, une connexion manquante, un lien qui ne rapporterait pas de commission), son étiquette indique **Retenue dans Deal Posting** au lieu d'Échec, et la ligne attend votre décision dans Deal Posting. **Arrêter** arrête aussi les balayages programmés ou lancés avec **Lancer maintenant**, et une trouvaille que Arrêter a empêché de transmettre affiche de nouveau son bouton **Envoyer au planning**. Ce bouton publie tout de suite quand votre moment est réglé sur **Publier tout de suite**, comme l'aurait fait le balayage.
 
@@ -37,6 +41,8 @@ Si l'API Amazon refuse la recherche sans mots-clés pour une catégorie, Pricecr
 
 Activez la planification automatique (1h / 3h / 6h / 12h / 24h) ou définissez votre propre intervalle avec le champ **Ou toutes les** (minutes, heures ou jours). Le 6h par défaut est un compromis entre réactivité et les quotas partagés de PA-API. Votre choix (préréglage ou personnalisé) est conservé après un redémarrage.
 
+![Préréglages de l'analyse automatique et l'interrupteur d'exécution automatique](/assets/tutorials/pricecrashbutler/{locale}/04-auto-scan-schedule.webp "1 : choisissez la fréquence d'analyse (ou votre propre intervalle). 2 : activez l'exécution automatique.")
+
 ## Comment marche le « 99 % » réellement
 
 La Creators API n'expose pas de filtre « remise minimale » côté serveur. Pricecrash itère chaque catégorie avec `sortBy: Price:LowToHigh` et filtre ensuite par `savingsPercent`. Les correspondances à 99 % sont rares - c'est exactement le but.
@@ -44,6 +50,8 @@ La Creators API n'expose pas de filtre « remise minimale » côté serveur. Pri
 ## Composez votre publication
 
 Pricecrash Butler a son propre composeur **Composez votre publication**, directement dans le panneau, pour que chaque prise se publie d'une seule voix cohérente, quels que soient les espaces d'offres qui la reçoivent. Il est organisé exactement comme celui de Deal Posting, avec trois pages : **Texte**, **Premier commentaire** et **Options**.
+
+![Éditeur Build Your Post de Pricecrash avec les pages légende, premier commentaire et options, les styles prêts à l'emploi et les puces à insérer](/assets/tutorials/pricecrashbutler/{locale}/06-build-your-post.webp "1 : passez de la légende au premier commentaire et aux options. 2 : partez d'un style prêt à l'emploi. 3 : cliquez ou glissez des puces comme le % de remise dans la légende.")
 
 - **Choisissez un style.** La première étape de la page Texte propose des mises en page prêtes à l'emploi (Bases d'une publication d'offre, Telegram et Lâchers d'offres). Cliquez sur l'une d'elles pour remplir votre texte et votre premier commentaire, puis modifiez ce que vous voulez. Vous pouvez aussi glisser un style sur n'importe quel éditeur et enregistrer votre publication actuelle comme formule avec **Enregistrer comme formule**.
 - **Puces Insérer.** Le panneau **Insérer** à droite contient les puces : champs de l'offre (Image, Titre, ASIN, Lien, Prix soldé, Ancien prix, % de réduction, Boutique, Avis, Étoiles, Se termine dans), lignes rotatives (Accroche, Appel à l'action, Hashtags, Urgence) et la puce rouge **Urgence d'erreur de prix**. Il commence par l'essentiel ; cliquez sur **Plus de puces** pour tout voir et chercher par nom. Cliquez sur une puce pour l'ajouter là où se trouve votre curseur, ou glissez-la. Les puces déposées peuvent être déplacées ou retirées d'un clic. Il n'y a pas de puce de code promo ici : une erreur de prix ne vient jamais avec un code ni un coupon.
@@ -59,6 +67,8 @@ Pricecrash Butler a son propre composeur **Composez votre publication**, directe
 ## Limites de publication et le meilleur d'abord
 
 Un gros passage peut trouver des dizaines d'offres d'un coup. La carte **Limites de publication et le meilleur d'abord** garde ça sous contrôle :
+
+![Limites de publication par analyse, heure et jour, avec le menu de choix des meilleures offres](/assets/tutorials/pricecrashbutler/{locale}/05-posting-limits.webp "1 : limitez les publications par analyse, heure ou jour (vide = aucune limite). 2 : choisissez quelles trouvailles partent en premier.")
 
 - **Publications par passage, par heure et par jour.** Réglez-en une, deux ou les trois, ou laissez-les vides pour ne pas avoir de limite. Les limites par heure et par jour regardent en arrière sur les 60 dernières minutes et les 24 dernières heures, tous passages confondus, donc un passage qui tourne toutes les quelques heures ne les dépassera pas. Une offre envoyée à plusieurs workspaces Offres compte pour une seule publication.
 - **Choisir le meilleur selon.** Quand une limite ne laisse de la place qu'à certaines trouvailles, ce réglage décide lesquelles partent en premier : **Meilleure offre** (combine le pourcentage de remise et les dollars économisés, donc une grosse économie sur un vrai produit bat une remise de 99 % sur un article à 50 centimes), **Prix le plus bas**, **Plus forte remise en %** ou **Première trouvée** (transmises dans l'ordre où le passage les a trouvées, comme Pricecrash fonctionnait avant).

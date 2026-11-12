@@ -98,5 +98,29 @@ export function partnerHoldRanges(fromMs: number, toMs: number): BusyRange[] {
   return out;
 }
 
+/**
+ * The partner program a booking came from, for the admin chip. A partner
+ * booking is stamped in host_notes ("Reserved <label> slot: ...") by
+ * /api/booking/create; a Setup call at one of the reserved times also counts,
+ * in case that stamp failed or the notes were edited since.
+ */
+export function partnerProgramForBooking(b: {
+  call_type: string;
+  starts_at: string;
+  host_notes?: string | null;
+}): PartnerProgram | null {
+  const notes = b.host_notes ?? "";
+  for (const p of PARTNER_PROGRAMS) {
+    if (notes.startsWith(`Reserved ${p.label} slot`)) return p;
+  }
+  if (b.call_type !== PARTNER_CALL_TYPE) return null;
+  const startMs = Date.parse(b.starts_at);
+  if (!Number.isFinite(startMs)) return null;
+  for (const p of PARTNER_PROGRAMS) {
+    if (programSlots(p).some((s) => s.startMs === startMs)) return p;
+  }
+  return null;
+}
+
 /** Minimum notice for a partner slot (shorter than the public lead time). */
 export const PARTNER_LEAD_MS = 2 * 3600_000;

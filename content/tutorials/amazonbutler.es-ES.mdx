@@ -34,6 +34,7 @@ Si vives fuera de EE. UU. (por ejemplo en Reino Unido, Australia o Canadá), una
 
 1. Elige tu país en **País a comprobar**. Los países aparecen atenuados hasta que la región correspondiente de la API de Creators esté conectada en **Amazon Butler > Configuración de Amazon**: US, CA, MX y BR usan tus credenciales predeterminadas, Reino Unido y los demás países europeos usan credenciales EU, y AU, JP, SG e IN usan credenciales FE.
 2. Activa **Solo enviar mensajes a marcas con productos disponibles en tu país**.
+   ![Tarjeta del filtro de disponibilidad por país abierta, con el menú del país a comprobar y el interruptor de activación](/assets/tutorials/amazonbutler/{locale}/05-country-availability.webp "1: elige tu país en el país a comprobar. 2: activa Enviar mensajes solo a marcas con productos disponibles en tu país.")
 
 Durante una ejecución, Butler comprueba los productos de cada campaña en la tienda de Amazon de ese país y omite las marcas sin nada comprable allí, indicando el motivo en la lista de omitidos. Una campaña pasa en cuanto un producto está disponible. Los resultados se guardan en caché durante dos días, así que las ejecuciones repetidas siguen siendo rápidas.
 
