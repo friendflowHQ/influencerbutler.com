@@ -153,6 +153,9 @@
     "#ib-price-lock-banner .ibpl-eyebrow{display:block;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#fbbf24}" +
     "#ib-price-lock-banner .ibpl-eyebrow.ibpl-urgent{color:#fca5a5;animation:ibpl-pulse 1.2s ease-in-out infinite}" +
     "#ib-price-lock-banner .ibpl-head{display:block;font-size:17px;font-weight:800;letter-spacing:-.01em}" +
+    "#ib-price-lock-banner .ibpl-prices{display:block;margin-top:3px;font-size:12.5px;font-weight:600;color:#e5e7eb}" +
+    "#ib-price-lock-banner .ibpl-prices s{color:#9ca3af;font-weight:500;margin-right:3px}" +
+    "#ib-price-lock-banner .ibpl-prices b{color:#fde68a;font-weight:800}" +
     "#ib-price-lock-banner .ibpl-clock{display:flex;align-items:center;gap:6px}" +
     "#ib-price-lock-banner .ibpl-tile{min-width:54px;padding:5px 6px 4px;border-radius:9px;text-align:center;" +
     "background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.04));border:1px solid rgba(251,191,36,.45);" +
@@ -177,6 +180,7 @@
     "@media (max-width:640px){#ib-price-lock-banner{padding:9px 40px 10px 10px}" +
     "#ib-price-lock-banner .ibpl-row{gap:8px 10px}#ib-price-lock-banner .ibpl-hat{font-size:22px}" +
     "#ib-price-lock-banner .ibpl-head{font-size:14px}#ib-price-lock-banner .ibpl-eyebrow{font-size:10px}" +
+    "#ib-price-lock-banner .ibpl-prices{display:none}" +
     "#ib-price-lock-banner .ibpl-tile{min-width:40px;padding:4px 3px 3px}#ib-price-lock-banner .ibpl-num{font-size:18px}" +
     "#ib-price-lock-banner .ibpl-lbl{font-size:8px;letter-spacing:.06em}#ib-price-lock-banner .ibpl-sep{display:none}" +
     "#ib-price-lock-banner .ibpl-cta{padding:7px 12px;font-size:13px}}" +
@@ -220,6 +224,25 @@
     var head = el("span", "ibpl-head", "Lock today's price forever 🔒");
     words.appendChild(eyebrow);
     words.appendChild(head);
+    // Today's price as the deal, the post-deadline price crossed out. Visual
+    // only; screen readers get the sentence version below.
+    var prices = el("span", "ibpl-prices");
+    prices.setAttribute("aria-hidden", "true");
+    var plans = [
+      ["Beginner", "$29.99", "$24.99"],
+      ["Power User", "$49", "$39"]
+    ];
+    for (var pi = 0; pi < plans.length; pi++) {
+      if (pi > 0) prices.appendChild(document.createTextNode(" \u00b7 "));
+      prices.appendChild(document.createTextNode(plans[pi][0] + " "));
+      prices.appendChild(el("s", null, plans[pi][1]));
+      prices.appendChild(el("b", null, plans[pi][2]));
+      prices.appendChild(document.createTextNode("/mo"));
+    }
+    words.appendChild(prices);
+    words.appendChild(
+      el("span", "ibpl-sr", "Today: Beginner $24.99 a month, Power User $39 a month. After Nov 30: $29.99 and $49.")
+    );
     copy.appendChild(hat);
     copy.appendChild(words);
 

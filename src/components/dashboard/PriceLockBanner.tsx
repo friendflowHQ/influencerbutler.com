@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { LEVEL_PRICE_CENTS, PRICE_CHANGE } from "@/lib/pricing-constants";
 
 /**
  * Dashboard price lock banner (until Nov 30 2026, 11:59pm Pacific). The
@@ -17,6 +18,15 @@ function parts(ms: number) {
 }
 
 const pad = (n: number) => String(n).padStart(2, "0");
+
+const money = (cents: number) => `$${cents % 100 === 0 ? cents / 100 : (cents / 100).toFixed(2)}`;
+
+// Solo monthly, today vs after the deadline, straight from the price constants.
+const PRICE_ROWS = (["beginner", "power"] as const).map((level) => ({
+  name: level === "beginner" ? "Beginner" : "Power User",
+  today: LEVEL_PRICE_CENTS[level].solo?.monthly ?? 0,
+  next: PRICE_CHANGE.prices[level].solo?.monthly ?? 0,
+}));
 
 const BG =
   "radial-gradient(circle at 12% 30%,rgba(251,191,36,.18) 0 2px,transparent 3px)," +
@@ -114,7 +124,25 @@ export default function PriceLockBanner() {
             <p className="text-base font-extrabold sm:text-lg">
               {comp ? "Add a card by Nov 30 to keep today's price 🔒" : "Lock today's price forever 🔒"}
             </p>
-            {comp ? <p className="text-sm text-slate-200">No charge until your free time ends.</p> : null}
+            {comp ? (
+              <p className="text-sm text-slate-200">No charge until your free time ends.</p>
+            ) : (
+              <>
+                <p aria-hidden="true" className="mt-0.5 hidden text-[13px] font-semibold text-slate-200 sm:block">
+                  {PRICE_ROWS.map((r, i) => (
+                    <span key={r.name}>
+                      {i > 0 ? " \u00b7 " : ""}
+                      {r.name} <s className="mr-0.5 font-medium text-slate-400">{money(r.next)}</s>
+                      <b className="font-extrabold text-amber-200">{money(r.today)}</b>/mo
+                    </span>
+                  ))}
+                </p>
+                <p className="sr-only">
+                  Today: {PRICE_ROWS.map((r) => `${r.name} ${money(r.today)} a month`).join(", ")}. After Nov 30:{" "}
+                  {PRICE_ROWS.map((r) => money(r.next)).join(" and ")}.
+                </p>
+              </>
+            )}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">
