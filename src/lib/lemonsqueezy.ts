@@ -1,3 +1,13 @@
+import {
+  ADDON_PLAN_DAILY_DEALS,
+  PRICE_CHANGE,
+  planMetaFor,
+  priceChangeActive,
+  priceFamilyAt,
+  type LevelPlanString,
+  type PriceFamily,
+} from "@/lib/pricing-constants";
+
 const LS_API_BASE_URL = "https://api.lemonsqueezy.com/v1";
 
 export async function lsApi(path: string, options: RequestInit = {}) {
@@ -415,6 +425,160 @@ export function resolveVariantId(
   return { ok: false, reason: "missing-input" };
 }
 
+// ---------------------------------------------------------------------------
+// Price lock (deadline Nov 30 2026, 11:59pm Pacific; see PRICE_CHANGE in
+// pricing-constants.ts). Each level plan gets a SECOND Lemon Squeezy variant at
+// the new price ("next" family). Old variants are never edited: Lemon Squeezy
+// keeps every existing subscription on the price it was created with, so
+// paying subscribers, trials started before the deadline and comps that add a
+// card before it all keep the old price. New checkouts that start at or after
+// PRICE_CHANGE.effectiveAt get the next-family variant automatically.
+//
+// Ids come from the LS dashboard (the owner creates them by hand; the LS API
+// cannot create variants). An env var LEMONSQUEEZY_NEXT_VARIANT_<PLAN> (plan
+// upper-cased, dashes to underscores) overrides the table.
+// ---------------------------------------------------------------------------
+export const NEXT_VARIANT_IDS: Partial<Record<LevelPlanString, string>> = {
+  // Filled in once the 14 new variants exist in Lemon Squeezy.
+};
+
+const NEXT_FAMILY_PLANS: readonly LevelPlanString[] = [
+  "beginner-solo-monthly",
+  "beginner-solo-annual",
+  "beginner-trio-monthly",
+  "beginner-trio-annual",
+  "beginner-agency-monthly",
+  "beginner-agency-annual",
+  "power-solo-monthly",
+  "power-solo-annual",
+  "power-trio-monthly",
+  "power-trio-annual",
+  "power-team-monthly",
+  "power-team-annual",
+  "power-agency-monthly",
+  "power-agency-annual",
+];
+
+/** Next-family (post-deadline price) variant id for a level plan, or null. */
+export function nextVariantIdFor(plan: string): string | null {
+  const envName = `LEMONSQUEEZY_NEXT_VARIANT_${plan.toUpperCase().replace(/-/g, "_")}`;
+  const fromEnv = process.env[envName];
+  if (fromEnv && fromEnv.trim()) return fromEnv.trim();
+  const fromTable = NEXT_VARIANT_IDS[plan as LevelPlanString];
+  return fromTable && fromTable.length > 0 ? fromTable : null;
+}
+
+/** Legacy plan string -> the Power User plan a NEW buyer gets after the
+ * deadline (owner decision 2026-11-11). Existing legacy subscribers are never
+ * moved; this only applies to brand-new checkouts. */
+const LEGACY_TO_POWER: Record<string, LevelPlanString> = {
+  monthly: "power-solo-monthly",
+  annual: "power-solo-annual",
+  "solo-monthly": "power-solo-monthly",
+  "solo-annual": "power-solo-annual",
+  "duo-monthly": "power-trio-monthly",
+  "duo-annual": "power-trio-annual",
+  "team-monthly": "power-team-monthly",
+  "team-annual": "power-team-annual",
+  "agency-monthly": "power-agency-monthly",
+  "agency-annual": "power-agency-annual",
+};
+
+export type CheckoutVariantResolution =
+  | {
+      ok: true;
+      variantId: string;
+      /** The plan string actually sold (legacy strings become power-* after the deadline). */
+      plan: string | null;
+      family: PriceFamily;
+      /** ISO time the LS checkout should stop working, or null for no expiry. */
+      expiresAt: string | null;
+    }
+  | { ok: false; reason: "missing-input" | "missing-env" | "unknown-variant"; envVar?: string };
+
+/** How long a checkout started just before the deadline may still be paid. */
+const PRE_DEADLINE_CHECKOUT_GRACE_MS = 2 * 60 * 60 * 1000;
+
+/**
+ * Variant for a NEW checkout, price-lock aware.
+ *
+ *   - Before the deadline: today's variants, and the checkout expires 2 hours
+ *     after the deadline so a stale old-price link cannot be paid in December.
+ *   - From the deadline on: the next-family variant. Legacy plan strings map to
+ *     the matching Power User plan first. A raw variant id (guest ?variantId=)
+ *     must be a known plan variant and is mapped to its next-family twin.
+ *   - `family` forces a family: "current" for someone who keeps today's price
+ *     after the deadline (a trial that started before it).
+ *
+ * If a next-family id is not configured yet the old variant is used and the
+ * gap is logged loudly, so checkout never breaks.
+ */
+export function resolveCheckoutVariant(
+  plan: string | undefined,
+  fallbackVariantId: string | undefined,
+  opts: { now?: number; family?: PriceFamily } = {},
+): CheckoutVariantResolution {
+  const now = opts.now ?? Date.now();
+  const family = opts.family ?? priceFamilyAt(now);
+  const expiresAt =
+    family === "current" && priceChangeActive(now)
+      ? new Date(Date.parse(PRICE_CHANGE.effectiveAt) + PRE_DEADLINE_CHECKOUT_GRACE_MS).toISOString()
+      : null;
+
+  let planString: string | null = plan && PLAN_ENV_VAR[plan] ? plan : null;
+  if (!planString && fallbackVariantId) {
+    if (isAddonVariant(fallbackVariantId)) {
+      return { ok: true, variantId: fallbackVariantId, plan: ADDON_PLAN_DAILY_DEALS, family: "current", expiresAt: null };
+    }
+    planString = planForVariantId(fallbackVariantId);
+    if (!planString) return { ok: false, reason: "unknown-variant" };
+    if (family === "current" && variantFamilyOf(fallbackVariantId) === "current") {
+      return { ok: true, variantId: fallbackVariantId, plan: planString, family, expiresAt };
+    }
+  }
+  if (!planString) return { ok: false, reason: "missing-input" };
+
+  if (planString === ADDON_PLAN_DAILY_DEALS) {
+    const r = resolveVariantId(planString, undefined);
+    return r.ok ? { ok: true, variantId: r.variantId, plan: planString, family: "current", expiresAt: null } : r;
+  }
+
+  if (family === "next") {
+    const target = LEGACY_TO_POWER[planString] ?? planString;
+    const nextId = nextVariantIdFor(target);
+    if (nextId) return { ok: true, variantId: nextId, plan: target, family: "next", expiresAt: null };
+    console.error("price-lock: next-family variant missing, selling the old variant", { plan: planString, target });
+    // Fall through to today's variant so checkout keeps working.
+  }
+
+  const r = resolveVariantId(planString, undefined);
+  if (!r.ok) return r;
+  return { ok: true, variantId: r.variantId, plan: planString, family: "current", expiresAt };
+}
+
+/**
+ * The same plan's variant in another family. Used to keep plan switches in the
+ * subscriber's own family and to move a comp's stored variant to the new price
+ * when the card is added after the deadline. Null when there is no twin
+ * configured (legacy plans only exist in the current family).
+ */
+export function variantIdForPlanInFamily(plan: string, family: PriceFamily): string | null {
+  if (family === "next") return nextVariantIdFor(plan);
+  const r = resolveVariantId(plan, undefined);
+  return r.ok ? r.variantId : null;
+}
+
+/** For a comp (or anyone) adding a card for a stored variant: after the
+ * deadline, the variant a NEW checkout for that plan would get (legacy plans
+ * move to Power User). Before the deadline the stored variant itself. */
+export function postDeadlineVariantFor(storedVariantId: string, now: number = Date.now()): string {
+  if (priceChangeActive(now)) return storedVariantId;
+  const plan = planForVariantId(storedVariantId);
+  if (!plan || variantFamilyOf(storedVariantId) === "next") return storedVariantId;
+  const r = resolveCheckoutVariant(plan, undefined, { now, family: "next" });
+  return r.ok ? r.variantId : storedVariantId;
+}
+
 /**
  * Is `variantId` the Daily Deals Workspace add-on? Used by both checkout
  * routes (belt 1 + 2 of the promo-exclusion contract) to skip discount /
@@ -449,8 +613,12 @@ export function getDiscountableVariantIds(): string[] {
     process.env.LEMONSQUEEZY_VARIANT_TEAM_ANNUAL,
     process.env.LEMONSQUEEZY_VARIANT_AGENCY_MONTHLY,
     process.env.LEMONSQUEEZY_VARIANT_AGENCY_ANNUAL,
+    // Beginner / Power User levels, both price families. These were missing,
+    // so codes minted with this list did not apply to level checkouts.
+    ...NEXT_FAMILY_PLANS.map((plan) => process.env[PLAN_ENV_VAR[plan]]),
+    ...NEXT_FAMILY_PLANS.map((plan) => nextVariantIdFor(plan) ?? undefined),
   ];
-  return ids.filter((id): id is string => typeof id === "string" && id.length > 0);
+  return [...new Set(ids.filter((id): id is string => typeof id === "string" && id.length > 0))];
 }
 
 // Maps each tier's monthly variant env var to its annual counterpart. Used to
@@ -510,7 +678,38 @@ export function planForVariantId(
     const candidate = envVar ? process.env[envVar] : undefined;
     if (candidate && candidate === id) return plan;
   }
+  // Price-lock "next" family (new variants at the post-deadline prices) maps
+  // to the same plan string, so entitlements, seats and plan switches treat
+  // both families alike.
+  for (const plan of NEXT_FAMILY_PLANS) {
+    if (nextVariantIdFor(plan) === id) return plan as CanonicalPlanString;
+  }
   return null;
+}
+
+/**
+ * Which price family a variant belongs to: "current" for every variant we
+ * sold before the price lock deadline (including legacy and the add-on),
+ * "next" for the new post-deadline variants, null when unknown.
+ */
+export function variantFamilyOf(variantId: string | number | null | undefined): PriceFamily | null {
+  if (variantId == null) return null;
+  const id = String(variantId);
+  if (!id) return null;
+  for (const plan of NEXT_FAMILY_PLANS) {
+    if (nextVariantIdFor(plan) === id) return "next";
+  }
+  return planForVariantId(id) ? "current" : null;
+}
+
+/** List price of the variant a subscription is actually on (old or new
+ * family), for MRR and proration math. Never time-dependent. */
+export function planMetaForVariantId(
+  variantId: string | number | null | undefined,
+): { priceCents: number; interval: "month" | "year" } | null {
+  const plan = planForVariantId(variantId);
+  if (!plan) return null;
+  return planMetaFor(plan, variantFamilyOf(variantId) ?? "current");
 }
 
 /**

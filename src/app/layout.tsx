@@ -71,6 +71,7 @@ export default function RootLayout({
         <Script src="/js/activity-widget.js" strategy="afterInteractive" />
         <Script src="/js/webmcp.js" strategy="afterInteractive" />
         <Script src="/js/image-lightbox.js" strategy="afterInteractive" />
+        <Script src="/js/price-lock-banner.js" strategy="afterInteractive" />
         <Script src="/js/new-tab-labels.js" strategy="afterInteractive" />
       </body>
     </html>

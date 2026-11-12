@@ -232,22 +232,14 @@ function changeClause(level: PlanLevel, tier: Tier, interval: Interval): string 
 export function buildPriceLockLine(base: PlanBase, tier: Tier = "solo", interval: Interval = "monthly", now = Date.now()): string {
   if (!priceChangeActive(now)) return "";
   const levels: PlanLevel[] = base === "beginner" ? ["beginner"] : base === "power" ? ["power"] : ["beginner", "power"];
-  // Only the person's own seat tier: Power Team / Agency are not changing, so
-  // they get no notice at all.
+  // Only the person's own seat tier.
   const clauses = levels
     .map((l) => changeClause(l, tier, interval))
     .filter((c): c is string => Boolean(c));
   if (clauses.length === 0) return "";
-  const when = new Date(PRICE_CHANGE.effectiveAt).toLocaleString("en-US", {
-    month: "long",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: "America/Denver",
-    timeZoneName: "short",
-  });
+  const when = PRICE_CHANGE.whenLabel;
   return (
-    `Heads up: prices for new subscriptions go up on ${when.replace(/, (\d)/, " at $1")} (${clauses.join(", ")}). ` +
+    `Heads up: prices for new subscriptions go up after ${when} (${clauses.join(", ")}). ` +
     `Start before then and you keep today's price for as long as you stay subscribed.`
   );
 }

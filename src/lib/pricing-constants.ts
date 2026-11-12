@@ -188,21 +188,64 @@ export const LEVEL_PRICE_CENTS: Record<PlanLevel, Partial<Record<Tier, { monthly
   },
 };
 
-// The announced price change. Shown on the pricing page, the dashboard and (via
-// the licensing Worker's PRICE_CHANGE_NOTICE) the desktop until the date passes.
-// Existing subscriptions keep their price; only new checkouts after the date
-// pay the new one. Update LEVEL_PRICE_CENTS (and the LS variants) on the day.
+// The announced price change ("price lock"). Shown on the pricing page, the
+// dashboard, the site banner, the extension notice and (via the licensing
+// Worker's PRICE_CHANGE_NOTICE) the desktop until the deadline passes.
+// Existing subscriptions keep their price; checkouts that START at or after
+// effectiveAt pay PRICE_CHANGE.prices, on the NEW Lemon Squeezy variants
+// (src/lib/lemonsqueezy.ts NEXT_VARIANT_IDS). Old variants are never edited.
+// Everything flips on its own at effectiveAt: no deploy or manual step.
 export const PRICE_CHANGE = {
-  // Nov 28 2026, 10pm MST (owner-specified cutover time).
-  effectiveAt: "2026-11-29T05:00:00Z",
+  // Deadline: Mon Nov 30 2026, 11:59pm Pacific (owner-specified, 2026-11-11).
+  // effectiveAt is the first instant of the new prices: midnight Pacific.
+  effectiveAt: "2026-12-01T08:00:00Z",
+  timeZone: "America/Los_Angeles",
+  // Human labels, so no caller formats effectiveAt (which is already Dec 1 in
+  // UTC and Mountain time).
+  dayLabel: "November 30",
+  shortDayLabel: "Nov 30",
+  whenLabel: "November 30 at 11:59pm Pacific",
+  // About +20% on every level tier (owner-approved 2026-11-11); annual = 10x monthly.
   prices: {
-    beginner: { solo: { monthly: 2900, annual: 29000 }, duo: { monthly: 5900, annual: 59000 }, agency: { monthly: 23900, annual: 239000 } },
-    power: { solo: { monthly: 4900, annual: 49000 }, duo: { monthly: 8900, annual: 89000 } },
+    beginner: {
+      solo: { monthly: 2999, annual: 29900 },
+      duo: { monthly: 5399, annual: 53900 },
+      agency: { monthly: 23900, annual: 239000 },
+    },
+    power: {
+      solo: { monthly: 4900, annual: 49000 },
+      duo: { monthly: 8300, annual: 83000 },
+      team: { monthly: 15500, annual: 155000 },
+      agency: { monthly: 35900, annual: 359000 },
+    },
   } as Record<PlanLevel, Partial<Record<Tier, { monthly: number; annual: number }>>>,
 } as const;
 
+/** True while the price-lock notice is showing (before the new prices start). */
 export function priceChangeActive(now: number = Date.now()): boolean {
   return now < Date.parse(PRICE_CHANGE.effectiveAt);
+}
+
+/** Which price family a NEW checkout gets at `now`: "current" before the
+ * deadline, "next" from effectiveAt on. */
+export type PriceFamily = "current" | "next";
+export function priceFamilyAt(now: number = Date.now()): PriceFamily {
+  return priceChangeActive(now) ? "current" : "next";
+}
+
+/** Level price table for a family. */
+export function levelPriceTable(family: PriceFamily): Record<PlanLevel, Partial<Record<Tier, { monthly: number; annual: number }>>> {
+  return family === "next" ? PRICE_CHANGE.prices : LEVEL_PRICE_CENTS;
+}
+
+/** "November 30". */
+export function priceChangeDayLabel(): string {
+  return PRICE_CHANGE.dayLabel;
+}
+
+/** "November 30 at 11:59pm Pacific". */
+export function priceChangeWhenLabel(): string {
+  return PRICE_CHANGE.whenLabel;
 }
 
 /** Seat tiers sold on a level, in display order. */
@@ -237,9 +280,17 @@ export function levelForPlan(plan: string | undefined | null): PlanLevel | "lega
   return parsed ? parsed.level : "legacy";
 }
 
-/** Price for a level x tier x cadence, null when not sold on that level. */
-export function levelPriceCents(level: PlanLevel, tier: Tier, interval: Interval): number | null {
-  const row = LEVEL_PRICE_CENTS[level][tier];
+/** Price for a level x tier x cadence, null when not sold on that level.
+ * `family` defaults to what a NEW checkout gets right now (old prices before
+ * the deadline, new prices after). Pass a family to price an existing
+ * subscription by the variant it is on. */
+export function levelPriceCents(
+  level: PlanLevel,
+  tier: Tier,
+  interval: Interval,
+  family: PriceFamily = priceFamilyAt(),
+): number | null {
+  const row = levelPriceTable(family)[level][tier];
   return row ? row[interval] : null;
 }
 
@@ -327,6 +378,7 @@ export function tierForPlan(plan: string | undefined | null): Tier | null {
  */
 export function planMetaFor(
   plan: string | undefined | null,
+  family: PriceFamily = priceFamilyAt(),
 ): { priceCents: number; interval: "month" | "year" } | null {
   if (!plan) return null;
   if (plan === ADDON_PLAN_DAILY_DEALS) {
@@ -334,7 +386,7 @@ export function planMetaFor(
   }
   const level = parseLevelPlan(plan);
   if (level) {
-    const priceCents = levelPriceCents(level.level, level.tier, level.interval);
+    const priceCents = levelPriceCents(level.level, level.tier, level.interval, family);
     if (priceCents == null) return null;
     return { priceCents, interval: INTERVAL_BY_CADENCE[level.interval] };
   }

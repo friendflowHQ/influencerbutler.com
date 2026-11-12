@@ -20,6 +20,8 @@ import {
 import { sendEmail, logSuppressedSkip, type EmailFunnel, type SendTracking } from "@/lib/email-send";
 import { plainTextToTrackableHtml } from "@/lib/email-marketing";
 import type { EmailStream } from "@/lib/email-senders";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { marketingGate } from "@/lib/send-gates";
 
 export type MarketingEmail = {
   from: string;
@@ -49,6 +51,10 @@ export type MarketingEmail = {
    * never by the bulk cron. The unsubscribe footer + headers are still appended,
    * so the test email is byte-for-byte what a real recipient would receive. */
   bypassSuppression?: boolean;
+  /** The caller already applied the global send gates (src/lib/send-gates.ts):
+   * the campaign and sequence senders do, so they can defer without counting a
+   * failed attempt. Everyone else gets the gate here. */
+  skipGate?: boolean;
 } & SendTracking;
 
 /**
@@ -68,6 +74,21 @@ export async function sendMarketingEmail(email: MarketingEmail): Promise<boolean
     // logged so it stays visible in the admin dashboard.
     await logSuppressedSkip(email);
     return true;
+  }
+
+  // Global send rules: one marketing email per person per Pacific day, no
+  // marketing Nov 26-28 2026, push days reserved for the price lock push. A
+  // gated send reports false so funnel crons retry it on a later run. Test
+  // sends and callers that gated already skip this.
+  if (!email.skipGate && !email.bypassSuppression && !/_test$/.test(email.category)) {
+    let gated = false;
+    try {
+      const gate = await marketingGate(createAdminClient(), email.to);
+      gated = !gate.ok;
+    } catch {
+      gated = false; // fail open, like the rest of the engine
+    }
+    if (gated) return false;
   }
 
   // An explicit HTML body wins; otherwise trackOpens synthesizes a minimal one

@@ -189,20 +189,19 @@ describe("buildTrackVars", () => {
 
   it("priceLockLine names the new prices before the change and vanishes after", () => {
     const b = buildPriceLockLine("beginner", "solo", "monthly", NOW_BEFORE);
-    expect(b).toContain("$24.99 to $29/month");
-    expect(b).toContain("November 28");
+    expect(b).toContain("$24.99 to $29.99/month");
+    expect(b).toContain("November 30 at 11:59pm Pacific");
     expect(b).not.toContain("Power User goes");
     const u = buildPriceLockLine("unknown", "solo", "monthly", NOW_BEFORE);
-    expect(u).toContain("Beginner goes from $24.99 to $29/month");
+    expect(u).toContain("Beginner goes from $24.99 to $29.99/month");
     expect(u).toContain("Power User goes from $39 to $49/month");
     expect(buildPriceLockLine("beginner", "solo", "monthly", NOW_AFTER)).toBe("");
     expect(buildTrackVars({ base: "power", now: NOW_AFTER }).priceLockLine).toBe("");
   });
 
-  it("priceLockLine is empty for a seat tier with no announced change", () => {
-    // Power Team is not in PRICE_CHANGE.
-    expect(buildPriceLockLine("power", "team", "monthly", NOW_BEFORE)).toBe("");
-    expect(buildPriceLockLine("beginner", "duo", "annual", NOW_BEFORE)).toContain("$449 to $590/year");
+  it("priceLockLine covers every seat tier in the price lock", () => {
+    expect(buildPriceLockLine("power", "team", "monthly", NOW_BEFORE)).toContain("$129 to $155/month");
+    expect(buildPriceLockLine("beginner", "duo", "annual", NOW_BEFORE)).toContain("$449 to $539/year");
   });
 
   it("goalLine follows the walkthrough goal", () => {

@@ -65,6 +65,11 @@ import { buildCampaignEmail } from "@/lib/campaign-email";
 import { runRecurringIfDue } from "@/lib/recurring-campaign";
 import type { NormalizedAttachment } from "@/lib/email-attachments";
 import { verifyBearer } from "@/lib/auth-secret";
+import { marketingGate } from "@/lib/send-gates";
+import { loadPriceLockPeople, stillInSegment, type PriceLockPeople } from "@/lib/price-lock-audience";
+import { personalizePriceLockBody } from "@/lib/price-lock-emails";
+import { keepPlanUrl } from "@/lib/comp-expiry-customer";
+import { fromLiz } from "@/lib/price-lock-emails";
 import { evaluateExperiments } from "@/lib/email-experiments";
 
 export const runtime = "nodejs";
@@ -137,6 +142,8 @@ type Summary = {
   campaignSent: number;
   campaignSkipped: number;
   campaignFailed: number;
+  campaignDeferred?: number;
+  sequenceDeferred?: number;
   sequenceSent: number;
   sequenceStoppedSubscribed: number;
   // Due steps held back because the recipient's last send failed recently.
@@ -369,6 +376,7 @@ type SendingCampaign = {
   // "lifecycle" (brand domain) or "cold" (separate domain, paused while
   // EMAIL_FROM_COLD is unset). Defaults to "lifecycle" pre-migration.
   stream?: DripStream | null;
+  audience?: unknown;
 };
 
 async function sendCampaignRecipients(db: SupabaseClient, summary: Summary): Promise<void> {
@@ -376,7 +384,7 @@ async function sendCampaignRecipients(db: SupabaseClient, summary: Summary): Pro
   // migration has not been applied so the send engine keeps draining.
   const withStream = await db
     .from("email_campaigns")
-    .select("id, subject, body, attachments, inline_images, stream")
+    .select("id, subject, body, attachments, inline_images, stream, audience")
     .eq("status", "sending")
     .not("materialized_at", "is", null)
     .order("created_at", { ascending: true });
@@ -386,7 +394,7 @@ async function sendCampaignRecipients(db: SupabaseClient, summary: Summary): Pro
     // stream column not applied yet: fall back to the media columns.
     const withMedia = await db
       .from("email_campaigns")
-      .select("id, subject, body, attachments, inline_images")
+      .select("id, subject, body, attachments, inline_images, audience")
       .eq("status", "sending")
       .not("materialized_at", "is", null)
       .order("created_at", { ascending: true });
@@ -396,7 +404,7 @@ async function sendCampaignRecipients(db: SupabaseClient, summary: Summary): Pro
   if (error) {
     const base = await db
       .from("email_campaigns")
-      .select("id, subject, body")
+      .select("id, subject, body, audience")
       .eq("status", "sending")
       .not("materialized_at", "is", null)
       .order("created_at", { ascending: true });
@@ -412,6 +420,21 @@ async function sendCampaignRecipients(db: SupabaseClient, summary: Summary): Pro
   // rolling-hour headroom so campaigns yield to transactional/system volume.
   let budget = marketingRunBudget(safeHourlySends(), await sentInLastHour(db), CAMPAIGN_PER_RUN);
   if (budget <= 0) return;
+
+  // Price lock push: one fresh read of who is in which segment per run, so
+  // anyone who started a trial, paid or added a card since the send began
+  // drops out before their email goes.
+  let pushPeople: PriceLockPeople | null | undefined;
+  const loadPushPeople = async (): Promise<PriceLockPeople | null> => {
+    if (pushPeople !== undefined) return pushPeople;
+    try {
+      pushPeople = await loadPriceLockPeople(db);
+    } catch (err) {
+      reportError("price lock people", err as { message?: string });
+      pushPeople = null;
+    }
+    return pushPeople;
+  };
 
   for (const campaign of (rows ?? []) as SendingCampaign[]) {
     if (budget <= 0) break;
@@ -431,6 +454,11 @@ async function sendCampaignRecipients(db: SupabaseClient, summary: Summary): Pro
       attachments: campaign.attachments ?? [],
       inlineImages: campaign.inline_images ?? [],
     });
+    const parsedAudience = parseAudience(campaign.audience);
+    const push = parsedAudience?.kind === "price_lock" ? parsedAudience : null;
+    const people = push ? await loadPushPeople() : null;
+    // Fail closed for a push: no fresh segment read, no send this run.
+    if (push && !people) continue;
 
     const { data: recipients, error: recErr } = await db
       .from("email_campaign_recipients")
@@ -461,17 +489,57 @@ async function sendCampaignRecipients(db: SupabaseClient, summary: Summary): Pro
         continue;
       }
 
+      // Push recipients must still be in the segment (no trial, no payment, no
+      // card added since the list was built).
+      let mail = built;
+      if (push && people) {
+        if (!push.segments.some((seg) => stillInSegment(people, email, seg))) {
+          await db.from("email_campaign_recipients").update({ status: "skipped" }).eq("id", recipient.id);
+          summary.campaignSkipped += 1;
+          continue;
+        }
+        const compSub = people.compSubIdOf.get(email.trim().toLowerCase());
+        const body = personalizePriceLockBody(campaign.body, {
+          keepPlanUrl: compSub ? keepPlanUrl(compSub, "price-lock") : null,
+        });
+        if (body == null) {
+          await db.from("email_campaign_recipients").update({ status: "skipped" }).eq("id", recipient.id);
+          summary.campaignSkipped += 1;
+          continue;
+        }
+        if (body !== campaign.body) {
+          mail = buildCampaignEmail({
+            body,
+            attachments: campaign.attachments ?? [],
+            inlineImages: campaign.inline_images ?? [],
+          });
+        }
+      }
+
+      // One marketing email per person per Pacific day, no sends Nov 26-28, and
+      // push days reserved for the push. Deferred, not dropped: the recipient
+      // stays queued for a later run.
+      const gate = await marketingGate(db, email, {
+        isPush: Boolean(push),
+        allowSecondToday: Boolean(push?.allowSecondToday),
+      });
+      if (!gate.ok) {
+        summary.campaignDeferred = (summary.campaignDeferred ?? 0) + 1;
+        continue;
+      }
+
       budget -= 1;
       const ok = await sendMarketingEmail({
-        from: campaignFrom,
+        from: push ? fromLiz(campaignFrom) : campaignFrom,
         to: email,
         subject: campaign.subject,
-        text: built.text,
-        html: built.html,
-        attachments: built.attachments,
+        text: mail.text,
+        html: mail.html,
+        attachments: mail.attachments,
         stream: campaignStream,
         category: campaignCategory(campaign.id),
         funnel: "campaign",
+        skipGate: true,
       });
       if (ok) {
         await db
@@ -782,6 +850,14 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
         body = copy.body;
       }
 
+      // Global send rules (one marketing email per Pacific day, Nov 26-28
+      // blackout, push days reserved). Deferred: retried next run.
+      const gate = await marketingGate(db, enrollment.email);
+      if (!gate.ok) {
+        summary.sequenceDeferred = (summary.sequenceDeferred ?? 0) + 1;
+        continue;
+      }
+
       seqBudget -= 1;
       globalRemaining -= 1;
       // No-op unless the body carries placeholders: {{REVIEW_*}} (the review
@@ -807,6 +883,7 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
         category: stepCategory(seq.id, nextStep.position),
         funnel: "sequence",
         stream: seq.stream,
+        skipGate: true,
       });
       // On failure, stamp nothing: the enrollment retries next run.
       if (!ok) continue;

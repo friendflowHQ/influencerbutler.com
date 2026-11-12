@@ -202,11 +202,7 @@ function sampleTrackVars(site: string): Record<string, unknown> {
   const power = LEVEL_PRICE_CENTS.power.solo?.monthly ?? 0;
   const beginner = LEVEL_PRICE_CENTS.beginner.solo?.monthly ?? 0;
   const priceLockLine = priceChangeActive()
-    ? `Prices go up on ${new Date(PRICE_CHANGE.effectiveAt).toLocaleDateString("en-US", {
-        month: "long",
-        day: "numeric",
-        timeZone: "America/Denver",
-      })}. Start before then and you keep today's price for as long as you stay subscribed.`
+    ? `Prices go up after ${PRICE_CHANGE.dayLabel}. Start before then and you keep today's price for as long as you stay subscribed.`
     : "";
   return {
     aiLine:

@@ -14,6 +14,7 @@ import { NextResponse } from "next/server";
 import { readExtensionFlags, versionOf } from "@/lib/extension-flags";
 import { corsHeaders, jsonWithCors, optionsResponse } from "@/lib/extension-api";
 import { getAdmin, activeBanners } from "@/lib/events";
+import { priceChangeActive } from "@/lib/pricing-constants";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -77,6 +78,13 @@ export async function GET(request: Request) {
       // A banner-merge failure must never break the kill-switch feed.
       console.error("extension/flags: banner merge failed", e);
     }
+  }
+
+  // Price lock (until Nov 30 2026, 11:59pm Pacific): with no env notice and no
+  // event banner, the popup shows the price notice. It stops on its own at the
+  // deadline (no extension release, no env edit).
+  if (!flags.notice && priceChangeActive()) {
+    flags.notice = "Prices go up Nov 30. Lock today's price forever: influencerbutler.com/pricing";
   }
 
   // Recompute the version over the merged payload so a banner change (or its

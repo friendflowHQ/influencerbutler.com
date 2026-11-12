@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import {
   lsApi,
-  resolveVariantId,
+  resolveCheckoutVariant,
   isAddonVariant,
   hasLiveSubscriptionForEmail,
 } from "@/lib/lemonsqueezy";
@@ -18,6 +18,7 @@ import {
 } from "@/lib/promo";
 import { resolveCheckoutDiscount, affiliateCaptureCustom } from "@/lib/promo-resolver";
 import { planMetaFor } from "@/lib/pricing-constants";
+import { keepsPreDeadlinePrice } from "@/lib/price-lock";
 import { readGeo, upsertCheckoutGeo } from "@/lib/recent-activity";
 import {
   compGrantsForUser,
@@ -64,7 +65,10 @@ export async function POST(request: Request) {
       shownTier: rawShownTier,
     } = (await request.json()) as CheckoutRequestBody;
 
-    const variantResolution = resolveVariantId(plan, variantIdFromBody);
+    // Price lock: new checkouts get today's variant before the deadline and the
+    // new-price variant after it (legacy plan strings move to Power User).
+    // Re-resolved below for a no-card trial that started before the deadline.
+    let variantResolution = resolveCheckoutVariant(plan, variantIdFromBody);
 
     if (!variantResolution.ok) {
       if (variantResolution.reason === "missing-env") {
@@ -73,7 +77,7 @@ export async function POST(request: Request) {
       }
       return NextResponse.json({ error: "Missing plan or variantId" }, { status: 400 });
     }
-    const { variantId } = variantResolution;
+    let { variantId } = variantResolution;
 
     // Phase F belt 1: Daily Deals Workspace add-on never accepts promo or
     // affiliate codes. Compute the flag once and short-circuit every
@@ -155,6 +159,16 @@ export async function POST(request: Request) {
         );
       }
 
+      // A trial that started before the price lock deadline converts at the
+      // old price, even when the card is added after it (owner rule 3).
+      if (variantResolution.ok && variantResolution.family === "next" && keepsPreDeadlinePrice(grants)) {
+        const grandfathered = resolveCheckoutVariant(plan, variantIdFromBody, { family: "current" });
+        if (grandfathered.ok) {
+          variantResolution = grandfathered;
+          variantId = grandfathered.variantId;
+        }
+      }
+
       const running = runningComp(proCoveringComps(grants));
       if (running) {
         const hasTrial = await variantHasFreeTrial(variantId);
@@ -203,7 +217,9 @@ export async function POST(request: Request) {
     // Best-code wins discount, first-touch affiliate gets aff_ref (independent).
     // The plan metadata (price + interval) is required to compute lifetime $ value
     // across candidates; we treat unknown plans like a 1-cycle no-op horizon.
-    const planMeta = planMetaFor(plan) ?? { priceCents: 0, interval: "month" };
+    const soldPlan = variantResolution.ok ? (variantResolution.plan ?? plan) : plan;
+    const soldFamily = variantResolution.ok ? variantResolution.family : undefined;
+    const planMeta = planMetaFor(soldPlan, soldFamily) ?? { priceCents: 0, interval: "month" };
 
     const resolved: Awaited<ReturnType<typeof resolveCheckoutDiscount>> = isAddon
       ? { winner: null, attribution: null, intendedAffiliate: null, candidates: [] }
@@ -252,6 +268,8 @@ export async function POST(request: Request) {
       product_options: {
         redirect_url: `${siteUrl.replace(/\/$/, "")}/welcome`,
       },
+      // An old-price checkout stops working 2 hours after the deadline.
+      ...(variantResolution.ok && variantResolution.expiresAt ? { expires_at: variantResolution.expiresAt } : {}),
     };
 
     const lsResponse = await lsApi("/checkouts", {

@@ -48,7 +48,7 @@ function levelAnnualSavingsPct(level: PlanLevel, tier: Tier): number {
 function priceChangeLine(level: PlanLevel, tier: Tier, cadence: Interval): string | null {
   const future = levelFuturePriceCents(level, tier, cadence);
   if (future == null) return null;
-  return `From November 28: ${formatPrice(future)}${cadence === "monthly" ? "/month" : "/year"}. Subscribe before then and keep today's price.`;
+  return `From December 1: ${formatPrice(future)}${cadence === "monthly" ? "/month" : "/year"}. Subscribe before then and keep today's price.`;
 }
 
 function formatDate(iso: string | null): string | null {

@@ -328,7 +328,7 @@ describe("computeFunnelArmStats", () => {
 });
 
 describe("priceLockStopNeeded", () => {
-  const after = Date.parse("2026-12-01T00:00:00Z");
+  const after = Date.parse("2026-12-02T00:00:00Z");
   const before = Date.parse("2026-11-20T00:00:00Z");
   const lockControl = { subject: "Hi", body: "Body {{priceLockLine}}" };
 
@@ -345,7 +345,7 @@ describe("priceLockStopNeeded", () => {
     });
     expect(priceLockStopNeeded(both, after, lockControl)).toBe(false);
     expect(priceLockStopNeeded(exp(), after, { subject: "Hi", body: "No lock" })).toBe(false);
-    expect(priceLockStopNeeded(exp({ startedAt: "2026-11-30T00:00:00Z" }), after, lockControl)).toBe(false);
+    expect(priceLockStopNeeded(exp({ startedAt: "2026-12-01T09:00:00Z" }), after, lockControl)).toBe(false);
   });
   it("always stops when an explicit arm uses the token", () => {
     const e = exp({

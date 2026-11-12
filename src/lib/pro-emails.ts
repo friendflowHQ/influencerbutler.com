@@ -82,17 +82,13 @@ export function planPriceLabel(level: PlanLevel, now: number = Date.now()): stri
 
 /** Day the price change takes effect, in Mountain time ("November 28"). */
 export function priceChangeDayLabel(): string {
-  return new Date(PRICE_CHANGE.effectiveAt).toLocaleDateString("en-US", {
-    month: "long",
-    day: "numeric",
-    timeZone: "America/Denver",
-  });
+  return PRICE_CHANGE.dayLabel;
 }
 
 /** The generic price-lock sentence, or "" once the change date has passed. */
 export function defaultPriceLockLine(now: number = Date.now()): string {
   if (!priceChangeActive(now)) return "";
-  return `Prices go up on ${priceChangeDayLabel()} (10pm Mountain). Subscribe before then and you keep today's price for as long as your subscription stays active.`;
+  return `Prices go up after ${priceChangeDayLabel()} (11:59pm Pacific). Subscribe before then and you keep today's price for as long as your subscription stays active.`;
 }
 
 /** Plan-neutral fallback track vars. Every claim matches pricing-constants and

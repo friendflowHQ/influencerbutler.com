@@ -25,7 +25,7 @@ export const RECURRING_MIN_TO_SEND = 25;
 /** First automatic run: Monday Oct 26 2026, 5:00 PM MDT (the evening hour that worked). */
 export const RECURRING_FIRST_RUN_AT = "2026-10-26T23:00:00.000Z";
 /** Dec 1 2026, 00:00 Mountain (MST, UTC-7). Sends on or after this drop the pricing P.S. */
-export const PRICING_NOTE_ENDS_AT = "2026-12-01T07:00:00.000Z";
+export const PRICING_NOTE_ENDS_AT = "2026-12-01T08:00:00.000Z"; // = PRICE_CHANGE.effectiveAt (Nov 30 11:59pm Pacific)
 export const RECURRING_SUBJECT =
   "Someone asked for a feature at lunch. It shipped before the game ended.";
 

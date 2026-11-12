@@ -16,6 +16,7 @@ import {
   levelPriceCents,
   levelFuturePriceCents,
   priceChangeActive,
+  priceFamilyAt,
   planMetaFor,
   tierForPlan,
 } from "../pricing-constants";
@@ -61,24 +62,44 @@ describe("level plan strings", () => {
     for (const tier of ["solo", "duo", "team", "agency"] as const) {
       expect(LEVEL_PRICE_CENTS.power[tier]).toEqual(PRICE_CENTS[tier]);
     }
-    expect(levelPriceCents("beginner", "solo", "monthly")).toBe(2499);
-    expect(levelPriceCents("beginner", "team", "monthly")).toBeNull();
-    expect(planMetaFor("beginner-solo-monthly")).toEqual({ priceCents: 2499, interval: "month" });
-    expect(planMetaFor("power-trio-annual")).toEqual({ priceCents: 69000, interval: "year" });
-    expect(planMetaFor("beginner-team-monthly")).toBeNull();
+    expect(levelPriceCents("beginner", "solo", "monthly", "current")).toBe(2499);
+    expect(levelPriceCents("beginner", "team", "monthly", "current")).toBeNull();
+    expect(planMetaFor("beginner-solo-monthly", "current")).toEqual({ priceCents: 2499, interval: "month" });
+    expect(planMetaFor("power-trio-annual", "current")).toEqual({ priceCents: 69000, interval: "year" });
+    expect(planMetaFor("beginner-team-monthly", "current")).toBeNull();
+    // The new-price family (price lock, owner-approved 2026-11-11).
+    expect(planMetaFor("beginner-solo-monthly", "next")).toEqual({ priceCents: 2999, interval: "month" });
+    expect(planMetaFor("beginner-solo-annual", "next")).toEqual({ priceCents: 29900, interval: "year" });
+    expect(planMetaFor("power-agency-annual", "next")).toEqual({ priceCents: 359000, interval: "year" });
+    // Legacy plans never change price.
+    expect(planMetaFor("monthly", "next")).toEqual({ priceCents: 3900, interval: "month" });
   });
 
-  it("price change: active before November 28 2026 10pm MST with the announced numbers, gone after", () => {
+  it("price lock: active until Nov 30 2026 11:59pm Pacific with the approved numbers, gone after", () => {
     const before = Date.parse("2026-11-01T00:00:00Z");
-    const after = Date.parse("2026-11-29T05:00:01Z");
+    const lastSecond = Date.parse("2026-12-01T07:59:59Z"); // Nov 30 11:59:59pm PST
+    const after = Date.parse("2026-12-01T08:00:00Z");
     expect(priceChangeActive(before)).toBe(true);
+    expect(priceChangeActive(lastSecond)).toBe(true);
     expect(priceChangeActive(after)).toBe(false);
-    expect(levelFuturePriceCents("beginner", "solo", "monthly", before)).toBe(2900);
+    expect(priceFamilyAt(lastSecond)).toBe("current");
+    expect(priceFamilyAt(after)).toBe("next");
+    expect(levelFuturePriceCents("beginner", "solo", "monthly", before)).toBe(2999);
+    expect(levelFuturePriceCents("beginner", "duo", "monthly", before)).toBe(5399);
+    expect(levelFuturePriceCents("beginner", "agency", "annual", before)).toBe(239000);
     expect(levelFuturePriceCents("power", "solo", "monthly", before)).toBe(4900);
-    expect(levelFuturePriceCents("power", "duo", "monthly", before)).toBe(8900);
-    expect(levelFuturePriceCents("power", "team", "monthly", before)).toBeNull();
+    expect(levelFuturePriceCents("power", "duo", "monthly", before)).toBe(8300);
+    expect(levelFuturePriceCents("power", "team", "monthly", before)).toBe(15500);
+    expect(levelFuturePriceCents("power", "agency", "monthly", before)).toBe(35900);
     expect(levelFuturePriceCents("beginner", "solo", "monthly", after)).toBeNull();
-    expect(PRICE_CHANGE.effectiveAt).toBe("2026-11-29T05:00:00Z");
+    expect(PRICE_CHANGE.effectiveAt).toBe("2026-12-01T08:00:00Z");
+    expect(PRICE_CHANGE.whenLabel).toBe("November 30 at 11:59pm Pacific");
+    // Annual is always 10x monthly, rounded to whole dollars.
+    for (const level of ["beginner", "power"] as const) {
+      for (const row of Object.values(PRICE_CHANGE.prices[level])) {
+        expect(Math.abs(row!.annual - row!.monthly * 10)).toBeLessThan(100);
+      }
+    }
   });
 });
 

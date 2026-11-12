@@ -6,6 +6,7 @@ import SwitchToAnnualBanner from "@/components/dashboard/SwitchToAnnualBanner";
 import TestimonialAskBanner from "@/components/dashboard/TestimonialAskBanner";
 import EventBanner from "@/components/dashboard/EventBanner";
 import CompEndingBanner from "@/components/dashboard/CompEndingBanner";
+import PriceLockBanner from "@/components/dashboard/PriceLockBanner";
 import ConciergeBubble from "@/components/dashboard/ConciergeBubble";
 import AdminBadge from "@/components/dashboard/AdminBadge";
 import DashboardUserEmail from "@/components/dashboard/DashboardUserEmail";
@@ -44,6 +45,7 @@ export default async function DashboardLayout({
             <DashboardUserEmail />
             <OpenAppButton />
           </div>
+          <PriceLockBanner />
           <CompEndingBanner />
           <EventBanner />
           <AffiliateUpsellBanner />

@@ -121,7 +121,40 @@ export function campaignPlainText(body: string): string {
  * download; `inlineImages` embed in the body. Pure and deterministic so the
  * test send and the bulk cron produce identical output.
  */
+/**
+ * Optional inbox preview line: a body whose FIRST line is "Preheader: ..."
+ * uses that text as the hidden preview shown next to the subject in the inbox
+ * list. The line itself never appears in the email.
+ */
+const PREHEADER_RE = /^Preheader:[ \t]*([^\n]+)\n(?:\s*\n)?/;
+
+export function splitPreheader(body: string): { preheader: string | null; body: string } {
+  const m = PREHEADER_RE.exec(body.replace(/\r\n/g, "\n"));
+  if (!m) return { preheader: null, body };
+  return { preheader: m[1].trim(), body: body.replace(/\r\n/g, "\n").slice(m[0].length) };
+}
+
+function preheaderHtml(text: string): string {
+  // Hidden preview text, padded so the inbox does not pull body text after it.
+  const pad = "&#847;&zwnj;&nbsp;".repeat(60);
+  return (
+    `<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;font-size:1px;line-height:1px;color:#ffffff;">` +
+    `${escapeHtml(text)}${pad}</div>`
+  );
+}
+
 export function buildCampaignEmail(opts: {
+  body: string;
+  attachments?: NormalizedAttachment[];
+  inlineImages?: NormalizedAttachment[];
+}): BuiltCampaignEmail {
+  const split = splitPreheader(opts.body ?? "");
+  const built = buildCampaignEmailBody({ ...opts, body: split.body });
+  if (split.preheader && built.html) built.html = preheaderHtml(split.preheader) + built.html;
+  return built;
+}
+
+function buildCampaignEmailBody(opts: {
   body: string;
   attachments?: NormalizedAttachment[];
   inlineImages?: NormalizedAttachment[];

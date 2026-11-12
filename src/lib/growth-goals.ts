@@ -6,6 +6,11 @@
 // growth_goals (month, metric) unique constraint so reloads never duplicate.
 // The admin then accepts, edits, or dismisses each suggestion.
 //
+// The "last month" figure on each card is recomputed from the live snapshot
+// on every load (liveBaseline), not read back from the saved `baseline`
+// column: that column is frozen at the month's first visit, so it kept
+// pre-fix counts and a mid-month subscriber count. Saved targets stay as-is.
+//
 // stampAchievements() marks accepted goals whose actual has crossed the
 // target. `celebrated_at` is stamped separately by the UI so the confetti
 // fires exactly once per goal.
@@ -147,9 +152,21 @@ export async function writeMonthMarker(
 // ---------------------------------------------------------------------------
 
 /**
+ * The real "last month" figure for a metric, from the live snapshot:
+ *   - flow metrics (trials, revenue, signups, ...): the previous month's total;
+ *   - active_subscriptions: paying subscribers at the start of the month;
+ *   - facebook_members: last month's ending headcount.
+ * The snapshot already puts each of those in `previous`. Null when unknown.
+ */
+export function liveBaseline(metric: string, snapshot: GrowthSnapshot): number | null {
+  const prev = snapshot.metrics[metric]?.previous;
+  return typeof prev === "number" && Number.isFinite(prev) ? prev : null;
+}
+
+/**
  * Seeds this month's suggested goals once. Baseline is last month's actual;
- * active_subscriptions (a point-in-time metric) baselines on the current
- * count instead.
+ * level metrics (active_subscriptions, facebook_members) baseline on where
+ * they stood when the month began, falling back to the current level.
  */
 export async function ensureSuggestions(
   supabase: GoalsClient,
@@ -167,11 +184,9 @@ export async function ensureSuggestions(
     // Point-in-time LEVEL metrics baseline on where they are now, not on a
     // monthly flow: active_subscriptions and the Facebook group headcount.
     const baseline =
-      def.key === "active_subscriptions"
-        ? snap.current
-        : def.key === "facebook_members"
-          ? (snap.current ?? snap.previous)
-          : snap.previous;
+      def.key === "active_subscriptions" || def.key === "facebook_members"
+        ? (liveBaseline(def.key, snapshot) ?? snap.current)
+        : liveBaseline(def.key, snapshot);
     const target = suggestTarget(def.key, baseline);
     if (target === null) continue;
     rows.push({
@@ -245,7 +260,11 @@ export async function loadGoalsWithAchievements(
       month,
       metric,
       target,
-      baseline: Number.isFinite(Number(raw.baseline)) && raw.baseline !== null ? Number(raw.baseline) : null,
+      // Live figure first; the saved seed-time value only when the snapshot
+      // cannot say (e.g. that metric's query failed).
+      baseline:
+        liveBaseline(metric, snapshot) ??
+        (Number.isFinite(Number(raw.baseline)) && raw.baseline !== null ? Number(raw.baseline) : null),
       status,
       achievedAt,
       celebratedAt,

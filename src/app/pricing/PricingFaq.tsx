@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { priceChangeActive } from "@/lib/pricing-constants";
 
 const FAQ: { q: string; a: ReactNode }[] = [
   {
@@ -34,10 +35,6 @@ const FAQ: { q: string; a: ReactNode }[] = [
     a: "Beginner is the calm start: the starter butlers (AMZ Deals Finder, Message Brands, Daily Commission Butler, Video and Photo Reload, your Foyer page) plus every free tool, with AI included on our key (150 actions a month) and a guided fast track. Power User opens all 50+ butlers, runs AI without a cap on your own OpenAI key, and includes 1:1 call booking. You can upgrade from Beginner to Power User in one click inside the app, with no new license key.",
   },
   {
-    q: "What changes on November 28?",
-    a: "New prices for new subscriptions: Beginner Solo goes to $29 a month, Power User Solo to $49, Power User Trio to $89 (annual plans stay 10 months for the price of 12). Anyone subscribed before that date keeps the price they signed up at for as long as they stay subscribed.",
-  },
-  {
     q: "What happens to my Foyer page if I don't upgrade to Pro?",
     a: "Nothing about the page changes. Your Foyer link-in-bio page and subscriber list stay live and are fully yours, forever. Once your trial ends, sending new newsletters to that list needs an active Pro subscription. We'll email you a heads-up a few days before that happens, and again if it takes effect, so it's never a surprise.",
   },
@@ -67,10 +64,17 @@ const FAQ: { q: string; a: ReactNode }[] = [
   },
 ];
 
+// Shown only until the price lock deadline (the page is force-dynamic).
+const PRICE_LOCK_FAQ = {
+  q: "What changes after November 30?",
+  a: "New prices for new subscriptions that start after November 30 at 11:59pm Pacific: Beginner Solo goes from $24.99 to $29.99 a month ($249 to $299 a year), Power User Solo from $39 to $49 a month ($390 to $490 a year), and the Trio, Team and Agency plans go up about 20%. Anyone subscribed by then, and any trial started by then, keeps today's price for as long as they stay subscribed.",
+};
+
 export default function PricingFaq() {
+  const items = priceChangeActive() ? [...FAQ.slice(0, 4), PRICE_LOCK_FAQ, ...FAQ.slice(4)] : FAQ;
   return (
     <ul className="divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 bg-white">
-      {FAQ.map(({ q, a }) => (
+      {items.map(({ q, a }) => (
         <li key={q}>
           <details className="group">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-sm font-semibold text-slate-900 hover:bg-slate-50 sm:px-6 sm:text-base">

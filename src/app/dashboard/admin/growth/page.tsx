@@ -16,6 +16,7 @@ import ProjectedEarnings from "./ProjectedEarnings";
 import PlanBreakdown from "./PlanBreakdown";
 import GrowthForecast from "./GrowthForecast";
 import FoyerGrowthSection from "./FoyerGrowthSection";
+import PriceLockSection from "./PriceLockSection";
 import {
   catalogEntry,
   currentMonthKey,
@@ -404,6 +405,8 @@ export default function AdminGrowthPage() {
           </div>
         )}
       </section>
+
+      <PriceLockSection />
 
       {!isFuture ? <FoyerGrowthSection month={month} /> : null}
 

@@ -11,8 +11,7 @@
 // manual-recompute admin route (src/app/api/admin/finance/valuation/recompute/route.ts).
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { planForVariantId } from "@/lib/lemonsqueezy";
-import { planMetaFor } from "@/lib/pricing-constants";
+import { planMetaForVariantId } from "@/lib/lemonsqueezy";
 import { DEFAULT_TIMEZONE, localParts, localDateStr, zonedTimeToUtc } from "@/lib/timezone";
 import { deriveMonthlyGrowth } from "@/lib/growth-forecast";
 
@@ -98,7 +97,7 @@ async function activeSubscriptionsAsOf(
 
 /** A plan's list price normalized to a monthly figure (annual plans / 12). */
 function monthlyEquivalentCents(variantId: string | null): number {
-  const meta = planMetaFor(planForVariantId(variantId));
+  const meta = planMetaForVariantId(variantId);
   if (!meta) return 0;
   return meta.interval === "year" ? Math.round(meta.priceCents / 12) : meta.priceCents;
 }

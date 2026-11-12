@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { adminService, type AdminService } from "@/lib/admin-service";
-import { fetchLicenseFromLs, planForVariantId } from "@/lib/lemonsqueezy";
+import { fetchLicenseFromLs, planForVariantId, planMetaForVariantId } from "@/lib/lemonsqueezy";
 import { planMetaFor } from "@/lib/pricing-constants";
 import { hashLicenseKey } from "@/lib/license-auth";
 
@@ -252,7 +252,7 @@ function computePricingInsight(
     (a, b) => subStatusRank(a.status) - subStatusRank(b.status),
   )[0];
 
-  const listMeta = primary ? planMetaFor(planForVariantId(primary.ls_variant_id ?? null)) : null;
+  const listMeta = primary ? planMetaForVariantId(primary.ls_variant_id ?? null) : null;
   const listCents = listMeta ? listMeta.priceCents : null;
 
   const codedOrder = orders.find((o) => (o.discount_code ?? "").trim().length > 0);

@@ -32,6 +32,12 @@ function isAuthorized(request: Request): boolean {
   return verifyBearer(request, "CRON_SECRET");
 }
 
+const PUSH_QUIET_FROM = Date.parse("2026-11-12T08:00:00Z");
+const PUSH_QUIET_UNTIL = Date.parse("2026-12-01T08:00:00Z");
+function newsletterPausedForPush(now: number = Date.now()): boolean {
+  return now >= PUSH_QUIET_FROM && now < PUSH_QUIET_UNTIL;
+}
+
 export async function GET(request: Request) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -42,6 +48,13 @@ export async function GET(request: Request) {
   const configured = Boolean(process.env.RESEND_API_KEY && process.env.RESEND_AUDIENCE_ID);
   if (!configured && !dry) {
     return NextResponse.json({ ok: true, sent: false, reason: "not-configured" });
+  }
+
+  // The weekly newsletter is a Resend Broadcast to the whole list, so it cannot
+  // honour the one-email-a-day rule per person. It sits out the price lock push
+  // (Nov 12 - Nov 30 2026, Pacific) and resumes on its own after.
+  if (!dry && newsletterPausedForPush()) {
+    return NextResponse.json({ ok: true, sent: false, reason: "price-lock-push" });
   }
 
   const state = await readNewsletterState();

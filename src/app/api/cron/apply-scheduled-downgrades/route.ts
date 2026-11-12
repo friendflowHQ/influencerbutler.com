@@ -15,7 +15,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAdminAction } from "@/lib/admin-audit";
-import { lsApi, resolveVariantId } from "@/lib/lemonsqueezy";
+import { lsApi, resolveVariantId, variantFamilyOf, variantIdForPlanInFamily } from "@/lib/lemonsqueezy";
 import { verifyBearer } from "@/lib/auth-secret";
 import { sendDowngradeDigest, type DowngradeRow } from "@/lib/scheduled-downgrade-email";
 import { syncPlanLevelForPlanChange } from "@/lib/plan-level";
@@ -34,7 +34,7 @@ type DueRow = {
 };
 
 type LsSubscriptionResponse = {
-  data?: { attributes?: { status?: string | null } };
+  data?: { attributes?: { status?: string | null; variant_id?: number | string | null } };
 };
 
 export async function GET(request: Request) {
@@ -109,7 +109,14 @@ export async function GET(request: Request) {
         continue;
       }
 
-      const resolution = resolveVariantId(row.scheduled_plan, undefined);
+      // Price lock: stay in the subscriber's own price family (old-price
+      // subscribers downgrade to the old-price variant, even after the deadline).
+      const currentVariant = subPayload.data?.attributes?.variant_id ?? null;
+      const family = variantFamilyOf(currentVariant) ?? "current";
+      const familyId = variantIdForPlanInFamily(row.scheduled_plan, family);
+      const resolution: ReturnType<typeof resolveVariantId> = familyId
+        ? { ok: true, variantId: familyId }
+        : resolveVariantId(row.scheduled_plan, undefined);
       if (!resolution.ok) {
         console.error("apply-scheduled-downgrades: target variant unresolved", {
           lsSubscriptionId: row.ls_subscription_id,

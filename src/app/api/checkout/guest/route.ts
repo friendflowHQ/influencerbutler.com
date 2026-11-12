@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { lsApi, resolveVariantId, isAddonVariant } from "@/lib/lemonsqueezy";
+import { lsApi, resolveCheckoutVariant, isAddonVariant } from "@/lib/lemonsqueezy";
 import { appendAffRef, selfHostedAffiliatesEnabled } from "@/lib/affiliate-lookup";
 import {
   WELCOME_TOKEN_COOKIE,
@@ -88,7 +88,8 @@ export async function GET(request: Request) {
     const rawAffiliateSource = url.searchParams.get("affiliateSource") ?? "";
     const rawShownTier = url.searchParams.get("shownTier");
 
-    const variantResolution = resolveVariantId(plan ?? undefined, variantIdFromQuery ?? undefined);
+    // Price lock aware; a raw ?variantId= must be a known plan variant.
+    const variantResolution = resolveCheckoutVariant(plan ?? undefined, variantIdFromQuery ?? undefined);
 
     if (!variantResolution.ok) {
       if (variantResolution.reason === "missing-env") {
@@ -125,7 +126,8 @@ export async function GET(request: Request) {
       (rawAffiliateSource.trim().length > 0 ? rawAffiliateSource.trim() : null) ??
       readAffiliateSourceCookie(cookieStore);
 
-    const planMeta = planMetaFor(plan) ?? { priceCents: 0, interval: "month" };
+    const planMeta =
+      planMetaFor(variantResolution.plan ?? plan, variantResolution.family) ?? { priceCents: 0, interval: "month" };
 
     const resolved: Awaited<ReturnType<typeof resolveCheckoutDiscount>> = isAddon
       ? { winner: null, attribution: null, intendedAffiliate: null, candidates: [] }
@@ -183,6 +185,8 @@ export async function GET(request: Request) {
       product_options: {
         redirect_url: `${siteUrl.replace(/\/$/, "")}/welcome`,
       },
+      // An old-price checkout stops working 2 hours after the deadline.
+      ...(variantResolution.expiresAt ? { expires_at: variantResolution.expiresAt } : {}),
     };
 
     const lsResponse = await lsApi("/checkouts", {

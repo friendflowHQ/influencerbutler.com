@@ -11,6 +11,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { campaignCategory } from "@/lib/email-marketing";
 
+import {
+  PRICE_LOCK_SEGMENTS,
+  campaignClickers,
+  emailsForSegment,
+  loadPriceLockPeople,
+  type PriceLockSegment,
+} from "@/lib/price-lock-audience";
+
 export type AudienceSegment = "trial" | "pro" | "churned" | "newsletter";
 
 /**
@@ -28,6 +36,15 @@ export type Audience = (
   | { kind: "opened_nonpaid"; minOpens: number; maxOpens?: number; withinDays?: number }
   | { kind: "campaign_nonopeners"; campaignId: string }
   | { kind: "pasted"; emails: string[] }
+  // Price lock push (Nov 2026): live segments, see src/lib/price-lock-audience.ts.
+  | {
+      kind: "price_lock";
+      segments: PriceLockSegment[];
+      /** Keys of earlier push sends whose clickers are left out (Nov 30 6pm). */
+      excludeClickersOf?: string[];
+      /** The Nov 30 6pm exception to one marketing email per day. */
+      allowSecondToday?: boolean;
+    }
 ) & {
   split?: AudienceSplit;
   /**
@@ -36,6 +53,17 @@ export type Audience = (
    */
   excludeCampaignIds?: string[];
 };
+
+/** Campaign ids for price lock send keys (campaign names "Price lock: <key> (...)"). Null on error. */
+export async function campaignIdsForPriceLockKeys(db: SupabaseClient, keys: string[]): Promise<string[] | null> {
+  const ids: string[] = [];
+  for (const key of keys) {
+    const { data, error } = await db.from("email_campaigns").select("id").like("name", `Price lock: ${key} (%`);
+    if (error) return null;
+    for (const row of (data ?? []) as { id: string }[]) ids.push(row.id);
+  }
+  return ids;
+}
 
 export const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -202,6 +230,22 @@ function parseAudienceBase(input: unknown): Audience | null {
     case "campaign_nonopeners": {
       if (typeof raw.campaignId !== "string" || !UUID_RE.test(raw.campaignId)) return null;
       return { kind: "campaign_nonopeners", campaignId: raw.campaignId.toLowerCase() };
+    }
+    case "price_lock": {
+      if (!Array.isArray(raw.segments)) return null;
+      const segments = [...new Set(raw.segments)].filter((x): x is PriceLockSegment =>
+        (PRICE_LOCK_SEGMENTS as readonly unknown[]).includes(x),
+      );
+      if (segments.length === 0 || segments.length !== raw.segments.length) return null;
+      const excludeClickersOf = Array.isArray(raw.excludeClickersOf)
+        ? raw.excludeClickersOf.filter((k): k is string => typeof k === "string" && /^pl-[a-z0-9-]{1,40}$/.test(k))
+        : [];
+      return {
+        kind: "price_lock",
+        segments,
+        ...(excludeClickersOf.length ? { excludeClickersOf } : {}),
+        ...(raw.allowSecondToday === true ? { allowSecondToday: true } : {}),
+      };
     }
     case "pasted": {
       if (!Array.isArray(raw.emails)) return null;
@@ -586,6 +630,26 @@ async function resolveAudienceBase(
   switch (audience.kind) {
     case "pasted":
       return { emails: audience.emails.slice(0, MAX_AUDIENCE), migrationPending: false };
+
+    case "price_lock": {
+      // Throws on a read error; treated as "not ready" so the campaign retries
+      // next run instead of going out to a partial list.
+      try {
+        const people = await loadPriceLockPeople(db);
+        let emails = audience.segments.flatMap((seg) => emailsForSegment(people, seg));
+        if (audience.excludeClickersOf?.length) {
+          const ids = await campaignIdsForPriceLockKeys(db, audience.excludeClickersOf);
+          if (!ids) return { emails: [], migrationPending: true };
+          const clickers = await campaignClickers(db, ids);
+          emails = emails.filter((e) => !clickers.has(e));
+        }
+        // No MAX_AUDIENCE cap: the push must reach the whole approved segment.
+        return { emails: [...new Set(emails)], migrationPending: false };
+      } catch (err) {
+        console.error("email-audience: price lock audience failed", err);
+        return { emails: [], migrationPending: true };
+      }
+    }
 
     case "all_contacts": {
       const ok = await collectSubscribers(db, into, {});

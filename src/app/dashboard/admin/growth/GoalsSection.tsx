@@ -29,6 +29,11 @@ type GoalsResponse = {
   error?: string;
 };
 
+// Headcount metrics: their baseline is where they stood on the 1st (paying
+// subscribers at month start, last month's ending group size), not a monthly
+// total. The API computes every baseline live from the snapshot.
+const LEVEL_METRICS = new Set(["active_subscriptions", "facebook_members"]);
+
 const CARD_ACCENTS = [
   { bar: "bg-indigo-500", ring: "border-indigo-200" },
   { bar: "bg-emerald-500", ring: "border-emerald-200" },
@@ -230,7 +235,8 @@ export default function GoalsSection({
                         {g.baseline !== null && g.baseline > 0 ? (
                           <span className="text-amber-700/70">
                             {" "}
-                            (last month: {formatMetricValue(entry.unit, g.baseline)})
+                            ({LEVEL_METRICS.has(g.metric) ? "start of month" : "last month"}:{" "}
+                            {formatMetricValue(entry.unit, g.baseline)})
                           </span>
                         ) : null}
                       </p>

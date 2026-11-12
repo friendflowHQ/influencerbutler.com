@@ -301,9 +301,9 @@ export default function PricingCardsClient({
 
 function formatChangeDate(): string {
   try {
-    return new Date(PRICE_CHANGE.effectiveAt).toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "UTC" });
+    return PRICE_CHANGE.whenLabel;
   } catch {
-    return "November 28";
+    return "November 30 at 11:59pm Pacific";
   }
 }
 
@@ -351,7 +351,7 @@ function PriceChangeNotice({ level }: { level: PlanLevel }) {
   if (!parts.length) return null;
   return (
     <p className="mx-auto mt-5 max-w-3xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-900">
-      <strong className="font-semibold">Prices go up on {formatChangeDate()}:</strong> {parts.join(", ")}.
+      <strong className="font-semibold">Prices go up after {formatChangeDate()}:</strong> {parts.join(", ")}.
       Buy before then and keep today&apos;s price for as long as you stay subscribed.
     </p>
   );

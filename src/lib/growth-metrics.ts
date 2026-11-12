@@ -13,16 +13,14 @@
 
 import { computeMonthlyEarnings } from "@/lib/affiliate-commissions-data";
 import { SEED_SOURCE } from "@/lib/recent-activity";
-import { planForVariantId } from "@/lib/lemonsqueezy";
+import { planForVariantId, planMetaForVariantId } from "@/lib/lemonsqueezy";
 import {
-  planMetaFor,
   PRICE_CENTS,
   TIER_NAME,
   LEVEL_ORDER,
   LEVEL_NAME,
   levelTiers,
   levelPlanString,
-  levelPriceCents,
   type PlanLevel,
   type Tier,
 } from "@/lib/pricing-constants";
@@ -234,7 +232,7 @@ export function projectedTrialConversionCents(
 ): number {
   let total = 0;
   for (const variantId of variantIds) {
-    const meta = planMetaFor(planForVariantId(variantId));
+    const meta = planMetaForVariantId(variantId);
     total += meta ? meta.priceCents : fallbackCents;
   }
   return total;
@@ -257,6 +255,81 @@ export function billsWithinWindow(
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Statuses after which a subscription no longer bills (its end is `ends_at`). */
+const ENDED_STATUSES = new Set(["cancelled", "expired"]);
+
+function orderCents(row: Record<string, unknown>): number {
+  const total = typeof row.total === "number" ? row.total : Number(row.total ?? 0);
+  return Number.isFinite(total) ? total : 0;
+}
+
+/**
+ * How many PAYING subscribers we had at the instant `atMs`, rebuilt from
+ * history instead of read off today's status column, so a past moment (the
+ * start of the viewed month) can be counted after the fact.
+ *
+ * A subscription counts when all of these hold:
+ *   - it is not the Daily Deals add-on, not an in-house comp (`comp:` id) and
+ *     not in the live comp list;
+ *   - it had at least one non-zero paid order before `atMs`. Comps and trial
+ *     starts are $0, so they never qualify, even when the comp list could not
+ *     be read;
+ *   - it had not ended by `atMs`. A cancelled/expired row ends at `ends_at`;
+ *     with no `ends_at` we assume one billing period (31 days, or 366 for an
+ *     annual plan) after its last paid charge. Any other status (active,
+ *     past_due, paused, ...) is still live today, so it was live then too.
+ *
+ * `orders` should be paid orders (status = 'paid'); rows without a
+ * subscription id or with a non-positive total are ignored.
+ */
+export function activeSubscribersAt(
+  subs: Record<string, unknown>[],
+  orders: Record<string, unknown>[],
+  atMs: number,
+  opts: { compSubscriptionIds?: ReadonlySet<string> | null; addonVariant?: string } = {},
+): number {
+  const firstPaid = new Map<string, number>();
+  const lastPaid = new Map<string, number>();
+  for (const o of orders) {
+    if (orderCents(o) <= 0) continue;
+    const subId = String(o.ls_subscription_id ?? "");
+    if (!subId) continue;
+    const ts = typeof o.created_at === "string" ? Date.parse(o.created_at) : NaN;
+    if (!Number.isFinite(ts)) continue;
+    const first = firstPaid.get(subId);
+    if (first === undefined || ts < first) firstPaid.set(subId, ts);
+    const last = lastPaid.get(subId);
+    if (last === undefined || ts > last) lastPaid.set(subId, ts);
+  }
+
+  const addonVariant = opts.addonVariant ?? "";
+  let count = 0;
+  const seen = new Set<string>();
+  for (const sub of subs) {
+    const subId = String(sub.ls_subscription_id ?? "");
+    if (!subId || seen.has(subId)) continue;
+    seen.add(subId);
+    if (subId.startsWith("comp:")) continue;
+    if (opts.compSubscriptionIds?.has(subId)) continue;
+    if (addonVariant !== "" && String(sub.ls_variant_id ?? "") === addonVariant) continue;
+
+    const started = firstPaid.get(subId);
+    if (started === undefined || started >= atMs) continue;
+
+    if (ENDED_STATUSES.has(String(sub.status ?? ""))) {
+      let endMs = typeof sub.ends_at === "string" ? Date.parse(sub.ends_at) : NaN;
+      if (!Number.isFinite(endMs)) {
+        const meta = planMetaForVariantId(sub.ls_variant_id == null ? null : String(sub.ls_variant_id));
+        const periodDays = meta?.interval === "year" ? 366 : 31;
+        endMs = (lastPaid.get(subId) ?? started) + periodDays * DAY_MS;
+      }
+      if (endMs <= atMs) continue;
+    }
+    count += 1;
+  }
+  return count;
+}
 
 const BREAKDOWN_TIERS = ["solo", "duo", "team", "agency"] as const;
 const BREAKDOWN_INTERVALS = ["monthly", "annual"] as const;
@@ -320,6 +393,7 @@ export function planBreakdownFor(
   }
   const other: PlanBreakdownRow = { plan: "other", label: "Other / unmapped plan", section: "other", active: 0, comped: 0, onTrial: 0, mrrCents: null };
 
+  const levelMrr = new Map<string, number>();
   const tally = (list: Record<string, unknown>[], field: "active" | "onTrial") => {
     for (const r of list) {
       const plan = planForVariantId(r.ls_variant_id == null ? null : String(r.ls_variant_id));
@@ -327,6 +401,14 @@ export function planBreakdownFor(
       target[field] += 1;
       if (field === "active" && compSubscriptionIds.has(String(r.ls_subscription_id ?? ""))) {
         target.comped += 1;
+      } else if (field === "active" && plan) {
+        // Price by the variant actually held: after the price lock deadline a
+        // plan has old-price and new-price subscribers side by side.
+        const meta = planMetaForVariantId(r.ls_variant_id == null ? null : String(r.ls_variant_id));
+        if (meta) {
+          const monthly = meta.interval === "year" ? meta.priceCents / 12 : meta.priceCents;
+          levelMrr.set(plan, (levelMrr.get(plan) ?? 0) + monthly);
+        }
       }
     }
   };
@@ -345,9 +427,7 @@ export function planBreakdownFor(
     for (const tier of levelTiers(level)) {
       for (const interval of BREAKDOWN_INTERVALS) {
         const row = byPlan.get(levelPlanString(level, tier, interval))!;
-        const priceCents = levelPriceCents(level, tier, interval) ?? 0;
-        const monthlyCents = interval === "monthly" ? priceCents : priceCents / 12;
-        row.mrrCents = Math.round((row.active - row.comped) * monthlyCents);
+        row.mrrCents = Math.round(levelMrr.get(levelPlanString(level, tier, interval)) ?? 0);
       }
     }
   }
@@ -395,7 +475,7 @@ export function splitProjectionByPayout(
 
   const priceRow = (row: Record<string, unknown>): number => {
     const variantId = row.ls_variant_id == null ? null : String(row.ls_variant_id);
-    const meta = planMetaFor(planForVariantId(variantId));
+    const meta = planMetaForVariantId(variantId);
     return meta ? meta.priceCents : fallbackCents;
   };
 
@@ -705,13 +785,25 @@ export async function computeGrowthSnapshot(
    * Zero-total orders (trial starts, 100%-off comp checkouts), comps and the
    * add-on are excluded. Renewals never count: only each customer's first
    * charge does.
+   *
+   * The raw paid orders and subscription rows come back too, so the
+   * active-subscriber count at the start of the month can be rebuilt from the
+   * same history (see activeSubscribersAt).
    */
-  async function loadFirstPaidStarts(): Promise<Record<string, unknown>[] | null> {
+  async function loadPaidHistory(): Promise<{
+    starts: Record<string, unknown>[];
+    orders: Record<string, unknown>[];
+    subs: Record<string, unknown>[];
+  } | null> {
     const [orders, subs] = await Promise.all([
       allRows("orders", "created_at,user_id,ls_subscription_id,total", "created_at", (c) =>
         c.eq("status", "paid").not("ls_subscription_id", "is", null).lt("created_at", bounds!.nextIso),
       ),
-      allRows("subscriptions", "ls_subscription_id,user_id,ls_variant_id,trial_started_at", "ls_subscription_id"),
+      allRows(
+        "subscriptions",
+        "ls_subscription_id,user_id,ls_variant_id,trial_started_at,status,ends_at",
+        "ls_subscription_id",
+      ),
     ]);
     if (!orders || !subs) return null;
     const subById = new Map<string, Record<string, unknown>>();
@@ -733,13 +825,13 @@ export async function computeGrowthSnapshot(
         wasTrial: sub ? sub.trial_started_at != null : false,
       });
     }
-    return [...firstByUser.values()];
+    return { starts: [...firstByUser.values()], orders, subs };
   }
 
   const [
     trialClickRows,
     trialStartRows,
-    paidStarts,
+    paidHistory,
     activeRows,
     orderRows,
     affSignupRows,
@@ -759,27 +851,13 @@ export async function computeGrowthSnapshot(
     windowRows("subscriptions", "trial_started_at", "trial_started_at", (c) =>
       c.not("trial_started_at", "is", null),
     ),
-    // First-ever paid charge per customer (see loadFirstPaidStarts).
-    loadFirstPaidStarts(),
+    // First-ever paid charge per customer, plus the raw history (see loadPaidHistory).
+    loadPaidHistory(),
     // Point-in-time: every active/on-trial sub, filtered for the addon
-    // variant in code.
-    (async () => {
-      try {
-        const res = await supabase
-          .from("subscriptions")
-          .select("status,ls_variant_id,renews_at,ls_subscription_id")
-          .not("status", "in", '("cancelled","expired")')
-          .limit(ROW_LIMIT);
-        if (res.error) {
-          console.error("growth snapshot: live subs query failed", res.error);
-          return null;
-        }
-        return res.data ?? [];
-      } catch (err) {
-        console.error("growth snapshot: live subs query threw", err);
-        return null;
-      }
-    })(),
+    // variant in code. Paged: a single read stops at Supabase's 1000-row cap.
+    allRows("subscriptions", "status,ls_variant_id,renews_at,ls_subscription_id", "ls_subscription_id", (c) =>
+      c.not("status", "in", '("cancelled","expired")'),
+    ),
     windowRows("orders", "created_at,total", "created_at", (c) => c.eq("status", "paid")),
     windowRows("affiliate_applications", "created_at", "created_at"),
     windowRows("affiliate_clicks", "created_at", "created_at", (c) => c.eq("is_bot", false)),
@@ -848,6 +926,7 @@ export async function computeGrowthSnapshot(
   // New subscriptions = customers whose FIRST real (non-zero) charge fell in
   // the month. Trial conversions = the subset of those whose paying
   // subscription started as a free trial. Each customer counts once, ever.
+  const paidStarts = paidHistory ? paidHistory.starts : null;
   if (paidStarts) {
     metrics.new_subscriptions = bucket(paidStarts, "ts");
     metrics.trial_conversions = bucket(
@@ -863,6 +942,17 @@ export async function computeGrowthSnapshot(
     const activeAll = live.filter((r) => r.status === "active");
     // Paying subscribers only: this feeds the tile, goals, digests and projections.
     activeLive = activeAll.filter((r) => !isComp(r));
+    if (compSubscriptionIds == null && paidHistory) {
+      // The comp list could not be read, so isComp() matched nobody. Comps are
+      // never charged, so keep only subs with a real (non-zero) paid order
+      // rather than counting every comp as a paying subscriber.
+      const paidSubIds = new Set(
+        paidHistory.orders
+          .filter((o) => orderCents(o) > 0)
+          .map((o) => String(o.ls_subscription_id ?? "")),
+      );
+      activeLive = activeLive.filter((r) => paidSubIds.has(String(r.ls_subscription_id ?? "")));
+    }
     metrics.active_subscriptions = {
       current: activeLive.length,
       previous: null,
@@ -874,6 +964,22 @@ export async function computeGrowthSnapshot(
       series: null,
     };
     planBreakdown = planBreakdownFor(activeAll, onTrialLive, compSubscriptionIds ?? undefined);
+  }
+  // Active subscribers is a level, not a monthly flow, so its "previous" is the
+  // paying headcount at the START of the viewed month (the 1st, 00:00 local),
+  // rebuilt from paid orders + ends_at. That is the number the goal cards show
+  // as "last month", and for the current month it is also the fair
+  // month-to-date comparison for today's count.
+  if (paidHistory) {
+    const atStart = activeSubscribersAt(paidHistory.subs, paidHistory.orders, Date.parse(bounds.startIso), {
+      compSubscriptionIds,
+      addonVariant,
+    });
+    metrics.active_subscriptions = {
+      ...metrics.active_subscriptions,
+      previous: atStart,
+      ...(throughDay != null ? { previousToDate: atStart } : {}),
+    };
   }
   metrics.revenue_cents = bucket(orderRows, "created_at", (row) =>
     typeof row.total === "number" && Number.isFinite(row.total) ? row.total : 0,

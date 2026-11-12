@@ -82,7 +82,7 @@ export type UpgradeVars = {
 /** "Upgrade before Nov 28 and keep today's Power User price", or "". */
 export function upgradePriceLockLine(now: number = Date.now()): string {
   if (!priceChangeActive(now)) return "";
-  return `Power User prices go up on ${priceChangeDayLabel()} (10pm Mountain). Switch before then and you keep today's Power User price for as long as you stay subscribed.`;
+  return `Power User prices go up after ${priceChangeDayLabel()} (11:59pm Pacific). Switch before then and you keep today's Power User price for as long as you stay subscribed.`;
 }
 
 /** Fills every upgrade var from whatever the caller passed (cron vars, admin

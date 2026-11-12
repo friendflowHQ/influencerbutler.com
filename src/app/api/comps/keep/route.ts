@@ -13,7 +13,8 @@
  */
 import { NextResponse } from "next/server";
 import { adminService } from "@/lib/admin-service";
-import { lsApi, resolveVariantId } from "@/lib/lemonsqueezy";
+import { lsApi, postDeadlineVariantFor, resolveCheckoutVariant } from "@/lib/lemonsqueezy";
+import { PRICE_CHANGE, priceChangeActive } from "@/lib/pricing-constants";
 import { siteUrl, verifyKeepPlanToken, formatCompDate } from "@/lib/comp-expiry-customer";
 import { compGrantsForUser, isCompSubscriptionId, variantHasFreeTrial } from "@/lib/comp-conversion";
 
@@ -76,10 +77,15 @@ export async function GET(request: Request) {
   const sub = (await svc.from("subscriptions").select("ls_variant_id").eq("ls_subscription_id", compId).maybeSingle()).data;
   let variantId = sub?.ls_variant_id != null ? String(sub.ls_variant_id) : null;
   if (!variantId) {
-    const fallback = resolveVariantId("monthly", undefined);
+    const fallback = resolveCheckoutVariant("monthly", undefined);
     variantId = fallback.ok ? fallback.variantId : null;
   }
   if (!variantId) return page("Something went wrong", "Please try again in a few minutes.", 500);
+  // Price lock: a card added before the deadline keeps the comp's plan at
+  // today's price; after the deadline it is the new price (legacy plans move
+  // to Power User), same as any new checkout.
+  variantId = postDeadlineVariantFor(variantId);
+  const lockOpen = priceChangeActive();
 
   // The delayed first charge rides on the plan's free trial. If this variant has
   // none, LS would charge at checkout, which breaks our promise, so stop here.
@@ -112,6 +118,10 @@ export async function GET(request: Request) {
             custom: { supabase_user_id: userId, comp_keep: compId, comp_keep_src: src },
           },
           product_options: { redirect_url: `${siteUrl()}/welcome?from=comp` },
+          // An old-price checkout stops working 2 hours after the deadline.
+          ...(lockOpen
+            ? { expires_at: new Date(Date.parse(PRICE_CHANGE.effectiveAt) + 2 * 60 * 60 * 1000).toISOString() }
+            : {}),
         },
         relationships: {
           store: { data: { type: "stores", id: storeId } },

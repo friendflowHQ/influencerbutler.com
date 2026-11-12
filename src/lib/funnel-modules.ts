@@ -108,12 +108,8 @@ export function trackVars(v: TrackCopyVars, base: PlanBase = "unknown"): TrackVa
   const lockProvided = Object.prototype.hasOwnProperty.call(v, "priceLockLine") && v.priceLockLine != null;
   let priceLockLine = lockProvided ? String(v.priceLockLine).trim() : "";
   if (!lockProvided && priceChangeActive()) {
-    const when = new Date(PRICE_CHANGE.effectiveAt).toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      timeZone: "America/Denver",
-    });
-    priceLockLine = `Prices go up for new subscriptions on ${when}. Start before then and you keep today's price for as long as you stay subscribed.`;
+    const when = PRICE_CHANGE.dayLabel;
+    priceLockLine = `Prices go up for new subscriptions after ${when}. Start before then and you keep today's price for as long as you stay subscribed.`;
   }
   return {
     aiLine: str(v, "aiLine", aiFallback),

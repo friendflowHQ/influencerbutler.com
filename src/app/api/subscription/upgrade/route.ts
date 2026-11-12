@@ -8,6 +8,9 @@ import {
   resolveVariantId,
   isAddonVariant,
   planForVariantId,
+  planMetaForVariantId,
+  variantFamilyOf,
+  variantIdForPlanInFamily,
 } from "@/lib/lemonsqueezy";
 import { planMetaFor, ADDON_PLAN_DAILY_DEALS } from "@/lib/pricing-constants";
 import { syncPlanLevelForPlanChange } from "@/lib/plan-level";
@@ -164,7 +167,14 @@ export async function POST(request: Request) {
         );
       }
 
-      const resolution = resolveVariantId(targetPlan, undefined);
+      // Price lock: a subscriber keeps their price family when they change tier
+      // or cadence, so someone on an old-price variant switches to the old-price
+      // variant of the new plan, even after the deadline.
+      const family = variantFamilyOf(currentVariantId) ?? "current";
+      const familyId = variantIdForPlanInFamily(targetPlan, family);
+      const resolution: ReturnType<typeof resolveVariantId> = familyId
+        ? { ok: true, variantId: familyId }
+        : resolveVariantId(targetPlan, undefined);
       if (!resolution.ok) {
         console.error("upgrade: target variant unresolved", { targetPlan, resolution });
         return NextResponse.json(
@@ -183,8 +193,8 @@ export async function POST(request: Request) {
       // prorated difference lands immediately. Downgrades swap right away and
       // leave the proration credit on the account for future invoices, and a
       // trial is never invoiced until it ends.
-      const currentMeta = planMetaFor(currentPlan);
-      const targetMeta = planMetaFor(targetPlan);
+      const currentMeta = planMetaForVariantId(currentVariantId) ?? planMetaFor(currentPlan, "current");
+      const targetMeta = planMetaFor(targetPlan, familyId ? family : "current");
       invoiceImmediately =
         status === "active" &&
         currentMeta != null &&
