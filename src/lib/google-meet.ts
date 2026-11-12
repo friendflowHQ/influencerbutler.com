@@ -185,7 +185,10 @@ export async function checkGoogleConnection(refreshToken: string): Promise<{ ok:
     }
     const token = ((await res.json()) as { access_token?: string }).access_token;
     if (!token) return { ok: false, reason: "Google returned no access token." };
-    const cal = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary", { headers: { Authorization: `Bearer ${token}` } });
+    // Probe with an events read: calendar.events (what Meet creation needs)
+    // allows it, while GET calendars/primary needs a broader calendar scope and
+    // 403'd on a healthy connection, showing a false "Connection broken".
+    const cal = await fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events?maxResults=1", { headers: { Authorization: `Bearer ${token}` } });
     if (!cal.ok) {
       const t = await cal.text().catch(() => "");
       if (cal.status === 403 && /accessNotConfigured|has not been used|disabled/i.test(t)) {
