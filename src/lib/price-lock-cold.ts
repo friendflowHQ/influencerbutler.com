@@ -17,6 +17,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { COLD_SEGMENT_TAG, loadPriceLockPeople, nonUnsubscribeClickIds } from "@/lib/price-lock-audience";
 
 const PAGE = 1000;
+/** Sequence steps are capped at 20 by the admin API; positions start at 0 or 1. */
+const MAX_STEP_POSITION = 20;
 
 export function isColdOwner(row: { stream?: unknown; name?: unknown; trigger?: unknown; apply_tag?: unknown }): boolean {
   if (row.stream === "cold") return true;
@@ -113,16 +115,23 @@ export async function coldReport(db: SupabaseClient, opts: { write?: boolean } =
     });
   }
 
-  const rows: SendRow[] = [];
+  // Exact categories only, so every read uses email_sends_category_idx
+  // (category, created_at). A LIKE prefix scan times out on the full table.
+  const categories: string[] = [];
   for (const { prefix } of prefixes) {
+    if (prefix.startsWith("campaign_")) categories.push(prefix);
+    else for (let pos = 0; pos <= MAX_STEP_POSITION; pos += 1) categories.push(`${prefix}s${pos}`);
+  }
+  const rows: SendRow[] = [];
+  for (const category of categories) {
     for (let from = 0; ; from += PAGE) {
       const { data, error } = await db
         .from("email_sends")
         .select("recipient, category, subject, status, resend_id, opened_at, clicked_at, bounced_at, complained_at")
-        .like("category", `${prefix}%`)
-        .order("created_at")
+        .eq("category", category)
+        .order("created_at", { ascending: false })
         .range(from, from + PAGE - 1);
-      if (error) throw new Error(`could not read email_sends (${prefix}): ${error.message ?? error.code ?? "unknown"}`);
+      if (error) throw new Error(`could not read email_sends (${category}): ${error.message ?? error.code ?? "unknown"}`);
       rows.push(...((data ?? []) as SendRow[]));
       if (!data || data.length < PAGE) break;
     }

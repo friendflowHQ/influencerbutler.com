@@ -306,7 +306,7 @@ export async function campaignClickers(db: SupabaseClient, campaignIds: string[]
           .select("recipient, resend_id, clicked_at")
           .eq("category", category)
           .not("clicked_at", "is", null)
-          .order("id")
+          .order("created_at", { ascending: false })
           .range(a, b),
       )) ?? [];
     const realClicks = await nonUnsubscribeClickIds(db, rows.map((r) => r.resend_id).filter((x): x is string => !!x));

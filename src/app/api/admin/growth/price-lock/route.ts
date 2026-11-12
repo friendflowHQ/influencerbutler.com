@@ -145,7 +145,13 @@ export async function GET(request: Request) {
       const clickers = new Set<string>();
       for (const category of categoryOfGroup[group]) {
         const rows = await pageAll<{ recipient: string; clicked_at: string | null }>((a, b) =>
-          db.from("email_sends").select("recipient, clicked_at").eq("category", category).eq("status", "sent").order("id").range(a, b),
+          db
+            .from("email_sends")
+            .select("recipient, clicked_at")
+            .eq("category", category)
+            .eq("status", "sent")
+            .order("created_at", { ascending: false })
+            .range(a, b),
         );
         sent += rows.length;
         for (const r of rows) if (r.clicked_at) clickers.add(r.recipient);

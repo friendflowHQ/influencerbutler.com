@@ -172,6 +172,7 @@ export async function POST(request: Request) {
           bypassSuppression: true,
         });
         results.push({ key: e.key, ok });
+        await new Promise((resolve) => setTimeout(resolve, 600)); // stay under Resend's rate limit
       }
       return NextResponse.json({ ok: results.every((r) => r.ok), results });
     }
