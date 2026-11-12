@@ -34,6 +34,8 @@ export type PriceLockEmail = {
   cold?: boolean;
   /** Long-form emails offer monthly and annual buttons (owner request 2026-11-11). */
   maxButtons?: number;
+  /** B only: paying monthly subscribers (gets {{ANNUAL_OFFER}}). */
+  monthlyOnly?: boolean;
 };
 
 /**
@@ -262,6 +264,33 @@ Liz`,
   },
 
   // ---------------------------------------------------------------- Tue Nov 24, 12pm
+  {
+    key: "pl-1124-bm",
+    date: "2026-11-24",
+    hour: 12,
+    segments: ["B"],
+    monthlyOnly: true,
+    subject: "🔒 Want a whole year at today's price?",
+    body: `Preheader: Your monthly price stays locked. Switch to annual by Nov 30 to lock today's annual price too ✨
+
+Hi there! 👋
+
+Quick one, since you're on a monthly plan.
+
+Your monthly price is locked in for as long as you stay. That doesn't change! 🧡
+
+But if you've been thinking about going annual, **switch by Nov 30 at 11:59pm Pacific** to get today's annual price. After that, switching to annual uses the new prices.
+
+{{ANNUAL_OFFER}}
+
+[🔒 Switch to annual](${SITE}/dashboard/subscription?src=pl-1124-bm)
+
+It's one click in your dashboard, and the unused part of this month is credited toward your year.
+
+Liz 🧡
+
+P.S. Happy staying monthly? You don't need to do a thing. Your price is locked either way.`,
+  },
   {
     key: "pl-1124-ad",
     date: "2026-11-24",
@@ -622,12 +651,20 @@ Liz`,
 
 /** Fills the per-recipient placeholders. Null when a needed value is missing
  * (the caller then skips the recipient rather than send a broken link). */
-export function personalizePriceLockBody(body: string, values: { keepPlanUrl?: string | null }): string | null {
-  if (body.includes("{{KEEP_PLAN_URL}}")) {
+export function personalizePriceLockBody(
+  body: string,
+  values: { keepPlanUrl?: string | null; annualOffer?: string | null },
+): string | null {
+  let out = body;
+  if (out.includes("{{KEEP_PLAN_URL}}")) {
     if (!values.keepPlanUrl) return null;
-    return body.split("{{KEEP_PLAN_URL}}").join(values.keepPlanUrl);
+    out = out.split("{{KEEP_PLAN_URL}}").join(values.keepPlanUrl);
   }
-  return body;
+  if (out.includes("{{ANNUAL_OFFER}}")) {
+    if (!values.annualOffer) return null;
+    out = out.split("{{ANNUAL_OFFER}}").join(values.annualOffer);
+  }
+  return out;
 }
 
 /** Campaign name used for the draft (shown in admin Emails). */

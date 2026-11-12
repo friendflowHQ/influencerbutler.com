@@ -70,6 +70,7 @@ import { loadPriceLockPeople, stillInSegment, type PriceLockPeople } from "@/lib
 import { personalizePriceLockBody } from "@/lib/price-lock-emails";
 import { keepPlanUrl } from "@/lib/comp-expiry-customer";
 import { fromLiz } from "@/lib/price-lock-emails";
+import { annualOfferFor, annualOfferLines } from "@/lib/price-lock-annual";
 import { evaluateExperiments } from "@/lib/email-experiments";
 
 export const runtime = "nodejs";
@@ -503,8 +504,10 @@ async function sendCampaignRecipients(db: SupabaseClient, summary: Summary): Pro
           continue;
         }
         const compSub = people.compSubIdOf.get(email.trim().toLowerCase());
+        const offer = annualOfferFor(people.paidVariantOf.get(email.trim().toLowerCase()));
         const body = personalizePriceLockBody(campaign.body, {
           keepPlanUrl: compSub ? keepPlanUrl(compSub, "price-lock") : null,
+          annualOffer: offer ? annualOfferLines(offer) : null,
         });
         if (body == null) {
           await db.from("email_campaign_recipients").update({ status: "skipped" }).eq("id", recipient.id);

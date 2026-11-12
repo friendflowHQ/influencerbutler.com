@@ -67,7 +67,7 @@ const FAQ: { q: string; a: ReactNode }[] = [
 // Shown only until the price lock deadline (the page is force-dynamic).
 const PRICE_LOCK_FAQ = {
   q: "What changes after November 30?",
-  a: "New prices for new subscriptions that start after November 30 at 11:59pm Pacific: Beginner Solo goes from $24.99 to $29.99 a month ($249 to $299 a year), Power User Solo from $39 to $49 a month ($390 to $490 a year), and the Trio, Team and Agency plans go up about 20%. Anyone subscribed by then, and any trial started by then, keeps today's price for as long as they stay subscribed.",
+  a: "New prices for new subscriptions that start after November 30 at 11:59pm Pacific: Beginner Solo goes from $24.99 to $29.99 a month ($249 to $299 a year), Power User Solo from $39 to $49 a month ($390 to $490 a year), and the Trio, Team and Agency plans go up about 20%. Anyone subscribed by then, and any trial started by then, keeps today's price on their plan for as long as they stay subscribed. Switching to a different plan, or from monthly to annual, after November 30 uses the new prices, so if you want annual at today's price, switch by November 30.",
 };
 
 export default function PricingFaq() {

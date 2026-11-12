@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { compGrantsForUser, isCompSubscriptionId } from "@/lib/comp-conversion";
 import { keepPlanUrl } from "@/lib/comp-expiry-customer";
 import { PRICE_CHANGE, priceChangeActive } from "@/lib/pricing-constants";
+import { annualOfferFor } from "@/lib/price-lock-annual";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,12 +33,20 @@ export async function GET() {
     const grantIds = new Set(grants.map((g) => g.lsSubscriptionId));
     const { data: live } = await admin
       .from("subscriptions")
-      .select("ls_subscription_id,status")
+      .select("ls_subscription_id,status,ls_variant_id")
       .eq("user_id", userId)
       .in("status", ["active", "on_trial", "past_due", "paused"]);
-    const rows = (live ?? []) as { ls_subscription_id?: string | null; status?: string | null }[];
-    const paidOrCardTrial = rows.some((s) => !isCompSubscriptionId(s.ls_subscription_id ?? null, grantIds));
-    if (paidOrCardTrial) return NextResponse.json({ state: "locked", endsAt });
+    const rows = (live ?? []) as {
+      ls_subscription_id?: string | null;
+      status?: string | null;
+      ls_variant_id?: string | number | null;
+    }[];
+    const paid = rows.filter((s) => !isCompSubscriptionId(s.ls_subscription_id ?? null, grantIds));
+    if (paid.length > 0) {
+      // Monthly payers get the "switch to annual by Nov 30" offer.
+      const offer = paid.map((s) => annualOfferFor(s.ls_variant_id ?? null)).find((o) => o != null) ?? null;
+      return NextResponse.json({ state: "locked", endsAt, ...(offer ? { annualOffer: offer } : {}) });
+    }
 
     const { data: grantRows } = await admin
       .from("comp_grants")

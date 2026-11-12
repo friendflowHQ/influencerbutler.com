@@ -32,6 +32,7 @@ import {
   type PriceLockEmail,
 } from "@/lib/price-lock-emails";
 import { pacificTimeToUtc } from "@/lib/send-gates";
+import { annualOfferFor, annualOfferLines } from "@/lib/price-lock-annual";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -53,6 +54,7 @@ function audienceFor(e: PriceLockEmail) {
     ...(e.excludeClickersOf ? { excludeClickersOf: e.excludeClickersOf } : {}),
     ...(e.allowSecondToday ? { allowSecondToday: true } : {}),
     ...(e.segments.includes("A") ? { excludeOrigins: [...DEFAULT_EXCLUDED_ORIGINS] } : {}),
+    ...(e.monthlyOnly ? { monthlyOnly: true } : {}),
   };
 }
 
@@ -161,7 +163,11 @@ export async function POST(request: Request) {
       if (!EMAIL_RE.test(toEmail)) return NextResponse.json({ error: "A valid toEmail is required" }, { status: 400 });
       const results: { key: string; ok: boolean }[] = [];
       for (const e of pick(PRICE_LOCK_EMAILS)) {
-        const text = personalizePriceLockBody(e.body, { keepPlanUrl: `${SITE}/dashboard/subscription?src=${e.key}-test` });
+        const sample = annualOfferFor(process.env.LEMONSQUEEZY_VARIANT_MONTHLY ?? null);
+        const text = personalizePriceLockBody(e.body, {
+          keepPlanUrl: `${SITE}/dashboard/subscription?src=${e.key}-test`,
+          annualOffer: sample ? annualOfferLines(sample) : "✨ (your plan's annual numbers go here)",
+        });
         const built = buildCampaignEmail({ body: text ?? e.body, attachments: [], inlineImages: [] });
         const ok = await sendMarketingEmail({
           from: fromLiz(MARKETING_FROM),

@@ -10,7 +10,13 @@ import { LEVEL_PRICE_CENTS, PRICE_CHANGE } from "@/lib/pricing-constants";
  * the countdown and a trial button. Same look as the site-wide banner
  * (public/js/price-lock-banner.js). Disappears on its own at the deadline.
  */
-type Status = { state: "locked" | "comp" | "open" | "none"; endsAt: string; keepUrl?: string };
+type AnnualOffer = { planName: string; monthlyCents: number; annualCents: number; saveCents: number; afterCents: number };
+type Status = {
+  state: "locked" | "comp" | "open" | "none";
+  endsAt: string;
+  keepUrl?: string;
+  annualOffer?: AnnualOffer;
+};
 
 function parts(ms: number) {
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -84,16 +90,38 @@ export default function PriceLockBanner() {
   if (!Number.isFinite(end) || now >= end) return null;
 
   if (status.state === "locked") {
+    const o = status.annualOffer;
     return (
       <div
         role="region"
         aria-label="Price lock"
-        className="mb-6 flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-semibold text-emerald-900"
+        className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm text-emerald-900"
       >
-        <span aria-hidden="true" className="text-xl">
-          🔒
-        </span>
-        You&apos;re locked in at your current price as long as you stay.
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <span aria-hidden="true" className="text-xl">
+              🔒
+            </span>
+            <div>
+              <p className="font-semibold">You&apos;re locked in at your current price as long as you stay.</p>
+              {o ? (
+                <p className="mt-0.5">
+                  Want a whole year at today&apos;s price? Switch to annual by Nov 30:{" "}
+                  <b>{money(o.annualCents)} a year</b> (you save {money(o.saveCents)}). After Nov 30, annual is{" "}
+                  {money(o.afterCents)}.
+                </p>
+              ) : null}
+            </div>
+          </div>
+          {o ? (
+            <a
+              href="/dashboard/subscription?src=pl-dashboard-annual"
+              className="inline-flex shrink-0 items-center justify-center rounded-full bg-emerald-800 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-800 focus-visible:ring-offset-2"
+            >
+              Switch to annual
+            </a>
+          ) : null}
+        </div>
       </div>
     );
   }

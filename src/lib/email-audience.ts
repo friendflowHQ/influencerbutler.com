@@ -11,6 +11,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { campaignCategory } from "@/lib/email-marketing";
 
+import { annualOfferFor } from "@/lib/price-lock-annual";
 import {
   PRICE_LOCK_SEGMENTS,
   campaignClickers,
@@ -46,6 +47,8 @@ export type Audience = (
       allowSecondToday?: boolean;
       /** Leave whole lists out by origin label (e.g. "instagram-posse"), see originLabel. */
       excludeOrigins?: string[];
+      /** B only: just paying subscribers on a monthly plan that has an annual version. */
+      monthlyOnly?: boolean;
     }
 ) & {
   split?: AudienceSplit;
@@ -251,6 +254,7 @@ function parseAudienceBase(input: unknown): Audience | null {
         ...(excludeClickersOf.length ? { excludeClickersOf } : {}),
         ...(raw.allowSecondToday === true ? { allowSecondToday: true } : {}),
         ...(excludeOrigins.length ? { excludeOrigins } : {}),
+        ...(raw.monthlyOnly === true ? { monthlyOnly: true } : {}),
       };
     }
     case "pasted": {
@@ -643,6 +647,9 @@ async function resolveAudienceBase(
       try {
         const people = await loadPriceLockPeople(db);
         let emails = audience.segments.flatMap((seg) => emailsForSegment(people, seg));
+        if (audience.monthlyOnly) {
+          emails = emails.filter((e) => annualOfferFor(people.paidVariantOf.get(e)) != null);
+        }
         if (audience.excludeOrigins?.length) {
           const drop = new Set(audience.excludeOrigins);
           emails = emails.filter((e) => !drop.has(people.originOf.get(e) ?? "other"));

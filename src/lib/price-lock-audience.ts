@@ -83,6 +83,8 @@ export type PriceLockPeople = {
   accounts: Set<string>;
   /** Where each person came from, for the segment-size report. */
   originOf: Map<string, string>;
+  /** B only: the variant a paying subscriber is on (for the annual offer). */
+  paidVariantOf: Map<string, string>;
 };
 
 /** Coarse origin label for the size report and for leaving whole lists out. */
@@ -119,8 +121,13 @@ export async function loadPriceLockPeople(db: SupabaseClient): Promise<PriceLock
       db.from("profiles").select("id, email").order("id").range(a, b),
     )) ?? fail("profiles");
   const subs =
-    (await pageAll<{ user_id: string | null; status: string | null; ls_subscription_id: string | null }>((a, b) =>
-      db.from("subscriptions").select("user_id, status, ls_subscription_id").order("ls_subscription_id").range(a, b),
+    (await pageAll<{
+      user_id: string | null;
+      status: string | null;
+      ls_subscription_id: string | null;
+      ls_variant_id: string | number | null;
+    }>((a, b) =>
+      db.from("subscriptions").select("user_id, status, ls_subscription_id, ls_variant_id").order("ls_subscription_id").range(a, b),
     )) ?? fail("subscriptions");
   type GrantRow = {
     user_id: string | null;
@@ -154,6 +161,7 @@ export async function loadPriceLockPeople(db: SupabaseClient): Promise<PriceLock
   const now = Date.now();
   const compSubIds = new Set<string>();
   const compSubIdOf = new Map<string, string>();
+  const paidVariantOf = new Map<string, string>();
   const facts = new Map<string, PersonFacts>(); // keyed by email
   const emailOfUser = new Map<string, string>();
   const blank = (): PersonFacts => ({
@@ -205,7 +213,10 @@ export async function loadPriceLockPeople(db: SupabaseClient): Promise<PriceLock
       // grant row, treat it as a comp.
       if (!f.liveNoCardTrial) f.liveComp = true;
     } else if (s.status === "on_trial") f.liveNonCompTrial = true;
-    else f.liveNonCompPaid = true;
+    else {
+      f.liveNonCompPaid = true;
+      if (s.ls_variant_id != null) paidVariantOf.set(email, String(s.ls_variant_id));
+    }
   }
   for (const o of orders) {
     const email = o.user_id ? emailOfUser.get(o.user_id) : undefined;
@@ -251,7 +262,7 @@ export async function loadPriceLockPeople(db: SupabaseClient): Promise<PriceLock
     segmentOf.set(email, seg);
     if (seg === "D") wouldReturn.set(email, latest.get(email)?.v ?? null);
   }
-  return { segmentOf, wouldReturn, suppressed, compSubIdOf, accounts: accountSet, originOf };
+  return { segmentOf, wouldReturn, suppressed, compSubIdOf, accounts: accountSet, originOf, paidVariantOf };
 }
 
 /** Ordered recipients for a segment (D: "yes" then "maybe" then the rest). */

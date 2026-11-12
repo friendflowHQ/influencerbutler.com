@@ -9,10 +9,9 @@ import {
   isAddonVariant,
   planForVariantId,
   planMetaForVariantId,
-  variantFamilyOf,
-  variantIdForPlanInFamily,
+  switchTargetVariant,
 } from "@/lib/lemonsqueezy";
-import { planMetaFor, ADDON_PLAN_DAILY_DEALS } from "@/lib/pricing-constants";
+import { planMetaFor, priceChangeActive, ADDON_PLAN_DAILY_DEALS } from "@/lib/pricing-constants";
 import { syncPlanLevelForPlanChange } from "@/lib/plan-level";
 
 export const runtime = "nodejs";
@@ -167,13 +166,11 @@ export async function POST(request: Request) {
         );
       }
 
-      // Price lock: a subscriber keeps their price family when they change tier
-      // or cadence, so someone on an old-price variant switches to the old-price
-      // variant of the new plan, even after the deadline.
-      const family = variantFamilyOf(currentVariantId) ?? "current";
-      const familyId = variantIdForPlanInFamily(targetPlan, family);
-      const resolution: ReturnType<typeof resolveVariantId> = familyId
-        ? { ok: true, variantId: familyId }
+      // Price lock: the plan someone is on keeps its price, but a plan they
+      // switch TO after Nov 30 is at the new price (owner rule 2026-11-11).
+      const target = switchTargetVariant(targetPlan, currentVariantId);
+      const resolution: ReturnType<typeof resolveVariantId> = target
+        ? { ok: true, variantId: target.variantId }
         : resolveVariantId(targetPlan, undefined);
       if (!resolution.ok) {
         console.error("upgrade: target variant unresolved", { targetPlan, resolution });
@@ -194,7 +191,7 @@ export async function POST(request: Request) {
       // leave the proration credit on the account for future invoices, and a
       // trial is never invoiced until it ends.
       const currentMeta = planMetaForVariantId(currentVariantId) ?? planMetaFor(currentPlan, "current");
-      const targetMeta = planMetaFor(targetPlan, familyId ? family : "current");
+      const targetMeta = target ? planMetaFor(target.plan, target.family) : planMetaFor(targetPlan, "current");
       invoiceImmediately =
         status === "active" &&
         currentMeta != null &&
@@ -202,7 +199,16 @@ export async function POST(request: Request) {
         targetMeta.priceCents > currentMeta.priceCents;
     } else {
       // Legacy body (no targetPlan): monthly-to-annual within the same tier.
-      const annualVariantId = resolveAnnualVariantForMonthly(currentVariantId);
+      // After Nov 30 the annual plan is at the new price (Power User annual
+      // for a legacy Pro monthly subscriber).
+      const legacyAnnual = resolveAnnualVariantForMonthly(currentVariantId);
+      const currentPlanForAnnual = planForVariantId(currentVariantId);
+      const annualVariantId =
+        legacyAnnual && !priceChangeActive() && currentPlanForAnnual
+          ? legacyAnnual
+          : legacyAnnual && currentPlanForAnnual
+            ? (switchTargetVariant(currentPlanForAnnual.replace(/monthly$/, "annual"), currentVariantId)?.variantId ?? legacyAnnual)
+            : legacyAnnual;
       if (!annualVariantId) {
         // Already annual, an unrecognised variant, or the add-on.
         return NextResponse.json(

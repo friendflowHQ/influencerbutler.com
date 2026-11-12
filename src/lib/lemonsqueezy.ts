@@ -568,6 +568,35 @@ export function variantIdForPlanInFamily(plan: string, family: PriceFamily): str
   return r.ok ? r.variantId : null;
 }
 
+/** The plan a NEW buyer of `plan` gets after the deadline (legacy -> Power User). */
+export function postDeadlinePlanFor(plan: string): string {
+  return LEGACY_TO_POWER[plan] ?? plan;
+}
+
+/**
+ * Target variant when an existing subscriber CHANGES plan (tier or monthly to
+ * annual). Owner rule (2026-11-11): the plan someone is on keeps its price
+ * forever, but a NEW plan chosen after the deadline is at the new price.
+ *   - Before the deadline: the target plan in the subscriber's own family
+ *     (legacy stays legacy), i.e. today's prices.
+ *   - From the deadline on: the new-price variant, exactly like a new checkout
+ *     (legacy plans move to the matching Power User plan).
+ * Falls back to today's variant (logged) if a new-price id is not set up yet.
+ */
+export function switchTargetVariant(
+  targetPlan: string,
+  currentVariantId: string | number | null | undefined,
+  now: number = Date.now(),
+): { variantId: string; plan: string; family: PriceFamily } | null {
+  if (priceChangeActive(now)) {
+    const family = variantFamilyOf(currentVariantId) ?? "current";
+    const id = variantIdForPlanInFamily(targetPlan, family) ?? variantIdForPlanInFamily(targetPlan, "current");
+    return id ? { variantId: id, plan: targetPlan, family: id === nextVariantIdFor(targetPlan) ? "next" : "current" } : null;
+  }
+  const r = resolveCheckoutVariant(targetPlan, undefined, { now, family: "next" });
+  return r.ok ? { variantId: r.variantId, plan: r.plan ?? targetPlan, family: r.family } : null;
+}
+
 /** For a comp (or anyone) adding a card for a stored variant: after the
  * deadline, the variant a NEW checkout for that plan would get (legacy plans
  * move to Power User). Before the deadline the stored variant itself. */

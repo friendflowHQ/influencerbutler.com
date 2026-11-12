@@ -11,7 +11,9 @@ import {
   variantFamilyOf,
   variantIdForPlanInFamily,
   getDiscountableVariantIds,
+  switchTargetVariant,
 } from "../lemonsqueezy";
+import { annualOfferFor, annualOfferLines } from "../price-lock-annual";
 import { keepsPreDeadlinePrice } from "../price-lock";
 
 const BEFORE = Date.parse("2026-11-20T12:00:00Z");
@@ -27,6 +29,8 @@ const ENV: Record<string, string> = {
   LEMONSQUEEZY_VARIANT_POWER_SOLO_MONTHLY: "2244107",
   LEMONSQUEEZY_VARIANT_POWER_SOLO_ANNUAL: "2244052",
   LEMONSQUEEZY_VARIANT_POWER_TRIO_MONTHLY: "2244111",
+  LEMONSQUEEZY_VARIANT_BEGINNER_SOLO_ANNUAL: "2244025",
+  LEMONSQUEEZY_NEXT_VARIANT_BEGINNER_SOLO_ANNUAL: "3000002",
   LEMONSQUEEZY_NEXT_VARIANT_BEGINNER_SOLO_MONTHLY: "3000001",
   LEMONSQUEEZY_NEXT_VARIANT_POWER_SOLO_MONTHLY: "3000007",
   LEMONSQUEEZY_NEXT_VARIANT_POWER_SOLO_ANNUAL: "3000008",
@@ -126,6 +130,46 @@ describe("both families map to the same plan", () => {
     const ids = getDiscountableVariantIds();
     expect(ids).toEqual(expect.arrayContaining(["2243998", "3000001", "1533734"]));
     expect(ids).not.toContain("9000001");
+  });
+});
+
+describe("plan switches (owner rule: a new plan after Nov 30 is at the new price)", () => {
+  it("before the deadline: today's variant, legacy stays legacy", () => {
+    expect(switchTargetVariant("beginner-solo-annual", "2243998", BEFORE)).toMatchObject({ variantId: "2244025" });
+    expect(switchTargetVariant("annual", "1533734", BEFORE)).toMatchObject({ variantId: "1533746" });
+  });
+
+  it("after the deadline: the new-price variant, legacy moves to Power User", () => {
+    expect(switchTargetVariant("beginner-solo-annual", "2243998", AFTER)).toMatchObject({ variantId: "3000002", family: "next" });
+    expect(switchTargetVariant("solo-annual", "1533734", AFTER)).toMatchObject({
+      variantId: "3000008",
+      plan: "power-solo-annual",
+    });
+  });
+});
+
+describe("switch-to-annual offer", () => {
+  it("uses the subscriber's own plan and real prices", () => {
+    expect(annualOfferFor("1533734")).toEqual({
+      planName: "Pro Solo",
+      monthlyCents: 3900,
+      annualCents: 39000,
+      saveCents: 7800,
+      afterCents: 49000,
+    });
+    expect(annualOfferFor("2243998")).toMatchObject({
+      planName: "Beginner Solo",
+      annualCents: 24900,
+      saveCents: 2499 * 12 - 24900,
+      afterCents: 29900,
+    });
+    expect(annualOfferFor("1533746")).toBeNull(); // already annual
+    expect(annualOfferFor("9000001")).toBeNull(); // add-on
+    const lines = annualOfferLines(annualOfferFor("1533734")!);
+    expect(lines).toContain("$390 a year");
+    expect(lines).toContain("$78 less");
+    expect(lines).toContain("$490 a year");
+    expect(lines).not.toMatch(/\u2014/);
   });
 });
 
