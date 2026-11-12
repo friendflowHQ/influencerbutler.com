@@ -62,8 +62,12 @@ const VDP_LINK_RE = /\/vdp\/([^/?#]+)/;
 // One video to stamp, resolved from a surface's DOM.
 type Target = {
   contentId: string; // lowercased bare hex
-  doneEl: HTMLElement; // marked with DONE_ATTR so it decorates once
-  mountEl: HTMLElement; // the chip strip is inserted after this
+  doneEl: HTMLElement; // stamped with DONE_ATTR=contentId so it decorates once per video
+  mountEl: HTMLElement; // the chip strip is inserted after this (or inside, see mountInside)
+  // Append the strip as the last child of mountEl instead of after it. Used where
+  // the page's framework recycles row nodes: a sibling we insert next to a row is
+  // left behind when React drops that row, and piles up at the top of the list.
+  mountInside?: boolean;
   title: string | null;
   asin: string | null;
   contentUrl: string | null; // full /vdp/ url when the surface exposed it
@@ -82,6 +86,9 @@ let rowObserver: MutationObserver | null = null;
 // contentIds already reported to the desktop Reach Booster this run, so SPA
 // re-renders don't re-send the same held-back items on every mutation pass.
 const reportedReach = new Set<string>();
+// The chip host mounted for each decorated element, so a recycled node (same DOM
+// element, different video) or a removed row can have its stale strip cleaned up.
+const mounted = new Map<HTMLElement, HTMLElement>();
 
 export function initYouTubeStatus(surface: YouTubeSurface): void {
   controller?.abort();
@@ -98,10 +105,15 @@ export function initYouTubeStatus(surface: YouTubeSurface): void {
   // pass mounts chip shells immediately (unknown state) and resolves status in
   // the background so nothing waits on the bridge round trip.
   const decorate = (): void => {
-    const targets = collectTargets(surface).filter((tg) => !tg.doneEl.getAttribute(DONE_ATTR));
+    sweepStale();
+    const targets = collectTargets(surface).filter(
+      (tg) => tg.doneEl.getAttribute(DONE_ATTR) !== tg.contentId,
+    );
     if (targets.length === 0) return;
     for (const tg of targets) {
-      tg.doneEl.setAttribute(DONE_ATTR, "1");
+      // A recycled node now showing a different video: drop its old strip first.
+      mounted.get(tg.doneEl)?.remove();
+      tg.doneEl.setAttribute(DONE_ATTR, tg.contentId);
       tg.marketplace = marketplace;
       mountChips(tg);
     }
@@ -153,7 +165,8 @@ function collectManageContentRows(): Target[] {
     return {
       contentId: r.contentId.toLowerCase(),
       doneEl: r.el,
-      mountEl: r.el,
+      mountEl: manageContentNameCell(r.el),
+      mountInside: true,
       title: r.title,
       asin: null,
       contentUrl: vdpUrlIn(r.el),
@@ -163,6 +176,23 @@ function collectManageContentRows(): Target[] {
       reachKind: reach.kind,
     };
   });
+}
+
+// The /manage-content row is a flex row whose first cell holds the columns
+// (thumbnail, name, status, last edit, ...). The thumbnail column wraps the
+// /create/post link; the column right after it is Name, and the chips sit under
+// the title there. Mounting inside the row (never as its sibling) keeps the strip
+// attached to its row when React re-renders or re-sorts the list. Falls back to
+// the row's first cell, then the row, if the layout ever changes.
+function manageContentNameCell(row: HTMLElement): HTMLElement {
+  const link = row.querySelector<HTMLElement>('a[href*="/create/post"], a[href*="/vdp/"]');
+  let col: HTMLElement | null = link;
+  while (col?.parentElement && col.parentElement !== row && col.parentElement.children.length < 2) {
+    col = col.parentElement;
+  }
+  const name = col && col !== row ? (col.nextElementSibling as HTMLElement | null) : null;
+  if (name && (name.textContent ?? "").trim().length > 0) return name;
+  return (row.firstElementChild as HTMLElement | null) ?? row;
 }
 
 // Storefront /shop/ video cards: each carries a /vdp/<contentId> link. Climb to
@@ -239,7 +269,9 @@ function mountChips(tg: Target): void {
   wrap.append(body);
   root.append(wrap);
   host.style.display = "block";
-  if (!tg.mountEl.insertAdjacentElement("afterend", host)) tg.mountEl.append(host);
+  if (tg.mountInside) tg.mountEl.append(host);
+  else if (!tg.mountEl.insertAdjacentElement("afterend", host)) tg.mountEl.append(host);
+  mounted.set(tg.doneEl, host);
   tg.body = body;
   // Initial paint: unknown YouTube state + the pure-DOM Amazon showing chip.
   renderChips(body, tg, "unknown", { paired: false, byId: new Map() });
@@ -592,11 +624,25 @@ function watchRows(signal: AbortSignal, decorate: () => void): void {
   signal.addEventListener("abort", () => observer.disconnect(), { once: true });
 }
 
+// Drop strips whose row is gone (React removed or replaced it). Without this a
+// strip mounted next to a row outlives the row and drifts to the top of the list.
+function sweepStale(): void {
+  for (const [doneEl, host] of mounted) {
+    if (doneEl.isConnected && host.isConnected) continue;
+    host.remove();
+    mounted.delete(doneEl);
+    // The row survived but its cell was re-rendered without our strip: let the
+    // next pass mount it again.
+    if (doneEl.isConnected) doneEl.removeAttribute(DONE_ATTR);
+  }
+}
+
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function teardown(): void {
+  mounted.clear();
   for (const host of Array.from(document.querySelectorAll(`.${HOST_CLASS}`))) host.remove();
   for (const marked of Array.from(document.querySelectorAll(`[${DONE_ATTR}]`))) {
     marked.removeAttribute(DONE_ATTR);
