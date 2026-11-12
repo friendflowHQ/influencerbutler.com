@@ -7,8 +7,9 @@ import { bodyToHtml } from "@/lib/newsletter";
 import { sendEmail } from "@/lib/email-send";
 import { DEFAULT_STATEMENT_INBOX } from "@/lib/commission-statement-email";
 import type { CompRow } from "@/lib/comps-data";
+import { MAIN_FROM } from "@/lib/email-senders";
 
-const FROM_ADDRESS = "Influencer Butler <affiliates@influencerbutler.com>";
+const FROM_ADDRESS = MAIN_FROM;
 
 /** Owner recipients: COMP_ALERT_INBOX, else every ADMIN_EMAILS entry, else default. */
 export function compAlertRecipients(): string[] {

@@ -10,9 +10,10 @@
 // competitors, per the repo copy rule.
 
 import { sendMarketingEmail } from "@/lib/marketing-email";
+import { MAIN_FROM } from "@/lib/email-senders";
 
 const SITE = "https://www.influencerbutler.com";
-const FROM = "Influencer Butler <affiliates@influencerbutler.com>";
+const FROM = MAIN_FROM;
 
 /** The shared body: a short tour of the dashboard plus the two resources. */
 export function affiliateResourcesLines(): string[] {

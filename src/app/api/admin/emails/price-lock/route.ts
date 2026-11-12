@@ -164,10 +164,10 @@ export async function POST(request: Request) {
       const results: { key: string; ok: boolean; from?: string; skipped?: string }[] = [];
       for (const e of pick(PRICE_LOCK_EMAILS)) {
         // Same sender and stream the real push uses: A-D from the main address,
-        // cold E1-E3 only from the cold sender (skipped while it is unset).
+        // cold E1-E3 skipped while they are on hold.
         const sender = priceLockSender(e.segments);
         if (!sender) {
-          results.push({ key: e.key, ok: true, skipped: "cold stream paused (EMAIL_FROM_COLD unset)" });
+          results.push({ key: e.key, ok: true, skipped: "cold E1-E3 on hold (PRICE_LOCK_COLD_HELD)" });
           continue;
         }
         const sample = annualOfferFor(process.env.LEMONSQUEEZY_VARIANT_MONTHLY ?? null);

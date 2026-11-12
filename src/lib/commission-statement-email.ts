@@ -15,8 +15,9 @@ import { bodyToHtml } from "@/lib/newsletter";
 import { sendEmail } from "@/lib/email-send";
 import { formatUsdFromCents } from "@/lib/affiliates";
 import type { AffiliateStatement } from "@/lib/affiliate-commissions-data";
+import { MAIN_FROM } from "@/lib/email-senders";
 
-const FROM_ADDRESS = "Influencer Butler <affiliates@influencerbutler.com>";
+const FROM_ADDRESS = MAIN_FROM;
 const REPLY_TO = "affiliates@influencerbutler.com";
 const DASHBOARD_URL = "https://www.influencerbutler.com/dashboard/affiliates";
 

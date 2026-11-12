@@ -5,8 +5,9 @@
  */
 
 import { sendEmail } from "@/lib/email-send";
+import { MAIN_FROM } from "@/lib/email-senders";
 
-const FROM_ADDRESS = "Influencer Butler <affiliates@influencerbutler.com>";
+const FROM_ADDRESS = MAIN_FROM;
 const REPLY_TO = "affiliates@influencerbutler.com";
 
 function siteUrl(): string {

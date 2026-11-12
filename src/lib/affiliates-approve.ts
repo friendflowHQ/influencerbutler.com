@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/admin";
 import { generateAndCreateAffiliateCode } from "@/lib/affiliate-code-generator";
 import { affiliateResourcesLines } from "@/lib/affiliate-resources-email";
 import { sendEmail } from "@/lib/email-send";
+import { MAIN_FROM } from "@/lib/email-senders";
 
 export const BRANDED_CODE_PERCENT_OFF = 15;
 
@@ -119,7 +120,7 @@ async function sendApprovalEmail(params: {
   );
 
   const { ok } = await sendEmail({
-    from: "Influencer Butler <affiliates@influencerbutler.com>",
+    from: MAIN_FROM,
     to: params.to,
     subject: "At your service: your Influencer Butler affiliate account stands ready",
     text: lines.join("\n"),

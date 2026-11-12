@@ -15,6 +15,7 @@ import { getFunnelOverrides, resolveFunnelCopyForKey } from "@/lib/funnel-copy";
 import { tagRecipientsAsContacts } from "@/lib/email-marketing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { makeLocalCodeDefault, mergeTrackVars, str, type LifecycleTrackVars } from "@/lib/pro-emails";
+import { MAIN_FROM } from "@/lib/email-senders";
 
 export type ConversionTier = "1h" | "3d" | "5d";
 
@@ -163,7 +164,7 @@ export async function sendConversionEmail(params: {
       })
     : { subject: resolved.subject, body: resolved.body, tracking: {} };
   const ok = await sendMarketingEmail({
-    from: "Influencer Butler <affiliates@influencerbutler.com>",
+    from: MAIN_FROM,
     to: params.to,
     subject: sendCopy.subject,
     text: sendCopy.body,

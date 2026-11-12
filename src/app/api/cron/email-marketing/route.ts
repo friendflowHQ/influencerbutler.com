@@ -452,7 +452,7 @@ async function sendCampaignRecipients(db: SupabaseClient, summary: Summary): Pro
     }
     // Price lock push (owner decision 2026-11-12): A-D go from the main
     // transactional address; E1-E3 are cold whatever the stream column says
-    // (prod has no stream column yet) and stay held until a cold sender exists.
+    // (prod has no stream column yet) and stay held while PRICE_LOCK_COLD_HELD.
     const pushSender = push ? priceLockSender(push.segments) : null;
     if (push && !pushSender) {
       summary.coldPaused += 1;

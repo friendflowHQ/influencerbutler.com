@@ -9,8 +9,9 @@ import { bodyToHtml } from "@/lib/newsletter";
 import { sendEmail } from "@/lib/email-send";
 import { formatUsdFromCents } from "@/lib/affiliates";
 import { statementInbox, formatPeriod } from "@/lib/commission-statement-email";
+import { MAIN_FROM } from "@/lib/email-senders";
 
-const FROM_ADDRESS = "Influencer Butler <affiliates@influencerbutler.com>";
+const FROM_ADDRESS = MAIN_FROM;
 const REPLY_TO = "affiliates@influencerbutler.com";
 const OWED_TAB_URL = "https://www.influencerbutler.com/dashboard/admin/affiliates";
 

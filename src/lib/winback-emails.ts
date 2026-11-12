@@ -27,8 +27,9 @@ import { getFunnelOverrides, resolveFunnelCopyForKey } from "@/lib/funnel-copy";
 import { tagRecipientsAsContacts } from "@/lib/email-marketing";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { makeLocalCodeDefault, mergeTrackVars, str, type LifecycleTrackVars } from "@/lib/pro-emails";
+import { MAIN_FROM } from "@/lib/email-senders";
 
-const FROM_ADDRESS = "Influencer Butler <support@influencerbutler.com>";
+const FROM_ADDRESS = MAIN_FROM;
 
 /** Free-window length of the win-back comp, in months. Used by the claim route. */
 export const WINBACK_COMP_MONTHS = 2;

@@ -14,6 +14,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email-send";
 import type { RecallCreditStatus } from "@/lib/recall";
+import { MAIN_FROM } from "@/lib/email-senders";
 
 /** app_config key holding the last-known Recall credit status (JSON below). */
 export const RECALL_CREDIT_STATUS_KEY = "recall_credit_status";
@@ -21,7 +22,7 @@ export const RECALL_CREDIT_STATUS_KEY = "recall_credit_status";
 /** Don't re-email the owner more than once per this window while credit is out. */
 const ALERT_THROTTLE_MS = 12 * 3600_000;
 
-const FROM_ADDRESS = "Influencer Butler <alerts@influencerbutler.com>";
+const FROM_ADDRESS = MAIN_FROM;
 const REPLY_TO = "support@influencerbutler.com";
 const RECALL_BILLING_URL = "https://www.recall.ai/dashboard";
 const ADMIN_EVENTS_URL = "https://www.influencerbutler.com/dashboard/admin/events";

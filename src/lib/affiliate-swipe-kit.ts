@@ -13,9 +13,10 @@
 import { BUTLERS, type ButlerGroup } from "@/app/dashboard/affiliates/planner/engagementPosts";
 import { affiliateShareLink } from "@/lib/affiliate-resources-email";
 import { sendMarketingEmail } from "@/lib/marketing-email";
+import { MAIN_FROM } from "@/lib/email-senders";
 
 const SITE = "https://www.influencerbutler.com";
-export const SWIPE_KIT_FROM = "Influencer Butler <affiliates@influencerbutler.com>";
+export const SWIPE_KIT_FROM = MAIN_FROM;
 const CONFIG_KEY = "affiliate_swipe_kit";
 const PER_RUN_LIMIT = 1000;
 

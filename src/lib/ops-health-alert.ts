@@ -19,6 +19,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email-send";
+import { MAIN_FROM } from "@/lib/email-senders";
 
 /** app_config key holding the latest health report (JSON below). */
 export const OPS_HEALTH_STATUS_KEY = "ops_health_status";
@@ -30,7 +31,7 @@ export const ALERT_THROTTLE_MS = 24 * 3600_000;
 /** A report older than this means the daily routine did not run. */
 export const STALE_AFTER_MS = 36 * 3600_000;
 
-const FROM_ADDRESS = "Influencer Butler <alerts@influencerbutler.com>";
+const FROM_ADDRESS = MAIN_FROM;
 const REPLY_TO = "support@influencerbutler.com";
 
 export const SERVICES = ["cloudflare", "vercel", "resend", "supabase", "site", "other"] as const;

@@ -5,6 +5,7 @@
 // unsubscribe/suppression list.
 
 import { sendMarketingEmail } from "@/lib/marketing-email";
+import { MAIN_FROM } from "@/lib/email-senders";
 
 const SITE = "https://www.influencerbutler.com";
 
@@ -31,7 +32,7 @@ export async function sendCancelSurveyEmail(params: {
   ].join("\n");
 
   return sendMarketingEmail({
-    from: "Influencer Butler <support@influencerbutler.com>",
+    from: MAIN_FROM,
     to: params.to,
     subject: "Quick question: why did you cancel?",
     text: body,

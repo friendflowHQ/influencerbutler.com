@@ -13,8 +13,9 @@
 
 import { sendMarketingEmail } from "@/lib/marketing-email";
 import { affiliateShareLink } from "@/lib/affiliate-resources-email";
+import { MAIN_FROM } from "@/lib/email-senders";
 
-const FROM_ADDRESS = "Influencer Butler <affiliates@influencerbutler.com>";
+const FROM_ADDRESS = MAIN_FROM;
 
 export type ActivationTier = "day7" | "comp";
 

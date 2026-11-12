@@ -17,6 +17,7 @@ import { resolveAudience, type Audience } from "@/lib/email-audience";
 import { sendEmail } from "@/lib/email-send";
 import { FACEBOOK_GROUP_URL } from "@/lib/social";
 import { LEVEL_PRICE_CENTS, PRICE_CHANGE, priceChangeActive, type PlanLevel } from "@/lib/pricing-constants";
+import { MAIN_FROM } from "@/lib/email-senders";
 
 export const RECURRING_CONFIG_KEY = "recurring_group_mirror";
 export const RECURRING_EVERY_DAYS = 14;
@@ -39,7 +40,7 @@ export const RECURRING_SERIES_SEED = [
 
 const HISTORY_LIMIT = 12;
 const DAY_MS = 86_400_000;
-const FROM_ADDRESS = "Influencer Butler <alerts@influencerbutler.com>";
+const FROM_ADDRESS = MAIN_FROM;
 const ADMIN_EMAILS_URL = "https://www.influencerbutler.com/dashboard/admin/emails";
 
 export type RecurringRun = {

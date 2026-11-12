@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { clientIp } from "@/lib/client-ip";
 import { rateLimit } from "@/lib/rate-limit";
 import { crossSiteBlocked } from "@/lib/request-origin";
+import { MAIN_FROM } from "@/lib/email-senders";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -76,7 +77,7 @@ export async function POST(request: Request) {
   const name = clean(row.full_name ?? email);
 
   const { ok: sent } = await sendEmail({
-    from: "Influencer Butler <affiliates@influencerbutler.com>",
+    from: MAIN_FROM,
     to,
     subject: `New affiliate application: ${name}`,
     text: [

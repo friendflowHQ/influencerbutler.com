@@ -7,6 +7,7 @@
 import { bodyToHtml } from "@/lib/newsletter";
 import { sendEmail } from "@/lib/email-send";
 import { compAlertRecipients } from "@/lib/comp-expiry-email";
+import { MAIN_FROM } from "@/lib/email-senders";
 
 export type DowngradeRow = {
   email: string | null;
@@ -14,7 +15,7 @@ export type DowngradeRow = {
   targetPlan: string;
 };
 
-const FROM_ADDRESS = "Influencer Butler <affiliates@influencerbutler.com>";
+const FROM_ADDRESS = MAIN_FROM;
 
 function line(row: DowngradeRow): string {
   return `  ${row.email ?? row.lsSubscriptionId} -> ${row.targetPlan} (${row.lsSubscriptionId})`;
