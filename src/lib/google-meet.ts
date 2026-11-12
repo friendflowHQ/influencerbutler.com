@@ -59,8 +59,11 @@ export function isGoogleConfigured(): boolean {
 }
 
 export function redirectUri(originFallback?: string): string {
+  // Only honor the override when it really is the scheduling callback. On
+  // 2026-11-11 it held the YouTube callback, so every "Connect Google Calendar"
+  // landed in the YouTube callback and the calendar never connected.
   const env = process.env.GOOGLE_OAUTH_REDIRECT_URI?.trim();
-  if (env) return env;
+  if (env && env.replace(/\/+$/, "").endsWith(SCHEDULING_CALLBACK_PATH)) return env;
   const base = (originFallback || "https://www.influencerbutler.com").replace(/\/+$/, "");
   return `${base}${SCHEDULING_CALLBACK_PATH}`;
 }
@@ -68,7 +71,7 @@ export function redirectUri(originFallback?: string): string {
 /** Redirect URI for the dedicated YouTube account OAuth flow (Events admin). */
 export function youtubeRedirectUri(originFallback?: string): string {
   const env = process.env.GOOGLE_OAUTH_YOUTUBE_REDIRECT_URI?.trim();
-  if (env) return env;
+  if (env && env.replace(/\/+$/, "").endsWith(YOUTUBE_CALLBACK_PATH)) return env;
   const base = (originFallback || "https://www.influencerbutler.com").replace(/\/+$/, "");
   return `${base}${YOUTUBE_CALLBACK_PATH}`;
 }
