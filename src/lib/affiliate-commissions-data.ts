@@ -4,6 +4,7 @@
 // pure engine in affiliate-commissions.ts. Shared by the Payouts API route and
 // the monthly statement cron so the query logic lives in exactly one place.
 
+import { resolveOrderInterval } from "@/lib/order-interval";
 import { createAdminClient } from "@/lib/admin";
 import {
   buildFirstOrderByBuyer,
@@ -139,6 +140,7 @@ export async function loadAffiliateCommissions(opts: {
   // error (or unconfigured variant) degrades that buyer to monthly (single
   // recognition), which matches the pre-amortization behavior.
   const intervalByBuyer = new Map<string, BillingInterval>();
+  const variantByBuyer = new Map<string, string>();
   try {
     const { data: subs } = await supabase
       .from("subscriptions")
@@ -148,10 +150,17 @@ export async function loadAffiliateCommissions(opts: {
       if (!uid) continue;
       const interval = billingIntervalForVariantId(row.ls_variant_id as string | number | null);
       if (interval) intervalByBuyer.set(uid, interval);
+      if (row.ls_variant_id != null) variantByBuyer.set(uid, String(row.ls_variant_id));
     }
   } catch (err) {
     console.warn("loadAffiliateCommissions: subscription interval read skipped", err);
   }
+
+  // Per-ORDER extras, read separately so a column missing in prod (they are
+  // hand-applied migrations) never breaks the commission load:
+  //  - billing_interval (20261113): what this charge pre-paid.
+  //  - *_usd_cents (20260827_finance): the net commission base.
+  const extrasByOrder = await loadOrderExtras(supabase);
 
   // Normalize orders once. Keep the referring affiliate on each row so we can
   // group, but build the full set too (unfiltered) for per-buyer window anchors.
@@ -174,8 +183,25 @@ export async function loadAffiliateCommissions(opts: {
       attributionStatus: str(row.attribution_status),
       reconciledAt: str(row.reconciled_at),
       createdAt: str(row.created_at),
-      billingInterval: buyerUserId ? intervalByBuyer.get(buyerUserId) ?? null : null,
     };
+    const extras = extrasByOrder.get(lsOrderId);
+    if (extras) {
+      co.totalUsdCents = extras.totalUsdCents;
+      co.taxUsdCents = extras.taxUsdCents;
+      co.refundedUsdCents = extras.refundedUsdCents;
+    }
+    // The charge's OWN cadence (see src/lib/order-interval.ts), not the
+    // buyer's current plan, so a monthly to annual switch never relabels
+    // earlier monthly orders.
+    co.billingInterval = resolveOrderInterval({
+      stored: extras?.billingInterval,
+      chargeCents:
+        typeof extras?.totalUsdCents === "number"
+          ? extras.totalUsdCents - (extras.taxUsdCents ?? 0)
+          : co.totalCents,
+      variantId: buyerUserId ? variantByBuyer.get(buyerUserId) ?? null : null,
+      fallback: buyerUserId ? intervalByBuyer.get(buyerUserId) ?? null : null,
+    });
     const paidCents =
       typeof row.reconciled_amount_cents === "number" ? row.reconciled_amount_cents : 0;
     if (paidCents > 0) paidByOrder.set(lsOrderId, paidCents);
@@ -446,4 +472,55 @@ export async function computeMonthlyEarnings(opts: {
     totals: labels.map((l) => totalsByMonth.get(l)!),
     byAffiliate,
   };
+}
+
+type OrderExtras = {
+  billingInterval: string | null;
+  totalUsdCents: number | null;
+  taxUsdCents: number | null;
+  refundedUsdCents: number | null;
+};
+
+/** Best-effort per-order extras keyed by ls_order_id. Each column group is read
+ *  on its own and silently skipped when the column does not exist yet. */
+async function loadOrderExtras(supabase: LoadClient): Promise<Map<string, OrderExtras>> {
+  const out = new Map<string, OrderExtras>();
+  const get = (id: string): OrderExtras => {
+    let e = out.get(id);
+    if (!e) {
+      e = { billingInterval: null, totalUsdCents: null, taxUsdCents: null, refundedUsdCents: null };
+      out.set(id, e);
+    }
+    return e;
+  };
+  const numOrNull = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
+  const groups: { cols: string; apply: (row: Record<string, unknown>, e: OrderExtras) => void }[] = [
+    {
+      cols: "ls_order_id,total_usd_cents,tax_usd_cents,refunded_usd_cents",
+      apply: (row, e) => {
+        e.totalUsdCents = numOrNull(row.total_usd_cents);
+        e.taxUsdCents = numOrNull(row.tax_usd_cents);
+        e.refundedUsdCents = numOrNull(row.refunded_usd_cents);
+      },
+    },
+    {
+      cols: "ls_order_id,billing_interval",
+      apply: (row, e) => {
+        e.billingInterval = typeof row.billing_interval === "string" ? row.billing_interval : null;
+      },
+    },
+  ];
+  for (const g of groups) {
+    try {
+      const { data, error } = await supabase.from("orders").select(g.cols);
+      if (error) continue; // column not migrated yet
+      for (const row of (data ?? []) as Record<string, unknown>[]) {
+        const id = typeof row.ls_order_id === "string" ? row.ls_order_id : null;
+        if (id) g.apply(row, get(id));
+      }
+    } catch {
+      /* best-effort */
+    }
+  }
+  return out;
 }

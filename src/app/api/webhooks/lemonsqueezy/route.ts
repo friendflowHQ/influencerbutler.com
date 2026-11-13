@@ -6,7 +6,13 @@ import { mintTrialDiscounts } from "@/lib/trial-discounts";
 import { hasRedeemedDiscount } from "@/lib/discount-eligibility";
 import { firstNameFrom, logPurchaseActivity, logTrialStartActivity } from "@/lib/recent-activity";
 import { logWebhookEvent } from "@/lib/webhook-events";
-import { lsApi, planForVariantId, setLicenseKeyActivationLimit } from "@/lib/lemonsqueezy";
+import {
+  billingIntervalForVariantId,
+  lsApi,
+  planForVariantId,
+  setLicenseKeyActivationLimit,
+} from "@/lib/lemonsqueezy";
+import { clawbackTargetCents, isDuplicateInitialCharge, refundedShare } from "@/lib/order-refunds";
 import { SEAT_LIMIT, tierForPlan } from "@/lib/pricing-constants";
 import { rewardReferrerForSubscription } from "@/lib/referral-program";
 import { sendCancelSurveyEmail } from "@/lib/cancel-survey-email";
@@ -634,6 +640,92 @@ async function captureOrderMoneyBreakdown(
   }
 }
 
+/**
+ * Stamps what a charge pre-paid ("month" | "year") on its order row, so
+ * commission amortization and Finance read the charge's own cadence instead of
+ * the buyer's current plan. Best-effort: the column (20261113) may not exist.
+ */
+async function captureOrderInterval(
+  supabase: SupabaseServiceClient,
+  lsOrderId: string,
+  interval: "month" | "year" | null,
+): Promise<void> {
+  if (!interval) return;
+  try {
+    const { error } = await supabase.from("orders").update({ billing_interval: interval }).eq("ls_order_id", lsOrderId);
+    if (error && error.code !== "42703" && !/billing_interval/.test(String(error.message ?? ""))) {
+      console.error("captureOrderInterval: update failed", error, { lsOrderId });
+    }
+  } catch (error) {
+    console.error("captureOrderInterval: update threw", error, { lsOrderId });
+  }
+}
+
+/** The variant a subscription is on right now, from Lemon Squeezy (null on any error). */
+async function liveSubscriptionVariant(lsSubscriptionId: string): Promise<string | null> {
+  try {
+    const res = await lsApi(`/subscriptions/${lsSubscriptionId}`, { method: "GET" });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { data?: { attributes?: { variant_id?: number | string | null } } };
+    const v = body.data?.attributes?.variant_id;
+    return v == null ? null : String(v);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Claws back commission already paid on a refunded charge, in proportion to the
+ * refunded share (a partial refund claws back only its share). Idempotent: it
+ * tops up to the target, so a partial refund followed by a full one claws back
+ * the rest, and a re-delivered webhook adds nothing.
+ */
+async function clawbackRefundedCommission(
+  supabase: SupabaseServiceClient,
+  lsOrderId: string,
+  share: number,
+  source: string,
+): Promise<void> {
+  const { data: order } = await supabase
+    .from("orders")
+    .select("ref_affiliate_user_id,reconciled_amount_cents,currency")
+    .eq("ls_order_id", lsOrderId)
+    .maybeSingle();
+  const affiliateUserId =
+    typeof order?.ref_affiliate_user_id === "string" ? order.ref_affiliate_user_id : null;
+  const paidCents = typeof order?.reconciled_amount_cents === "number" ? order.reconciled_amount_cents : 0;
+  if (!affiliateUserId || paidCents <= 0) return; // nothing was paid -> nothing to claw back
+
+  const { data: prior } = await supabase
+    .from("affiliate_commission_adjustments")
+    .select("id,amount_cents")
+    .eq("related_customer", lsOrderId);
+  const alreadyClawed = (Array.isArray(prior) ? prior : []).reduce(
+    (sum, r) => sum + (typeof r.amount_cents === "number" && r.amount_cents < 0 ? -r.amount_cents : 0),
+    0,
+  );
+  const amount = clawbackTargetCents(paidCents, share) - alreadyClawed;
+  if (amount <= 0) return;
+
+  await assertWrite(
+    "affiliate_commission_adjustments.insert(clawback)",
+    supabase.from("affiliate_commission_adjustments").insert({
+      user_id: affiliateUserId,
+      amount_cents: -amount,
+      currency: typeof order?.currency === "string" ? order.currency : "USD",
+      note:
+        share >= 1
+          ? `Refund/chargeback clawback on order ${lsOrderId}`
+          : `Partial refund clawback (${Math.round(share * 100)}%) on order ${lsOrderId}`,
+      // 'manual' keeps within the source CHECK constraint (makewhole|manual);
+      // related_customer carries the order id for idempotency + admin context.
+      source: "manual",
+      related_customer: lsOrderId,
+      created_by: source,
+    }),
+  );
+}
+
 async function captureOrderDiscount(
   supabase: SupabaseServiceClient,
   lsOrderId: string,
@@ -811,6 +903,15 @@ export async function POST(request: Request) {
       // Analytics only - never throws, never blocks order processing.
       await captureOrderDiscount(supabase, recordId, attrs.discount_total);
       await captureOrderMoneyBreakdown(supabase, recordId, attrs);
+      {
+        const item = attrs.first_order_item as { variant_id?: unknown } | undefined;
+        const variant = item?.variant_id;
+        await captureOrderInterval(
+          supabase,
+          recordId,
+          billingIntervalForVariantId(typeof variant === "number" || typeof variant === "string" ? variant : null),
+        );
+      }
 
       if (lsCustomerId) {
         await assertWrite(
@@ -912,43 +1013,38 @@ export async function POST(request: Request) {
         refunded_at: attrs.refunded_at ?? new Date().toISOString(),
       });
 
-      const affiliateUserId =
-        typeof existingOrder?.ref_affiliate_user_id === "string"
-          ? existingOrder.ref_affiliate_user_id
-          : null;
-      const paidCents =
-        typeof existingOrder?.reconciled_amount_cents === "number"
-          ? existingOrder.reconciled_amount_cents
-          : 0;
-      if (!affiliateUserId || paidCents <= 0) return; // nothing was paid -> no clawback
+      void existingOrder;
+      // Claw back only the refunded share of anything already paid (a partial
+      // refund used to claw back 100%).
+      await clawbackRefundedCommission(
+        supabase,
+        recordId,
+        refundedShare(getString(attrs.status), attrs.refunded_amount_usd ?? attrs.refunded_amount, attrs.total_usd ?? attrs.total),
+        "ls-webhook:order_refunded",
+      );
+    },
 
-      // Idempotency: skip if a clawback for this order already exists. Filter the
-      // negative amount in JS (the typed client only chains .eq here).
-      const { data: prior } = await supabase
-        .from("affiliate_commission_adjustments")
-        .select("id,amount_cents")
-        .eq("related_customer", recordId);
-      if (
-        Array.isArray(prior) &&
-        prior.some((r) => typeof r.amount_cents === "number" && r.amount_cents < 0)
-      ) {
-        return;
-      }
-
+    // A refunded RENEWAL or plan-switch charge (subscription invoice). Before
+    // this handler existed those orders stayed 'paid' and kept earning
+    // commission. Mirrors order_refunded.
+    subscription_payment_refunded: async () => {
+      const lsOrderId = getIdString(attrs.order_id) ?? recordId;
+      if (!lsOrderId) return;
+      const status = getString(attrs.status) === "partial_refund" ? "partial_refund" : "refunded";
       await assertWrite(
-        "affiliate_commission_adjustments.insert(clawback)",
-        supabase.from("affiliate_commission_adjustments").insert({
-          user_id: affiliateUserId,
-          amount_cents: -paidCents,
-          currency:
-            typeof existingOrder?.currency === "string" ? existingOrder.currency : "USD",
-          note: `Refund/chargeback clawback on order ${recordId}`,
-          // 'manual' keeps within the source CHECK constraint (makewhole|manual);
-          // related_customer carries the order id for idempotency + admin context.
-          source: "manual",
-          related_customer: recordId,
-          created_by: "ls-webhook:order_refunded",
-        }),
+        "orders.update(subscription_payment_refunded)",
+        supabase.from("orders").update({ status }).eq("ls_order_id", lsOrderId),
+      );
+      await captureOrderMoneyBreakdown(supabase, lsOrderId, {
+        ...attrs,
+        refunded_amount_usd: attrs.refunded_amount_usd ?? (status === "refunded" ? attrs.total_usd : undefined),
+        refunded_at: attrs.refunded_at ?? new Date().toISOString(),
+      });
+      await clawbackRefundedCommission(
+        supabase,
+        lsOrderId,
+        refundedShare(status, attrs.refunded_amount_usd ?? attrs.refunded_amount, attrs.total_usd ?? attrs.total),
+        "ls-webhook:subscription_payment_refunded",
       );
     },
 
@@ -1359,6 +1455,27 @@ export async function POST(request: Request) {
         );
       }
 
+      // The first paid charge of a no-trial checkout also arrives as order_created.
+      // When the invoice carries no order_id it would be stored a second time
+      // (double commission). Skip it when a paid order for the same buyer and
+      // amount landed in the last 48 hours (the backfill skips "initial" too).
+      if (getString(attrs.billing_reason) === "initial" && !getIdString(attrs.order_id)) {
+        const since = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+        const { data: recent } = await supabase
+          .from("orders")
+          .select("ls_order_id,total,status")
+          .eq("user_id", userId)
+          .gte("created_at", since)
+          .limit(20);
+        if (isDuplicateInitialCharge(renewalOrderId, attrs.total, Array.isArray(recent) ? recent : [])) {
+          console.log("subscription_payment_success: initial charge already stored by order_created", {
+            renewalOrderId,
+            lsSubscriptionId,
+          });
+          return;
+        }
+      }
+
       await recordExists(supabase, "orders", "ls_order_id", renewalOrderId);
 
       await assertWrite(
@@ -1389,6 +1506,26 @@ export async function POST(request: Request) {
       // moment (belt-and-braces alongside subscription_updated).
       await captureOrderDiscount(supabase, renewalOrderId, attrs.discount_total);
       await captureOrderMoneyBreakdown(supabase, renewalOrderId, attrs);
+      // What this charge pre-paid. A plan-switch charge ("updated") is for the
+      // NEW plan, so read the live variant from Lemon Squeezy (already swapped);
+      // a renewal is for the plan on record. Unknown leaves it to the amount
+      // rule in src/lib/order-interval.ts.
+      if (lsSubscriptionId) {
+        const reason = getString(attrs.billing_reason);
+        let variant: string | null = null;
+        if (reason === "updated") {
+          variant = await liveSubscriptionVariant(lsSubscriptionId);
+        } else {
+          const { data: subRow } = await supabase
+            .from("subscriptions")
+            .select("ls_variant_id")
+            .eq("ls_subscription_id", lsSubscriptionId)
+            .maybeSingle();
+          const v = subRow?.ls_variant_id;
+          variant = typeof v === "number" || typeof v === "string" ? String(v) : null;
+        }
+        await captureOrderInterval(supabase, renewalOrderId, billingIntervalForVariantId(variant));
+      }
       // Only a real (non-zero) charge converts a trial: Lemon Squeezy also sends
       // this event for the $0 invoice at trial START, which used to stamp nearly
       // every trial as converted on day 0.

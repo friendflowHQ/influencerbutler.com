@@ -62,7 +62,53 @@ export type CommissionOrder = {
   createdAt: string | null;
   /** Billing cadence, for amortization. Optional: undefined/null = monthly. */
   billingInterval?: BillingInterval | null;
+  /** Finance enrichment (USD cents, from the LS *_usd fields). Optional: older
+   *  rows and tests may not carry them. Used for the net commission base. */
+  totalUsdCents?: number | null;
+  taxUsdCents?: number | null;
+  refundedUsdCents?: number | null;
 };
+
+/**
+ * Orders created on or after this instant earn commission on NET revenue in
+ * USD (total minus tax minus refunds), as the affiliate terms say ("net
+ * subscription revenue (after refunds and taxes)"). Older orders keep the
+ * gross order total they were always computed on, so nothing already earned or
+ * paid ever moves.
+ */
+export const NET_BASIS_FROM = "2026-11-13T00:00:00Z";
+
+/** Statuses that still carry commission (a partial refund keeps the unrefunded part). */
+const COMMISSIONABLE_STATUSES = new Set(["paid", "partial_refund"]);
+
+const num = (v: number | null | undefined): number | null =>
+  typeof v === "number" && Number.isFinite(v) ? v : null;
+
+/**
+ * The amount commission is figured on for one order, in cents.
+ *  - From NET_BASIS_FROM: USD total minus tax minus any refund, when the USD
+ *    figures exist; otherwise the raw total for USD orders (minus a refund).
+ *  - Before it: the raw total, as always, minus the refunded share for a
+ *    partial refund (which used to wipe the whole order instead).
+ */
+export function commissionBaseCents(order: CommissionOrder): number {
+  const raw = Number.isFinite(order.totalCents) ? order.totalCents : 0;
+  const totalUsd = num(order.totalUsdCents);
+  const taxUsd = num(order.taxUsdCents) ?? 0;
+  const refundedUsd = order.status === "partial_refund" ? num(order.refundedUsdCents) ?? 0 : 0;
+  const createdMs = order.createdAt ? new Date(order.createdAt).getTime() : NaN;
+  const netBasis = Number.isFinite(createdMs) && createdMs >= Date.parse(NET_BASIS_FROM);
+
+  if (netBasis && totalUsd !== null) {
+    return Math.max(0, Math.round(totalUsd - taxUsd - refundedUsd));
+  }
+  if (refundedUsd > 0) {
+    // Scale the raw total by the unrefunded share when we can, else subtract.
+    if (totalUsd !== null && totalUsd > 0) return Math.max(0, Math.round(raw * (1 - refundedUsd / totalUsd)));
+    return Math.max(0, Math.round(raw - refundedUsd));
+  }
+  return Math.max(0, Math.round(raw));
+}
 
 export type CommissionLine = {
   lsOrderId: string;
@@ -115,6 +161,9 @@ export function resolveDurationMonths(terms: AffiliateTerms | null | undefined):
   return hasCustomRate ? null : DEFAULT_COMMISSION_DURATION_MONTHS;
 }
 
+/** One day of grace at the end of the commission window (see orderEconomics). */
+const WINDOW_GRACE_MS = 24 * 60 * 60 * 1000;
+
 function addMonths(iso: string, months: number): number {
   const d = new Date(iso);
   d.setUTCMonth(d.getUTCMonth() + months);
@@ -129,7 +178,7 @@ function addMonths(iso: string, months: number): number {
 export function buildFirstOrderByBuyer(orders: CommissionOrder[]): Map<string, number> {
   const first = new Map<string, number>();
   for (const o of orders) {
-    if (o.status !== "paid") continue;
+    if (!COMMISSIONABLE_STATUSES.has(o.status ?? "")) continue;
     if (!o.buyerUserId || !o.createdAt) continue;
     const t = new Date(o.createdAt).getTime();
     if (!Number.isFinite(t)) continue;
@@ -162,7 +211,7 @@ export function orderEconomics(
   terms: AffiliateTerms | null | undefined,
   firstOrderMs: number | null,
 ): OrderEconomics | null {
-  if (order.status !== "paid") return null;
+  if (!COMMISSIONABLE_STATUSES.has(order.status ?? "")) return null;
   if (!order.createdAt) return null;
   const orderMs = new Date(order.createdAt).getTime();
   if (!Number.isFinite(orderMs)) return null;
@@ -171,13 +220,15 @@ export function orderEconomics(
   const ratePercent = resolveRatePercent(terms);
   const durationMonths = resolveDurationMonths(terms);
 
-  // Outside the affiliate's honored window: no commission owed.
+  // Outside the affiliate's honored window: no commission owed. The window runs
+  // to the end of the last day of month N, so a renewal charged on the
+  // month-N anniversary (seconds after the anchor time) still counts.
   if (durationMonths !== null) {
     const anchorIso = new Date(anchorMs).toISOString();
-    if (orderMs > addMonths(anchorIso, durationMonths)) return null;
+    if (orderMs > addMonths(anchorIso, durationMonths) + WINDOW_GRACE_MS) return null;
   }
 
-  const totalCents = Number.isFinite(order.totalCents) ? order.totalCents : 0;
+  const totalCents = commissionBaseCents(order);
 
   // Did LS actually pay 30% on this order? Only if it was credited live AND the
   // order falls within LS's 12-month crediting window.

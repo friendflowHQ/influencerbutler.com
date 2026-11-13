@@ -8,6 +8,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { billingIntervalForVariantId, isAddonVariant } from "@/lib/lemonsqueezy";
 import { isMigrationPendingError } from "@/lib/finance-stepup";
+import { resolveOrderInterval } from "@/lib/order-interval";
 
 export type FinanceInterval = "month" | "year" | "one_time";
 
@@ -73,6 +74,7 @@ export async function loadFinanceOrders(db: SupabaseClient): Promise<FinanceOrde
     new Set(rows.map((r) => r.ls_subscription_id).filter((v): v is string => Boolean(v))),
   );
   const intervalBySub = new Map<string, FinanceInterval>();
+  const variantBySub = new Map<string, string>();
   for (let i = 0; i < subIds.length; i += 200) {
     const chunk = subIds.slice(i, i + 200);
     const { data } = await db
@@ -80,6 +82,7 @@ export async function loadFinanceOrders(db: SupabaseClient): Promise<FinanceOrde
       .select("ls_subscription_id,ls_variant_id")
       .in("ls_subscription_id", chunk);
     for (const s of (data ?? []) as { ls_subscription_id: string; ls_variant_id: string | null }[]) {
+      if (s.ls_variant_id != null) variantBySub.set(s.ls_subscription_id, String(s.ls_variant_id));
       if (isAddonVariant(s.ls_variant_id)) {
         intervalBySub.set(s.ls_subscription_id, "one_time");
         continue;
@@ -87,6 +90,25 @@ export async function loadFinanceOrders(db: SupabaseClient): Promise<FinanceOrde
       const interval = billingIntervalForVariantId(s.ls_variant_id);
       intervalBySub.set(s.ls_subscription_id, interval ?? "month");
     }
+  }
+
+  // Per-order cadence (20261113), best-effort: the column may not exist yet.
+  const storedInterval = new Map<string, string>();
+  try {
+    for (let page = 0; page < 50; page++) {
+      const { data, error } = await db
+        .from("orders")
+        .select("ls_order_id,billing_interval")
+        .not("billing_interval", "is", null)
+        .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);
+      if (error) break;
+      for (const r of (data ?? []) as { ls_order_id: string; billing_interval: string | null }[]) {
+        if (r.billing_interval) storedInterval.set(r.ls_order_id, r.billing_interval);
+      }
+      if ((data ?? []).length < PAGE_SIZE) break;
+    }
+  } catch {
+    /* best-effort */
   }
 
   let enrichedCount = 0;
@@ -114,10 +136,32 @@ export async function loadFinanceOrders(db: SupabaseClient): Promise<FinanceOrde
       taxUsdCents: Number.isFinite(tax) ? tax : 0,
       refundedUsdCents: Number.isFinite(refunded) ? refunded : 0,
       refundedAt: r.refunded_at ?? (r.status === "refunded" ? r.created_at : null),
-      interval: (r.ls_subscription_id && intervalBySub.get(r.ls_subscription_id)) || "one_time",
+      interval: financeIntervalFor(r, total - tax, storedInterval, intervalBySub, variantBySub),
       enriched,
     });
   }
 
   return { ok: true, orders, enrichedCount };
+}
+
+/** The charge's own cadence: add-ons stay one-time; otherwise the stored
+ *  per-order interval, then the amount rule, then the subscription's current one. */
+function financeIntervalFor(
+  r: OrderRow,
+  chargeCents: number,
+  stored: Map<string, string>,
+  bySub: Map<string, FinanceInterval>,
+  variantBySub: Map<string, string>,
+): FinanceInterval {
+  const subInterval = r.ls_subscription_id ? bySub.get(r.ls_subscription_id) : undefined;
+  if (!r.ls_subscription_id) return "one_time";
+  if (subInterval === "one_time") return "one_time";
+  return (
+    resolveOrderInterval({
+      stored: stored.get(r.ls_order_id),
+      chargeCents,
+      variantId: variantBySub.get(r.ls_subscription_id) ?? null,
+      fallback: subInterval === "month" || subInterval === "year" ? subInterval : null,
+    }) ?? "one_time"
+  );
 }
