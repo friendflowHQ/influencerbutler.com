@@ -49,6 +49,8 @@ export type Audience = (
       excludeOrigins?: string[];
       /** B only: just paying subscribers on a monthly plan that has an annual version. */
       monthlyOnly?: boolean;
+      /** Small batches: at most perWindow sends per windowMinutes for this campaign. */
+      pace?: { perWindow: number; windowMinutes: number };
     }
 ) & {
   split?: AudienceSplit;
@@ -159,6 +161,15 @@ function parseExcludeCampaignIds(raw: unknown): string[] | undefined | null {
 }
 
 /** Allow-list validation of an untrusted audience payload. Null on garbage. */
+function isPace(v: unknown): v is { perWindow: number; windowMinutes: number } {
+  if (!v || typeof v !== "object") return false;
+  const o = v as Record<string, unknown>;
+  return (
+    Number.isInteger(o.perWindow) && (o.perWindow as number) >= 1 && (o.perWindow as number) <= 1000 &&
+    Number.isInteger(o.windowMinutes) && (o.windowMinutes as number) >= 5 && (o.windowMinutes as number) <= 240
+  );
+}
+
 export function parseAudience(input: unknown): Audience | null {
   const base = parseAudienceBase(input);
   if (!base) return null;
@@ -255,6 +266,7 @@ function parseAudienceBase(input: unknown): Audience | null {
         ...(raw.allowSecondToday === true ? { allowSecondToday: true } : {}),
         ...(excludeOrigins.length ? { excludeOrigins } : {}),
         ...(raw.monthlyOnly === true ? { monthlyOnly: true } : {}),
+        ...(isPace(raw.pace) ? { pace: { perWindow: raw.pace.perWindow, windowMinutes: raw.pace.windowMinutes } } : {}),
       };
     }
     case "pasted": {

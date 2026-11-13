@@ -17,6 +17,7 @@ import {
   resendKeyFor,
   priceLockSender,
   MAIN_FROM,
+  COLD_FROM,
   PRICE_LOCK_COLD_HELD,
 } from "../email-senders";
 
@@ -45,14 +46,21 @@ afterEach(() => {
   }
 });
 
-describe("sender addresses (one main sender for everything, 2026-11-12)", () => {
-  it("every stream sends from hello@influencerbutler.com", () => {
+describe("sender addresses (main for known people, subdomain for cold, 2026-11-13)", () => {
+  it("transactional and lifecycle send from hello@influencerbutler.com", () => {
     expect(MAIN_FROM).toBe("Influencer Butler <hello@influencerbutler.com>");
     expect(DEFAULT_BRAND_FROM).toBe(MAIN_FROM);
     expect(transactionalFrom()).toBe(MAIN_FROM);
     expect(lifecycleFrom()).toBe(MAIN_FROM);
-    expect(coldFrom()).toBe(MAIN_FROM);
-    for (const s of ["transactional", "lifecycle", "cold"] as const) expect(fromForStream(s)).toBe(MAIN_FROM);
+    expect(fromForStream("transactional")).toBe(MAIN_FROM);
+    expect(fromForStream("lifecycle")).toBe(MAIN_FROM);
+  });
+
+  it("cold sends from the separate news. subdomain, never the main domain", () => {
+    expect(coldFrom()).toBe(COLD_FROM);
+    expect(fromForStream("cold")).toBe(COLD_FROM);
+    expect(COLD_FROM).toMatch(/@news\.influencerbutler\.com>$/);
+    expect(coldFrom()).not.toBe(MAIN_FROM);
   });
 
   it("ignores stale EMAIL_FROM_* env values (e.g. lifecycle on news.)", () => {
@@ -61,10 +69,10 @@ describe("sender addresses (one main sender for everything, 2026-11-12)", () => 
     process.env.EMAIL_FROM_COLD = "C <c@cold.com>";
     expect(transactionalFrom()).toBe(MAIN_FROM);
     expect(lifecycleFrom()).toBe(MAIN_FROM);
-    expect(coldFrom()).toBe(MAIN_FROM);
+    expect(coldFrom()).toBe(COLD_FROM);
   });
 
-  it("the cold stream has a sender, so it is not paused for lack of one", () => {
+  it("the cold stream has its own sender, so it is not paused for lack of one", () => {
     expect(coldStreamEnabled()).toBe(true);
   });
 });

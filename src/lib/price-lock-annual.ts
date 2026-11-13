@@ -1,7 +1,8 @@
 /**
- * "Switch to annual by Nov 30" offer for paying MONTHLY subscribers (owner
- * rule 2026-11-11: the plan someone is on keeps its price, a new plan chosen
- * after Nov 30, including monthly to annual, is at the new price).
+ * Switch-to-annual offer for paying MONTHLY subscribers. Owner rule
+ * 2026-11-13: a locked-in price is locked forever while subscribed, switching
+ * monthly to annual included, so the annual price shown is theirs whenever
+ * they switch (see switchTargetVariant).
  *
  * Built from the variant the subscriber is actually on, so a Pro Trio or a
  * Beginner Solo customer sees their own numbers.
@@ -16,7 +17,7 @@ export type AnnualOffer = {
   annualCents: number;
   /** 12 x monthly minus annual. */
   saveCents: number;
-  /** Annual price if they switch after the deadline. */
+  /** Annual price a NEW customer pays after the deadline (for comparison). */
   afterCents: number;
 };
 
@@ -49,11 +50,11 @@ export function annualOfferFor(variantId: string | number | null | undefined): A
 export const dollars = (cents: number) =>
   `$${cents % 100 === 0 ? (cents / 100).toLocaleString("en-US") : (cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-/** The per-person lines for the Nov 24 email ({{ANNUAL_OFFER}}). */
+/** The per-person lines for the annual email ({{ANNUAL_OFFER}}). */
 export function annualOfferLines(o: AnnualOffer): string {
   return [
     `✨ You're on ${o.planName} at ${dollars(o.monthlyCents)} a month, and that stays locked`,
     `✨ Annual today: **${dollars(o.annualCents)} a year**, that's ${dollars(o.saveCents)} less than 12 months at ${dollars(o.monthlyCents)}`,
-    `✨ Switch after Nov 30 and annual is ${dollars(o.afterCents)} a year`,
+    `✨ That annual price is locked for you too, even if you switch after Nov 30 (new customers will pay ${dollars(o.afterCents)} a year)`,
   ].join("\n");
 }

@@ -85,6 +85,8 @@ export type PriceLockPeople = {
   originOf: Map<string, string>;
   /** B only: the variant a paying subscriber is on (for the annual offer). */
   paidVariantOf: Map<string, string>;
+  /** First name when we have a trustworthy one (comp recipient name, then profile display name). */
+  firstNameOf: Map<string, string>;
 };
 
 /** Coarse origin label for the size report and for leaving whole lists out. */
@@ -106,6 +108,25 @@ export function originLabel(hasAccount: boolean, tags: readonly string[], source
     return list ? `list:${list}`.slice(0, 48) : "list:untagged";
   }
   return source ? `source:${source}`.slice(0, 40) : "other";
+}
+
+/**
+ * A first name safe to put after "Hi". `typed` names (entered by an admin on
+ * the comp) are trusted; profile display names are often handles, so those
+ * need a space ("Jane Doe") or a leading capital, and must not just be the
+ * email's local part. Returns null when unsure, so the email says "Hi,".
+ */
+export function cleanFirstName(raw: string | null | undefined, typed: boolean, email?: string): string | null {
+  const s = (raw ?? "").trim();
+  if (!s || /[@\d_]|https?:/i.test(s)) return null;
+  if (!typed) {
+    const local = (email ?? "").split("@")[0]?.toLowerCase() ?? "";
+    if (!/\s/.test(s) && !/^\p{Lu}/u.test(s)) return null;
+    if (local && s.replace(/\s+/g, "").toLowerCase() === local) return null;
+  }
+  const first = s.split(/\s+/)[0].replace(/[^\p{L}'-]/gu, "");
+  if (first.length < 2 || first.length > 20) return null;
+  return first[0].toUpperCase() + first.slice(1);
 }
 
 /**
@@ -137,6 +158,7 @@ export async function loadPriceLockPeople(db: SupabaseClient): Promise<PriceLock
     cancelled_at: string | null;
     converted_at?: string | null;
     kind?: string | null;
+    recipient_name?: string | null;
   };
   // select("*"): kind / converted_at are later migrations that prod may lack.
   const grants =
@@ -158,12 +180,20 @@ export async function loadPriceLockPeople(db: SupabaseClient): Promise<PriceLock
     (await pageAll<{ email: string }>((a, b) => db.from("email_suppressions").select("email").order("email").range(a, b))) ??
     fail("email_suppressions");
 
+  // Best-effort: names only personalize the greeting, so a failed read just
+  // means "Hi," and never blocks the push.
+  const profileNames =
+    (await pageAll<{ id: string; display_name: string | null }>((a, b) =>
+      db.from("profiles").select("id, display_name").order("id").range(a, b),
+    )) ?? [];
+
   const now = Date.now();
   const compSubIds = new Set<string>();
   const compSubIdOf = new Map<string, string>();
   const paidVariantOf = new Map<string, string>();
   const facts = new Map<string, PersonFacts>(); // keyed by email
   const emailOfUser = new Map<string, string>();
+  const firstNameOf = new Map<string, string>();
   const blank = (): PersonFacts => ({
     liveNonCompPaid: false,
     liveNonCompTrial: false,
@@ -194,6 +224,8 @@ export async function loadPriceLockPeople(db: SupabaseClient): Promise<PriceLock
       !g.cancelled_at && (!g.expires_at || Date.parse(g.expires_at) > now);
     const f = get(email);
     if (g.converted_at) f.compCardAdded = true;
+    const typed = cleanFirstName(g.recipient_name, true);
+    if (typed && !firstNameOf.has(email)) firstNameOf.set(email, typed);
     if (running) {
       if (g.kind === "trial") f.liveNoCardTrial = true;
       else {
@@ -262,7 +294,15 @@ export async function loadPriceLockPeople(db: SupabaseClient): Promise<PriceLock
     segmentOf.set(email, seg);
     if (seg === "D") wouldReturn.set(email, latest.get(email)?.v ?? null);
   }
-  return { segmentOf, wouldReturn, suppressed, compSubIdOf, accounts: accountSet, originOf, paidVariantOf };
+  // Profile display names fill in after the typed comp names.
+  for (const p of profileNames) {
+    const email = emailOfUser.get(p.id);
+    if (!email || firstNameOf.has(email)) continue;
+    const n = cleanFirstName(p.display_name, false, email);
+    if (n) firstNameOf.set(email, n);
+  }
+
+  return { segmentOf, wouldReturn, suppressed, compSubIdOf, accounts: accountSet, originOf, paidVariantOf, firstNameOf };
 }
 
 /** Ordered recipients for a segment (D: "yes" then "maybe" then the rest). */

@@ -8,12 +8,12 @@
 //     Keeps the unsubscribe affordance.
 //   - cold: cold sequences + campaigns to non-customers.
 //
-// ONE SENDER FOR EVERYTHING (owner decision, 2026-11-12): every stream sends
-// from MAIN_FROM, hello@influencerbutler.com. The EMAIL_FROM_TRANSACTIONAL /
-// EMAIL_FROM_LIFECYCLE / EMAIL_FROM_COLD env vars are deliberately IGNORED so a
-// stale Vercel value (lifecycle pointed at news.influencerbutler.com) can never
-// move mail off the main address. Streams still pick their Resend API key and
-// keep their own gates; only the "from" is unified.
+// SENDERS (owner, 2026-11-12/13): transactional and lifecycle mail, including
+// the price lock push to segments A-D, send from MAIN_FROM,
+// hello@influencerbutler.com. Cold mail (the "cold" stream and price lock
+// E1-E3) sends from COLD_FROM on the separate news. subdomain and never from the
+// main domain. The EMAIL_FROM_* env vars are deliberately IGNORED so a stale
+// Vercel value can never move mail. Streams still pick their Resend API key.
 
 export type EmailStream = "transactional" | "lifecycle" | "cold";
 
@@ -33,14 +33,18 @@ export function lifecycleFrom(): string {
   return MAIN_FROM;
 }
 
-/** Sender for cold outreach. Same main address as everything else. */
+/** Cold outreach sender on a SEPARATE subdomain (owner, 2026-11-13): cold mail
+ * (price lock E1-E3 and anything on the "cold" stream) never uses the main
+ * domain address. news.influencerbutler.com is verified in Resend. */
+export const COLD_FROM = "Influencer Butler <hello@news.influencerbutler.com>";
+
+/** Sender for cold outreach: COLD_FROM, never MAIN_FROM. */
 export function coldFrom(): string {
-  return MAIN_FROM;
+  return COLD_FROM;
 }
 
-/** Cold sequences and campaigns have a sender (the main address), so the cold
- * stream is no longer paused for lack of one. The price lock cold groups
- * (E1-E3) are held separately, see PRICE_LOCK_COLD_HELD. */
+/** The cold stream has its own subdomain sender. The price lock cold groups
+ * (E1-E3) are additionally held, see PRICE_LOCK_COLD_HELD. */
 export function coldStreamEnabled(): boolean {
   return coldFrom().trim().length > 0;
 }
@@ -60,16 +64,16 @@ export function fromForStream(stream: EmailStream): string {
 
 /**
  * Price lock cold groups (E1, E2, E3) stay ON HOLD until the owner approves the
- * deliverability fixes (owner, 2026-11-12). Flip to false in a reviewed commit
- * to release them; they then send from the main address like everything else.
+ * deliverability fixes (owner, 2026-11-12/13). Flip to false in a reviewed
+ * commit to release them; they then send from COLD_FROM (news. subdomain).
  */
 export const PRICE_LOCK_COLD_HELD = true;
 
 /**
- * Sender for the Nov 2026 price lock push: the main address for every segment.
- * A-D go on the transactional stream (same Resend key as license keys and
- * sign-in links). Any audience touching E1-E3 returns null (held) while
- * PRICE_LOCK_COLD_HELD is true.
+ * Sender for the Nov 2026 price lock push. A-D: the main address on the
+ * transactional stream (same Resend key as license keys and sign-in links).
+ * Any audience touching E1-E3: null (held) while PRICE_LOCK_COLD_HELD, then
+ * COLD_FROM on the cold stream. E1-E3 never get the main address.
  *
  * The send itself still goes through sendMarketingEmail, so the unsubscribe
  * footer, one-click List-Unsubscribe headers and daily gates are unchanged.

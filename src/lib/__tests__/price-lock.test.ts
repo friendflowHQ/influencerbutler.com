@@ -133,18 +133,23 @@ describe("both families map to the same plan", () => {
   });
 });
 
-describe("plan switches (owner rule: a new plan after Nov 30 is at the new price)", () => {
+describe("plan switches (owner rule 2026-11-13: a locked-in price is locked forever, switches included)", () => {
   it("before the deadline: today's variant, legacy stays legacy", () => {
     expect(switchTargetVariant("beginner-solo-annual", "2243998", BEFORE)).toMatchObject({ variantId: "2244025" });
     expect(switchTargetVariant("annual", "1533734", BEFORE)).toMatchObject({ variantId: "1533746" });
   });
 
-  it("after the deadline: the new-price variant, legacy moves to Power User", () => {
-    expect(switchTargetVariant("beginner-solo-annual", "2243998", AFTER)).toMatchObject({ variantId: "3000002", family: "next" });
-    expect(switchTargetVariant("solo-annual", "1533734", AFTER)).toMatchObject({
-      variantId: "3000008",
-      plan: "power-solo-annual",
-    });
+  it("after the deadline: a locked-in subscriber still gets the OLD price of the target plan", () => {
+    // monthly to yearly: the old yearly price
+    expect(switchTargetVariant("beginner-solo-annual", "2243998", AFTER)).toMatchObject({ variantId: "2244025", family: "current" });
+    // legacy Pro monthly to annual stays legacy (old yearly price)
+    expect(switchTargetVariant("annual", "1533734", AFTER)).toMatchObject({ variantId: "1533746", family: "current" });
+    // upgrade to a bigger plan: that plan's old price
+    expect(switchTargetVariant("power-trio-monthly", "1533734", AFTER)).toMatchObject({ variantId: "2244111", family: "current" });
+  });
+
+  it("a subscriber already on new prices stays on new prices", () => {
+    expect(switchTargetVariant("power-trio-monthly", "3000001", AFTER)).toMatchObject({ variantId: "3000009", family: "next" });
   });
 });
 
@@ -189,5 +194,32 @@ describe("comps and trials", () => {
     expect(keepsPreDeadlinePrice([trial(AFTER - day)], AFTER + day)).toBe(false); // already ended
     expect(keepsPreDeadlinePrice([{ ...trial(AFTER + 5 * day), kind: "admin" }], AFTER + day)).toBe(false);
     expect(keepsPreDeadlinePrice([trial(AFTER + 5 * day)], BEFORE)).toBe(false); // nothing to keep yet
+  });
+});
+
+describe("first-name greeting", () => {
+  it("uses a typed or real-looking name, else plain Hi", async () => {
+    const { cleanFirstName } = await import("../price-lock-audience");
+    const { personalizePriceLockBody } = await import("../price-lock-emails");
+    expect(cleanFirstName("rachel graves", true)).toBe("Rachel");
+    expect(cleanFirstName("Jane Doe", false, "jd@x.com")).toBe("Jane");
+    expect(cleanFirstName("jcmulroney", false, "jcmulroney@aol.com")).toBeNull();
+    expect(cleanFirstName("deals_by_ali", false)).toBeNull();
+    expect(cleanFirstName("Ali123", false)).toBeNull();
+    expect(personalizePriceLockBody("Hi {{FIRST_NAME}},\n\nx", { firstName: "Jane" })).toBe("Hi Jane,\n\nx");
+    expect(personalizePriceLockBody("Hi {{FIRST_NAME}},\n\nx", {})).toBe("Hi,\n\nx");
+  });
+});
+
+describe("comp resend", () => {
+  it("pl-1113-c targets C only and carries the rule 5 promises", async () => {
+    const { PRICE_LOCK_EMAILS } = await import("../price-lock-emails");
+    const e = PRICE_LOCK_EMAILS.find((x) => x.key === "pl-1113-c");
+    expect(e?.segments).toEqual(["C"]);
+    expect(e?.cold).toBeFalsy();
+    expect(e?.body).toMatch(/free time rides out/i);
+    expect(e?.body).toMatch(/locked for as long as you stay subscribed/i);
+    expect(e?.body).toMatch(/annual/i);
+    expect(e?.body.startsWith("Hi {{FIRST_NAME}},")).toBe(true);
   });
 });

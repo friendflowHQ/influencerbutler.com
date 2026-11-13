@@ -43,7 +43,7 @@ export async function GET() {
     }[];
     const paid = rows.filter((s) => !isCompSubscriptionId(s.ls_subscription_id ?? null, grantIds));
     if (paid.length > 0) {
-      // Monthly payers get the "switch to annual by Nov 30" offer.
+      // Monthly payers get the switch-to-annual offer (annual price locked too).
       const offer = paid.map((s) => annualOfferFor(s.ls_variant_id ?? null)).find((o) => o != null) ?? null;
       return NextResponse.json({ state: "locked", endsAt, ...(offer ? { annualOffer: offer } : {}) });
     }

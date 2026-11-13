@@ -112,8 +112,8 @@ export async function GET(request: Request) {
       // Price lock: a scheduled downgrade stays in the subscriber's own price
       // family even when it applies after Nov 30. It was usually requested
       // earlier (it lands at renewal) and it moves to a CHEAPER plan, so we do
-      // not hold the request time against them. Immediate switches made after
-      // the deadline use the new prices (switchTargetVariant in the upgrade route).
+      // not hold the request time against them. Immediate switches stay in the
+      // family too (switchTargetVariant): a locked-in price is locked forever.
       const currentVariant = subPayload.data?.attributes?.variant_id ?? null;
       const family = variantFamilyOf(currentVariant) ?? "current";
       const familyId = variantIdForPlanInFamily(row.scheduled_plan, family);

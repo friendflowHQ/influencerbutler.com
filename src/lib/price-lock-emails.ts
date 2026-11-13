@@ -208,11 +208,39 @@ Liz`,
     hour: 12,
     segments: ["C"],
     subject: "Keep today's price (no charge until your free time ends)",
-    body: `Hi,
+    body: `Hi {{FIRST_NAME}},
 
 You're on free time with Influencer Butler right now, so I wanted to give you a heads up.
 
-Prices for new subscriptions go up after **Nov 30 at 11:59pm Pacific**. If you add a card by then, you keep today's price for as long as you stay subscribed. You won't be charged anything until your free time ends.
+Prices for new subscriptions go up after **Nov 30 at 11:59pm Pacific**. If you add a card by then:
+
+🎁 Your free time rides out. Nothing is charged until your free time ends.
+🔒 Your price is locked for as long as you stay subscribed.
+📅 That includes switching to annual later (at today's annual price) or moving up to a bigger plan (at that plan's price today).
+
+[Keep today's price]({{KEEP_PLAN_URL}})
+
+If you add it after Nov 30, you can still keep going, just at the new price.
+
+Liz`,
+  },
+  // Resend of pl-1112-c from the main address (owner, 2026-11-13) to comps who
+  // still have not added a card. Same audience rules, re-checked at send time.
+  {
+    key: "pl-1113-c",
+    date: "2026-11-13",
+    hour: 12,
+    segments: ["C"],
+    subject: "Keep today's price (no charge until your free time ends)",
+    body: `Hi {{FIRST_NAME}},
+
+You're on free time with Influencer Butler right now, so I wanted to give you a heads up.
+
+Prices for new subscriptions go up after **Nov 30 at 11:59pm Pacific**. If you add a card by then:
+
+🎁 Your free time rides out. Nothing is charged until your free time ends.
+🔒 Your price is locked for as long as you stay subscribed.
+📅 That includes switching to annual later (at today's annual price) or moving up to a bigger plan (at that plan's price today).
 
 [Keep today's price]({{KEEP_PLAN_URL}})
 
@@ -271,7 +299,7 @@ Liz`,
     segments: ["B"],
     monthlyOnly: true,
     subject: "🔒 Want a whole year at today's price?",
-    body: `Preheader: Your monthly price stays locked. Switch to annual by Nov 30 to lock today's annual price too ✨
+    body: `Preheader: Your monthly price stays locked, and so does today's annual price whenever you switch ✨
 
 Hi there! 👋
 
@@ -279,7 +307,7 @@ Quick one, since you're on a monthly plan.
 
 Your monthly price is locked in for as long as you stay. That doesn't change! 🧡
 
-But if you've been thinking about going annual, **switch by Nov 30 at 11:59pm Pacific** to get today's annual price. After that, switching to annual uses the new prices.
+And if you've been thinking about going annual, **your annual price is locked too**. Switch now or any time later, even after Nov 30, and you get today's annual price, not the new one.
 
 {{ANNUAL_OFFER}}
 
@@ -317,11 +345,11 @@ Liz`,
     hour: 12,
     segments: ["C"],
     subject: "6 days left to keep today's price",
-    body: `Hi,
+    body: `Hi {{FIRST_NAME}},
 
 Quick reminder: there are **6 days left** to keep today's price.
 
-Add a card by Nov 30 at 11:59pm Pacific and you keep it for as long as you stay subscribed. Nothing is charged until your free time ends.
+Add a card by Nov 30 at 11:59pm Pacific and your free time still rides out: nothing is charged until it ends. After that your price stays locked for as long as you stay subscribed, including if you switch to annual.
 
 [Keep today's price]({{KEEP_PLAN_URL}})
 
@@ -351,11 +379,11 @@ Liz`,
     hour: 12,
     segments: ["C"],
     subject: "Tomorrow is the last day to keep today's price",
-    body: `Hi,
+    body: `Hi {{FIRST_NAME}},
 
 Short one: **tomorrow, Nov 30**, is the last day to keep today's price.
 
-Add a card and you're set. No charge until your free time ends.
+Add a card and you're set. Your free time rides out with no charge until it ends, and your price stays locked as long as you stay, annual included.
 
 [Keep today's price]({{KEEP_PLAN_URL}})
 
@@ -387,9 +415,9 @@ Liz`,
     hour: 8,
     segments: ["C"],
     subject: "Last day to keep today's price",
-    body: `Hi,
+    body: `Hi {{FIRST_NAME}},
 
-Today's the last day. Add a card **by 11:59pm Pacific tonight** and you keep today's price for as long as you stay. Still no charge until your free time ends.
+Today's the last day. Add a card **by 11:59pm Pacific tonight** and you keep today's price for as long as you stay, including if you switch to annual. Still no charge until your free time ends.
 
 [Keep today's price]({{KEEP_PLAN_URL}})
 
@@ -421,9 +449,9 @@ Liz`,
     hour: 18,
     segments: ["C"],
     subject: "Final hours to keep today's price",
-    body: `Hi,
+    body: `Hi {{FIRST_NAME}},
 
-A few hours left. Add a card **by 11:59pm Pacific tonight** to keep today's price. No charge until your free time ends.
+A few hours left. Add a card **by 11:59pm Pacific tonight** to keep today's price for as long as you stay, annual included. No charge until your free time ends.
 
 [Keep today's price]({{KEEP_PLAN_URL}})
 
@@ -653,9 +681,13 @@ Liz`,
  * (the caller then skips the recipient rather than send a broken link). */
 export function personalizePriceLockBody(
   body: string,
-  values: { keepPlanUrl?: string | null; annualOffer?: string | null },
+  values: { keepPlanUrl?: string | null; annualOffer?: string | null; firstName?: string | null },
 ): string | null {
   let out = body;
+  // "Hi {{FIRST_NAME}}," becomes "Hi Jane," or plain "Hi," when we have no name.
+  const name = values.firstName?.trim() || null;
+  out = out.split("Hi {{FIRST_NAME}},").join(name ? `Hi ${name},` : "Hi,");
+  out = out.split("{{FIRST_NAME}}").join(name ?? "there");
   if (out.includes("{{KEEP_PLAN_URL}}")) {
     if (!values.keepPlanUrl) return null;
     out = out.split("{{KEEP_PLAN_URL}}").join(values.keepPlanUrl);

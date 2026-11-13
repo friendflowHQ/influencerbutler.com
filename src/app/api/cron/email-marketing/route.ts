@@ -77,6 +77,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const CAMPAIGN_PER_RUN = 100;
+/** Price lock push batches when a campaign sets no pace: 75 every 30 minutes. */
+const PRICE_LOCK_DEFAULT_PACE = { perWindow: 75, windowMinutes: 30 } as const;
 const MAX_ATTEMPTS = 3;
 const CANDIDATE_LIMIT = 500;
 const CHUNK = 200;
@@ -470,19 +472,39 @@ async function sendCampaignRecipients(db: SupabaseClient, summary: Summary): Pro
     // Fail closed for a push: no fresh segment read, no send this run.
     if (push && !people) continue;
 
+    // Price lock push goes out in small batches (owner, 2026-11-12/13): at most
+    // pace.perWindow sends per pace.windowMinutes for this campaign. Fails
+    // closed: if the recent count cannot be read, this campaign waits a run.
+    let campaignLeft = budget;
+    if (push) {
+      const pace = push.pace ?? PRICE_LOCK_DEFAULT_PACE;
+      const since = new Date(Date.now() - pace.windowMinutes * 60 * 1000).toISOString();
+      const { count: recentSent, error: paceErr } = await db
+        .from("email_campaign_recipients")
+        .select("id", { count: "exact", head: true })
+        .eq("campaign_id", campaign.id)
+        .eq("status", "sent")
+        .gte("sent_at", since);
+      campaignLeft = paceErr || recentSent == null ? 0 : Math.min(budget, Math.max(0, pace.perWindow - recentSent));
+      if (campaignLeft <= 0) {
+        summary.campaignDeferred = (summary.campaignDeferred ?? 0) + 1;
+        continue;
+      }
+    }
+
     const { data: recipients, error: recErr } = await db
       .from("email_campaign_recipients")
       .select("id, email, attempts")
       .eq("campaign_id", campaign.id)
       .eq("status", "queued")
-      .limit(budget);
+      .limit(campaignLeft);
     if (recErr) {
       reportError("queued recipients query", recErr);
       continue;
     }
 
     for (const recipient of (recipients ?? []) as { id: string; email: string; attempts: number }[]) {
-      if (budget <= 0) break;
+      if (budget <= 0 || campaignLeft <= 0) break;
       const email = recipient.email;
 
       if (await isEmailSuppressed(email)) {
@@ -517,6 +539,7 @@ async function sendCampaignRecipients(db: SupabaseClient, summary: Summary): Pro
         const body = personalizePriceLockBody(campaign.body, {
           keepPlanUrl: compSub ? keepPlanUrl(compSub, "price-lock") : null,
           annualOffer: offer ? annualOfferLines(offer) : null,
+          firstName: people.firstNameOf.get(email.trim().toLowerCase()) ?? null,
         });
         if (body == null) {
           await db.from("email_campaign_recipients").update({ status: "skipped" }).eq("id", recipient.id);
@@ -545,6 +568,7 @@ async function sendCampaignRecipients(db: SupabaseClient, summary: Summary): Pro
       }
 
       budget -= 1;
+      campaignLeft -= 1;
       const ok = await sendMarketingEmail({
         from: push ? fromLiz(campaignFrom) : campaignFrom,
         to: email,

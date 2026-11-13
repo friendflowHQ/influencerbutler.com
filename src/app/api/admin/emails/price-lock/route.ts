@@ -8,8 +8,11 @@
 //                            (all by default) to one inbox.
 //   POST {action:"snapshot-cold"}            freezes the cold groups as contact
 //                            tags pl-e1 / pl-e2 / pl-e3.
-//   POST {action:"schedule", keys}           schedules those drafts at their
-//                            planned Pacific time. Only after owner approval.
+//   POST {action:"sync-drafts", keys?}       rewrites unscheduled drafts' subject,
+//                            body and audience from the code.
+//   POST {action:"schedule", keys, startNow?} schedules those drafts at their
+//                            planned Pacific time (startNow: in a minute, one key
+//                            only). Only after owner approval.
 //
 // Everything here needs marketing.send. Nothing sends to customers until a
 // draft is scheduled.
@@ -160,7 +163,7 @@ export async function POST(request: Request) {
   const svc = db();
   if (!svc) return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
 
-  let body: { action?: unknown; toEmail?: unknown; keys?: unknown };
+  let body: { action?: unknown; toEmail?: unknown; keys?: unknown; firstName?: unknown; startNow?: unknown };
   try {
     body = (await request.json()) as typeof body;
   } catch {
@@ -217,6 +220,7 @@ export async function POST(request: Request) {
         const text = personalizePriceLockBody(e.body, {
           keepPlanUrl: `${SITE}/dashboard/subscription?src=${e.key}-test`,
           annualOffer: sample ? annualOfferLines(sample) : "✨ (your plan's annual numbers go here)",
+          firstName: typeof body.firstName === "string" ? body.firstName.trim().slice(0, 20) || null : null,
         });
         const built = buildCampaignEmail({ body: text ?? e.body, attachments: [], inlineImages: [] });
         const from = fromLiz(sender.from);
@@ -251,6 +255,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, updated });
     }
 
+    // Rewrite each DRAFT's subject, body and audience from the code (after copy
+    // changes). Never touches a campaign that has started sending.
+    if (body.action === "sync-drafts") {
+      const existing = await existingCampaigns(svc);
+      const updated: string[] = [];
+      for (const e of pick(PRICE_LOCK_EMAILS)) {
+        const c = existing.find((row) => row.name === priceLockCampaignName(e));
+        if (!c || c.status !== "draft" || c.scheduled_at || c.materialized_at) continue;
+        const { error } = await svc
+          .from("email_campaigns")
+          .update({ subject: e.subject, body: e.body, audience: audienceFor(e) })
+          .eq("id", c.id)
+          .eq("status", "draft");
+        if (!error) updated.push(e.key);
+      }
+      return NextResponse.json({ ok: true, updated });
+    }
+
     if (body.action === "snapshot-cold") {
       const report = await coldReport(svc, { write: true });
       return NextResponse.json({ ok: true, report });
@@ -263,7 +285,10 @@ export async function POST(request: Request) {
       for (const e of pick(PRICE_LOCK_EMAILS)) {
         const c = existing.find((row) => row.name === priceLockCampaignName(e));
         if (!c || c.status !== "draft") continue;
-        const at = pacificTimeToUtc(e.date, e.hour);
+        // startNow (one key only): start this campaign right away instead of
+        // at its planned time, e.g. a resend approved after its planned hour.
+        const startNow = body.startNow === true && keys.length === 1;
+        const at = startNow ? new Date(Date.now() + 60_000) : pacificTimeToUtc(e.date, e.hour);
         if (at.getTime() < Date.now() - 60_000) continue; // never schedule into the past
         const { error } = await svc.from("email_campaigns").update({ scheduled_at: at.toISOString() }).eq("id", c.id);
         if (!error) scheduled.push({ key: e.key, at: at.toISOString() });

@@ -106,8 +106,8 @@ export default function PriceLockBanner() {
               <p className="font-semibold">You&apos;re locked in at your current price as long as you stay.</p>
               {o ? (
                 <p className="mt-0.5">
-                  Want a whole year at today&apos;s price? Switch to annual by Nov 30:{" "}
-                  <b>{money(o.annualCents)} a year</b> (you save {money(o.saveCents)}). After Nov 30, annual is{" "}
+                  Want a whole year? Switch to annual any time: <b>{money(o.annualCents)} a year</b> (you save{" "}
+                  {money(o.saveCents)}). Your annual price is locked too, even after Nov 30, when new customers pay{" "}
                   {money(o.afterCents)}.
                 </p>
               ) : null}
@@ -153,7 +153,10 @@ export default function PriceLockBanner() {
               {comp ? "Add a card by Nov 30 to keep today's price 🔒" : "Lock today's price forever 🔒"}
             </p>
             {comp ? (
-              <p className="text-sm text-slate-200">No charge until your free time ends.</p>
+              <p className="text-sm text-slate-200">
+                Your free time rides out with no charge until it ends. Then your price stays locked for as long as you
+                stay, including if you switch to annual.
+              </p>
             ) : (
               <>
                 <p aria-hidden="true" className="mt-0.5 hidden text-[13px] font-semibold text-slate-200 sm:block">

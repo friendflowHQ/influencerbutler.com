@@ -574,27 +574,30 @@ export function postDeadlinePlanFor(plan: string): string {
 }
 
 /**
- * Target variant when an existing subscriber CHANGES plan (tier or monthly to
- * annual). Owner rule (2026-11-11): the plan someone is on keeps its price
- * forever, but a NEW plan chosen after the deadline is at the new price.
- *   - Before the deadline: the target plan in the subscriber's own family
- *     (legacy stays legacy), i.e. today's prices.
- *   - From the deadline on: the new-price variant, exactly like a new checkout
- *     (legacy plans move to the matching Power User plan).
- * Falls back to today's variant (logged) if a new-price id is not set up yet.
+ * Target variant when an existing subscriber CHANGES plan (tier, monthly to
+ * annual, or a bigger plan). Owner rule (2026-11-13, replaces the 2026-11-11
+ * "new plan after the deadline is at the new price" rule): a locked-in price is
+ * locked FOREVER while subscribed, plan switches included.
+ *   - The target plan is always taken from the subscriber's OWN price family.
+ *     Someone on today's (current-family) variant switches to the target
+ *     plan's old-price variant, before or after Nov 30: monthly to yearly gets
+ *     the OLD yearly price, an upgrade gets that plan's OLD price, and legacy
+ *     plans stay legacy (legacy Pro monthly to annual = legacy Pro annual).
+ *   - Someone on a new-price (next-family) variant stays on new prices.
+ * Only live subscriptions can switch (the upgrade route allows active and
+ * on_trial), so cancel and come back is a new checkout at the new price.
+ * The old-price variants must stay published in Lemon Squeezy (hidden from any
+ * store page is fine) so these switches keep working after the deadline.
  */
 export function switchTargetVariant(
   targetPlan: string,
   currentVariantId: string | number | null | undefined,
-  now: number = Date.now(),
+  _now: number = Date.now(),
 ): { variantId: string; plan: string; family: PriceFamily } | null {
-  if (priceChangeActive(now)) {
-    const family = variantFamilyOf(currentVariantId) ?? "current";
-    const id = variantIdForPlanInFamily(targetPlan, family) ?? variantIdForPlanInFamily(targetPlan, "current");
-    return id ? { variantId: id, plan: targetPlan, family: id === nextVariantIdFor(targetPlan) ? "next" : "current" } : null;
-  }
-  const r = resolveCheckoutVariant(targetPlan, undefined, { now, family: "next" });
-  return r.ok ? { variantId: r.variantId, plan: r.plan ?? targetPlan, family: r.family } : null;
+  const family = variantFamilyOf(currentVariantId) ?? "current";
+  const id = variantIdForPlanInFamily(targetPlan, family) ?? variantIdForPlanInFamily(targetPlan, "current");
+  if (!id) return null;
+  return { variantId: id, plan: targetPlan, family: family === "next" && id === nextVariantIdFor(targetPlan) ? "next" : "current" };
 }
 
 /** For a comp (or anyone) adding a card for a stored variant: after the
