@@ -92,13 +92,18 @@ describe("resolveCheckoutVariant", () => {
     });
   });
 
-  it("falls back to today's variant if a new id is missing, so checkout never breaks", () => {
+  it("without an env override, uses the wired-in (2026) variant from NEXT_VARIANT_IDS", () => {
     delete process.env.LEMONSQUEEZY_NEXT_VARIANT_POWER_SOLO_ANNUAL;
     expect(resolveCheckoutVariant("power-solo-annual", undefined, { now: AFTER })).toMatchObject({
       ok: true,
-      variantId: "2244052",
-      family: "current",
+      variantId: "2372573",
+      family: "next",
     });
+  });
+
+  it("every level plan has a new-price variant wired in", async () => {
+    const { NEXT_FAMILY_PLANS, NEXT_VARIANT_IDS } = await import("../lemonsqueezy");
+    for (const plan of NEXT_FAMILY_PLANS) expect(NEXT_VARIANT_IDS[plan]).toMatch(/^\d+$/);
   });
 
   it("never touches the add-on", () => {

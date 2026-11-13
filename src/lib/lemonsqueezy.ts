@@ -439,7 +439,22 @@ export function resolveVariantId(
 // upper-cased, dashes to underscores) overrides the table.
 // ---------------------------------------------------------------------------
 export const NEXT_VARIANT_IDS: Partial<Record<LevelPlanString, string>> = {
-  // Filled in once the 14 new variants exist in Lemon Squeezy.
+  // The "(2026)" products in Lemon Squeezy, created 2026-11-13 by duplicating
+  // the current ones (same 14-day trial and license key settings, new price).
+  "beginner-solo-monthly": "2372533", // $29.99/mo
+  "beginner-solo-annual": "2372545", // $299/yr
+  "beginner-trio-monthly": "2372553", // $53.99/mo
+  "beginner-trio-annual": "2372560", // $539/yr
+  "beginner-agency-monthly": "2372564", // $239/mo
+  "beginner-agency-annual": "2372569", // $2,390/yr
+  "power-solo-monthly": "2372572", // $49/mo
+  "power-solo-annual": "2372573", // $490/yr
+  "power-trio-monthly": "2372589", // $83/mo
+  "power-trio-annual": "2372590", // $830/yr
+  "power-team-monthly": "2372583", // $155/mo
+  "power-team-annual": "2372587", // $1,550/yr
+  "power-agency-monthly": "2372575", // $359/mo
+  "power-agency-annual": "2372577", // $3,590/yr
 };
 
 export const NEXT_FAMILY_PLANS: readonly LevelPlanString[] = [
