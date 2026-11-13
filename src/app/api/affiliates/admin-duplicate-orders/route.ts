@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { requirePermission, createAdminClient } from "@/lib/admin";
+import { requirePermission } from "@/lib/admin";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { logAdminAction } from "@/lib/admin-audit";
 
 export const runtime = "nodejs";
@@ -40,8 +41,12 @@ const WINDOW_MS = 60 * 60 * 1000;
 export async function GET(request: Request) {
   const actor = await requirePermission("affiliates.view", request);
   if (!actor) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  const db = createAdminClient();
-  if (!db) return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+  let db: ReturnType<typeof createAdminClient>;
+  try {
+    db = createAdminClient();
+  } catch {
+    return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+  }
 
   const rows: OrderRow[] = [];
   for (let page = 0; page < 100; page++) {
@@ -108,8 +113,12 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const actor = await requirePermission("affiliates.link", request);
   if (!actor) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  const db = createAdminClient();
-  if (!db) return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+  let db: ReturnType<typeof createAdminClient>;
+  try {
+    db = createAdminClient();
+  } catch {
+    return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+  }
 
   let body: { lsOrderIds?: unknown };
   try {
