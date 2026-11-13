@@ -62,18 +62,18 @@ const es: DealCaptureDict = {
 
 const fr: DealCaptureDict = {
   button: "Envoyer ces offres à Influencer Butler",
-  hint: "Faites d'abord défiler la page pour charger plus de produits. Les offres vont dans le tableau Offres Black Friday de Walmart Butler.",
+  hint: "Faites d'abord défiler la page pour charger plus de produits. Les offres vont dans le tableau Offres du Black Friday de Walmart Butler.",
   dismiss: "Masquer le bouton Influencer Butler",
   reading: "Lecture des produits de cette page...",
   sending: (sent, total) => `Envoi de ${sent} offres sur ${total}...`,
   noProducts: "Aucun produit sur cette page pour l'instant. Faites défiler pour en charger, puis recliquez.",
   sent: (added) =>
     added === 1
-      ? "1 offre envoyée dans votre tableau Offres Black Friday."
-      : `${added} offres envoyées dans votre tableau Offres Black Friday.`,
+      ? "1 offre envoyée dans votre tableau Offres du Black Friday."
+      : `${added} offres envoyées dans votre tableau Offres du Black Friday.`,
   tableTotal: (total) => (total === 1 ? "Il contient maintenant 1 offre." : `Il contient maintenant ${total} offres.`),
   nothingNew: (total) =>
-    `Aucune nouvelle offre ici. Votre tableau Offres Black Friday les contient déjà (${total} ${total === 1 ? "offre" : "offres"}).`,
+    `Aucune nouvelle offre ici. Votre tableau Offres du Black Friday les contient déjà (${total} ${total === 1 ? "offre" : "offres"}).`,
   capped: (max) => `Seuls les ${max} premiers produits de la page ont été envoyés.`,
   partial: (sent, total) => `${sent} offres sur ${total} ont été envoyées avant l'arrêt.`,
   needsUpdate: "Mettez à jour l'application Influencer Butler pour envoyer ces offres, puis recliquez.",
