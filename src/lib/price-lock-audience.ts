@@ -16,6 +16,7 @@
  * in no push audience at all, and is re-checked at send time
  * (priceLockSendCheck) so they drop out mid-push.
  */
+import { isUndeliverableTestEmail } from "@/lib/email-address";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type PriceLockSegment = "A" | "B" | "C" | "D" | "E1" | "E2" | "E3";
@@ -55,8 +56,11 @@ export function isColdContactTags(tags: readonly string[] | null | undefined, so
   return typeof source === "string" && /^cold[-_]/i.test(source);
 }
 
+/** Lowercased email, or "" (skipped everywhere) for addresses that can never
+ * receive mail, like unclaimed comp placeholders. */
 function norm(e: unknown): string {
-  return typeof e === "string" ? e.trim().toLowerCase() : "";
+  const v = typeof e === "string" ? e.trim().toLowerCase() : "";
+  return v && !isUndeliverableTestEmail(v) ? v : "";
 }
 
 async function pageAll<T>(

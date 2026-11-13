@@ -14,6 +14,12 @@ describe("isUndeliverableTestEmail", () => {
     expect(isUndeliverableTestEmail("a@example.org")).toBe(true);
   });
 
+  it("flags unclaimed comp placeholder addresses, not real influencerbutler.com mail", () => {
+    expect(isUndeliverableTestEmail("comp-1234@unassigned.comp.influencerbutler.com")).toBe(true);
+    expect(isUndeliverableTestEmail("hello@influencerbutler.com")).toBe(false);
+    expect(isUndeliverableTestEmail("hello@news.influencerbutler.com")).toBe(false);
+  });
+
   it("flags reserved / non-routable TLDs", () => {
     expect(isUndeliverableTestEmail("a@foo.test")).toBe(true);
     expect(isUndeliverableTestEmail("a@foo.invalid")).toBe(true);

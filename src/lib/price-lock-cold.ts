@@ -14,7 +14,7 @@
  * pl-e3 (no migration needed), which the E campaigns and tracking read.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { transactionalFrom } from "@/lib/email-senders";
+import { coldFrom, lifecycleFrom, transactionalFrom } from "@/lib/email-senders";
 import { COLD_SEGMENT_TAG, loadPriceLockPeople, nonUnsubscribeClickIds } from "@/lib/price-lock-audience";
 
 const PAGE = 1000;
@@ -215,8 +215,8 @@ export async function coldReport(db: SupabaseClient, opts: { write?: boolean } =
   const report: ColdReport = {
     sources: prefixes.map((p) => p.src).filter((s) => s.sent > 0 || s.status === "active"),
     fromDomain: {
-      lifecycle: domainOf(process.env.EMAIL_FROM_LIFECYCLE) ?? "influencerbutler.com",
-      cold: domainOf(process.env.EMAIL_FROM_COLD),
+      lifecycle: domainOf(lifecycleFrom()) ?? "influencerbutler.com",
+      cold: domainOf(coldFrom()),
       // A-D push sender (main transactional address), see priceLockSender().
       priceLockAD: domainOf(transactionalFrom()) ?? "influencerbutler.com",
     },

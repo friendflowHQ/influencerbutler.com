@@ -60,6 +60,7 @@ import {
 import { logSuppressedSkip, sendEmail } from "@/lib/email-send";
 import { coldFrom, coldStreamEnabled, priceLockSender, type EmailStream } from "@/lib/email-senders";
 import { isEmailSuppressed } from "@/lib/email-unsubscribe";
+import { isUndeliverableTestEmail } from "@/lib/email-address";
 import { isMissingTable } from "@/lib/growth-goals";
 import { buildCampaignEmail } from "@/lib/campaign-email";
 import { runRecurringIfDue } from "@/lib/recurring-campaign";
@@ -506,6 +507,14 @@ async function sendCampaignRecipients(db: SupabaseClient, summary: Summary): Pro
     for (const recipient of (recipients ?? []) as { id: string; email: string; attempts: number }[]) {
       if (budget <= 0 || campaignLeft <= 0) break;
       const email = recipient.email;
+
+      // Never-deliverable addresses (reserved test domains, unclaimed comp
+      // placeholders) would only hard-bounce on our own reputation.
+      if (isUndeliverableTestEmail(email)) {
+        await db.from("email_campaign_recipients").update({ status: "skipped" }).eq("id", recipient.id);
+        summary.campaignSkipped += 1;
+        continue;
+      }
 
       if (await isEmailSuppressed(email)) {
         // Opted out: mark skipped (keeps per-campaign counts honest) and log
