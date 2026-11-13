@@ -19,6 +19,7 @@ import { requirePermission } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EMAIL_RE } from "@/lib/email-audience";
 import { priceLockSender } from "@/lib/email-senders";
+import { campaignCategory } from "@/lib/email-marketing";
 import { sendMarketingEmail } from "@/lib/marketing-email";
 import { buildCampaignEmail } from "@/lib/campaign-email";
 import { loadPriceLockPeople, segmentAOrigins, segmentCounts } from "@/lib/price-lock-audience";
@@ -79,6 +80,48 @@ export async function GET(request: Request) {
   if (!actor) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const svc = db();
   if (!svc) return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+  // ?status=1: exact per-campaign delivery numbers for the push (the campaign
+  // list's counts are capped across ALL campaigns, so big sends hide these).
+  if (new URL(request.url).searchParams.get("status") === "1") {
+    try {
+      const campaigns = await existingCampaigns(svc);
+      const out = [];
+      for (const c of campaigns) {
+        const recipients: Record<string, number> = {};
+        for (const st of ["queued", "sent", "skipped", "failed"]) {
+          const { count } = await svc
+            .from("email_campaign_recipients")
+            .select("id", { count: "exact", head: true })
+            .eq("campaign_id", c.id)
+            .eq("status", st);
+          recipients[st] = count ?? 0;
+        }
+        const sends: Record<string, number> = {};
+        for (const st of ["sent", "suppressed", "failed"]) {
+          const { count } = await svc
+            .from("email_sends")
+            .select("id", { count: "exact", head: true })
+            .eq("category", campaignCategory(c.id))
+            .eq("status", st);
+          sends[st] = count ?? 0;
+        }
+        const engagement: Record<string, number> = {};
+        for (const col of ["opened_at", "clicked_at", "bounced_at", "complained_at"]) {
+          const { count } = await svc
+            .from("email_sends")
+            .select("id", { count: "exact", head: true })
+            .eq("category", campaignCategory(c.id))
+            .not(col, "is", null);
+          engagement[col.replace("_at", "")] = count ?? 0;
+        }
+        out.push({ name: c.name, status: c.status, scheduled_at: c.scheduled_at, sent_at: c.sent_at, recipients, sends, engagement });
+      }
+      return NextResponse.json({ ok: true, campaigns: out });
+    } catch (err) {
+      return NextResponse.json({ error: (err as Error).message }, { status: 500 });
+    }
+  }
+
   try {
     const settle = <T,>(p: Promise<T>) => p.then((v) => ({ ok: true as const, v })).catch((e: Error) => ({ ok: false as const, e: e.message }));
     const [peopleR, coldR, campaignsR] = await Promise.all([
