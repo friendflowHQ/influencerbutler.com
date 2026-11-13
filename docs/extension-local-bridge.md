@@ -230,6 +230,44 @@ the run.
 }
 ```
 
+**`walmartEvent.capture`** - the "Send these deals to Influencer Butler"
+button on a walmart.com deal page (`/shop/deals/black-friday`,
+`/shop/deals/cyber-monday`, `/shop/deals/earlyaccess`, `/shop/deals/top100`,
+the department deal pages). Walmart's "press and hold" human check blocks the
+app's automated browser on these pages, so the creator opens the page in their
+own Chrome and the extension reads the product tiles already on screen when
+they click (it never fetches Walmart pages in the background and never touches
+the human check). The products land in the Black Friday Deals table in Walmart
+Butler > Black Friday Event Finder. `workspace` is the extension's configured
+Deal Posting target (the same one the Send to Deals chips use), omitted when
+none is set; the app maps it to its Black Friday Event Finder itself. At most
+500 products per click, sent 200 per command. Each product: `itemId` (the
+trailing digit run of its `/ip/` path), `title`, `url`
+(`https://www.walmart.com/ip/<itemId>`), and when the tile shows them
+`imageUrl` (https only), `nowPrice` / `wasPrice` (dollars, from the same tile
+text parser the desktop uses), `badge` ("Black Friday Deal", "Walmart+ Early
+Access", "Cyber Monday Deal", "Flash Deal" or "Rollback") and `shippingText`.
+The reply adds counts to the usual result: `added` (new deals put in the
+table), `total` (deals now in the table) and `skipped`. An app that answers
+"Unknown command" is told to update. Like `deal.push.batch` it is a pure data
+write, so it may arrive over the cross-device relay when no local app is
+running (the relay reply carries no counts).
+
+```json
+{
+  "type": "walmartEvent.capture",
+  "workspace": "default",
+  "pageUrl": "https://www.walmart.com/shop/deals/black-friday",
+  "products": [
+    { "itemId": "17701403764", "title": "...", "url": "https://www.walmart.com/ip/17701403764",
+      "imageUrl": "https://i5.walmartimages.com/...jpeg", "nowPrice": 199, "wasPrice": 299,
+      "badge": "Black Friday Deal", "shippingText": "Free shipping, arrives in 2 days" }
+  ]
+}
+```
+
+Reply: `{ "type": "command.result", "ok": true, "message": "...", "added": 87, "total": 87, "skipped": 13 }`
+
 **`content.push`** - queue the product into Content Butler for a post.
 Same `product` shape. When `product.brand` is present (scraped from the
 product byline), the app pre-fills the card's Brand field.

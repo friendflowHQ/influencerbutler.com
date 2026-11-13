@@ -296,6 +296,9 @@ function sendToPort(
           ok?: boolean;
           message?: string;
           needsPairing?: boolean;
+          added?: unknown;
+          total?: unknown;
+          skipped?: unknown;
         };
         if (frame.type === "authed") {
           clearTimeout(timer);
@@ -309,7 +312,18 @@ function sendToPort(
         }
         if (frame.type === "command.result") {
           log("hud", `command ${command.type} -> ${frame.ok ? "ok" : "fail"}`);
-          done({ ok: frame.ok === true, message: frame.message, needsPairing: frame.needsPairing });
+          const result: HudCommandResult = {
+            ok: frame.ok === true,
+            message: frame.message,
+            needsPairing: frame.needsPairing,
+          };
+          // Counts some commands report back (walmartEvent.capture: added /
+          // total / skipped). Kept only when they are real numbers.
+          for (const key of ["added", "total", "skipped"] as const) {
+            const value = frame[key];
+            if (typeof value === "number" && Number.isFinite(value)) result[key] = value;
+          }
+          done(result);
           return;
         }
       } catch {

@@ -148,8 +148,9 @@ export async function resolveDefaultRelayTarget(): Promise<{ instanceId: string;
 
 // Send a command to the desktop app, preferring the app on THIS computer and
 // transparently falling back to a linked desktop on ANOTHER computer when no
-// local app is running. Only deal pushes (and video.reload) fall back: they
-// are pure data writes / self-contained automations that are machine
+// local app is running. Only deal pushes (deal.push, deal.push.batch, and the
+// walmartEvent.capture Black Friday Deals table send) and video.reload fall
+// back: they are pure data writes / self-contained automations that are machine
 // independent, whereas commands like campaign.accept need the live logged-in
 // browser on THIS machine, so those never leave it. video.reload drives its
 // own Puppeteer-controlled browser profile inside the desktop app regardless
@@ -187,6 +188,7 @@ async function dispatchCommand(
   const relayable =
     command.type === "deal.push" ||
     command.type === "deal.push.batch" ||
+    command.type === "walmartEvent.capture" ||
     command.type === "video.reload";
   // hud-bridge returns this exact line only when nothing answered on any bridge
   // port (the app is not running here), as opposed to needsPairing (app present,

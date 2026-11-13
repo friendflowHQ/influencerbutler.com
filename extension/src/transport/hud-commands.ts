@@ -6,6 +6,7 @@
 
 import type { CreatorMode } from "../shared/creator-mode";
 import type { Finding } from "./types";
+import type { WalmartEventProduct } from "../walmart/deal-capture";
 
 export type ProductRef = {
   asin: string;
@@ -168,6 +169,20 @@ export type HudCommand =
   // Batch push of harvested deals into one Deals Butler workspace, from the Deal
   // Sites Harvester. Same target as deal.push, many products at once.
   | { type: "deal.push.batch"; workspace: string; products: ProductRef[]; placement?: DealPlacement }
+  // "Send these deals to Influencer Butler" on a walmart.com deal page
+  // (/shop/deals/black-friday and friends): the products the creator has on
+  // screen, read from the page in their own Chrome (Walmart's human check
+  // blocks the app's automated browser there). Lands in the desktop's Black
+  // Friday Deals table in Walmart Butler > Black Friday Event Finder; the app
+  // maps `workspace` (the extension's Deal Posting target, omitted when none)
+  // to that finder itself. Chunked to 200 products per command. The reply's
+  // `added` / `total` / `skipped` say what the table did with them.
+  | {
+      type: "walmartEvent.capture";
+      workspace?: string;
+      pageUrl: string;
+      products: WalmartEventProduct[];
+    }
   | { type: "content.push"; product: ProductRef }
   // Batch push of harvested order products into the Content Butler planner.
   | { type: "content.push.batch"; products: ProductRef[] }
@@ -277,6 +292,11 @@ export type HudCommandResult = {
   // app yet, so the UI can prompt the user to connect instead of showing a
   // generic error.
   needsPairing?: boolean;
+  // walmartEvent.capture only: new deals put in the Black Friday Deals table,
+  // deals now in it, and products it did not take. Absent on other commands.
+  added?: number;
+  total?: number;
+  skipped?: number;
 };
 
 // Result of the popup's pairing steps.

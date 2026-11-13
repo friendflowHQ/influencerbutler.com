@@ -7,6 +7,8 @@ import {
   needsFreshProductDoc,
 } from "../walmart/product-signals";
 import { initWalmartProduct } from "../tools/walmart-overlay/overlay";
+import { initWalmartDealCapture, removeWalmartDealCapture } from "../tools/walmart-deal-capture/button";
+import { isWalmartDealsUrl } from "../walmart/deal-capture";
 import { extractTargetProductSync, readTargetProduct, targetToSignals } from "../target/product-signals";
 import { initTargetProduct } from "../tools/target-overlay/overlay";
 import { retailerModule } from "../retailers/module";
@@ -528,9 +530,21 @@ async function runForPage(): Promise<void> {
   // __NEXT_DATA__ JSON. Gated by the master Walmart setting. The Amazon
   // extractors are never run against a Walmart page.
   if (retailer === "walmart") {
+    // "Send these deals to Influencer Butler" on walmart.com deal pages
+    // (/shop/deals/*): reads the tiles the creator has on screen into the
+    // desktop's Black Friday Deals table. Torn down on an SPA hop off a deal
+    // page; honors the master Walmart setting and its own remote kill switch.
+    const onDealsPage = isWalmartDealsUrl(currentUrl);
+    if (!onDealsPage || !settings.tools.walmart) removeWalmartDealCapture();
     if (!settings.tools.walmart) {
       log("content", "walmart support disabled by setting");
       return;
+    }
+    if (onDealsPage) {
+      const flags = await getFlags();
+      const killed = flags?.disableAll === true || (flags?.disabledTools.includes("walmartDealCapture") ?? false);
+      if (killed) removeWalmartDealCapture();
+      else guard("walmart-deal-capture", () => initWalmartDealCapture());
     }
     if (pageType === "product") {
       // The Walmart branch predates the remote flags and does not read them for
