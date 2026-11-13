@@ -442,7 +442,7 @@ export const NEXT_VARIANT_IDS: Partial<Record<LevelPlanString, string>> = {
   // Filled in once the 14 new variants exist in Lemon Squeezy.
 };
 
-const NEXT_FAMILY_PLANS: readonly LevelPlanString[] = [
+export const NEXT_FAMILY_PLANS: readonly LevelPlanString[] = [
   "beginner-solo-monthly",
   "beginner-solo-annual",
   "beginner-trio-monthly",
