@@ -99,7 +99,8 @@ export function CampaignCard({ p }: { p: OpportunityPost }) {
 
 /** One of their posts in a shopping event: live now, or the day the sale starts. */
 export function EventCard({ p, label }: { p: OpportunityPost; label: string }) {
-  const when = p.deal?.live || !p.deal?.startsDay ? "on sale now" : `starts ${p.deal.startsDay}`;
+  // Only live deals ever reach this card (dealIsLive); never a start date.
+  const when = "on sale now";
   return (
     <li className="flex gap-4 rounded-2xl border border-slate-200 bg-white p-4">
       <Thumb p={p} />
@@ -140,9 +141,8 @@ export default function OpportunitiesView({ op, claimed }: { op: InviteOpportuni
         <section aria-label={`Your posts with ${event.label} deals`}>
           <h2 className="text-xl font-bold text-slate-900">{event.label} on your posts</h2>
           <p className="mt-1 text-slate-700">
-            {event.count === 1 ? "One of your posts has" : `${event.count} of your posts have`} a {event.label} deal
-            {event.live > 0 ? `, ${event.live} on sale already` : ""}. Share them again when the sale starts: each one has
-            a caption ready to copy.
+            {event.count === 1 ? "One of your posts is" : `${event.count} of your posts are`} in a {event.label} deal right
+            now. Share them again while the sale is on: each one has a caption ready to copy.
           </p>
           <TrackingIdBox />
           <ul className="mt-4 grid gap-4 md:grid-cols-2">

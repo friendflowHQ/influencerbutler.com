@@ -192,12 +192,27 @@ export function currentInviteEvent(op: InviteOpportunities | null, now = Date.no
   if (!ev || !ev.posts.length) return null;
   const end = Date.parse(ev.endsAt || "");
   if (Number.isFinite(end) && end + 24 * 3600 * 1000 < now) return null;
-  // Drop event posts whose own sale has ended (a one-day deal on Nov 19).
-  const posts = ev.posts.filter((p) => {
-    const e = Date.parse(p.deal?.endsAt || "");
-    return !Number.isFinite(e) || e >= now;
-  });
-  return posts.length ? { ...ev, posts } : null;
+  // Only deals that are live right now: Amazon does not allow showing a deal
+  // before it starts, and an ended one (a one-day deal on Nov 19) is gone.
+  const posts = ev.posts.filter((p) => dealIsLive(p, now));
+  if (!posts.length) return null;
+  // Older pages stored upcoming deals in the count; never let them inflate it.
+  const dropped = posts.length < ev.posts.length;
+  return dropped ? { ...ev, posts, count: posts.length, live: posts.length } : { ...ev, posts };
+}
+
+/**
+ * True when a post's deal has started and not ended. A known start time
+ * decides; a post marked not live (live === false) never shows. Amazon's terms
+ * forbid showing a deal before it is live.
+ */
+export function dealIsLive(p: Pick<OpportunityPost, "deal">, now = Date.now()): boolean {
+  const d = p.deal;
+  if (!d) return false;
+  const start = Date.parse(d.startsAt || "");
+  if (Number.isFinite(start) ? start > now : d.live === false) return false;
+  const end = Date.parse(d.endsAt || "");
+  return !Number.isFinite(end) || end >= now;
 }
 
 /**
@@ -216,7 +231,7 @@ export function publicOpportunities(op: InviteOpportunities | null, claimed: boo
   const event = currentInviteEvent(op, now);
   const eventPosts = event ? event.posts : [];
   const inEvent = new Set(eventPosts.map((p) => p.asin));
-  const dealPosts = posts.filter((p) => p.deal && !inEvent.has(p.asin));
+  const dealPosts = posts.filter((p) => p.deal && dealIsLive(p, now) && !inEvent.has(p.asin));
   const allCampaign = posts.filter((p) => p.campaign && !p.deal && !inEvent.has(p.asin));
   const campaignPosts = claimed ? allCampaign : allCampaign.slice(0, FREE_CAMPAIGN_POSTS);
   return { eventPosts, event, dealPosts, campaignPosts, lockedCampaigns: allCampaign.length - campaignPosts.length };

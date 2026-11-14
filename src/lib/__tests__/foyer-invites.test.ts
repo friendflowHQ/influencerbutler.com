@@ -170,9 +170,22 @@ describe("Black Friday (shopping event) posts", () => {
       event: event([evPost("E1", "2026-12-01T07:59:00Z", true), evPost("E2", "2026-11-20T07:59:00Z")]),
     });
     const now = publicOpportunities(op, false, NOW);
-    expect(now.eventPosts.map((p) => p.asin)).toEqual(["E1", "E2"]);
+    // E2 is not live yet: never shown before it starts (Amazon's terms).
+    expect(now.eventPosts.map((p) => p.asin)).toEqual(["E1"]);
+    expect(now.event?.count).toBe(1);
     expect(now.dealPosts.map((p) => p.asin)).toEqual(["D1"]);
     expect(currentInviteEvent(op, Date.parse("2026-11-21T12:00:00Z"))?.posts.map((p) => p.asin)).toEqual(["E1"]);
     expect(currentInviteEvent(op, Date.parse("2026-12-03T12:00:00Z"))).toBeNull();
+  });
+
+  it("a deal with a start time shows only once it has started", async () => {
+    const { currentInviteEvent, dealIsLive } = await import("@/lib/foyer-invites");
+    const later = { ...evPost("E3", "2026-12-01T07:59:00Z", true), deal: { percentOff: 30, live: true, startsAt: "2026-11-19T08:00:00Z", endsAt: "2026-12-01T07:59:00Z" } };
+    const op = normalizeOpportunities({ posts: [], event: event([later]) });
+    expect(dealIsLive(later, NOW)).toBe(false);
+    expect(currentInviteEvent(op, NOW)).toBeNull();
+    expect(currentInviteEvent(op, Date.parse("2026-11-20T12:00:00Z"))?.posts.map((p) => p.asin)).toEqual(["E3"]);
+    const onSale = publicOpportunities(normalizeOpportunities({ posts: [later] }), false, NOW);
+    expect(onSale.dealPosts).toEqual([]);
   });
 });
