@@ -120,15 +120,22 @@ export const FREE_CAMPAIGN_POSTS = 3;
 
 /**
  * The Creator Connections link for a post's campaign, or null. Only Amazon's
- * own campaign request page passes, so the page can never send a creator to a
- * look-alike host. The creator signs in there and clicks Accept themselves.
+ * own Creator Connections pages pass, so the page can never send a creator to
+ * a look-alike host: the opportunity grid searched for the product's ASIN
+ * (/p/connect/requests?keyword=<ASIN>, the shape that stays put; the single
+ * campaign page jumps to the SPCC tab on its own) or, without an ASIN, the
+ * single campaign page. The creator signs in and clicks Accept themselves.
  */
 export function campaignConnectUrl(p: Pick<OpportunityPost, "campaign"> | null | undefined): string | null {
   const raw = p && p.campaign && typeof p.campaign.connectUrl === "string" ? p.campaign.connectUrl : "";
   if (!raw) return null;
   try {
     const u = new URL(raw);
-    if (u.protocol !== "https:" || u.hostname !== "affiliate-program.amazon.com" || u.pathname !== "/p/connect/request") return null;
+    if (u.protocol !== "https:" || u.hostname !== "affiliate-program.amazon.com") return null;
+    if (u.pathname === "/p/connect/requests") {
+      return /^[A-Z0-9]{10}$/.test(u.searchParams.get("keyword") || "") ? u.toString() : null;
+    }
+    if (u.pathname !== "/p/connect/request") return null;
     if (!u.searchParams.get("campaignId")) return null;
     return u.toString();
   } catch {

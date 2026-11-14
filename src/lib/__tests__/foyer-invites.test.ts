@@ -138,6 +138,9 @@ describe("Creator Connections campaign links", () => {
     expect(campaignConnectUrl(c("https://affiliate-program.amazon.com/p/connect/request?adId=A1"))).toBeNull();
     expect(campaignConnectUrl(c("javascript:alert(1)"))).toBeNull();
     expect(campaignConnectUrl({ campaign: null })).toBeNull();
+    expect(campaignConnectUrl(c("https://affiliate-program.amazon.com/p/connect/requests?status=opportunity&type=affiliate-plus&keyword=B01F36JEXE"))).toContain("keyword=B01F36JEXE");
+    expect(campaignConnectUrl(c("https://affiliate-program.amazon.com/p/connect/requests?status=opportunity&keyword=<script>"))).toBeNull();
+    expect(campaignConnectUrl(c("https://affiliate-program.amazon.com/p/other?keyword=B01F36JEXE"))).toBeNull();
   });
 });
 
