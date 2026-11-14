@@ -1,7 +1,8 @@
 /**
  * /api/admin/invites: the invite-only Storefront Score page pilot.
  *
- *   GET    list invites (no page blobs), funnel counts, the day-14 report
+ *   GET    list invites (no page blobs), funnel counts, the day-14 report,
+ *          how long each funnel step takes (timings)
  *          (emailed, delivered, opened, visited, claim clicked, claimed, trial
  *          started, converted) and per-row delivery, optional ?batch=
  *   POST   upload one invite from scripts/outreach/upload-invite.js (Bearer =
@@ -34,6 +35,7 @@ import {
   normalizeEmailSteps,
   normalizeOpportunities,
   previewUrlFor,
+  stageTimings,
   type InviteRow,
 } from "@/lib/foyer-invites";
 
@@ -141,6 +143,8 @@ export async function GET(request: Request) {
     })),
     funnel,
     report,
+    // How long each step takes (median / fastest / slowest hours), same rows.
+    timings: stageTimings(rows),
     batches,
   });
 }

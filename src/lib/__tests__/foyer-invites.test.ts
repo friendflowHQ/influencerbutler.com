@@ -192,3 +192,64 @@ describe("Black Friday (shopping event) posts", () => {
     expect(onSale.dealPosts).toEqual([]);
   });
 });
+
+describe("invite funnel timings and automatic conversion", () => {
+  it("medians, fastest and slowest per step, skipping out-of-order rows", async () => {
+    const { stageTimings } = await import("@/lib/foyer-invites");
+    const h = (n: number) => new Date(Date.parse("2026-11-01T00:00:00Z") + n * 3600000).toISOString();
+    const rows = [
+      { sent_at: h(0), viewed_at: h(2), claimed_at: h(3), activated_at: h(4), converted_at: h(3 + 24 * 14) },
+      { sent_at: h(0), viewed_at: h(10), claimed_at: h(30) },
+      { sent_at: h(0), viewed_at: h(4) },
+      { sent_at: null, viewed_at: h(1) },
+      { sent_at: h(5), viewed_at: h(1) },
+    ];
+    const t = Object.fromEntries(stageTimings(rows as never).map((s) => [s.key, s]));
+    expect(t.sent_viewed).toMatchObject({ count: 3, medianHours: 4, fastestHours: 2, slowestHours: 10 });
+    expect(t.viewed_claimed).toMatchObject({ count: 2, medianHours: 10.5 });
+    expect(t.claimed_converted).toMatchObject({ count: 1, medianHours: 336 });
+    expect(t.sent_converted.count).toBe(1);
+  });
+
+  it("marks matching invites converted by claiming account or email, skipping removed ones", async () => {
+    const { markInvitesConverted } = await import("@/lib/foyer-invites");
+    const updates: Array<{ id: string; patch: Record<string, unknown> }> = [];
+    let orFilter = "";
+    const rows = [
+      { id: "a", email: "jo@example.com", status: "published" },
+      { id: "b", email: "jo@example.com", status: "replied" },
+      { id: "c", email: "jo@example.com", status: "removed" },
+    ];
+    const db = {
+      from: (table: string) => ({
+        select: () => ({
+          or: (f: string) => {
+            orFilter = f;
+            return { is: () => ({ limit: async () => ({ data: rows, error: null }) }) };
+          },
+        }),
+        update: (patch: Record<string, unknown>) => ({
+          eq: async (_col: string, id: string) => {
+            if (table === "foyer_invites") updates.push({ id, patch });
+            return { error: null };
+          },
+          then: undefined,
+        }),
+      }),
+    };
+    // cancelInviteEnrollment chains .eq().eq(); give it a tolerant stub.
+    const chain: Record<string, unknown> = {};
+    chain.eq = () => chain;
+    const realFrom = db.from;
+    (db as { from: unknown }).from = (table: string) =>
+      table === "email_sequence_enrollments" ? { update: () => ({ eq: () => ({ eq: async () => ({ error: null }) }) }) } : realFrom(table);
+    const n = await markInvitesConverted(db as never, { userId: "11111111-2222-3333-4444-555555555555", email: "Jo@Example.com" });
+    expect(n).toBe(2);
+    expect(orFilter).toBe("claim_user_id.eq.11111111-2222-3333-4444-555555555555,email.eq.jo@example.com");
+    expect(updates.map((u) => u.id)).toEqual(["a", "b"]);
+    expect(updates[0].patch).toMatchObject({ status: "converted" });
+    expect(updates[0].patch.converted_at).toBeTruthy();
+    expect(updates[1].patch).toMatchObject({ status: "converted" });
+    expect(await markInvitesConverted(db as never, {})).toBe(0);
+  });
+});

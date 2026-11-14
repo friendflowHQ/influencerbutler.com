@@ -63,6 +63,23 @@ type Report = {
 
 const FUNNEL = ["drafted", "sent", "viewed", "claimed", "activated", "published", "converted", "replied", "declined", "removed"] as const;
 
+type StageTiming = {
+  key: string;
+  label: string;
+  count: number;
+  medianHours: number | null;
+  fastestHours: number | null;
+  slowestHours: number | null;
+};
+
+/** 0.5 -> "30 min", 5 -> "5 hours", 50 -> "2.1 days". */
+function duration(h: number | null): string {
+  if (h == null) return "-";
+  if (h < 1) return `${Math.max(1, Math.round(h * 60))} min`;
+  if (h < 48) return `${Math.round(h * 10) / 10} hours`;
+  return `${Math.round((h / 24) * 10) / 10} days`;
+}
+
 /** The pilot brief's expected ranges, for the day-14 report. */
 const TARGETS: { key: keyof Report; label: string; of: keyof Report | null; expect: string }[] = [
   { key: "delivered", label: "Delivered", of: "emailed", expect: "about 90%" },
@@ -100,6 +117,7 @@ export default function AdminInvitesPage() {
   const [rows, setRows] = useState<InviteRow[]>([]);
   const [funnel, setFunnel] = useState<Record<string, number>>({});
   const [report, setReport] = useState<Report | null>(null);
+  const [timings, setTimings] = useState<StageTiming[]>([]);
   const [emailsId, setEmailsId] = useState<string | null>(null);
   const [batches, setBatches] = useState<string[]>([]);
   const [batch, setBatch] = useState("");
@@ -123,6 +141,7 @@ export default function AdminInvitesPage() {
       setRows(json.rows ?? []);
       setFunnel(json.funnel ?? {});
       setReport(json.report ?? null);
+      setTimings(Array.isArray(json.timings) ? json.timings : []);
       setBatches(json.batches ?? []);
     } catch {
       setError("Could not load invites.");
@@ -215,6 +234,37 @@ export default function AdminInvitesPage() {
             and visits can be inflated by email link scanners; claims are real clicks.
           </p>
           <p className="mt-2 text-sm font-medium text-slate-800">{advice}</p>
+          {timings.some((t) => t.count > 0) ? (
+            <>
+              <h3 className="mt-5 text-sm font-semibold text-slate-900">How long each step takes</h3>
+              <table className="mt-2 w-full text-sm">
+                <thead className="text-left text-xs uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="py-1">Step</th>
+                    <th className="py-1">Creators</th>
+                    <th className="py-1">Typical (median)</th>
+                    <th className="py-1">Fastest</th>
+                    <th className="py-1">Slowest</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {timings.map((t) => (
+                    <tr key={t.key} className="border-t border-slate-100">
+                      <td className="py-1">{t.label}</td>
+                      <td className="py-1">{t.count}</td>
+                      <td className="py-1">{duration(t.medianHours)}</td>
+                      <td className="py-1 text-slate-500">{duration(t.fastestHours)}</td>
+                      <td className="py-1 text-slate-500">{duration(t.slowestHours)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="mt-2 text-xs text-slate-500">
+                Paid means a paid plan started with a card on file; it is marked automatically from Lemon Squeezy. The
+                comp is 14 days, so a claim-to-paid time near 14 days means they kept the plan when it ran out.
+              </p>
+            </>
+          ) : null}
         </section>
       ) : null}
 

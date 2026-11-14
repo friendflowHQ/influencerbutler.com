@@ -23,6 +23,7 @@ import { applyCompConversion, compConversionSource } from "@/lib/comp-conversion
 import { sendOwnerChargeAlert } from "@/lib/comp-expiry-customer";
 import { syncPlanLevelFromLsSubscription } from "@/lib/plan-level";
 import { isRealTrialConversion } from "@/lib/trial-conversion";
+import { markInvitesConverted } from "@/lib/foyer-invites";
 
 /** The plan-level hook takes the full supabase-js client type. */
 type FunnelDb = Parameters<typeof syncPlanLevelFromLsSubscription>[0];
@@ -1247,6 +1248,17 @@ export async function POST(request: Request) {
             reason: conv.patchFailed ? "patch_failed" : "charged_at_checkout",
           });
         }
+      }
+
+      // Foyer page pilot: a creator who came from an invite (claimed it, or the
+      // invite went to this email) just started a paid plan, card on file. Mark
+      // the invite converted so Admin > Invites tracks it without a manual
+      // click. Never throws (markInvitesConverted swallows its own errors).
+      if (!isAddonSubscription && (status === "on_trial" || status === "active")) {
+        await markInvitesConverted(supabase as unknown as Parameters<typeof markInvitesConverted>[0], {
+          userId,
+          email: subEmail,
+        });
       }
     },
 

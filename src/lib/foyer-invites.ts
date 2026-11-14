@@ -466,6 +466,105 @@ export async function advanceInvite(
   return true;
 }
 
+/** How long each step of the invite funnel takes (Admin > Invites). */
+export type StageTiming = {
+  key: string;
+  label: string;
+  /** Invites that reached both ends of this step. */
+  count: number;
+  medianHours: number | null;
+  fastestHours: number | null;
+  slowestHours: number | null;
+};
+
+const STAGE_PAIRS: ReadonlyArray<[string, string, keyof InviteRow, keyof InviteRow]> = [
+  ["sent_viewed", "Email to first page view", "sent_at", "viewed_at"],
+  ["viewed_claimed", "First view to claim", "viewed_at", "claimed_at"],
+  ["sent_claimed", "Email to claim", "sent_at", "claimed_at"],
+  ["claimed_activated", "Claim to opening the app", "claimed_at", "activated_at"],
+  ["claimed_converted", "Claim to paid plan", "claimed_at", "converted_at"],
+  ["sent_converted", "Email to paid plan", "sent_at", "converted_at"],
+];
+
+function median(sorted: number[]): number {
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
+/**
+ * Time between funnel steps over a set of invites: median, fastest and slowest
+ * in hours, only over invites that reached both ends (a step out of order,
+ * e.g. a test invite with no sent_at, is skipped). Pure.
+ */
+export function stageTimings(rows: ReadonlyArray<Partial<InviteRow>>): StageTiming[] {
+  return STAGE_PAIRS.map(([key, label, from, to]) => {
+    const hours = rows
+      .map((r) => {
+        const a = Date.parse(String(r[from] ?? ""));
+        const b = Date.parse(String(r[to] ?? ""));
+        return Number.isFinite(a) && Number.isFinite(b) && b >= a ? (b - a) / 3600000 : null;
+      })
+      .filter((h): h is number => h !== null)
+      .sort((x, y) => x - y);
+    const round = (h: number) => Math.round(h * 10) / 10;
+    return {
+      key,
+      label,
+      count: hours.length,
+      medianHours: hours.length ? round(median(hours)) : null,
+      fastestHours: hours.length ? round(hours[0]) : null,
+      slowestHours: hours.length ? round(hours[hours.length - 1]) : null,
+    };
+  });
+}
+
+/**
+ * A paid subscription started (Lemon Squeezy subscription_created, not an
+ * add-on): mark every matching invite converted. An invite matches by the
+ * account that claimed it, or by the invite's email (someone who bought
+ * straight from the page without claiming still came from the invite).
+ * Removed or declined invites are left alone; a replied one still converts.
+ * Idempotent (only rows without converted_at) and never throws, so it can
+ * run inside the webhook. Returns how many invites were marked.
+ */
+export async function markInvitesConverted(
+  db: SupabaseClient,
+  who: { userId?: string | null; email?: string | null },
+): Promise<number> {
+  try {
+    const email = (who.email || "").trim().toLowerCase();
+    const filters = [
+      who.userId ? `claim_user_id.eq.${who.userId}` : "",
+      email && /^[^\s@,()]+@[^\s@,()]+$/.test(email) ? `email.eq.${email}` : "",
+    ].filter(Boolean);
+    if (!filters.length) return 0;
+    const { data, error } = await db
+      .from("foyer_invites")
+      .select("id, email, status")
+      .or(filters.join(","))
+      .is("converted_at", null)
+      .limit(5);
+    if (error || !data) return 0;
+    let marked = 0;
+    for (const row of data as Array<Pick<InviteRow, "id" | "email" | "status">>) {
+      if (TERMINAL.has(row.status)) continue;
+      const now = new Date().toISOString();
+      // advanceInvite stamps converted_at with the status; "replied" ranks above
+      // "converted", so set both explicitly there.
+      const extra: Record<string, unknown> = { converted_at: now };
+      if (row.status === "replied") extra.status = "converted";
+      if (await advanceInvite(db, row, "converted", extra)) {
+        marked += 1;
+        await cancelInviteEnrollment(db, row.email);
+      }
+    }
+    return marked;
+  } catch (err) {
+    console.error("foyer-invites: markInvitesConverted failed", err);
+    return 0;
+  }
+}
+
 /** Stop the invite drip for an email (claimed, replied, removed or declined). */
 export async function cancelInviteEnrollment(db: SupabaseClient, email: string): Promise<void> {
   const { error } = await db
