@@ -9,7 +9,7 @@
  *   - RemovePageButton: deletes the page and opts the creator out for good.
  *   - TimeBeacon: reports visible time on page with navigator.sendBeacon.
  */
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 
 type Fix = { id: string; title: string; why: string; withButler: string; byHandNote?: string };
 
@@ -193,11 +193,87 @@ export function RemovePageButton({ code }: { code: string }) {
   );
 }
 
+// The header's claim button (ClaimTopButton) asks the one ClaimPanel on the
+// page to claim, so there is a single claim flow and a single result view.
+const CLAIM_EVENT = "ib-invite-claim";
+
+/** Small accessible info tooltip: a focusable "i" button; hover, focus or tap shows the text. */
+function InfoTip({ label, children }: { label: string; children: ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const id = "ib-claim-tip";
+  return (
+    <span className="relative inline-flex" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <button
+        type="button"
+        aria-label={label}
+        aria-describedby={open ? id : undefined}
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") setOpen(false);
+        }}
+        className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-orange-300 bg-white text-xs font-bold text-orange-800 hover:bg-orange-100 focus:outline-none focus-visible:ring-4 focus-visible:ring-orange-300"
+      >
+        i
+      </button>
+      {open ? (
+        <span
+          id={id}
+          role="tooltip"
+          className="absolute right-0 top-8 z-20 w-72 rounded-xl border border-slate-200 bg-white p-3 text-left text-sm font-normal leading-snug text-slate-700 shadow-lg"
+        >
+          {children}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+/** The prominent claim box at the top right of an invite page. */
+export function ClaimTopButton({ alreadyClaimed }: { alreadyClaimed: boolean }) {
+  return (
+    <div className="rounded-2xl border border-orange-200 bg-white p-4 shadow-sm sm:w-72">
+      <div className="flex items-start gap-2">
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new Event(CLAIM_EVENT))}
+          className="flex-1 rounded-xl bg-orange-500 px-4 py-3 text-base font-semibold text-slate-950 shadow hover:bg-orange-600 focus:outline-none focus-visible:ring-4 focus-visible:ring-orange-300"
+        >
+          {alreadyClaimed ? "Get my app links again" : "Claim my page, free"}
+        </button>
+        <InfoTip label="What claiming your page means">
+          Claiming gives you this page already set up in Influencer Butler, every open campaign on your posts, and 14
+          days of Influencer Butler Power User free, no card. Nothing goes live until you press Publish, and you can
+          remove the page anytime.
+        </InfoTip>
+      </div>
+      {!alreadyClaimed ? <p className="mt-2 text-xs text-slate-600">14 days free, no card. Remove anytime.</p> : null}
+    </div>
+  );
+}
+
 export default function ClaimPanel({ code, alreadyClaimed }: { code: string; alreadyClaimed: boolean }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<ClaimResult | null>(null);
   const [copied, setCopied] = useState(false);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const claimRef = useRef<() => void>(() => undefined);
+
+  // The header button: scroll here (where the result shows) and claim once.
+  useEffect(() => {
+    claimRef.current = () => {
+      rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (!busy && !result) void claim();
+    };
+  });
+  useEffect(() => {
+    const onClaim = () => claimRef.current();
+    window.addEventListener(CLAIM_EVENT, onClaim);
+    return () => window.removeEventListener(CLAIM_EVENT, onClaim);
+  }, []);
 
   async function claim() {
     setBusy(true);
@@ -231,7 +307,7 @@ export default function ClaimPanel({ code, alreadyClaimed }: { code: string; alr
 
   if (!result) {
     return (
-      <div>
+      <div ref={rootRef} className="scroll-mt-6">
         <button
           type="button"
           onClick={claim}
@@ -253,7 +329,7 @@ export default function ClaimPanel({ code, alreadyClaimed }: { code: string; alr
   }
 
   return (
-    <div className="rounded-2xl border border-orange-200 bg-orange-50 p-5" aria-live="polite">
+    <div ref={rootRef} className="scroll-mt-6 rounded-2xl border border-orange-200 bg-orange-50 p-5" aria-live="polite">
       {!alreadyClaimed && result.fixes.length > 1 ? (
         <div className="mb-6">
           <h3 className="text-lg font-bold text-slate-900">Your full report</h3>

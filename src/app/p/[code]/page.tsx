@@ -21,7 +21,7 @@ import {
   isValidInviteCode,
   type InviteRow,
 } from "@/lib/foyer-invites";
-import ClaimPanel, { RemovePageButton, TimeBeacon } from "./ClaimPanel";
+import ClaimPanel, { ClaimTopButton, RemovePageButton, TimeBeacon } from "./ClaimPanel";
 import OpportunitiesView from "./OpportunitiesView";
 
 export const dynamic = "force-dynamic";
@@ -91,18 +91,25 @@ export default async function InvitePreviewPage({ params }: { params: Promise<{ 
     <main id="main-content" className="min-h-screen bg-orange-50 px-4 py-8">
       <TimeBeacon code={code} />
       <div className="mx-auto max-w-5xl">
-        <p className="text-sm font-semibold uppercase tracking-wide text-orange-800">Made for @{invite.ig_handle}</p>
-        <h1 className="mt-1 text-3xl font-bold text-slate-900">
-          {event
-            ? `${event.count} of your posts have ${event.label} deals`
-            : op
-            ? `${earningCount} of your posts can earn more today`
-            : "Your Storefront Score"}
-        </h1>
-        <p className="mt-2 max-w-2xl text-slate-700">
-          Influencer Butler put this together from your public Amazon storefront only. It is private: only
-          someone with the link from your email can see it.
-        </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold uppercase tracking-wide text-orange-800">Made for @{invite.ig_handle}</p>
+            <h1 className="mt-1 text-3xl font-bold text-slate-900">
+              {event
+                ? `${event.count} of your posts have ${event.label} deals`
+                : op
+                ? `${earningCount} of your posts can earn more today`
+                : "Your Storefront Score"}
+            </h1>
+            <p className="mt-2 max-w-2xl text-slate-700">
+              Influencer Butler put this together from your public Amazon storefront only. It is private: only
+              someone with the link from your email can see it.
+            </p>
+          </div>
+          <div className="sm:flex-none">
+            <ClaimTopButton alreadyClaimed={claimed} />
+          </div>
+        </div>
 
         {op ? (
           <>
