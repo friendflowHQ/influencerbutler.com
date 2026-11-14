@@ -9,7 +9,7 @@
  *   - RemovePageButton: deletes the page and opts the creator out for good.
  *   - TimeBeacon: reports visible time on page with navigator.sendBeacon.
  */
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 
 type Fix = { id: string; title: string; why: string; withButler: string; byHandNote?: string };
 
@@ -99,8 +99,17 @@ export function TrackingIdBox() {
 }
 
 /** Copies a ready-made caption: their own tracking ID link when they added one, else their post link. */
+/**
+ * Preview caption + Copy caption. The preview shows exactly what will be
+ * copied (with their tracking ID once they add it) on its own line under the
+ * card's buttons; the parent row is flex-wrap, so basis-full wraps it.
+ */
 export function CopyCaptionButton({ caption, asin = "" }: { caption: string; asin?: string }) {
   const [copied, setCopied] = useState(false);
+  const [open, setOpen] = useState(false);
+  const previewId = useId();
+  const tag = useSyncExternalStore(subscribeTrackingId, readTrackingId, () => "");
+  const text = captionWithTag(caption, asin, tag);
   async function copy() {
     try {
       await navigator.clipboard.writeText(captionWithTag(caption, asin, readTrackingId()));
@@ -111,13 +120,32 @@ export function CopyCaptionButton({ caption, asin = "" }: { caption: string; asi
     }
   }
   return (
-    <button
-      type="button"
-      onClick={copy}
-      className="rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-semibold text-slate-950 hover:bg-orange-600 focus:outline-none focus-visible:ring-4 focus-visible:ring-orange-300"
-    >
-      {copied ? "Caption copied" : "Copy caption"}
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls={previewId}
+        className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-orange-300"
+      >
+        {open ? "Hide caption" : "Preview caption"}
+      </button>
+      <button
+        type="button"
+        onClick={copy}
+        className="rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-semibold text-slate-950 hover:bg-orange-600 focus:outline-none focus-visible:ring-4 focus-visible:ring-orange-300"
+      >
+        {copied ? "Caption copied" : "Copy caption"}
+      </button>
+      {open ? (
+        <p
+          id={previewId}
+          className="basis-full whitespace-pre-wrap break-words rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-800"
+        >
+          {text}
+        </p>
+      ) : null}
+    </>
   );
 }
 
