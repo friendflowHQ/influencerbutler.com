@@ -224,6 +224,8 @@ export function RemovePageButton({ code }: { code: string }) {
 // The header's claim button (ClaimTopButton) asks the one ClaimPanel on the
 // page to claim, so there is a single claim flow and a single result view.
 const CLAIM_EVENT = "ib-invite-claim";
+// ClaimPanel announces a successful claim so the header button can update.
+const CLAIMED_EVENT = "ib-invite-claimed";
 
 /** Small accessible info tooltip: a focusable "i" button; hover, focus or tap shows the text. */
 function InfoTip({ label, children }: { label: string; children: ReactNode }) {
@@ -261,6 +263,15 @@ function InfoTip({ label, children }: { label: string; children: ReactNode }) {
 
 /** The prominent claim box at the top right of an invite page. */
 export function ClaimTopButton({ alreadyClaimed }: { alreadyClaimed: boolean }) {
+  // Flips when the claim succeeds on this visit (ClaimPanel announces it), so
+  // the button stops inviting a second claim and points to the next steps.
+  const [justClaimed, setJustClaimed] = useState(false);
+  useEffect(() => {
+    const onClaimed = () => setJustClaimed(true);
+    window.addEventListener(CLAIMED_EVENT, onClaimed);
+    return () => window.removeEventListener(CLAIMED_EVENT, onClaimed);
+  }, []);
+  const label = justClaimed ? "Claimed: see my next steps" : alreadyClaimed ? "Get my app links again" : "Claim my page, free";
   return (
     <div className="rounded-2xl border border-orange-200 bg-white p-4 shadow-sm sm:w-72">
       <div className="flex items-start gap-2">
@@ -269,7 +280,7 @@ export function ClaimTopButton({ alreadyClaimed }: { alreadyClaimed: boolean }) 
           onClick={() => window.dispatchEvent(new Event(CLAIM_EVENT))}
           className="flex-1 rounded-xl bg-orange-500 px-4 py-3 text-base font-semibold text-slate-950 shadow hover:bg-orange-600 focus:outline-none focus-visible:ring-4 focus-visible:ring-orange-300"
         >
-          {alreadyClaimed ? "Get my app links again" : "Claim my page, free"}
+          {label}
         </button>
         <InfoTip label="What claiming your page means">
           Claiming gives you this page already set up in Influencer Butler, every open campaign on your posts, and 14
@@ -277,7 +288,11 @@ export function ClaimTopButton({ alreadyClaimed }: { alreadyClaimed: boolean }) 
           remove the page anytime.
         </InfoTip>
       </div>
-      {!alreadyClaimed ? <p className="mt-2 text-xs text-slate-600">14 days free, no card. Remove anytime.</p> : null}
+      {justClaimed ? (
+        <p className="mt-2 text-xs text-slate-600">Your key is below and in your email.</p>
+      ) : !alreadyClaimed ? (
+        <p className="mt-2 text-xs text-slate-600">14 days free, no card. Remove anytime.</p>
+      ) : null}
     </div>
   );
 }
@@ -315,7 +330,10 @@ export default function ClaimPanel({ code, alreadyClaimed }: { code: string; alr
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json.ok) setError(json.error || "Something went wrong. Please try again.");
-      else setResult(json as ClaimResult);
+      else {
+        setResult(json as ClaimResult);
+        window.dispatchEvent(new Event(CLAIMED_EVENT));
+      }
     } catch {
       setError("We could not reach the server. Please check your connection and try again.");
     } finally {

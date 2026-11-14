@@ -139,6 +139,10 @@
 
     var banner = document.createElement("div");
     banner.id = "ib-consent-banner";
+    // Private invite pages (/p/<code>) get a compact banner: on a phone the full
+    // one covered the page's claim box. Same two choices, same policy links.
+    var compact = /^\/p\//.test(window.location.pathname);
+    if (compact) banner.className = "is-compact";
     banner.setAttribute("role", "dialog");
     banner.setAttribute("aria-live", "polite");
     banner.setAttribute(
@@ -148,7 +152,9 @@
     banner.innerHTML =
       '<div class="ib-consent-banner__inner">' +
         '<p class="ib-consent-banner__copy">' +
-          "We use cookies to keep the site running and, with your permission, to measure aggregate traffic and support our advertising (including the Meta pixel). " +
+          (compact
+            ? "Cookies keep the site running and, if you allow, measure traffic and support our ads (including the Meta pixel). "
+            : "We use cookies to keep the site running and, with your permission, to measure aggregate traffic and support our advertising (including the Meta pixel). ") +
           'See our <a href="/legal/cookies">Cookie Policy</a> and <a href="/legal/privacy">Privacy Policy</a>.' +
         "</p>" +
         '<div class="ib-consent-banner__buttons">' +
@@ -181,6 +187,10 @@
       ".ib-consent-banner__btn--primary:hover{background:#1e40af}" +
       ".ib-consent-banner__btn--secondary{background:transparent;color:#e2e8f0;border:1px solid #475569}" +
       ".ib-consent-banner__btn--secondary:hover{background:rgba(255,255,255,0.06)}" +
+      "#ib-consent-banner.is-compact{left:8px;right:8px;bottom:8px;padding:8px 12px;font-size:12px;line-height:1.4}" +
+      "#ib-consent-banner.is-compact .ib-consent-banner__inner{gap:8px}" +
+      "#ib-consent-banner.is-compact .ib-consent-banner__copy{flex-basis:220px}" +
+      "#ib-consent-banner.is-compact .ib-consent-banner__btn{padding:6px 10px}" +
       "@media (max-width:480px){" +
         ".ib-consent-banner__buttons{width:100%;justify-content:stretch}" +
         ".ib-consent-banner__btn{flex:1}" +
