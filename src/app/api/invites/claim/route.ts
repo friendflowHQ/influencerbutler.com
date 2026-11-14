@@ -22,6 +22,7 @@ import {
   isExpired,
   isValidInviteCode,
   openInAppUrlFor,
+  campaignConnectUrl,
   publicOpportunities,
   siteBase,
   type InviteRow,
@@ -44,7 +45,12 @@ function links(code: string, invite: InviteRow) {
     openUrl: openInAppUrlFor(code),
     downloads: { windows: `${site}/dl/win`, macAppleSilicon: `${site}/dl/mac`, macIntel: `${site}/dl/mac-intel` },
     fixes: invite.score && Array.isArray(invite.score.fixes) ? invite.score.fixes : [],
-    campaignPosts: publicOpportunities(invite.opportunities, true).campaignPosts,
+    campaignPosts: publicOpportunities(invite.opportunities, true).campaignPosts.map((p) => ({
+      asin: p.asin,
+      title: p.title,
+      campaign: p.campaign ? { ratePct: p.campaign.ratePct, brand: p.campaign.brand } : null,
+      connectUrl: campaignConnectUrl(p),
+    })),
   };
 }
 

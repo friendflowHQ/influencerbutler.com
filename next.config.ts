@@ -57,6 +57,10 @@ const imgSrc = [
   "https://links.influencerbutler.com",
   // /videos cards show YouTube thumbnails.
   "https://i.ytimg.com",
+  // Private invite pages (/p/<code>) show the creator's own Amazon storefront
+  // post thumbnails and product images.
+  "https://m.media-amazon.com",
+  "https://images-na.ssl-images-amazon.com",
   // Meta Pixel's no-script/image fallback pings www.facebook.com/tr as an <img>.
   "https://www.facebook.com",
   // Google Ads remarketing fires 1x1 pixels from these conversion domains.

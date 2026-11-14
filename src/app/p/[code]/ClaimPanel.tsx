@@ -9,7 +9,7 @@
  *   - RemovePageButton: deletes the page and opts the creator out for good.
  *   - TimeBeacon: reports visible time on page with navigator.sendBeacon.
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 type Fix = { id: string; title: string; why: string; withButler: string; byHandNote?: string };
 
@@ -21,15 +21,89 @@ type ClaimResult = {
   openUrl: string;
   downloads: { windows: string; macAppleSilicon: string; macIntel: string };
   fixes: Fix[];
-  campaignPosts?: { asin: string; title: string; campaign: { ratePct: number; brand?: string } | null }[];
+  campaignPosts?: { asin: string; title: string; campaign: { ratePct: number; brand?: string } | null; connectUrl?: string | null }[];
 };
 
-/** Copies a ready-made caption (their own post link already inside). */
-export function CopyCaptionButton({ caption }: { caption: string }) {
+// The creator's Amazon Associates (offsite) tracking ID, typed once on this
+// page and kept only in their own browser. With it, every copied caption links
+// to the product with their tag; without it, the caption links to their post.
+const TAG_STORAGE_KEY = "ib-invite-tracking-id";
+const TAG_RE = /^[a-z0-9][a-z0-9-]{1,40}-2[0-9]$/i;
+
+function readTrackingId(): string {
+  try {
+    const v = (window.localStorage.getItem(TAG_STORAGE_KEY) || "").trim();
+    return TAG_RE.test(v) ? v : "";
+  } catch {
+    return "";
+  }
+}
+
+/** Swap the caption's link for a /dp/ link carrying their own tag (bare ?tag= is right for /dp/). */
+export function captionWithTag(caption: string, asin: string, tag: string): string {
+  if (!tag || !/^[A-Z0-9]{10}$/i.test(asin)) return caption;
+  const link = `https://www.amazon.com/dp/${asin.toUpperCase()}?tag=${tag}`;
+  return caption.replace(/https:\/\/www\.amazon\.[a-z.]+\/\S+/i, link);
+}
+
+const TAG_EVENT = "ib-invite-tracking-id";
+
+function subscribeTrackingId(cb: () => void) {
+  window.addEventListener(TAG_EVENT, cb);
+  window.addEventListener("storage", cb);
+  return () => {
+    window.removeEventListener(TAG_EVENT, cb);
+    window.removeEventListener("storage", cb);
+  };
+}
+
+export function TrackingIdBox() {
+  // The saved ID (server render: none), kept in sync without setState-in-effect.
+  const saved = useSyncExternalStore(subscribeTrackingId, readTrackingId, () => "");
+  const valid = Boolean(saved);
+  function save(v: string) {
+    try {
+      if (TAG_RE.test(v.trim())) window.localStorage.setItem(TAG_STORAGE_KEY, v.trim());
+      else window.localStorage.removeItem(TAG_STORAGE_KEY);
+    } catch {
+      /* private mode: the caption simply keeps the post link */
+    }
+    window.dispatchEvent(new Event(TAG_EVENT));
+  }
+  return (
+    <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+      <label className="block text-sm font-medium text-slate-800" htmlFor="ib-invite-tracking-id">
+        Your Amazon tracking ID for social posts (optional)
+      </label>
+      <input
+        id="ib-invite-tracking-id"
+        type="text"
+        inputMode="text"
+        autoComplete="off"
+        spellCheck={false}
+        placeholder="yourname-20"
+        // Uncontrolled; prefilled once on mount from this browser's saved ID.
+        ref={(el) => {
+          if (el && !el.value) el.value = readTrackingId();
+        }}
+        onChange={(e) => save(e.target.value)}
+        className="mt-2 w-full max-w-xs rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus-visible:ring-4 focus-visible:ring-orange-300"
+      />
+      <p className="mt-2 text-sm text-slate-600">
+        {valid
+          ? "Your captions now link straight to each product with your tracking ID."
+          : "Add the tracking ID you use outside Amazon (it ends in -20) and every caption links to the product with your ID, so sales from your socials are credited to you. It stays in this browser only."}
+      </p>
+    </div>
+  );
+}
+
+/** Copies a ready-made caption: their own tracking ID link when they added one, else their post link. */
+export function CopyCaptionButton({ caption, asin = "" }: { caption: string; asin?: string }) {
   const [copied, setCopied] = useState(false);
   async function copy() {
     try {
-      await navigator.clipboard.writeText(caption);
+      await navigator.clipboard.writeText(captionWithTag(caption, asin, readTrackingId()));
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     } catch {
@@ -204,9 +278,16 @@ export default function ClaimPanel({ code, alreadyClaimed }: { code: string; alr
           <p className="mt-1 text-sm text-slate-600">For Gold and Platinum creators.</p>
           <ul className="mt-3 space-y-2">
             {result.campaignPosts.map((p) => (
-              <li key={p.asin} className="rounded-xl bg-white px-4 py-2 text-slate-800">
-                {p.title}: {p.campaign?.brand ? `${p.campaign.brand}, ` : ""}
-                {p.campaign?.ratePct}% commission
+              <li key={p.asin} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-white px-4 py-2 text-slate-800">
+                <span>
+                  {p.title}: {p.campaign?.brand ? `${p.campaign.brand}, ` : ""}
+                  {p.campaign?.ratePct}% commission
+                </span>
+                {p.connectUrl ? (
+                  <a href={p.connectUrl} target="_blank" rel="noreferrer" className="text-sm font-semibold text-orange-700 underline">
+                    Open campaign
+                  </a>
+                ) : null}
               </li>
             ))}
           </ul>

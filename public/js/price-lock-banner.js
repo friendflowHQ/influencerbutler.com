@@ -198,7 +198,8 @@
       swapPrices();
       return;
     }
-    if (/^\/dashboard(\/|$)/.test(window.location.pathname)) return;
+    // Private invite pages (/p/<code>) are one-to-one: no countdown pressure there.
+    if (/^\/(dashboard|p)(\/|$)/.test(window.location.pathname)) return;
     if (document.getElementById("ib-price-lock-banner")) return;
     if (dismissedToday()) return;
 

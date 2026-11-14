@@ -116,3 +116,27 @@ describe("v3 opportunities", () => {
     expect(after.lockedCampaigns).toBe(0);
   });
 });
+
+describe("invite captions with the creator's own tracking ID", () => {
+  it("swaps the post link for a /dp/ link with a bare ?tag=", async () => {
+    const { captionWithTag } = await import("@/app/p/[code]/ClaimPanel");
+    const cap = "Deal alert! Mop\n17% off right now.\nShop it here: https://www.amazon.com/vdp/0a15295825694a21a52df8c58c1ab0bd\n#ad #founditonamazon";
+    expect(captionWithTag(cap, "B08ZB59MZX", "lizdean-20")).toContain("Shop it here: https://www.amazon.com/dp/B08ZB59MZX?tag=lizdean-20\n#ad");
+    expect(captionWithTag(cap, "B08ZB59MZX", "")).toBe(cap);
+    expect(captionWithTag(cap, "bad", "lizdean-20")).toBe(cap);
+  });
+});
+
+describe("Creator Connections campaign links", () => {
+  it("passes only Amazon's own campaign request page", async () => {
+    const { campaignConnectUrl } = await import("@/lib/foyer-invites");
+    const good = "https://affiliate-program.amazon.com/p/connect/request?adId=A1&campaignId=C9&type=cc&status=opportunity";
+    const c = (connectUrl: string) => ({ campaign: { ratePct: 20, connectUrl } });
+    expect(campaignConnectUrl(c(good))).toContain("campaignId=C9");
+    expect(campaignConnectUrl(c("https://affiliate-program.amazon.com.evil.test/p/connect/request?campaignId=C9"))).toBeNull();
+    expect(campaignConnectUrl(c("http://affiliate-program.amazon.com/p/connect/request?campaignId=C9"))).toBeNull();
+    expect(campaignConnectUrl(c("https://affiliate-program.amazon.com/p/connect/request?adId=A1"))).toBeNull();
+    expect(campaignConnectUrl(c("javascript:alert(1)"))).toBeNull();
+    expect(campaignConnectUrl({ campaign: null })).toBeNull();
+  });
+});

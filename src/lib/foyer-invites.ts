@@ -80,7 +80,7 @@ export type OpportunityPost = {
   title: string;
   asin: string;
   deal: { percentOff: number; endsDisplay?: string; category?: string } | null;
-  campaign: { ratePct: number; brand?: string; endsAt?: string | null } | null;
+  campaign: { ratePct: number; brand?: string; endsAt?: string | null; connectUrl?: string } | null;
   perSale: { baseRatePct?: number; base: number | null; campaign: number | null };
   caption: string;
 };
@@ -95,6 +95,24 @@ export type InviteOpportunities = {
 
 /** Campaign posts shown before claim; the rest unlock on claim. */
 export const FREE_CAMPAIGN_POSTS = 3;
+
+/**
+ * The Creator Connections link for a post's campaign, or null. Only Amazon's
+ * own campaign request page passes, so the page can never send a creator to a
+ * look-alike host. The creator signs in there and clicks Accept themselves.
+ */
+export function campaignConnectUrl(p: Pick<OpportunityPost, "campaign"> | null | undefined): string | null {
+  const raw = p && p.campaign && typeof p.campaign.connectUrl === "string" ? p.campaign.connectUrl : "";
+  if (!raw) return null;
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== "https:" || u.hostname !== "affiliate-program.amazon.com" || u.pathname !== "/p/connect/request") return null;
+    if (!u.searchParams.get("campaignId")) return null;
+    return u.toString();
+  } catch {
+    return null;
+  }
+}
 
 /** Validate an uploaded opportunities blob (shape only; the app computed it). */
 export function normalizeOpportunities(raw: unknown): InviteOpportunities | null {

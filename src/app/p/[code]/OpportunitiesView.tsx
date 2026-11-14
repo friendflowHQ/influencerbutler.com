@@ -8,8 +8,25 @@
  * "money you lost" framing.
  */
 import type { InviteOpportunities, OpportunityPost } from "@/lib/foyer-invites";
-import { publicOpportunities } from "@/lib/foyer-invites";
-import { CopyCaptionButton } from "./ClaimPanel";
+import { campaignConnectUrl, publicOpportunities } from "@/lib/foyer-invites";
+import { CopyCaptionButton, TrackingIdBox } from "./ClaimPanel";
+
+/** Opens the campaign on Amazon's own Creator Connections page, where they click Accept. */
+function OpenCampaignButton({ p }: { p: OpportunityPost }) {
+  const href = campaignConnectUrl(p);
+  if (!href) return null;
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="rounded-lg bg-orange-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-orange-700"
+      title="Opens the campaign in Creator Connections. Sign in to your Amazon Associates account, then click Accept."
+    >
+      Open campaign in Creator Connections
+    </a>
+  );
+}
 
 function perSale(v: number | null | undefined): string {
   return typeof v === "number" && Number.isFinite(v) ? `about $${v.toFixed(2)} per sale` : "";
@@ -37,11 +54,19 @@ export function DealCard({ p }: { p: OpportunityPost }) {
           {perSale(p.perSale.base)}
           {p.deal?.endsDisplay ? ` · sale ends ${p.deal.endsDisplay.split(" ")[0]}` : ""}
         </p>
+        {p.campaign ? (
+          <p className="mt-1 text-sm text-slate-700">
+            Also in a {p.campaign.brand ? `${p.campaign.brand} ` : ""}campaign: {p.campaign.ratePct}% commission
+            {p.perSale.campaign != null ? `, ${perSale(p.perSale.campaign)}` : ""}
+            <span className="ml-1 text-xs text-amber-900">(Gold and Platinum creators)</span>
+          </p>
+        ) : null}
         <div className="mt-2 flex flex-wrap gap-2">
           <a href={p.postUrl} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50">
             View your post
           </a>
-          {p.caption ? <CopyCaptionButton caption={p.caption} /> : null}
+          {p.caption ? <CopyCaptionButton caption={p.caption} asin={p.asin} /> : null}
+          {p.campaign ? <OpenCampaignButton p={p} /> : null}
         </div>
       </div>
     </li>
@@ -61,9 +86,12 @@ export function CampaignCard({ p }: { p: OpportunityPost }) {
           {p.campaign?.brand ? `${p.campaign.brand} ` : ""}campaign: {p.campaign?.ratePct}% commission
           {p.perSale.campaign != null ? `, ${perSale(p.perSale.campaign)}` : ""}
         </p>
-        <a href={p.postUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block rounded-lg border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50">
-          View your post
-        </a>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <a href={p.postUrl} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50">
+            View your post
+          </a>
+          <OpenCampaignButton p={p} />
+        </div>
       </div>
     </li>
   );
@@ -78,8 +106,9 @@ export default function OpportunitiesView({ op, claimed }: { op: InviteOpportuni
           <h2 className="text-xl font-bold text-slate-900">On sale today</h2>
           <p className="mt-1 text-slate-700">
             Products you already posted are on sale right now: a good reason to share them again. Each one has a caption
-            ready to copy, linking to your own post.
+            ready to copy.
           </p>
+          <TrackingIdBox />
           <ul className="mt-4 grid gap-4 md:grid-cols-2">
             {dealPosts.map((p) => (
               <DealCard key={p.asin} p={p} />
@@ -93,7 +122,8 @@ export default function OpportunitiesView({ op, claimed }: { op: InviteOpportuni
           <h2 className="text-xl font-bold text-slate-900">Open campaigns on your posts</h2>
           <p className="mt-1 text-slate-700">
             If you are a Gold or Platinum creator, brands are running Creator Connections campaigns on products you
-            already posted. Influencer Butler can accept them for you.
+            already posted. Tap Open campaign to see it in Creator Connections and accept it yourself, or let
+            Influencer Butler accept them for you.
           </p>
           <ul className="mt-4 grid gap-4 md:grid-cols-2">
             {campaignPosts.map((p) => (

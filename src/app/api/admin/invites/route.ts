@@ -12,7 +12,8 @@
  *          contacted (by email or handle). With enroll:true, enrolls the
  *          creator in the PAUSED cold sequence.
  *   PATCH  {id, action}: "decline" (stop + suppress), "replied" (stop), "note",
- *          "enroll" (a drafted invite), "unenroll", "converted".
+ *          "enroll" (a drafted invite), "unenroll", "converted", "refresh"
+ *          (new opportunities / page for an existing page; content only).
  *
  * Gated on licenses.view, the same permission as the Comps page.
  */
@@ -314,6 +315,26 @@ export async function PATCH(request: Request) {
   if (action === "converted") {
     await advanceInvite(db, row, "converted");
     return NextResponse.json({ ok: true });
+  }
+  if (action === "refresh") {
+    // Today's deals and campaigns on a page that already exists. Content only:
+    // never touches the emails, the status, the enrollment or the claim, so it
+    // can never re-contact anyone. Removed or declined pages stay gone.
+    if (row.status === "removed" || row.status === "declined") {
+      return NextResponse.json({ error: `This page was ${row.status}; it is never refreshed.` }, { status: 409 });
+    }
+    const opportunities = normalizeOpportunities(body.opportunities);
+    if (!opportunities) {
+      return NextResponse.json({ error: "opportunities (their posts on sale or in a campaign) are required" }, { status: 400 });
+    }
+    const patch: Record<string, unknown> = { opportunities, updated_at: new Date().toISOString() };
+    if (body.pageDoc && typeof body.pageDoc === "object") patch.page_doc = body.pageDoc;
+    if (typeof body.previewHtml === "string" && body.previewHtml) {
+      if (body.previewHtml.length > MAX_HTML) return NextResponse.json({ error: "previewHtml too large" }, { status: 400 });
+      patch.preview_html = body.previewHtml;
+    }
+    const { error } = await db.from("foyer_invites").update(patch).eq("id", id);
+    return error ? NextResponse.json({ error: "Save failed" }, { status: 500 }) : NextResponse.json({ ok: true });
   }
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });
 }
