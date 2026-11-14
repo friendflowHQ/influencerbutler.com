@@ -15,8 +15,10 @@ function hashKey(plain: string): string {
 }
 
 type ApiKeyRow = {
+  id: string;
   user_id: string;
   revoked_at: string | null;
+  expires_at: string | null;
 };
 
 type ProfileRow = {
@@ -58,7 +60,7 @@ export async function resolvePrincipal(req: Request): Promise<Principal | null> 
       };
     })
       .from("mcp_api_keys")
-      .select("user_id, revoked_at")
+      .select("id, user_id, revoked_at, expires_at")
       .eq("key_hash", keyHash)
       .maybeSingle();
     keyRow = data;
@@ -68,6 +70,24 @@ export async function resolvePrincipal(req: Request): Promise<Principal | null> 
   }
 
   if (!keyRow || keyRow.revoked_at) return null;
+  if (keyRow.expires_at && new Date(keyRow.expires_at).getTime() <= Date.now()) return null;
+
+  // Best-effort "last used" stamp. Awaited (this route runs on the nodejs
+  // runtime, not edge) but never allowed to fail the auth check itself.
+  try {
+    await (admin as unknown as {
+      from: (table: string) => {
+        update: (p: Record<string, unknown>) => {
+          eq: (col: string, value: string) => Promise<{ error: unknown }>;
+        };
+      };
+    })
+      .from("mcp_api_keys")
+      .update({ last_used_at: new Date().toISOString() })
+      .eq("id", keyRow.id);
+  } catch (error) {
+    console.error("mcp/auth: last_used_at stamp failed", error);
+  }
 
   let email: string | null = null;
   try {

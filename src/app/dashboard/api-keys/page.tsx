@@ -9,6 +9,7 @@ type KeyRow = {
   created_at: string;
   last_used_at: string | null;
   revoked_at: string | null;
+  expires_at: string | null;
 };
 
 export default function ApiKeysPage() {
@@ -135,6 +136,14 @@ export default function ApiKeysPage() {
                   <p className="text-xs text-slate-500">
                     <code className="font-mono">{k.prefix}…</code> · created{" "}
                     {new Date(k.created_at).toLocaleDateString()}
+                    {k.last_used_at ? (
+                      <span>, last used {new Date(k.last_used_at).toLocaleDateString()}</span>
+                    ) : (
+                      <span>, never used</span>
+                    )}
+                    {k.expires_at ? (
+                      <span>, expires {new Date(k.expires_at).toLocaleDateString()}</span>
+                    ) : null}
                     {k.revoked_at ? <span className="ml-2 text-red-600">revoked</span> : null}
                   </p>
                 </div>

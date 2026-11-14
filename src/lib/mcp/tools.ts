@@ -2,7 +2,11 @@ import { createAdminClient } from "@/lib/admin";
 import { generateAndCreateAffiliateCode } from "@/lib/affiliate-code-generator";
 import { fetchLsAffiliate, buildShareLink } from "@/lib/affiliates";
 import { FEATURE_CATALOG, PRICING_TIERS } from "@/lib/mcp/feature-catalog";
+import { rateLimit } from "@/lib/rate-limit";
 import type { Principal } from "@/lib/mcp/auth";
+
+const CREATE_AFFILIATE_LINK_LIMIT = 5;
+const CREATE_AFFILIATE_LINK_WINDOW_SEC = 3600;
 
 export type ToolDefinition = {
   name: string;
@@ -41,6 +45,14 @@ type ProfileForAffiliate = {
 
 const createAffiliateLink: ToolHandler = async (args, principal) => {
   if (!principal) return err("auth required: include a valid Authorization: Bearer ib_pat_... header");
+
+  const limited = await rateLimit(
+    `mcp:create-affiliate-link:user:${principal.userId}`,
+    CREATE_AFFILIATE_LINK_LIMIT,
+    CREATE_AFFILIATE_LINK_WINDOW_SEC,
+  );
+  if (!limited.allowed) return err("rate limited: try again later");
+
   const firstName = typeof args.firstName === "string" ? args.firstName.trim() : "";
   if (!firstName) return err("firstName is required");
 
