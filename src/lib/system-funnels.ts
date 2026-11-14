@@ -252,6 +252,9 @@ export function previewVars(funnel: string): Record<string, unknown> {
         helpUrl: `${site}/help`,
         discountCode: "SAVE20",
         discountPercent: 20,
+        // Day 12's own-posts line (src/lib/app-trial-posts.ts), as a sample.
+        postsLine:
+          "When your app last checked your storefront, 2 were in Black Friday deals, 3 were on sale and 4 had open Creator Connections campaigns (those are for Gold and Platinum creators). The best one earns about $2.70 per sale. Open Influencer Butler and the Home screen has a caption ready for each one, linked to your own post.",
         ...track,
       };
     case "winback":

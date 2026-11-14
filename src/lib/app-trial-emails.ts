@@ -80,6 +80,9 @@ export type AppTrialVars = {
   eventLine?: string;
   goalLine?: string;
   bookCallUrl?: string;
+  /** Day 12: counts of their own storefront posts on sale or with an open campaign,
+   * from the app (src/lib/app-trial-posts.ts postsLineFor); "" when none or stale. */
+  postsLine?: string;
 };
 
 export type TierCopy = {
@@ -223,6 +226,7 @@ export const APP_TRIAL_COPY: Record<AppTrialTier, TierCopy> = {
       return paragraphs(
         `${v.firstName},`,
         `Your trial ends in two days, so I wanted to give you a heads up rather than let it surprise you.`,
+        v.postsLine,
         t.priceLockLine,
         `If the butlers have earned a spot in your routine, staying on is simple and everything you've set up stays exactly as it is. Beginner starts at ${t.beginnerPrice} with AI included. Power User is ${t.price} for every butler.`,
         `See the plans: ${v.pricingUrl}`,
@@ -539,6 +543,8 @@ export type AppTrialEmailPayload = {
   trackVars?: Partial<
     Pick<AppTrialVars, "aiLine" | "priceLockLine" | "price" | "beginnerPrice" | "eventLine" | "goalLine" | "bookCallUrl">
   >;
+  /** Day 12 only: the own-posts line (src/lib/app-trial-posts.ts). */
+  postsLine?: string;
 };
 
 function renderTier(copy: TierCopy, vars: AppTrialVars): { subject: string; body: string } {
@@ -577,6 +583,7 @@ export async function sendAppTrialEmail(payload: AppTrialEmailPayload): Promise<
     discountCode: payload.discountCode,
     discountPercent: payload.discountPercent,
     ...(payload.trackVars ?? {}),
+    postsLine: payload.postsLine || "",
   };
 
   const overrides = await getFunnelOverrides();

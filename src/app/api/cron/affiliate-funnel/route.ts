@@ -9,6 +9,7 @@ import { hasRedeemedDiscount } from "@/lib/discount-eligibility";
 import { sendProEmail, type ProTier } from "@/lib/pro-emails";
 import { sendOnboardingEmail, type OnboardingTier } from "@/lib/free-onboarding-emails";
 import { sendAppTrialEmail, type AppTrialTier } from "@/lib/app-trial-emails";
+import { normalizePostsSummary, postsLineFor } from "@/lib/app-trial-posts";
 import { isUndeliverableTestEmail } from "@/lib/email-address";
 import { runSwipeKitBroadcast, type SwipeKitDb } from "@/lib/affiliate-swipe-kit";
 import { TRIAL_LENGTH_DAYS } from "@/lib/pricing-constants";
@@ -1389,6 +1390,28 @@ type AppTrialRow = {
   app_trial_send_failures: number | null;
 };
 
+/**
+ * Day 12's "your own posts" line from the counts the desktop app reported
+ * (src/lib/app-trial-posts.ts). A separate, failure-tolerant read on purpose:
+ * the columns come from a migration applied by hand, and adding them to the
+ * main app-trial query would stop every app-trial email until it is applied.
+ */
+async function appTrialPostsLine(supabase: CronClient, email: string): Promise<string> {
+  try {
+    const db = supabase as unknown as SupabaseClient;
+    const { data, error } = await db
+      .from("email_subscribers")
+      .select("app_trial_posts_summary,app_trial_posts_summary_at")
+      .eq("email", email)
+      .maybeSingle();
+    if (error || !data) return "";
+    const row = data as { app_trial_posts_summary: unknown; app_trial_posts_summary_at: string | null };
+    return postsLineFor(normalizePostsSummary(row.app_trial_posts_summary), row.app_trial_posts_summary_at);
+  } catch {
+    return "";
+  }
+}
+
 function selectAppTrialTier(
   row: AppTrialRow,
   tiers: ReadonlyArray<(typeof APP_TRIAL_TIERS)[number]>,
@@ -1572,6 +1595,7 @@ async function sendAppTrialEmails(supabase: CronClient): Promise<Record<AppTrial
         helpUrl,
         discountCode: referredCode === null ? discountCode : null,
         discountPercent,
+        postsLine: tier.tier === "day12" ? await appTrialPostsLine(supabase, row.email) : "",
       };
       let sent: boolean;
       if (v2) {
