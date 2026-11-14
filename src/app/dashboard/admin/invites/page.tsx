@@ -33,6 +33,7 @@ type InviteRow = {
   existing_customer: boolean;
   email_steps: { subject: string; body: string }[];
   score: { score: number } | null;
+  opportunities: { counts: { deals: number; campaigns: number } } | null;
   storefront_url: string;
   time_on_page_ms: number;
   claim_clicked_at: string | null;
@@ -152,7 +153,7 @@ export default function AdminInvitesPage() {
     const openRate = report.delivered ? report.opened / report.delivered : 0;
     const claimRate = report.visited ? report.claimed / report.visited : 0;
     if (openRate < 0.3) out.push("Open rate is under 30%: fix subject lines and deliverability.");
-    if (report.visited >= 5 && claimRate < 0.2) out.push("Visit-to-claim is under 20%: fix the page and the score.");
+    if (report.visited >= 5 && claimRate < 0.2) out.push("Visit-to-claim is under 20%: fix the page and the offer.");
     if (!out.length) out.push("Within the brief's thresholds. Do not scale past 100 without Liz's approval.");
     return out.join(" ");
   }, [report]);
@@ -267,7 +268,13 @@ export default function AdminInvitesPage() {
                         Storefront
                       </a>
                     ) : null}
-                    {r.score ? <div className="mt-1 text-xs font-semibold text-slate-700">Score {r.score.score}</div> : null}
+                    {r.opportunities ? (
+                      <div className="mt-1 text-xs font-semibold text-slate-700">
+                        {r.opportunities.counts.deals} on sale · {r.opportunities.counts.campaigns} campaigns
+                      </div>
+                    ) : r.score ? (
+                      <div className="mt-1 text-xs font-semibold text-slate-700">Score {r.score.score}</div>
+                    ) : null}
                   </td>
                   <td className="px-3 py-2">
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${STATUS_STYLE[r.status] ?? ""}`}>{r.status}</span>

@@ -9,6 +9,9 @@ import {
   newInviteCode,
   normalizeEmailSteps,
   personalizeInviteText,
+  normalizeOpportunities,
+  publicOpportunities,
+  FREE_CAMPAIGN_POSTS,
 } from "@/lib/foyer-invites";
 
 const steps = [
@@ -76,5 +79,40 @@ describe("funnel helpers", () => {
   it("mints codes that pass validation", () => {
     for (let i = 0; i < 20; i += 1) expect(isValidInviteCode(newInviteCode())).toBe(true);
     expect(isValidInviteCode("../etc")).toBe(false);
+  });
+});
+
+describe("v3 opportunities", () => {
+  const post = (asin: string, deal: boolean, campaign: boolean) => ({
+    postUrl: `https://www.amazon.com/shop/x/photo/${asin}`,
+    thumbUrl: "",
+    kind: "photo",
+    title: asin,
+    asin,
+    deal: deal ? { percentOff: 20 } : null,
+    campaign: campaign ? { ratePct: 10 } : null,
+    perSale: { base: null, campaign: null },
+    caption: "",
+  });
+
+  it("accepts only posts that are the creator's own Amazon posts with a deal or campaign", () => {
+    expect(normalizeOpportunities({ posts: [post("A", true, false)], counts: { deals: 1, campaigns: 0 } })).not.toBeNull();
+    expect(normalizeOpportunities({ posts: [] })).toBeNull();
+    expect(normalizeOpportunities({ posts: [{ ...post("A", true, false), postUrl: "https://evil.example/x" }] })).toBeNull();
+    expect(normalizeOpportunities({ posts: [post("A", false, false)] })).toBeNull();
+  });
+
+  it("shows every deal post but only the first campaign posts before claim", () => {
+    const op = normalizeOpportunities({
+      posts: [post("D1", true, false), post("C1", false, true), post("C2", false, true), post("C3", false, true), post("C4", false, true), post("B1", true, true)],
+      counts: { deals: 2, campaigns: 5 },
+    });
+    const before = publicOpportunities(op, false);
+    expect(before.dealPosts.map((p) => p.asin)).toEqual(["D1", "B1"]);
+    expect(before.campaignPosts).toHaveLength(FREE_CAMPAIGN_POSTS);
+    expect(before.lockedCampaigns).toBe(1);
+    const after = publicOpportunities(op, true);
+    expect(after.campaignPosts).toHaveLength(4);
+    expect(after.lockedCampaigns).toBe(0);
   });
 });

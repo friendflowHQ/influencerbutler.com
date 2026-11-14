@@ -1,13 +1,14 @@
 /**
- * /p/<code>: a private Storefront Score page (invite pilot).
+ * /p/<code>: a private invite page (pilot).
  *
  * Unlisted and noindex: the code only ever went to the creator's own inbox.
- * Built from the handle and public storefront facts only: no photos, no copied
- * posts, nothing from Amazon or Walmart's own branding. The tone is "here's
- * what you can unlock": the score, what it measures, ONE fix in full, the
- * other fixes by title only. Claiming (ClaimPanel) reveals the full report and
- * starts the trial. "Remove my page" deletes it on the spot. A visit counts as
- * "viewed"; TimeBeacon reports time on page.
+ * v3 (opportunities): the creator's own storefront posts that are on sale today
+ * or have an open campaign (OpportunitiesView), shown only to them, with their
+ * own post thumbnails and links; nothing from Amazon or Walmart's branding.
+ * v2 invites (score) keep the older Storefront Score layout. Claiming
+ * (ClaimPanel) reveals the full list and starts the trial. "Remove my page"
+ * deletes it on the spot. A visit counts as "viewed"; TimeBeacon reports time
+ * on page.
  */
 import type { Metadata } from "next";
 import {
@@ -20,11 +21,12 @@ import {
   type InviteRow,
 } from "@/lib/foyer-invites";
 import ClaimPanel, { RemovePageButton, TimeBeacon } from "./ClaimPanel";
+import OpportunitiesView from "./OpportunitiesView";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Your Storefront Score",
+  title: "Your posts, earning more",
   robots: { index: false, follow: false, nocache: true },
   referrer: "no-referrer",
 };
@@ -63,7 +65,7 @@ export default async function InvitePreviewPage({ params }: { params: Promise<{ 
   if (invite.status === "removed") {
     return <Notice title="This page was removed">It is gone for good, and you will not hear from us again.</Notice>;
   }
-  if (invite.status === "declined" || isExpired(invite) || !invite.score) {
+  if (invite.status === "declined" || isExpired(invite) || (!invite.score && !invite.opportunities)) {
     return <Notice title="This page is no longer available">If you would like it back, just reply to Liz&apos;s email.</Notice>;
   }
 
@@ -75,8 +77,10 @@ export default async function InvitePreviewPage({ params }: { params: Promise<{ 
   if (invite.status === "drafted" || invite.status === "sent") await advanceInvite(db, invite, "viewed");
 
   const score = invite.score;
+  const op = invite.opportunities;
   const claimed = Boolean(invite.claimed_at);
-  const fixes = Array.isArray(score.fixes) ? score.fixes : [];
+  const fixes = score && Array.isArray(score.fixes) ? score.fixes : [];
+  const earningCount = op ? op.posts.length : 0;
   const shown = claimed ? fixes : fixes.slice(0, 1);
   const locked = claimed ? [] : fixes.slice(1);
   const expires = formatInviteDate(invite.expires_at);
@@ -86,12 +90,24 @@ export default async function InvitePreviewPage({ params }: { params: Promise<{ 
       <TimeBeacon code={code} />
       <div className="mx-auto max-w-5xl">
         <p className="text-sm font-semibold uppercase tracking-wide text-orange-800">Made for @{invite.ig_handle}</p>
-        <h1 className="mt-1 text-3xl font-bold text-slate-900">Your Storefront Score</h1>
+        <h1 className="mt-1 text-3xl font-bold text-slate-900">
+          {op
+            ? `${earningCount} of your posts can earn more today`
+            : "Your Storefront Score"}
+        </h1>
         <p className="mt-2 max-w-2xl text-slate-700">
           Influencer Butler put this together from your public Amazon storefront only. It is private: only
           someone with the link from your email can see it.
         </p>
 
+        {op ? (
+          <>
+            <OpportunitiesView op={op} claimed={claimed} />
+            <div className="mt-6 max-w-2xl">
+              <ClaimPanel code={code} alreadyClaimed={claimed} />
+            </div>
+          </>
+        ) : score ? (
         <div className="mt-6 grid gap-6 md:grid-cols-[280px_1fr]">
           <section aria-label="Your score" className="rounded-2xl bg-white p-6 text-center shadow-sm">
             <div className="text-6xl font-bold text-slate-900">{score.score}</div>
@@ -145,6 +161,7 @@ export default async function InvitePreviewPage({ params }: { params: Promise<{ 
             </div>
           </section>
         </div>
+        ) : null}
 
         {invite.preview_html ? (
           <section aria-label="Your link-in-bio page" className="mt-8 grid gap-6 md:grid-cols-[1fr_400px] md:items-start">
@@ -154,6 +171,9 @@ export default async function InvitePreviewPage({ params }: { params: Promise<{ 
                 Claiming also gives you this page, already filled with your storefront and idea lists, plus 14 days of
                 Influencer Butler Power User free, no card. Nothing goes live until you press Publish, and you can change
                 anything on it.
+                {op
+                  ? " It keeps your own posts that are on sale pinned at the top, refreshed every day, so your followers always see what is on sale."
+                  : ""}
               </p>
             </div>
             <div className="mx-auto w-full max-w-[400px] overflow-hidden rounded-[2rem] border-8 border-slate-900 bg-white shadow-xl">

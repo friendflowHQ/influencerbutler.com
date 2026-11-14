@@ -72,6 +72,67 @@ export type InviteScore = {
   facts?: Record<string, unknown>;
 };
 
+/** One of the creator's own storefront posts that can earn more today (v3). */
+export type OpportunityPost = {
+  postUrl: string;
+  thumbUrl: string;
+  kind: string;
+  title: string;
+  asin: string;
+  deal: { percentOff: number; endsDisplay?: string; category?: string } | null;
+  campaign: { ratePct: number; brand?: string; endsAt?: string | null } | null;
+  perSale: { baseRatePct?: number; base: number | null; campaign: number | null };
+  caption: string;
+};
+
+export type InviteOpportunities = {
+  posts: OpportunityPost[];
+  counts: { deals: number; campaigns: number; both?: number };
+  postsRead?: number | null;
+  dealsSnapshotAt?: string | null;
+  readAt?: string | null;
+};
+
+/** Campaign posts shown before claim; the rest unlock on claim. */
+export const FREE_CAMPAIGN_POSTS = 3;
+
+/** Validate an uploaded opportunities blob (shape only; the app computed it). */
+export function normalizeOpportunities(raw: unknown): InviteOpportunities | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  const posts = Array.isArray(o.posts) ? (o.posts as OpportunityPost[]) : [];
+  const ok = posts.length > 0 && posts.every((p) => {
+    if (!p || typeof p.postUrl !== "string") return false;
+    try {
+      return /(^|\.)amazon\.[a-z.]+$/i.test(new URL(p.postUrl).hostname) && Boolean(p.deal || p.campaign);
+    } catch {
+      return false;
+    }
+  });
+  if (!ok) return null;
+  const counts = (o.counts && typeof o.counts === "object" ? o.counts : {}) as InviteOpportunities["counts"];
+  return {
+    posts: posts.slice(0, 24),
+    counts: { deals: Number(counts.deals) || 0, campaigns: Number(counts.campaigns) || 0, both: Number(counts.both) || 0 },
+    postsRead: Number.isFinite(Number(o.postsRead)) ? Number(o.postsRead) : null,
+    dealsSnapshotAt: typeof o.dealsSnapshotAt === "string" ? o.dealsSnapshotAt : null,
+    readAt: typeof o.readAt === "string" ? o.readAt : null,
+  };
+}
+
+/** What the page may show before a claim: every deal post, the first few campaign posts. */
+export function publicOpportunities(op: InviteOpportunities | null, claimed: boolean): {
+  dealPosts: OpportunityPost[];
+  campaignPosts: OpportunityPost[];
+  lockedCampaigns: number;
+} {
+  const posts = op && Array.isArray(op.posts) ? op.posts : [];
+  const dealPosts = posts.filter((p) => p.deal);
+  const allCampaign = posts.filter((p) => p.campaign && !p.deal);
+  const campaignPosts = claimed ? allCampaign : allCampaign.slice(0, FREE_CAMPAIGN_POSTS);
+  return { dealPosts, campaignPosts, lockedCampaigns: allCampaign.length - campaignPosts.length };
+}
+
 export type InviteRow = {
   id: string;
   code: string;
@@ -99,6 +160,7 @@ export type InviteRow = {
   existing_customer: boolean;
   email_steps: EmailStep[];
   score: InviteScore | null;
+  opportunities: InviteOpportunities | null;
   storefront_url: string;
   time_on_page_ms: number;
   claim_clicked_at: string | null;
@@ -109,7 +171,7 @@ export type InviteRow = {
 
 /** Columns safe to list (no page_doc / preview_html blobs). */
 export const INVITE_LIST_COLUMNS =
-  "id, code, ig_handle, email, first_name, niche, followers, opener, batch, source, status, notes, created_at, sent_at, expires_at, viewed_at, view_count, claimed_at, activated_at, published_at, converted_at, declined_at, license_key, existing_customer, email_steps, score, storefront_url, time_on_page_ms, claim_clicked_at, replied_at, removed_at, content_deleted_at";
+  "id, code, ig_handle, email, first_name, niche, followers, opener, batch, source, status, notes, created_at, sent_at, expires_at, viewed_at, view_count, claimed_at, activated_at, published_at, converted_at, declined_at, license_key, existing_customer, email_steps, score, opportunities, storefront_url, time_on_page_ms, claim_clicked_at, replied_at, removed_at, content_deleted_at";
 
 export function inviteDb(): SupabaseClient | null {
   try {
@@ -308,6 +370,7 @@ export const CLEARED_CONTENT = {
   page_doc: null,
   preview_html: null,
   score: null,
+  opportunities: null,
   email_steps: [],
   opener: "",
 } as const;

@@ -5,7 +5,8 @@
  *          (emailed, delivered, opened, visited, claim clicked, claimed, trial
  *          started, converted) and per-row delivery, optional ?batch=
  *   POST   upload one invite from scripts/outreach/upload-invite.js (Bearer =
- *          Liz's admin license key, or a signed-in admin session): the score,
+ *          Liz's admin license key, or a signed-in admin session): their posts
+ *          on sale or in a campaign (opportunities; v2 sent a score),
  *          the 4 written emails, the draft page. Refuses the do-not-contact
  *          list, existing customers and trial users, and anyone already
  *          contacted (by email or handle). With enroll:true, enrolls the
@@ -30,6 +31,7 @@ import {
   isExistingCustomer,
   newInviteCode,
   normalizeEmailSteps,
+  normalizeOpportunities,
   previewUrlFor,
   type InviteRow,
 } from "@/lib/foyer-invites";
@@ -162,6 +164,7 @@ export async function POST(request: Request) {
   const pageDoc = body.pageDoc && typeof body.pageDoc === "object" ? body.pageDoc : null;
   const emailSteps = normalizeEmailSteps(body.emailSteps);
   const score = body.score && typeof body.score === "object" ? (body.score as Record<string, unknown>) : null;
+  const opportunities = normalizeOpportunities(body.opportunities);
   const storefrontUrl = str(body.storefrontUrl, 300);
   if (!EMAIL_RE.test(email)) return NextResponse.json({ error: "Invalid email" }, { status: 400 });
   if (!HANDLE_RE.test(handle)) return NextResponse.json({ error: "Invalid igHandle" }, { status: 400 });
@@ -172,8 +175,10 @@ export async function POST(request: Request) {
   if (!emailSteps.every((s) => s.body.includes("{{INVITE_PREVIEW_URL}}"))) {
     return NextResponse.json({ error: "Every email needs the {{INVITE_PREVIEW_URL}} link" }, { status: 400 });
   }
-  if (!score || !Number.isInteger(score.score) || !Array.isArray(score.fixes)) {
-    return NextResponse.json({ error: "score (the Storefront Score) is required" }, { status: 400 });
+  // v3 invites carry the creator's own posts (opportunities); v2 a score.
+  const hasScore = Boolean(score && Number.isInteger(score.score) && Array.isArray(score.fixes));
+  if (!opportunities && !hasScore) {
+    return NextResponse.json({ error: "opportunities (their posts on sale or in a campaign) are required" }, { status: 400 });
   }
   if (!/^https:\/\/www\.amazon\.[a-z.]+\/shop\//i.test(storefrontUrl)) {
     return NextResponse.json({ error: "storefrontUrl must be the public Amazon storefront" }, { status: 400 });
@@ -205,7 +210,8 @@ export async function POST(request: Request) {
     preview_html: previewHtml,
     launch_answers: body.launchAnswers && typeof body.launchAnswers === "object" ? body.launchAnswers : {},
     email_steps: emailSteps,
-    score,
+    score: hasScore ? score : null,
+    opportunities,
     storefront_url: storefrontUrl,
     updated_at: new Date().toISOString(),
   };

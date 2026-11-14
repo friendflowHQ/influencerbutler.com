@@ -21,7 +21,31 @@ type ClaimResult = {
   openUrl: string;
   downloads: { windows: string; macAppleSilicon: string; macIntel: string };
   fixes: Fix[];
+  campaignPosts?: { asin: string; title: string; campaign: { ratePct: number; brand?: string } | null }[];
 };
+
+/** Copies a ready-made caption (their own post link already inside). */
+export function CopyCaptionButton({ caption }: { caption: string }) {
+  const [copied, setCopied] = useState(false);
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(caption);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      setCopied(false);
+    }
+  }
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className="rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-semibold text-slate-950 hover:bg-orange-600 focus:outline-none focus-visible:ring-4 focus-visible:ring-orange-300"
+    >
+      {copied ? "Caption copied" : "Copy caption"}
+    </button>
+  );
+}
 
 function beacon(payload: Record<string, unknown>) {
   try {
@@ -172,6 +196,20 @@ export default function ClaimPanel({ code, alreadyClaimed }: { code: string; alr
               </li>
             ))}
           </ol>
+        </div>
+      ) : null}
+      {!alreadyClaimed && result.campaignPosts && result.campaignPosts.length > 0 ? (
+        <div className="mb-6">
+          <h3 className="text-lg font-bold text-slate-900">Every open campaign on your posts</h3>
+          <p className="mt-1 text-sm text-slate-600">For Gold and Platinum creators.</p>
+          <ul className="mt-3 space-y-2">
+            {result.campaignPosts.map((p) => (
+              <li key={p.asin} className="rounded-xl bg-white px-4 py-2 text-slate-800">
+                {p.title}: {p.campaign?.brand ? `${p.campaign.brand}, ` : ""}
+                {p.campaign?.ratePct}% commission
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
       <h3 className="text-lg font-bold text-slate-900">Get started in two steps</h3>

@@ -22,6 +22,7 @@ import {
   isExpired,
   isValidInviteCode,
   openInAppUrlFor,
+  publicOpportunities,
   siteBase,
   type InviteRow,
 } from "@/lib/foyer-invites";
@@ -33,13 +34,17 @@ function ipOf(request: Request): string {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";
 }
 
-/** What a successful claim unlocks: the app links plus the FULL report (every fix). */
+/**
+ * What a successful claim unlocks: the app links plus the FULL report: every
+ * campaign post (v3; only the first few show before claim) or every fix (v2).
+ */
 function links(code: string, invite: InviteRow) {
   const site = siteBase();
   return {
     openUrl: openInAppUrlFor(code),
     downloads: { windows: `${site}/dl/win`, macAppleSilicon: `${site}/dl/mac`, macIntel: `${site}/dl/mac-intel` },
     fixes: invite.score && Array.isArray(invite.score.fixes) ? invite.score.fixes : [],
+    campaignPosts: publicOpportunities(invite.opportunities, true).campaignPosts,
   };
 }
 
