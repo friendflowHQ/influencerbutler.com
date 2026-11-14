@@ -88,7 +88,7 @@ export default async function InvitePreviewPage({ params }: { params: Promise<{ 
         <p className="text-sm font-semibold uppercase tracking-wide text-orange-800">Made for @{invite.ig_handle}</p>
         <h1 className="mt-1 text-3xl font-bold text-slate-900">Your Storefront Score</h1>
         <p className="mt-2 max-w-2xl text-slate-700">
-          Liz at Influencer Butler put this together from your public Amazon storefront only. It is private: only
+          Influencer Butler put this together from your public Amazon storefront only. It is private: only
           someone with the link from your email can see it.
         </p>
 

@@ -18,8 +18,10 @@
 
   // Marketing social proof is for prospects, not people already signed in. Skip
   // the authenticated app area so the "someone is checking this out" card never
-  // pops up inside a paying customer's dashboard.
-  var SKIP_PREFIXES = ["/dashboard"];
+  // pops up inside a paying customer's dashboard. Private invite pages (/p/)
+  // are skipped too: they are made for one creator and must carry no
+  // "others are doing this" pressure.
+  var SKIP_PREFIXES = ["/dashboard", "/p/"];
 
   function onAppSurface() {
     var path = "";
