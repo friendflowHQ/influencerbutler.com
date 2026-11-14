@@ -79,15 +79,37 @@ export type OpportunityPost = {
   kind: string;
   title: string;
   asin: string;
-  deal: { percentOff: number; endsDisplay?: string; category?: string } | null;
+  deal: {
+    percentOff: number;
+    endsDisplay?: string;
+    category?: string;
+    // Shopping-event posts only: whether the sale has started, and its days ("Nov 22").
+    live?: boolean;
+    startsAt?: string | null;
+    startsDay?: string;
+    endsAt?: string | null;
+    endsDay?: string;
+  } | null;
   campaign: { ratePct: number; brand?: string; endsAt?: string | null; connectUrl?: string } | null;
   perSale: { baseRatePct?: number; base: number | null; campaign: number | null };
   caption: string;
 };
 
+/** Their posts in a shopping event (Black Friday), live now or starting soon. */
+export type InviteEvent = {
+  id: string;
+  label: string;
+  startsAt: string | null;
+  endsAt: string | null;
+  count: number;
+  live: number;
+  posts: OpportunityPost[];
+};
+
 export type InviteOpportunities = {
   posts: OpportunityPost[];
-  counts: { deals: number; campaigns: number; both?: number };
+  event?: InviteEvent | null;
+  counts: { deals: number; campaigns: number; both?: number; event?: number };
   postsRead?: number | null;
   dealsSnapshotAt?: string | null;
   readAt?: string | null;
@@ -114,41 +136,90 @@ export function campaignConnectUrl(p: Pick<OpportunityPost, "campaign"> | null |
   }
 }
 
+function isOwnAmazonPost(p: OpportunityPost | null | undefined, needsDeal: boolean): boolean {
+  if (!p || typeof p.postUrl !== "string") return false;
+  try {
+    return /(^|\.)amazon\.[a-z.]+$/i.test(new URL(p.postUrl).hostname) && Boolean(needsDeal ? p.deal : p.deal || p.campaign);
+  } catch {
+    return false;
+  }
+}
+
+function normalizeEvent(raw: unknown): InviteEvent | null {
+  if (!raw || typeof raw !== "object") return null;
+  const e = raw as Record<string, unknown>;
+  const posts = Array.isArray(e.posts) ? (e.posts as OpportunityPost[]) : [];
+  if (typeof e.id !== "string" || !e.id || !posts.length || !posts.every((p) => isOwnAmazonPost(p, true))) return null;
+  return {
+    id: e.id.slice(0, 60),
+    label: typeof e.label === "string" && e.label ? e.label.slice(0, 40) : "Black Friday",
+    startsAt: typeof e.startsAt === "string" ? e.startsAt : null,
+    endsAt: typeof e.endsAt === "string" ? e.endsAt : null,
+    count: Number.isFinite(Number(e.count)) ? Number(e.count) : posts.length,
+    live: Number.isFinite(Number(e.live)) ? Number(e.live) : 0,
+    posts: posts.slice(0, 24),
+  };
+}
+
 /** Validate an uploaded opportunities blob (shape only; the app computed it). */
 export function normalizeOpportunities(raw: unknown): InviteOpportunities | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
   const posts = Array.isArray(o.posts) ? (o.posts as OpportunityPost[]) : [];
-  const ok = posts.length > 0 && posts.every((p) => {
-    if (!p || typeof p.postUrl !== "string") return false;
-    try {
-      return /(^|\.)amazon\.[a-z.]+$/i.test(new URL(p.postUrl).hostname) && Boolean(p.deal || p.campaign);
-    } catch {
-      return false;
-    }
-  });
-  if (!ok) return null;
+  const event = normalizeEvent(o.event);
+  // A page needs something on it: posts on sale or in a campaign, or event posts.
+  if (!posts.every((p) => isOwnAmazonPost(p, false))) return null;
+  if (!posts.length && !event) return null;
   const counts = (o.counts && typeof o.counts === "object" ? o.counts : {}) as InviteOpportunities["counts"];
   return {
     posts: posts.slice(0, 24),
-    counts: { deals: Number(counts.deals) || 0, campaigns: Number(counts.campaigns) || 0, both: Number(counts.both) || 0 },
+    event,
+    counts: {
+      deals: Number(counts.deals) || 0,
+      campaigns: Number(counts.campaigns) || 0,
+      both: Number(counts.both) || 0,
+      event: event ? event.count : 0,
+    },
     postsRead: Number.isFinite(Number(o.postsRead)) ? Number(o.postsRead) : null,
     dealsSnapshotAt: typeof o.dealsSnapshotAt === "string" ? o.dealsSnapshotAt : null,
     readAt: typeof o.readAt === "string" ? o.readAt : null,
   };
 }
 
-/** What the page may show before a claim: every deal post, the first few campaign posts. */
-export function publicOpportunities(op: InviteOpportunities | null, claimed: boolean): {
+/** The event block while it still matters (through the day after it ends), else null. */
+export function currentInviteEvent(op: InviteOpportunities | null, now = Date.now()): InviteEvent | null {
+  const ev = op && op.event ? op.event : null;
+  if (!ev || !ev.posts.length) return null;
+  const end = Date.parse(ev.endsAt || "");
+  if (Number.isFinite(end) && end + 24 * 3600 * 1000 < now) return null;
+  // Drop event posts whose own sale has ended (a one-day deal on Nov 19).
+  const posts = ev.posts.filter((p) => {
+    const e = Date.parse(p.deal?.endsAt || "");
+    return !Number.isFinite(e) || e >= now;
+  });
+  return posts.length ? { ...ev, posts } : null;
+}
+
+/**
+ * What the page may show before a claim: every event post and deal post, the
+ * first few campaign posts. A post shown under the event is not repeated
+ * under "On sale today".
+ */
+export function publicOpportunities(op: InviteOpportunities | null, claimed: boolean, now = Date.now()): {
+  eventPosts: OpportunityPost[];
+  event: InviteEvent | null;
   dealPosts: OpportunityPost[];
   campaignPosts: OpportunityPost[];
   lockedCampaigns: number;
 } {
   const posts = op && Array.isArray(op.posts) ? op.posts : [];
-  const dealPosts = posts.filter((p) => p.deal);
-  const allCampaign = posts.filter((p) => p.campaign && !p.deal);
+  const event = currentInviteEvent(op, now);
+  const eventPosts = event ? event.posts : [];
+  const inEvent = new Set(eventPosts.map((p) => p.asin));
+  const dealPosts = posts.filter((p) => p.deal && !inEvent.has(p.asin));
+  const allCampaign = posts.filter((p) => p.campaign && !p.deal && !inEvent.has(p.asin));
   const campaignPosts = claimed ? allCampaign : allCampaign.slice(0, FREE_CAMPAIGN_POSTS);
-  return { dealPosts, campaignPosts, lockedCampaigns: allCampaign.length - campaignPosts.length };
+  return { eventPosts, event, dealPosts, campaignPosts, lockedCampaigns: allCampaign.length - campaignPosts.length };
 }
 
 export type InviteRow = {

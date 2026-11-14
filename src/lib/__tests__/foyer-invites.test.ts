@@ -140,3 +140,39 @@ describe("Creator Connections campaign links", () => {
     expect(campaignConnectUrl({ campaign: null })).toBeNull();
   });
 });
+
+describe("Black Friday (shopping event) posts", () => {
+  const evPost = (asin: string, endsAt: string, live = false) => ({
+    postUrl: `https://www.amazon.com/shop/x/photo/${asin}`,
+    thumbUrl: "",
+    kind: "photo",
+    title: asin,
+    asin,
+    deal: { percentOff: 30, live, startsDay: "Nov 19", endsAt },
+    campaign: null,
+    perSale: { base: 1, campaign: null },
+    caption: "x",
+  });
+  const NOW = Date.parse("2026-11-14T12:00:00Z");
+  const event = (posts: unknown[]) => ({ id: "black-friday-cyber-monday", label: "Black Friday", startsAt: "2026-11-19T08:00:00.000Z", endsAt: "2026-11-30T23:59:59.000Z", count: 23, live: 1, posts });
+
+  it("accepts a page with only Black Friday posts, never a foreign link", async () => {
+    const op = normalizeOpportunities({ posts: [], event: event([evPost("E1", "2026-12-01T07:59:00Z")]) });
+    expect(op?.event?.count).toBe(23);
+    expect(op?.counts.event).toBe(23);
+    expect(normalizeOpportunities({ posts: [], event: event([{ ...evPost("E1", "2026-12-01T07:59:00Z"), postUrl: "https://evil.example/x" }]) })).toBeNull();
+  });
+
+  it("shows event posts first, without repeating them under On sale today, and hides them once over", async () => {
+    const { currentInviteEvent } = await import("@/lib/foyer-invites");
+    const op = normalizeOpportunities({
+      posts: [{ ...evPost("E1", "2026-12-01T07:59:00Z", true), caption: "" }, { ...evPost("D1", "2026-12-01T07:59:00Z", true) }],
+      event: event([evPost("E1", "2026-12-01T07:59:00Z", true), evPost("E2", "2026-11-20T07:59:00Z")]),
+    });
+    const now = publicOpportunities(op, false, NOW);
+    expect(now.eventPosts.map((p) => p.asin)).toEqual(["E1", "E2"]);
+    expect(now.dealPosts.map((p) => p.asin)).toEqual(["D1"]);
+    expect(currentInviteEvent(op, Date.parse("2026-11-21T12:00:00Z"))?.posts.map((p) => p.asin)).toEqual(["E1"]);
+    expect(currentInviteEvent(op, Date.parse("2026-12-03T12:00:00Z"))).toBeNull();
+  });
+});

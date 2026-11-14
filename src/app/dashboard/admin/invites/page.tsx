@@ -33,7 +33,7 @@ type InviteRow = {
   existing_customer: boolean;
   email_steps: { subject: string; body: string }[];
   score: { score: number } | null;
-  opportunities: { counts: { deals: number; campaigns: number } } | null;
+  opportunities: { counts: { deals: number; campaigns: number; event?: number } } | null;
   storefront_url: string;
   time_on_page_ms: number;
   claim_clicked_at: string | null;
@@ -271,6 +271,7 @@ export default function AdminInvitesPage() {
                     {r.opportunities ? (
                       <div className="mt-1 text-xs font-semibold text-slate-700">
                         {r.opportunities.counts.deals} on sale · {r.opportunities.counts.campaigns} campaigns
+                        {r.opportunities.counts.event ? ` · ${r.opportunities.counts.event} Black Friday` : ""}
                       </div>
                     ) : r.score ? (
                       <div className="mt-1 text-xs font-semibold text-slate-700">Score {r.score.score}</div>

@@ -14,6 +14,7 @@ import type { Metadata } from "next";
 import {
   INVITE_LIST_COLUMNS,
   advanceInvite,
+  currentInviteEvent,
   formatInviteDate,
   inviteDb,
   isExpired,
@@ -81,6 +82,7 @@ export default async function InvitePreviewPage({ params }: { params: Promise<{ 
   const claimed = Boolean(invite.claimed_at);
   const fixes = score && Array.isArray(score.fixes) ? score.fixes : [];
   const earningCount = op ? op.posts.length : 0;
+  const event = currentInviteEvent(op);
   const shown = claimed ? fixes : fixes.slice(0, 1);
   const locked = claimed ? [] : fixes.slice(1);
   const expires = formatInviteDate(invite.expires_at);
@@ -91,7 +93,9 @@ export default async function InvitePreviewPage({ params }: { params: Promise<{ 
       <div className="mx-auto max-w-5xl">
         <p className="text-sm font-semibold uppercase tracking-wide text-orange-800">Made for @{invite.ig_handle}</p>
         <h1 className="mt-1 text-3xl font-bold text-slate-900">
-          {op
+          {event
+            ? `${event.count} of your posts have ${event.label} deals`
+            : op
             ? `${earningCount} of your posts can earn more today`
             : "Your Storefront Score"}
         </h1>
