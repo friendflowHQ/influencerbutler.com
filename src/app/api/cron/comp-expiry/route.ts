@@ -113,9 +113,29 @@ export async function GET(request: Request) {
   const custWarn7: CompRow[] = [];
   const custWarn1: CompRow[] = [];
   const ownerCreator: CompRow[] = [];
+  // A person can hold an older, never-used comp alongside a newer one (e.g. a
+  // 3-month key from August and a 6-month key from September). Telling them
+  // "your free access ends Monday" about the old one, while the newer one runs
+  // for months, reads as losing what they were promised. Skip the notices for a
+  // comp that another live comp on the same email outlasts.
+  const latestEndByEmail = new Map<string, number>();
+  for (const r of result.rows) {
+    if (r.state === "cancelled" || !r.email) continue;
+    const end = r.state === "forever" ? Number.POSITIVE_INFINITY : (r.expiresAt ? new Date(r.expiresAt).getTime() : NaN);
+    if (Number.isNaN(end)) continue;
+    const key = r.email.trim().toLowerCase();
+    const prev = latestEndByEmail.get(key);
+    if (prev === undefined || end > prev) latestEndByEmail.set(key, end);
+  }
+  const isOutlasted = (r: CompRow): boolean => {
+    if (!r.email || !r.expiresAt) return false;
+    const latest = latestEndByEmail.get(r.email.trim().toLowerCase());
+    return latest !== undefined && latest > new Date(r.expiresAt).getTime();
+  };
   for (const row of result.rows) {
     if (row.state === "cancelled" || row.state === "forever") continue;
     if (row.convertedAt) continue;
+    if (isOutlasted(row)) continue;
     if (!row.kind || !CUSTOMER_NOTICE_KINDS.has(row.kind)) continue;
     if (!row.expiresAt) continue;
     const hoursLeft = (new Date(row.expiresAt).getTime() - Date.now()) / 3_600_000;
