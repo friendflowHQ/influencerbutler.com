@@ -7,6 +7,7 @@ import { NextResponse } from "next/server";
 import { resolveAuth } from "@/lib/license-auth";
 import { getAdmin, availabilityWithTypes } from "@/lib/scheduling-server";
 import { CALL_TYPES, type CallTypeKey } from "@/lib/scheduling";
+import { setupWalkthroughSkipped, SETUP_REQUIRED_MESSAGE } from "@/lib/setup-gate";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,10 +27,18 @@ export async function GET(request: Request) {
   if (!admin) return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
 
   // Each slot carries `types`: every call type open at that start (for the badge).
-  const days = await availabilityWithTypes(admin, type as CallTypeKey, Date.now());
+  const [days, setupRequired] = await Promise.all([
+    availabilityWithTypes(admin, type as CallTypeKey, Date.now()),
+    setupWalkthroughSkipped(admin, authed.auth.email),
+  ]);
   return NextResponse.json({
     callType: type,
     userMinutes: CALL_TYPES[type as CallTypeKey].userMinutes,
     days,
+    // A skipped in-app setup blocks booking (create/route.ts); the page shows
+    // this note instead of the calendar. Times are still listed for callers
+    // that ignore the flag; the create route is the real gate.
+    setupRequired,
+    setupRequiredMessage: setupRequired ? SETUP_REQUIRED_MESSAGE : null,
   });
 }

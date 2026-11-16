@@ -91,6 +91,9 @@ export default function BookCallPage() {
   const [confirmed, setConfirmed] = useState<{ joinUrl: string | null } | null>(null);
   const [mine, setMine] = useState<MyBooking[]>([]);
   const [partners, setPartners] = useState<PartnerProgram[]>([]);
+  // Set by /api/booking/slots when this customer skipped the in-app setup
+  // walkthrough (src/lib/setup-gate.ts). The create route is the real gate.
+  const [setupRequired, setSetupRequired] = useState<string | null>(null);
 
   const loadPartners = useCallback(async () => {
     try {
@@ -140,6 +143,7 @@ export default function BookCallPage() {
       if (!res.ok) { setMsg("Could not load times."); return; }
       const j = await res.json();
       setDays(j.days ?? []);
+      setSetupRequired(j.setupRequired ? (j.setupRequiredMessage || "") : null);
     } catch { setMsg("Could not load times."); }
     finally { setLoadingSlots(false); }
   }, []);
@@ -156,6 +160,7 @@ export default function BookCallPage() {
       const j = await res.json();
       const nextDays: DaySlots[] = j.days ?? [];
       setDays(nextDays);
+      setSetupRequired(j.setupRequired ? (j.setupRequiredMessage || "") : null);
       setSelectedSlot((prev) => {
         if (!prev) return prev;
         const stillOffered = nextDays.some((d) => d.slots.some((s) => s.startMs === prev.startMs));
@@ -295,6 +300,22 @@ export default function BookCallPage() {
         </button>
       </div>
 
+      {setupRequired !== null ? (
+        <div className="rounded-2xl border border-[#f97316] bg-orange-50 p-5" role="status">
+          <h2 className="font-semibold text-slate-900">One quick step before your call</h2>
+          <p className="mt-2 text-sm text-slate-700">
+            Please finish the quick setup in the Influencer Butler app before booking a 1:1 call. It connects your Butlers, so we can spend the call on your goals instead of on setup.
+          </p>
+          <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-slate-700">
+            <li>Open the Influencer Butler app and go to <strong>Settings</strong>.</li>
+            <li>Find <strong>First-run walkthrough</strong> and press <strong>Resume where you left off</strong>.</li>
+            <li>Follow the steps to the end, then come back to this page.</li>
+          </ol>
+          <p className="mt-3 text-xs text-slate-500">
+            We strongly recommend it: customers who finish setup get the most out of their call. It can take a minute for this page to notice you finished.
+          </p>
+        </div>
+      ) : (<>
       {/* Day selector */}
       <div>
         <h2 className="text-sm font-semibold text-slate-700">Pick a day</h2>
@@ -399,6 +420,8 @@ export default function BookCallPage() {
           </button>
         </div>
       )}
+
+      </>)}
 
       {/* My calls */}
       {mine.length > 0 && (

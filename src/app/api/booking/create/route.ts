@@ -16,6 +16,7 @@ import { createMeetEvent, isGoogleConfigured } from "@/lib/google-meet";
 import { scheduleBot, isRecallConfigured, shouldScheduleRecordingBot } from "@/lib/recall";
 import { sendBookingConfirmation, sendOwnerNotification, type BookingEmailData } from "@/lib/call-emails";
 import { sanitizeTopics, isMissingTopicsColumn } from "@/lib/call-topics";
+import { setupWalkthroughSkipped, SETUP_REQUIRED_CODE, SETUP_REQUIRED_MESSAGE } from "@/lib/setup-gate";
 import { findProgram, PARTNER_CALL_TYPE } from "@/lib/partner-call-slots";
 import {
   isPartnerAudience,
@@ -50,6 +51,12 @@ export async function POST(request: Request) {
 
   const admin = getAdmin();
   if (!admin) return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+
+  // Gate: a customer who skipped the in-app setup walkthrough finishes it
+  // before booking any 1:1 call (src/lib/setup-gate.ts). Fails open.
+  if (await setupWalkthroughSkipped(admin, userEmail)) {
+    return NextResponse.json({ error: SETUP_REQUIRED_MESSAGE, code: SETUP_REQUIRED_CODE }, { status: 403 });
+  }
 
   // Gate: support calls require an active/trial subscription.
   if (ct.requiresSubscription) {
