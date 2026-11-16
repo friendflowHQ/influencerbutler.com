@@ -128,7 +128,7 @@ export const TRIAL_COPY: Record<TrialTier, TierCopy> = {
     // open rate in the day 0-3 drip and zero clicks over 90 days (Oct 2026),
     // so this asks for a single five-minute action: a Daily Commission Butler
     // dry run that shows money already sitting on products the user sells.
-    // No OpenAI key needed, and "Run once" previews without accepting anything.
+    // No OpenAI key needed, and a first run on the Today range keeps it small.
     // Funnels v2: people with a walkthrough module get module copy here.
     subject: "the bonus commissions you haven't claimed yet",
     build: (v) => {
@@ -142,10 +142,10 @@ export const TRIAL_COPY: Record<TrialTier, TierCopy> = {
         `Daily Commission Butler finds and accepts them for you:`,
         ``,
         `  1. In the desktop app, run CC Check so the campaign list is fresh.`,
-        `  2. Open Daily Commission Butler and click Run once.`,
-        `  3. Look at the list. These are campaigns on products you sold recently or that top your storefront. Run once only previews, nothing is accepted until you click Accept all.`,
+        `  2. Open Daily Commission Butler, tick Today as the day range, and click Run.`,
+        `  3. It accepts the campaigns that match products you sold recently or that top your storefront. Accepting is a promise to the brand, so starting with Today keeps it small.`,
         ``,
-        `If the list looks right, accept them and switch on the daily schedule. From then on it claims new matches once a day without you.`,
+        `Read the log of what it accepted. If it looks right, switch on the daily schedule. From then on it claims new matches once a day without you.`,
         ``,
         `Full walkthrough: https://www.influencerbutler.com/help/tutorials/dailycommissionbutler`,
         ``,
@@ -354,7 +354,7 @@ export const TRIAL_TRACK_COPY: TrackCopyMap = {
         `Three quick steps to get value today:`,
         setupSteps(),
         `Then add your OpenAI key: open AI & Data Keys in the left menu, paste it and click Test. ${AI_LINES.power}`,
-        `Once that's in, run Daily Commission Butler (click Run once to preview). It reads what you sold recently and your storefront best-sellers, then accepts the matching Creator Connections campaigns once a day.`,
+        `Once that's in, run Daily Commission Butler (tick Today for your first run). It reads what you sold recently and your storefront best-sellers, then accepts the matching Creator Connections campaigns once a day.`,
         TIMING_NOTE,
         `Everything about your plan: ${POWER_HELP_URL}`,
         codeLine(v),
