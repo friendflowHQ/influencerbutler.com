@@ -24,6 +24,10 @@ export const dynamic = "force-dynamic";
 
 const MAX_TO_LEN = 512;
 const DOWNLOAD_URL = "https://dl.influencerbutler.com";
+// The download page (Mac and Windows) for people who don't have the app yet.
+// A web page can't tell whether the custom scheme opened anything, so the
+// redirect page always offers this as a clear second button.
+const DOWNLOAD_PAGE_URL = "https://www.influencerbutler.com/download?src=app-open";
 
 function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (c) =>
@@ -76,7 +80,7 @@ function withAffiliate(deepLink: string, code: string | null): string {
 function renderInvalidHtml(): string {
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="robots" content="noindex" /><title>Open Influencer Butler</title>
-<style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.5;color:#1f2937;background:#f9fafb;margin:0;padding:48px 20px;text-align:center}.card{max-width:460px;margin:0 auto;background:#fff;border-radius:12px;padding:32px 28px;box-shadow:0 1px 3px rgba(0,0,0,0.08)}h1{color:#f97316;font-size:20px;margin:0 0 8px}p{font-size:14px;color:#374151}.btn{display:inline-block;margin:16px 0 4px;padding:12px 24px;background:#f97316;color:#fff;text-decoration:none;border-radius:6px;font-weight:600}</style>
+<style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.5;color:#1f2937;background:#f9fafb;margin:0;padding:48px 20px;text-align:center}.card{max-width:460px;margin:0 auto;background:#fff;border-radius:12px;padding:32px 28px;box-shadow:0 1px 3px rgba(0,0,0,0.08)}h1{color:#c2410c;font-size:20px;margin:0 0 8px}p{font-size:14px;color:#374151}.btn{display:inline-block;margin:16px 0 4px;padding:12px 24px;background:#c2410c;color:#fff;text-decoration:none;border-radius:6px;font-weight:600}</style>
 </head><body><div class="card"><h1>Open Influencer Butler</h1><p>This link is missing or invalid. Open the app directly to continue.</p><a class="btn" href="${DOWNLOAD_URL}">Get Influencer Butler</a></div></body></html>`;
 }
 
@@ -87,8 +91,8 @@ function renderRedirectHtml(targetUrl: string): string {
   const jsLiteral = JSON.stringify(targetUrl).replace(/</g, "\\u003c");
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><meta name="robots" content="noindex" /><title>Opening Influencer Butler...</title>
-<style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.5;color:#1f2937;background:#f9fafb;margin:0;padding:48px 20px;text-align:center}.card{max-width:460px;margin:0 auto;background:#fff;border-radius:12px;padding:32px 28px;box-shadow:0 1px 3px rgba(0,0,0,0.08)}h1{color:#f97316;font-size:20px;margin:0 0 8px}p{font-size:14px;color:#374151}.btn{display:inline-block;margin:20px 0 4px;padding:12px 24px;background:#f97316;color:#fff;text-decoration:none;border-radius:6px;font-weight:600}.muted{font-size:12px;color:#6b7280;margin-top:18px}.muted a{color:#6b7280}</style>
-</head><body><div class="card"><h1>Opening Influencer Butler</h1><p>Your browser should ask for permission to open the app. If it doesn't, use the button below.</p><a class="btn" href="${safe}">Open Influencer Butler</a><p class="muted">Nothing happening? Make sure Influencer Butler is installed, then click the button again.<br />Need the app? <a href="${DOWNLOAD_URL}">Download Influencer Butler</a>.</p></div>
+<style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.5;color:#1f2937;background:#f9fafb;margin:0;padding:48px 20px;text-align:center}.card{max-width:460px;margin:0 auto;background:#fff;border-radius:12px;padding:32px 28px;box-shadow:0 1px 3px rgba(0,0,0,0.08)}h1{color:#c2410c;font-size:20px;margin:0 0 8px}p{font-size:14px;color:#374151}.btn{display:inline-block;margin:20px 0 4px;padding:12px 24px;background:#c2410c;color:#fff;text-decoration:none;border-radius:6px;font-weight:600}.btn2{display:inline-block;margin:8px 0 4px;padding:11px 22px;background:#fff;color:#c2410c;border:1px solid #c2410c;text-decoration:none;border-radius:6px;font-weight:600}.muted{font-size:12px;color:#4b5563;margin-top:18px}</style>
+</head><body><div class="card"><h1>Opening Influencer Butler</h1><p>Your browser should ask for permission to open the app. If it doesn't, use the button below.</p><a class="btn" href="${safe}">Open Influencer Butler</a><p>Don't have the app yet?</p><a class="btn2" href="${DOWNLOAD_PAGE_URL}">Download Influencer Butler</a><p class="muted">Available for Mac and Windows. Once it's installed, open it and you're all set.</p></div>
 <script>(function(){try{window.location.replace(${jsLiteral});}catch(e){try{window.location.href=${jsLiteral};}catch(e2){}}})();</script>
 </body></html>`;
 }
