@@ -172,6 +172,12 @@ async function sendCompEmail(params: {
   planPhrase: string;
   /** Subject line for this plan (e.g. "Your free Influencer Butler Pro license"). */
   subject: string;
+  /**
+   * Add the "already signed in with another key?" steps. The desktop app only
+   * reads the key it is signed in with, so a customer who already activated a
+   * paid (e.g. Beginner) key keeps that plan until they switch to this one.
+   */
+  includeSwitchKeySteps?: boolean;
   /** Affiliate branded checkout link (attribution) and issuer name, when gifted. */
   convertLink?: string | null;
   issuerName?: string | null;
@@ -201,6 +207,22 @@ async function sendCompEmail(params: {
     `2. Open it and paste the license key above when prompted.`,
     `3. New here? Our quick-start guides walk you through the butlers: ${siteUrl}/help`,
   ];
+  if (params.includeSwitchKeySteps) {
+    // Path verified against the desktop app: Settings > Account box (directly
+    // above Subscription) > "Sign out / Switch account" (workspaces/settings).
+    lines.push(
+      ``,
+      `Already using Influencer Butler with a different license key?`,
+      `The app keeps using the old key until you switch, so do this once:`,
+      ``,
+      `1. Open Influencer Butler and click Settings in the left menu.`,
+      `2. In the Account box at the top (just above Subscription), click "Sign out / Switch account" and confirm.`,
+      `3. When the sign-in screen opens, paste the new license key above. If it asks for an email, use the one this message was sent to.`,
+      `4. Your plan updates right away. If any butlers still look locked, quit the app fully and reopen it.`,
+      `   On Windows: right-click the Influencer Butler icon in the system tray (bottom right) and choose Quit.`,
+      `   On Mac: click the Influencer Butler icon in the menu bar (top right) and choose Quit, or press Cmd+Q.`,
+    );
+  }
   if (params.signInLink) {
     lines.push(
       ``,
@@ -456,6 +478,9 @@ export async function issueInHouseComp(input: IssueCompInput): Promise<IssueComp
       signInLink,
       planPhrase,
       subject: compSubject,
+      // The Deals add-on key goes in its own add-on slot, so "sign out and swap
+      // your key" would be wrong advice there.
+      includeSwitchKeySteps: !isDailyDeals,
       convertLink: input.convertLink ?? null,
       issuerName: input.issuerName ?? null,
     });
