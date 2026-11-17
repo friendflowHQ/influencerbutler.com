@@ -35,11 +35,16 @@ export async function GET(request: Request) {
   const pageRaw = Number(url.searchParams.get("page") ?? "0");
   const page = Number.isFinite(pageRaw) && pageRaw > 0 ? Math.floor(pageRaw) : 0;
 
+  // The unfiltered feed spans the whole table (~300k rows): an exact count
+  // re-scans all of it on every page load and can tip the request into a
+  // statement timeout under load. The planner estimate is plenty for "Page 1 of
+  // N". Filtered views stay exact (they are narrow, and the number is the answer).
+  const filtered = Boolean(query || category || status);
   let q = db
     .from("email_sends")
     .select(
       "id, resend_id, broadcast_id, recipient, subject, category, funnel, status, delivered_at, opened_at, clicked_at, bounced_at, complained_at, created_at",
-      { count: "exact" },
+      { count: filtered ? "exact" : "estimated" },
     )
     .order("created_at", { ascending: false })
     .range(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE - 1);

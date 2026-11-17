@@ -158,6 +158,11 @@ const STATUS_BADGE: Record<string, string> = {
   failed: "bg-rose-50 text-rose-700",
 };
 
+// One quiet retry for a stats call that timed out, after a short pause so the
+// other panels' queries have finished. Beyond that the banner explains it.
+const STATS_RETRIES = 1;
+const STATS_RETRY_DELAY_MS = 3000;
+
 export default function AdminEmailsPage() {
   const [forbidden, setForbidden] = useState(false);
   const [tab, setTab] = useState<"overview" | "contacts" | "campaigns" | "sequences">("overview");
@@ -219,20 +224,41 @@ export default function AdminEmailsPage() {
     })();
   }, [handle403]);
 
+  // Fetches a stats endpoint and, if it reports a transient loadError (almost
+  // always a statement timeout while other panels' queries are running), waits
+  // a moment and tries once more before surfacing the banner. Returns null on
+  // 403, a non-OK response, or when the effect was superseded.
+  const fetchStats = useCallback(
+    async <T extends { loadError?: boolean }>(url: string, isStale: () => boolean): Promise<T | null> => {
+      for (let attempt = 0; ; attempt++) {
+        const res = await fetch(url, { cache: "no-store" });
+        if (handle403(res) || !res.ok || isStale()) return null;
+        const body = (await res.json()) as T;
+        if (!body.loadError || attempt >= STATS_RETRIES) return isStale() ? null : body;
+        await new Promise((r) => setTimeout(r, STATS_RETRY_DELAY_MS));
+        if (isStale()) return null;
+      }
+    },
+    [handle403],
+  );
+
   useEffect(() => {
+    let stale = false;
     void (async () => {
       setSummaryLoading(true);
       try {
-        const res = await fetch(`/api/admin/emails/summary?days=${days}`, { cache: "no-store" });
-        if (handle403(res) || !res.ok) return;
-        setSummary((await res.json()) as SummaryResponse);
+        const body = await fetchStats<SummaryResponse>(`/api/admin/emails/summary?days=${days}`, () => stale);
+        if (body) setSummary(body);
       } catch {
         // panel stays empty
       } finally {
-        setSummaryLoading(false);
+        if (!stale) setSummaryLoading(false);
       }
     })();
-  }, [days, handle403]);
+    return () => {
+      stale = true;
+    };
+  }, [days, fetchStats]);
 
   useEffect(() => {
     void (async () => {
@@ -247,21 +273,24 @@ export default function AdminEmailsPage() {
   }, [handle403]);
 
   useEffect(() => {
+    let stale = false;
     void (async () => {
       setSendsLoading(true);
       try {
         const params = new URLSearchParams({ page: String(page) });
         if (query) params.set("query", query);
-        const res = await fetch(`/api/admin/emails/sends?${params}`, { cache: "no-store" });
-        if (handle403(res) || !res.ok) return;
-        setSends((await res.json()) as SendsResponse);
+        const body = await fetchStats<SendsResponse>(`/api/admin/emails/sends?${params}`, () => stale);
+        if (body) setSends(body);
       } catch {
         // panel stays empty
       } finally {
-        setSendsLoading(false);
+        if (!stale) setSendsLoading(false);
       }
     })();
-  }, [page, query, handle403]);
+    return () => {
+      stale = true;
+    };
+  }, [page, query, fetchStats]);
 
   if (forbidden) {
     return (

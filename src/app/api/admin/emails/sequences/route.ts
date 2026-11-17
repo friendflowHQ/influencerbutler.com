@@ -44,6 +44,7 @@ import { personalizeReviewBody } from "@/lib/extension-review";
 import { personalizePathBody } from "@/lib/email-path-select";
 import { personalizeBundleSubmitBody } from "@/lib/grow-together-submit";
 import { isMissingTable } from "@/lib/growth-goals";
+import { isMissingFunctionError } from "@/lib/email-sends-scan";
 import { mergeStepTimestamps, type StampedStep } from "@/lib/funnel-staleness";
 
 // Freshness stamps added by 20261110_funnels_v2_measure.sql. Writes include
@@ -67,9 +68,13 @@ const MAX_DAY_OFFSET = 365;
 // than silently dropped (the bug that hid a 2000 cap).
 const MAX_EMAILS = 50000;
 const MAX_SENDS_PER_HOUR = 5000;
-// Batch size for the .in("category", ...) filter on the all-time sent scan, so a
-// sequence set with many steps never builds an over-long PostgREST query string.
+// Batch size for .in(...) filters over a list of values, so a long list never
+// builds an over-long PostgREST query string.
 const CATEGORY_IN_CHUNK = 200;
+// Parallel count(*) queries in the all-time sent fallback (before the
+// email_sends_category_sent_counts RPC exists). Kept low so the counts never
+// crowd out the dashboard's other stats queries.
+const SENT_COUNT_CONCURRENCY = 4;
 
 type SequenceRow = {
   id: string;
@@ -569,39 +574,56 @@ export async function GET(request: Request) {
     }
 
     // All-time sent per sequence, from email_sends keyed by each step's category
-    // (seq_<shortId>_s<position>). Scan only these sequences' step categories and
-    // only genuine sends (status not suppressed/failed), so this touches far
-    // fewer rows than the full table. Best-effort: any failure leaves totals at 0
-    // and the rest of the response still renders.
+    // (seq_<shortId>_s<position>), counting only genuine sends (status not
+    // suppressed/failed). Counted in Postgres: paging the 200k+ matching rows out
+    // to the app took 60-80s and starved the Emails page's other stats queries
+    // into statement timeouts. Best-effort: any failure leaves totals at 0 and
+    // the rest of the response still renders.
     const categoryToSeq = new Map<string, string>();
     for (const [seqId, steps] of stepsById) {
       for (const step of steps) categoryToSeq.set(stepCategory(seqId, step.position), seqId);
     }
     const categories = [...categoryToSeq.keys()];
+    const addSent = (category: string, n: number) => {
+      const seqId = categoryToSeq.get(category);
+      if (seqId && n > 0) sentTotalById.set(seqId, (sentTotalById.get(seqId) ?? 0) + n);
+    };
     try {
-      for (let i = 0; i < categories.length; i += CATEGORY_IN_CHUNK) {
-        const chunk = categories.slice(i, i + CATEGORY_IN_CHUNK);
-        for (let offset = 0; ; offset += COUNT_PAGE) {
-          const { data: sendRows, error: sendErr } = await db
-            .from("email_sends")
-            .select("category")
-            .in("category", chunk)
-            .not("status", "in", "(suppressed,failed)")
-            .range(offset, offset + COUNT_PAGE - 1)
-            .returns<{ category: string }[]>();
-          if (sendErr) {
-            console.error("admin emails/sequences: sent scan failed", sendErr);
-            break;
+      if (categories.length > 0) {
+        // Fast path: one GROUP BY (20261117_email_sends_category_sent_counts.sql).
+        const rollup = await db.rpc("email_sends_category_sent_counts", { p_categories: categories });
+        if (!rollup.error) {
+          for (const row of (rollup.data ?? []) as { category: string; sent: number | string }[]) {
+            addSent(row.category, Number(row.sent) || 0);
           }
-          for (const row of sendRows ?? []) {
-            const seqId = categoryToSeq.get(row.category);
-            if (seqId) sentTotalById.set(seqId, (sentTotalById.get(seqId) ?? 0) + 1);
+        } else if (isMissingFunctionError(rollup.error)) {
+          // Migration not applied yet: one count(*) per category, a few at a
+          // time. Uses email_sends_category_idx and ships no rows to the app.
+          for (let i = 0; i < categories.length; i += SENT_COUNT_CONCURRENCY) {
+            const chunk = categories.slice(i, i + SENT_COUNT_CONCURRENCY);
+            const results = await Promise.all(
+              chunk.map((category) =>
+                db
+                  .from("email_sends")
+                  .select("id", { count: "exact", head: true })
+                  .eq("category", category)
+                  .not("status", "in", "(suppressed,failed)"),
+              ),
+            );
+            results.forEach((res, j) => {
+              if (res.error) {
+                console.error("admin emails/sequences: sent count failed", chunk[j], res.error);
+                return;
+              }
+              addSent(chunk[j], res.count ?? 0);
+            });
           }
-          if ((sendRows ?? []).length < COUNT_PAGE) break;
+        } else {
+          console.error("admin emails/sequences: sent rollup failed", rollup.error);
         }
       }
     } catch (err) {
-      console.error("admin emails/sequences: sent scan threw", err);
+      console.error("admin emails/sequences: sent count threw", err);
     }
   }
 
