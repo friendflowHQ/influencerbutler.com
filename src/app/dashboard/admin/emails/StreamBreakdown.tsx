@@ -24,7 +24,12 @@ type StreamsResponse = {
   days: number;
   streams: StreamAggregate[];
   migrationPending?: boolean;
+  loadError?: boolean;
 };
+
+// One retry for a timed-out breakdown, after the page's other stats load.
+const STREAMS_RETRIES = 1;
+const STREAMS_RETRY_DELAY_MS = 3000;
 
 /** Open/click denominator: delivered when we have it, else sent (delivery
  * events can lag while the webhook is new). Matches the overview's openBase. */
@@ -61,10 +66,17 @@ export default function StreamBreakdown({ days }: { days: number }) {
     void (async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/admin/emails/streams?days=${days}`, { cache: "no-store" });
-        if (!res.ok) return;
-        const json = (await res.json()) as StreamsResponse;
-        if (!cancelled) setData(json);
+        for (let attempt = 0; attempt <= STREAMS_RETRIES; attempt++) {
+          if (attempt > 0) await new Promise((r) => setTimeout(r, STREAMS_RETRY_DELAY_MS));
+          if (cancelled) return;
+          const res = await fetch(`/api/admin/emails/streams?days=${days}`, { cache: "no-store" });
+          if (!res.ok) return;
+          const json = (await res.json()) as StreamsResponse;
+          if (!json.loadError || attempt === STREAMS_RETRIES) {
+            if (!cancelled) setData(json);
+            break;
+          }
+        }
       } catch {
         // panel stays empty
       } finally {

@@ -21,13 +21,16 @@
  * if stream='cold' OR its name begins with "cold" OR its trigger tag begins with
  * "cold-". So the split is correct today with no manual data cleanup.
  *
- * Rows are paged out of email_sends and aggregated in JS, mirroring the summary
- * endpoint; a SQL view is the upgrade path if volume ever demands it.
+ * Counts come from public.email_sends_summary (20261111): one row per
+ * (category, funnel) in the window, already counted in Postgres, then bucketed
+ * here. Paging every row out (~125k for 30 days) took 8-25s. Until that
+ * function exists the route falls back to the row scan.
  */
 import { NextResponse } from "next/server";
 import { requirePermission } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { shortId } from "@/lib/email-marketing";
+import { isMissingFunctionError } from "@/lib/email-sends-scan";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -74,12 +77,29 @@ function ownerIsCold(row: Record<string, unknown>): boolean {
 const SEQ_CATEGORY_RE = /^seq_([0-9a-f]{8})_s\d+$/;
 const CAMPAIGN_CATEGORY_RE = /^campaign_([0-9a-f]{8})$/;
 
-function bump(agg: StreamAggregate, row: SendRow) {
-  if (row.status !== "suppressed" && row.status !== "failed") agg.sent += 1;
-  if (row.delivered_at) agg.delivered += 1;
-  if (row.opened_at) agg.opened += 1;
-  if (row.clicked_at) agg.clicked += 1;
-  if (row.bounced_at) agg.bounced += 1;
+type Counts = Pick<StreamAggregate, "sent" | "delivered" | "opened" | "clicked" | "bounced">;
+
+// One row of public.email_sends_summary. Its sent/delivered/... rules match
+// rowCounts() below: suppressed and failed are not "sent"; each event counts
+// when its timestamp is set.
+type RollupRow = Counts & { category: string; funnel: string };
+
+function rowCounts(row: SendRow): Counts {
+  return {
+    sent: row.status !== "suppressed" && row.status !== "failed" ? 1 : 0,
+    delivered: row.delivered_at ? 1 : 0,
+    opened: row.opened_at ? 1 : 0,
+    clicked: row.clicked_at ? 1 : 0,
+    bounced: row.bounced_at ? 1 : 0,
+  };
+}
+
+function bump(agg: StreamAggregate, c: Counts) {
+  agg.sent += Number(c.sent) || 0;
+  agg.delivered += Number(c.delivered) || 0;
+  agg.opened += Number(c.opened) || 0;
+  agg.clicked += Number(c.clicked) || 0;
+  agg.bounced += Number(c.bounced) || 0;
 }
 
 function blank(key: StreamKey, label: string): StreamAggregate {
@@ -138,7 +158,7 @@ export async function GET(request: Request) {
   };
 
   /** Which bucket a send belongs to, from its funnel + category. */
-  function bucketFor(row: SendRow): StreamKey {
+  function bucketFor(row: { category: string; funnel: string }): StreamKey {
     if (row.funnel === "transactional") return "transactional";
     if (row.funnel === "sequence") {
       const m = SEQ_CATEGORY_RE.exec(row.category || "");
@@ -153,6 +173,24 @@ export async function GET(request: Request) {
     return "warm";
   }
 
+  // Fast path: per (category, funnel) counts from Postgres.
+  const rollup = await db.rpc("email_sends_summary", { p_since: cutoff });
+  if (!rollup.error) {
+    for (const row of (rollup.data ?? []) as RollupRow[]) bump(streams[bucketFor(row)], row);
+    return NextResponse.json({
+      days,
+      streams: [streams.cold, streams.warm, streams.transactional],
+      migrationPending: false,
+    });
+  }
+  if (!isMissingFunctionError(rollup.error)) {
+    // Usually a statement timeout: report it as a transient failure rather
+    // than falling into a row scan that would take far longer.
+    console.error("admin emails/streams: rollup failed", rollup.error);
+    return NextResponse.json({ days, streams: [], migrationPending: false, loadError: true });
+  }
+
+  // Fallback (email_sends_summary missing): page rows out and count in JS.
   let offset = 0;
   for (;;) {
     const { data, error } = await db
@@ -166,7 +204,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ days, streams: [], migrationPending: true });
     }
     const rows = (data ?? []) as SendRow[];
-    for (const row of rows) bump(streams[bucketFor(row)], row);
+    for (const row of rows) bump(streams[bucketFor(row)], rowCounts(row));
     if (rows.length < BATCH) break;
     offset += BATCH;
   }
