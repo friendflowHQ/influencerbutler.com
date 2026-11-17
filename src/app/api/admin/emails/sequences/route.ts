@@ -117,6 +117,16 @@ type CountEnrollRow = {
   converted_step?: number | null;
 };
 
+// One email_sequence_enrollment_rollup row (or a single scanned row, n = 1).
+type EnrollBucket = {
+  sequence_id: string;
+  state: "open" | "completed" | "cancelled";
+  last_step: number | null;
+  conv_step: number | null;
+  n: number;
+  min_enrolled_at: string | null;
+};
+
 type Trigger = { kind: "tag_added"; tag: string } | { kind: "source"; source: string } | null;
 
 type StepInput = { day_offset: number; subject: string; body: string };
@@ -495,82 +505,113 @@ export async function GET(request: Request) {
       stepsById.set(step.sequence_id, list);
     }
 
-    // converted_at / converted_step are added by the 20260906 migration. Select
-    // them when present; if that errors as a missing column, drop to the base
-    // columns for the rest of the scan so counts still work pre-migration.
-    // Typed as string (not a literal) so the PostgREST type parser does not try
-    // to resolve the dynamic select and returns loosely-typed rows.
-    const BASE_COLS: string = "sequence_id, completed_at, cancelled_at, last_step_sent, enrolled_at";
-    const CONV_COLS: string = `${BASE_COLS}, converted_at, converted_step`;
-    const isMissingConvCol = (e: { code?: string; message?: string } | null): boolean => {
-      if (!e) return false;
-      if (e.code === "42703" || e.code === "PGRST204") return true;
-      const msg = e.message ?? "";
-      return /converted_at|converted_step/i.test(msg) && /column|schema cache/i.test(msg);
-    };
-    let convColsMissing = false;
-
-    for (let offset = 0; offset < COUNT_CAP; offset += COUNT_PAGE) {
-      let { data: enrollRows, error: enrollErr } = await db
-        .from("email_sequence_enrollments")
-        .select(convColsMissing ? BASE_COLS : CONV_COLS)
-        .in("sequence_id", ids)
-        .range(offset, offset + COUNT_PAGE - 1)
-        .returns<CountEnrollRow[]>();
-      if (enrollErr && !convColsMissing && isMissingConvCol(enrollErr)) {
-        convColsMissing = true;
-        ({ data: enrollRows, error: enrollErr } = await db
-          .from("email_sequence_enrollments")
-          .select(BASE_COLS)
-          .in("sequence_id", ids)
-          .range(offset, offset + COUNT_PAGE - 1)
-          .returns<CountEnrollRow[]>());
+    // Fold one bucket of enrollments into the per-sequence tallies. A bucket is
+    // either one email_sequence_enrollment_rollup row (20261118, grouped in
+    // Postgres) or a single scanned row (n = 1) on the fallback path, so both
+    // paths share these rules:
+    //   - converted rows (also cancelled) tally last-touch to conv_step;
+    //   - cancelled > completed > open, open rows park on the step after
+    //     last_step and feed the soonest next-send time.
+    const addBucket = (b: EnrollBucket) => {
+      if (!b.sequence_id) return;
+      const n = Number(b.n) || 0;
+      if (n <= 0) return;
+      const counts = countsById.get(b.sequence_id) ?? { active: 0, completed: 0, cancelled: 0 };
+      if (b.conv_step !== null) {
+        const perSeq = convertedById.get(b.sequence_id) ?? new Map<number, number>();
+        perSeq.set(b.conv_step, (perSeq.get(b.conv_step) ?? 0) + n);
+        convertedById.set(b.sequence_id, perSeq);
+        convertedTotalById.set(b.sequence_id, (convertedTotalById.get(b.sequence_id) ?? 0) + n);
       }
-      if (enrollErr) break;
-      for (const row of enrollRows ?? []) {
-        if (typeof row.sequence_id !== "string") continue;
-        const counts = countsById.get(row.sequence_id) ?? { active: 0, completed: 0, cancelled: 0 };
-        // A converted enrollment is also cancelled; tally it before the shared
-        // cancelled/completed/open branching (last-touch to converted_step).
-        if (row.converted_at) {
-          const step = typeof row.converted_step === "number" ? row.converted_step : 0;
-          const perSeq = convertedById.get(row.sequence_id) ?? new Map<number, number>();
-          perSeq.set(step, (perSeq.get(step) ?? 0) + 1);
-          convertedById.set(row.sequence_id, perSeq);
-          convertedTotalById.set(
-            row.sequence_id,
-            (convertedTotalById.get(row.sequence_id) ?? 0) + 1,
-          );
-        }
-        if (row.cancelled_at) counts.cancelled += 1;
-        else if (row.completed_at) counts.completed += 1;
-        else {
-          counts.active += 1;
-          // Open enrollment: park it against the next step it will receive.
-          const lastStep = typeof row.last_step_sent === "number" ? row.last_step_sent : 0;
-          const perSeq = queuedById.get(row.sequence_id) ?? new Map<number, number>();
-          perSeq.set(lastStep, (perSeq.get(lastStep) ?? 0) + 1);
-          queuedById.set(row.sequence_id, perSeq);
+      if (b.state === "cancelled") counts.cancelled += n;
+      else if (b.state === "completed") counts.completed += n;
+      else {
+        counts.active += n;
+        const lastStep = b.last_step ?? 0;
+        const perSeq = queuedById.get(b.sequence_id) ?? new Map<number, number>();
+        perSeq.set(lastStep, (perSeq.get(lastStep) ?? 0) + n);
+        queuedById.set(b.sequence_id, perSeq);
 
-          // Track the soonest due time for this open enrollment's next step.
-          const nextStep = (stepsById.get(row.sequence_id) ?? []).find(
-            (st) => st.position === lastStep + 1,
+        // Soonest due time for this bucket's next step. nextSendTime() never
+        // decreases as enrolled_at grows, so the earliest enrollee is due first.
+        const nextStep = (stepsById.get(b.sequence_id) ?? []).find(
+          (st) => st.position === lastStep + 1,
+        );
+        if (nextStep && typeof b.min_enrolled_at === "string") {
+          const due = nextSendTime(
+            b.min_enrolled_at,
+            nextStep.day_offset,
+            sendHourById.get(b.sequence_id) ?? null,
           );
-          if (nextStep && typeof row.enrolled_at === "string") {
-            const due = nextSendTime(
-              row.enrolled_at,
-              nextStep.day_offset,
-              sendHourById.get(row.sequence_id) ?? null,
-            );
-            if (Number.isFinite(due)) {
-              const cur = nextSendById.get(row.sequence_id);
-              if (cur === undefined || due < cur) nextSendById.set(row.sequence_id, due);
-            }
+          if (Number.isFinite(due)) {
+            const cur = nextSendById.get(b.sequence_id);
+            if (cur === undefined || due < cur) nextSendById.set(b.sequence_id, due);
           }
         }
-        countsById.set(row.sequence_id, counts);
       }
-      if ((enrollRows ?? []).length < COUNT_PAGE) break;
+      countsById.set(b.sequence_id, counts);
+    };
+
+    // Fast path: one GROUP BY in Postgres (20261118_email_sequence_list_rollups.sql).
+    // Paging ~74k enrollment rows out 1,000 at a time took 75 round trips.
+    const enrollRollup = await db.rpc("email_sequence_enrollment_rollup", { p_sequence_ids: ids });
+    if (!enrollRollup.error) {
+      for (const row of (enrollRollup.data ?? []) as EnrollBucket[]) addBucket(row);
+    } else {
+      if (!isMissingFunctionError(enrollRollup.error)) {
+        console.error("admin emails/sequences: enrollment rollup failed", enrollRollup.error);
+      }
+      // Fallback (function missing, or the rollup failed): scan rows as before.
+      // converted_at / converted_step are added by the 20260906 migration.
+      // Select them when present; if that errors as a missing column, drop to
+      // the base columns for the rest of the scan so counts still work.
+      // Typed as string (not a literal) so the PostgREST type parser does not
+      // try to resolve the dynamic select and returns loosely-typed rows.
+      const BASE_COLS: string = "sequence_id, completed_at, cancelled_at, last_step_sent, enrolled_at";
+      const CONV_COLS: string = `${BASE_COLS}, converted_at, converted_step`;
+      const isMissingConvCol = (e: { code?: string; message?: string } | null): boolean => {
+        if (!e) return false;
+        if (e.code === "42703" || e.code === "PGRST204") return true;
+        const msg = e.message ?? "";
+        return /converted_at|converted_step/i.test(msg) && /column|schema cache/i.test(msg);
+      };
+      let convColsMissing = false;
+
+      for (let offset = 0; offset < COUNT_CAP; offset += COUNT_PAGE) {
+        let { data: enrollRows, error: enrollErr } = await db
+          .from("email_sequence_enrollments")
+          .select(convColsMissing ? BASE_COLS : CONV_COLS)
+          .in("sequence_id", ids)
+          .range(offset, offset + COUNT_PAGE - 1)
+          .returns<CountEnrollRow[]>();
+        if (enrollErr && !convColsMissing && isMissingConvCol(enrollErr)) {
+          convColsMissing = true;
+          ({ data: enrollRows, error: enrollErr } = await db
+            .from("email_sequence_enrollments")
+            .select(BASE_COLS)
+            .in("sequence_id", ids)
+            .range(offset, offset + COUNT_PAGE - 1)
+            .returns<CountEnrollRow[]>());
+        }
+        if (enrollErr) break;
+        for (const row of enrollRows ?? []) {
+          if (typeof row.sequence_id !== "string") continue;
+          const open = !row.cancelled_at && !row.completed_at;
+          addBucket({
+            sequence_id: row.sequence_id,
+            state: row.cancelled_at ? "cancelled" : row.completed_at ? "completed" : "open",
+            last_step: open ? (typeof row.last_step_sent === "number" ? row.last_step_sent : 0) : null,
+            conv_step: row.converted_at
+              ? typeof row.converted_step === "number"
+                ? row.converted_step
+                : 0
+              : null,
+            n: 1,
+            min_enrolled_at: row.enrolled_at,
+          });
+        }
+        if ((enrollRows ?? []).length < COUNT_PAGE) break;
+      }
     }
 
     // All-time sent per sequence, from email_sends keyed by each step's category

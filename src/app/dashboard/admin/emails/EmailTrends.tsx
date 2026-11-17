@@ -43,6 +43,10 @@ function delta(current: number, previous: number): { arrow: string; label: strin
   return { arrow: "↓", label: `${Math.abs(changePct)}%`, tone: "text-rose-600" };
 }
 
+// One retry for a timed-out trend query, after the page's other stats load.
+const TREND_RETRIES = 1;
+const TREND_RETRY_DELAY_MS = 3000;
+
 export default function EmailTrends(props: {
   category?: string;
   prefix?: string;
@@ -68,12 +72,20 @@ export default function EmailTrends(props: {
         else if (prefix) params.set("prefix", prefix);
         else if (broadcastId) params.set("broadcastId", broadcastId);
         else if (funnel) params.set("funnel", funnel);
-        const res = await fetch(`/api/admin/emails/timeseries?${params}`, { cache: "no-store" });
-        if (!res.ok) {
-          if (!cancelled) setData(null);
-          return;
+        // One quiet retry after a pause if the query timed out (loadError):
+        // it usually loses to the other panels' queries on first page load.
+        let json: TimeseriesResponse | null = null;
+        for (let attempt = 0; attempt <= TREND_RETRIES; attempt++) {
+          if (attempt > 0) await new Promise((r) => setTimeout(r, TREND_RETRY_DELAY_MS));
+          if (cancelled) return;
+          const res = await fetch(`/api/admin/emails/timeseries?${params}`, { cache: "no-store" });
+          if (!res.ok) {
+            json = null;
+            break;
+          }
+          json = (await res.json()) as TimeseriesResponse;
+          if (!json.loadError) break;
         }
-        const json = (await res.json()) as TimeseriesResponse;
         if (!cancelled) setData(json);
       } catch {
         if (!cancelled) setData(null);
