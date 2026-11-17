@@ -436,3 +436,39 @@ Not legal advice; have counsel review. No live legal file was touched. Live priv
 - **Desktop app:** Launch Butler fixes, The Great Video Purge (uses the user's own OpenAI key, files kept on the user's computer), chat-bubble big-screenshot attach and expanded reports window (same support attachments already in §2.8), Black Friday mode, Butler Links tap handling: no new off-device flow or vendor found.
 - **Extension privacy page:** no extension changes found this week; no drift detected.
 - **Retention enforcement:** no new cleanup jobs this week.
+
+## Update 2026-11-17: weekly audit (nothing mechanical; nothing auto-published; two new undisclosed data flows need a human)
+
+Not legal advice; have counsel review. No live legal file was touched. Live privacy.html is "Last Updated: November 8, 2026"; terms.html unchanged. All earlier open items (TikTok Pixel and Google Ads tags, Concierge ticket filing, TestFlight feedback, `product_market_history` retention, Creator stores staff access, comp-to-paid billing clause, Appendix D enforcement status) remain open and unchanged.
+
+### New this week
+
+1. **Foyer page pilot invites: pages built about creators who are not yet customers (website repo `2bc7daa`, `211fb4d`, `7caf3fa`, `b824db3`; migrations `20261111`, `20261112`, `20261115_foyer_invites_v3.sql`).** Highest priority this week. privacy.html has no mention of this at all (grep for invite/prospect/pilot finds only the Google Calendar invitee text). What the code does: a desktop-side script (`scripts/outreach/build-invite.js`) reads a prospective creator's public Amazon storefront and stores, per person, in `foyer_invites`: their storefront URL, a "Storefront Score", up to a full list of their own posts (post URL, thumbnail URL, title, ASIN, deal and Creator Connections campaign details, commission rates, a caption carrying their own tracking ID), and individually written 4-email sequences (days 0, 3, 7, 14, plus monthly follow-ups). The private page `/p/<code>` tracks time on page, claim click, reply and removal. A "Remove my page" button deletes the content right away. A Lemon Squeezy webhook change (`7caf3fa`) now matches a paying subscriber's `userId`/email to an invite and marks it converted. Not mechanical on every count: it is a new category of data about people who have no account with us (collected from public pages, not from the person), a new marketing use (cold outreach emails), new behavioral tracking, and a new link between purchase events and that profile. Proposed new subsection (insert after §2.12; number accordingly) and a §7 bullet:
+
+```html
+<h3>2.13 Personalized Foyer page invitations</h3>
+<p>If you are an Amazon creator with a public storefront, we may build a private preview page for you and email you a link to it. To build it, we read your public Amazon storefront and your public posts (post links, titles, product identifiers, and which of those products currently have a deal or an open Creator Connections campaign), and we store that with your name or handle, your email address, and the storefront link. [CONFIRM: where the email address comes from, and the lawful basis and opt-out/suppression handling for these cold emails (CAN-SPAM, GDPR Art. 6(1)(f), PECR/ePrivacy for EU and UK recipients).] Your page records whether you opened it, how long you stayed, and whether you clicked the claim button, replied, or removed it. If you purchase a plan, we link that purchase to your invitation so we know the invitation worked. You can click "Remove my page" on the page at any time, which deletes its content immediately, or email us to have your invitation record deleted and to stop further emails.</p>
+```
+
+```html
+<li><strong>Foyer page invitations</strong> (storefront and post data, page activity, invitation emails): kept for [CONFIRM: period, e.g. 12 months after the last email], then deleted. Content is deleted immediately if you remove your page.</li>
+```
+
+   [CONFIRM: there is no scheduled deletion job for `foyer_invites` in code, so any stated period would be a new promise with no enforcement (add to Appendix D). Also confirm whether any invites have already been emailed to real people; if so, the disclosure should go live before more are sent.] Also consider a §6 (CCPA/CPRA) check: data collected from a source other than the consumer needs the "categories of sources" disclosure.
+
+2. **Desktop app uploads a daily "your own posts" summary for trial users (website repo `f0d7dde`, `ae3af95`; migration `20261116_app_trial_posts_summary.sql`; route `/api/app-trial/posts-summary`).** A new off-device flow from the desktop app: once a day it reports, for an app-trial user, counts of their own storefront posts that have a live deal, a live sale-event deal or an open Creator Connections campaign, stored on `email_subscribers` (`app_trial_posts_summary`, `_at`) and used to write the day 12 trial email. Counts only, no post URLs. Not mechanical: a new category of data leaving the device, and a new use of storefront data for email personalization. The §2.1 "stays on your device" list should not imply post data never leaves. Proposed sentence for the §2.5 (website account) bullet list, and one for §4:
+
+```html
+<li><strong>Trial summary counts</strong>: during your app trial, the desktop app sends us once a day a few counts (how many of your own Amazon storefront posts currently have a deal or an open Creator Connections campaign). We use them only to personalize your trial emails. We do not receive the posts themselves. [CONFIRM: that only counts are sent, and the retention period.]</li>
+```
+
+   [CONFIRM: retention (the summary is overwritten daily and sits on the subscriber row; confirm it is deleted with the row on unsubscribe/account deletion). Whether the trial opt-out for lifecycle emails also stops the upload.]
+
+### Checked, no action needed
+
+- **Extension (`7355262`, `164e0b7`, no drift):** Walmart deal-page capture reads product facts from walmart.com pages the user is viewing and sends them over the existing loopback bridge (or the existing paired relay) to the user's own desktop app; the extension privacy page already says it reads Walmart product details, uses the local bridge and requests Walmart host access. No new vendor, host or data category found on the extension privacy page.
+- **Subprocessors/SDKs:** no new dependency in either repo's `package.json` or `mobile-web/package.json`. The "Lemon Squeezy variant check" admin route (`04cd15c`) is read-only against the existing processor.
+- **Price lock, comp emails, send-from-hello@ change, affiliate billing fixes, booking setup gate, app-open page:** no new data category or vendor (same email/billing data already in §2.5, §2.7, §2.9). The setup gate reads onboarding completion already collected.
+- **Desktop app:** Facebook account walkthrough (`fb-account-wizard.js`, logins stay in the existing local browser profile), Facebook Page comments-off option, Roundup cover template, Walmart repost item search, Instagram "never follow a private account", Foyer promo-code copy, new Christmas scene images: all local; no new off-device flow or vendor found. Note: the hosted `/p/<code>` pilot above is the only new off-device data flow besides the trial summary.
+- **Retention enforcement:** no new cleanup jobs this week. `foyer_invites` has none (see item 1).
+- **Terms:** nothing this week changes obligations beyond the open comp-billing clause.
