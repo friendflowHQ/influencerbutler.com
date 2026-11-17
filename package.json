@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "node scripts/inject-webmcp.mjs && node scripts/inject-price-lock.mjs && node scripts/inject-image-lightbox.mjs && node scripts/inject-gtag.mjs && node scripts/inject-meta-pixel.mjs && node scripts/inject-tiktok-pixel.mjs && node scripts/inject-feature-videos.mjs && node scripts/generate-sitemap.mjs && node scripts/generate-page-lastmod.mjs",
+    "prebuild": "node scripts/inject-webmcp.mjs && node scripts/inject-price-lock.mjs && node scripts/inject-image-lightbox.mjs && node scripts/inject-gtag.mjs && node scripts/inject-meta-pixel.mjs && node scripts/inject-tiktok-pixel.mjs && node scripts/inject-feature-videos.mjs && node scripts/ensure-blog-images.mjs && node scripts/generate-sitemap.mjs && node scripts/generate-page-lastmod.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -21,7 +21,9 @@
     "generate:lastmod": "node scripts/generate-page-lastmod.mjs",
     "test:a11y": "node scripts/check-a11y.mjs",
     "sync:videos": "node scripts/generate-transcripts.mjs",
-    "inject:feature-videos": "node scripts/inject-feature-videos.mjs"
+    "inject:feature-videos": "node scripts/inject-feature-videos.mjs",
+    "check:blog-images": "node scripts/ensure-blog-images.mjs --check",
+    "generate:blog-heroes": "node scripts/generate-missing-blog-heroes.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",

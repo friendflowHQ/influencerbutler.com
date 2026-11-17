@@ -38,3 +38,13 @@ if (data.posts.some((p) => p.id === entry.id)) {
 data.posts.push(entry);
 fs.writeFileSync(indexPath, JSON.stringify(data, null, 2) + "\n", "utf8");
 console.log(`Appended "${entry.id}" (date ${entry.date}). Total posts: ${data.posts.length}`);
+
+// Hand-added posts used to ship without a hero (broken image on /blog). Flag it now.
+const heroPath = path.join(repoRoot, "public", String(entry.image).replace(/^\//, ""));
+if (String(entry.image).startsWith("/") && !fs.existsSync(heroPath)) {
+  console.warn(
+    `\nHero image ${entry.image} does not exist yet. Render it before committing:\n` +
+      `  node scripts/generate-missing-blog-heroes.mjs --only=${entry.id}\n` +
+      `  (or the AI version: node scripts/generate-blog-images.mjs --only=${entry.id})`
+  );
+}
