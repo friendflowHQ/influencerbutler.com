@@ -137,9 +137,11 @@ type SequencesResponse = { sequences: Sequence[]; migrationPending: boolean };
 // A/B/C variant group detection (client mirror of the server rule in the
 // sequences route): a variant sequence's trigger tag ends in a single-letter
 // suffix ("-a" / "-b" / "-c") and the text before it is the shared base.
-// variantSiblings returns the whole group (sorted by tag) when this sequence
-// belongs to one of size >= 2, else []. Used to offer the "split evenly across
-// the variants" enroll option only on grouped sequences.
+// variantSiblings returns the ACTIVE members of the group (sorted by tag) when
+// there are at least 2, else []. Used to offer the "split evenly across the
+// variants" enroll option only on grouped sequences. Paused variants (retired
+// losers, or ones not activated yet) are left out, matching the server's
+// enroll-split, which only fans a batch out across active siblings.
 const VARIANT_TAG_RE = /^(.+)-[a-z]$/;
 function triggerTagOf(trigger: Trigger): string | null {
   return trigger && trigger.kind === "tag_added" ? trigger.tag : null;
@@ -153,7 +155,7 @@ function variantSiblings(seq: Sequence, all: Sequence[]): Sequence[] {
   const base = variantBase(triggerTagOf(seq.trigger));
   if (!base) return [];
   const group = all
-    .filter((s) => variantBase(triggerTagOf(s.trigger)) === base)
+    .filter((s) => s.status === "active" && variantBase(triggerTagOf(s.trigger)) === base)
     .sort((a, b) => {
       const ta = triggerTagOf(a.trigger) ?? "";
       const tb = triggerTagOf(b.trigger) ?? "";
