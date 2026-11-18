@@ -901,7 +901,7 @@
       "id": "instagram-channel-link",
       "title": "Find your Instagram channel link for Deal Posting",
       "category": "Instagram",
-      "summary": "Get the desktop URL for your Instagram broadcast channel so Deal Posting can post to it. Walks through the mobile share link, a one-line console snippet to read the channel ID, and building the final link.",
+      "summary": "Let Deal Posting find your Instagram broadcast channel for you. Copy the share link on your phone, paste it into the Find my channel link walkthrough, and the app adds the right desktop link.",
       "order": 225,
       "locales": [
         "en-US",

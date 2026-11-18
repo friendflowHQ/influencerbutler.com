@@ -1,98 +1,40 @@
 ---
 title: Find your Instagram channel link for Deal Posting
-summary: Get the desktop URL for your Instagram broadcast channel so Deal Posting can post to it. Walks through the mobile share link, a one-line console snippet to read the channel ID, and building the final link.
+summary: Let Deal Posting find your Instagram broadcast channel for you. Copy the share link on your phone, paste it into the Find my channel link walkthrough, and the app adds the right desktop link.
 category: Instagram
 ---
 
-## Watch the walkthrough
-
-@youtube(54wdnHuUZY8)
-
 ## Why you need this
 
-Deal Posting can post your deals straight into an Instagram broadcast channel. To point it at the right channel, it needs the channel's desktop URL, which looks like this:
-
-```
-https://www.instagram.com/direct/t/9633497573423662
-```
-
-The catch: Instagram only shows your channel inside the mobile app, and it never displays that numeric channel ID anywhere in the interface. This guide walks you through pulling the ID out yourself, one time, so you can build the link and paste it into Deal Posting.
+Deal Posting can post your deals straight into an Instagram broadcast channel. To do that it needs a special desktop link for the channel. Instagram never shows that link, so the app finds it for you. All you do is copy the link Instagram gives you on your phone.
 
 You only have to do this once per channel.
 
 ## Before you start
 
 - You manage an Instagram **broadcast channel** (the owner account).
-- You have the Instagram mobile app and a desktop computer with Chrome (or any Chromium browser with developer tools).
-- You are logged into the owner account in your desktop browser.
+- You are signed in to Instagram in the app. If you are not, the walkthrough opens the sign-in window for you.
 
-## Step 1: Share the channel link from the mobile app
+## Step 1: Copy the channel link on your phone
 
 1. Open the Instagram app on your phone.
-2. Go to your broadcast channel.
-3. Open the channel's settings and find the **Share** option for the channel link.
-4. Choose to send it to yourself by email.
+2. Go to your broadcast channel and tap its name.
+3. Tap **Share** and send the link to yourself (email or a message works).
+4. On your computer, open that email or message and copy the link.
 
-## Step 2: Open the link on your desktop
+## Step 2: Run the walkthrough
 
-1. On your computer, open the email you just sent yourself.
-2. Make sure you are logged into the Instagram account that **owns** the channel in your browser.
-3. Click the channel link from the email so it opens in your desktop browser.
+1. In the app, open Deal Posting and go to **Social Destinations**.
+2. On the Instagram card, click **Find my channel link**.
+3. Paste the link you copied and click **Next**.
+4. Click **Find my channel link**. The app looks up your channel in the background, which can take up to a minute.
+5. When it says it found your channel, click **Next**, then finish the walkthrough.
 
-## Step 3: Open the developer console
-
-1. Right-click anywhere on the page and choose **Inspect**. This opens the browser developer tools.
-2. Click the **Console** tab.
-3. Clear anything already in the console so the output is easy to read.
-
-## Step 4: Read the channel ID
-
-Paste this single line into the console and press Enter:
-
-```
-[...document.documentElement.innerHTML.matchAll(/thread_fbid\D+(\d+)/g)].map(m=>m[1])
-```
-
-The first time you paste into the console, the browser may block it for safety and ask you to type **allow pasting** and press Enter. Do that, then paste the line again and press Enter.
-
-The console prints the channel ID. In our example it looks like this:
-
-```
-9633497573423662
-```
-
-Copy that number.
-
-## Step 5: Build the channel link
-
-Append the channel ID to the end of this base URL:
-
-```
-https://www.instagram.com/direct/t/
-```
-
-So the ID `9633497573423662` becomes:
-
-```
-https://www.instagram.com/direct/t/9633497573423662
-```
-
-That is the desktop link that opens the channel's message view directly, where deals get posted.
-
-## Step 6: Add it to Deal Posting
-
-1. In the app, open **Deal Posting**.
-2. Go to **Social Destinations**.
-3. Paste your link into the **Instagram Channel** field.
-
-The field saves automatically. Deal Posting now knows which channel to post to.
+The channel link is added to the Instagram box on its own and saves automatically. Deal Posting now knows which channel to post to.
 
 ## Common gotchas
 
-- **The snippet prints an empty list `[]`**: you are probably not logged into the owner account, or the page did not fully load. Reload the channel page while signed in as the owner and try again.
-- **The browser keeps blocking the paste**: type `allow pasting` exactly (no quotes) in the console, press Enter, then paste the snippet again.
-- **Several numbers print**: the channel ID is the long numeric value. If more than one appears, the channel ID is the one that, appended to the base URL, opens your channel.
-
-## Related
-
-- [Deal Posting tutorial](/help/tutorials/deals) - the workspace that posts to this channel.
+- **It asks you to sign in:** a window opens so you can sign in to Instagram. Sign in there, close it, then click **Find my channel link** again.
+- **It says it could not find your channel:** make sure you are signed in to the Instagram account that owns the channel, then copy the share link again and retry.
+- **It says that is not a channel link:** the link must start with instagram.com or ig.me. Copy the share link from the channel itself, not from a profile.
+- **You already have the long link:** if you have a link that looks like instagram.com/direct/t/ followed by a number, you can paste it straight into the Instagram box in Social Destinations.
