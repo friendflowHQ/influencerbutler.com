@@ -51,6 +51,12 @@ body {
   margin-top: 1.1em;
 }
 
+/* Blog headings carry ids for deep links; keep them clear of the sticky header. */
+.help-tutorial-body h2[id],
+.help-tutorial-body h3[id] {
+  scroll-margin-top: 5rem;
+}
+
 .help-tutorial-body h2 {
   font-size: 1.5rem;
   font-weight: 700;

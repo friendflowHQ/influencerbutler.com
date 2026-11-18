@@ -69,6 +69,19 @@ export function renderInline(line: string): string {
   return out;
 }
 
+/** Anchor slug for a heading: link text kept, markup dropped, kebab-cased. */
+export function headingSlug(text: string): string {
+  return text
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/[`*_]/g, "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+}
+
 // Small, sandboxed Markdown subset: headings, paragraphs, bullet/ordered
 // lists, fenced code blocks, blockquotes, inline code/bold/italic/links/images.
 export function renderMarkdown(source: string): string {
@@ -77,6 +90,7 @@ export function renderMarkdown(source: string): string {
   let inCode = false;
   let codeBuf: string[] = [];
   let listType: "ul" | "ol" | null = null;
+  const headingIds = new Map<string, number>();
 
   function closeList() {
     if (listType) {
@@ -109,7 +123,18 @@ export function renderMarkdown(source: string): string {
     if (heading) {
       closeList();
       const level = heading[1].length;
-      out.push(`<h${level}>${renderInline(heading[2])}</h${level}>`);
+      // h2/h3 get a stable id so other pages can deep-link a section,
+      // e.g. /blog/post#how-to-make-an-amazon-favorites-page.
+      let idAttr = "";
+      if (level === 2 || level === 3) {
+        const base = headingSlug(heading[2]);
+        if (base) {
+          const n = (headingIds.get(base) ?? 0) + 1;
+          headingIds.set(base, n);
+          idAttr = ` id="${n === 1 ? base : `${base}-${n}`}"`;
+        }
+      }
+      out.push(`<h${level}${idAttr}>${renderInline(heading[2])}</h${level}>`);
       continue;
     }
     // Standalone image line: ![alt](/assets/...) on its own line -> figure.
