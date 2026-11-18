@@ -14,6 +14,18 @@
       ]
     },
     {
+      "id": "dashboard-home",
+      "title": "Your dashboard: what is running, what needs you, and what runs next",
+      "category": "Getting Started",
+      "summary": "Read the top of your Dashboard at a glance, fix anything that needs attention, and change a schedule from the Next up list. Every butler group dashboard works the same way.",
+      "order": 3,
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
+    },
+    {
       "id": "tiktok-creator-stats",
       "title": "TikTok Creator Stats: your followers and recent video performance",
       "category": "TikTok",
