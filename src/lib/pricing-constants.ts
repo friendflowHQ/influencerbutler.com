@@ -195,6 +195,9 @@ export const LEVEL_PRICE_CENTS: Record<PlanLevel, Partial<Record<Tier, { monthly
 // effectiveAt pay PRICE_CHANGE.prices, on the NEW Lemon Squeezy variants
 // (src/lib/lemonsqueezy.ts NEXT_VARIANT_IDS). Old variants are never edited.
 // Everything flips on its own at effectiveAt: no deploy or manual step.
+// The static homepage (public/index.html) and /landing (public/landing-page.html)
+// carry a copy of LEVEL_PRICE_CENTS, these prices and effectiveAt in their
+// pricing <script>; update those too when any of them change.
 export const PRICE_CHANGE = {
   // Deadline: Mon Nov 30 2026, 11:59pm Pacific (owner-specified, 2026-11-11).
   // effectiveAt is the first instant of the new prices: midnight Pacific.

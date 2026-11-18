@@ -422,12 +422,13 @@
                 <div class="hero-content">
                     <span class="badge">50+ Built-In Automation Tools</span>
                     <h1>Automate Your Entire Influencer Business</h1>
-                    <p class="hero-sub">Brand outreach, commission harvesting, deal posting, content management, and more, from one powerful desktop app plus a free Chrome extension.</p>
+                    <p class="hero-sub">Built for Amazon, Walmart and Instagram creators: accept Creator Connections campaigns, track commissions and post deals automatically, from one desktop app plus a free Chrome extension.</p>
                     <div class="hero-ctas">
                         <a href="/go/download?src=home-hero" class="btn btn-primary btn-lg">Start Free</a>
                         <a href="#pricing" class="btn btn-outline btn-lg">See Pro Plans</a>
                     </div>
-                    <p class="hero-note" style="margin-top:0.75rem;font-size:0.85rem;color:#64748b;">Free forever tier, no card needed. Every Pro plan starts with a 14-day full-Pro trial, the only one in the category.</p>
+                    <p class="hero-demo-link"><a href="#see-it-run">&#9654; Watch the 2-minute demo</a></p>
+                    <p class="hero-note" style="margin-top:0.75rem;font-size:0.85rem;color:#64748b;">Free forever tier, no card needed. Works on Windows and Mac. Every Pro plan starts with a 14-day full-Pro trial, the only one in the category.</p>
                     <div class="hero-personas">
                         <span class="hero-personas-label">Not sure where to start? Tell us who you are:</span>
                         <div class="hero-persona-btns">
@@ -1658,7 +1659,7 @@
                             </tr>
                             <tr>
                                 <td>Starting Price</td>
-                                <td class="col-ib"><strong>$0 for 14 days, then $39 / mo</strong></td>
+                                <td class="col-ib"><strong>$0 for 14 days, then from <span class="js-price" data-level="beginner" data-tier="solo" data-cycle="monthly">$24.99</span> / mo</strong></td>
                                 <td class="col-other">$15-29 / month</td>
                             </tr>
                         </tbody>
@@ -1696,6 +1697,10 @@
                         <p>Activate the automations you need. Butler handles the repetitive work while you focus on creating content.</p>
                     </div>
                 </div>
+                <div class="how-needs">
+                    <p><strong>What you need:</strong> a Windows or Mac computer, Google Chrome, and your Amazon Associates / Creator account. Not sure it is safe for your accounts? <a href="/security">Read how it works and where your data lives</a>.</p>
+                    <p class="how-needs-cta"><a href="/go/download?src=home-how" class="btn btn-primary">Download free</a> <a href="#see-it-run" class="how-needs-link">Watch the walkthrough</a></p>
+                </div>
             </div>
         </section>
 
@@ -1718,7 +1723,7 @@
             <div class="container">
                 <span class="section-label">Pricing</span>
                 <h2>Simple, Transparent Pricing</h2>
-                <p class="section-sub">Start free. Every Pro plan comes with a 14-day free trial, so you can try the money engines before you pay. Upgrade when you're ready for the full power of Butler.</p>
+                <p class="section-sub">Start free. Every paid plan comes with a 14-day free trial, so you can try the money engines before you pay. Upgrade when you're ready for the full power of Butler.</p>
 
                 <div style="max-width:960px;margin:0 auto 2rem;border:1px solid #a7f3d0;background:#ecfdf5;border-radius:16px;padding:1.5rem 1.75rem;">
                     <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1.25rem;">
@@ -1742,152 +1747,337 @@
                     </div>
                 </div>
 
+                <details class="plan-helper">
+                    <summary>Not sure which plan? Answer three quick questions</summary>
+                    <ul>
+                        <li><strong>Brand new to automating?</strong> Start with Beginner Solo. You get the starter butlers, 150 AI actions a month and a guided path to your first posts.</li>
+                        <li><strong>Already posting daily or using several butlers?</strong> Power User unlocks every butler and unlimited AI on your own OpenAI key.</li>
+                        <li><strong>Sharing with a partner, assistant or clients?</strong> Choose Trio, Team or Agency for more devices. You can switch plans any time.</li>
+                    </ul>
+                </details>
+
+                <div class="level-toggle" role="group" aria-label="Plan level">
+                    <button type="button" class="level-opt is-active" data-level="beginner" aria-pressed="true" aria-controls="pricing-grid-beginner">
+                        <span class="level-opt-name">Beginner</span>
+                        <span class="level-opt-tag">The starter butlers, AI included, a guided path to your first posts</span>
+                    </button>
+                    <button type="button" class="level-opt" data-level="power" aria-pressed="false" aria-controls="pricing-grid-power">
+                        <span class="level-opt-name">Power User</span>
+                        <span class="level-opt-tag">Every butler, unlimited AI on your own OpenAI key, 1:1 calls</span>
+                    </button>
+                </div>
+
                 <div class="billing-toggle" role="tablist" aria-label="Billing cadence">
                     <button type="button" role="tab" class="billing-opt is-active" data-billing="monthly" aria-selected="true">Monthly</button>
                     <button type="button" role="tab" class="billing-opt" data-billing="annual" aria-selected="false">Annual <span class="billing-save">Save 17%</span></button>
                 </div>
 
-                <div class="pricing-grid">
-                    <!-- PRO SOLO -->
-                    <div class="pricing-card featured anim-up">
+                <p class="price-lock-note" id="price-lock-note">Prices go up after November 30 at 11:59pm Pacific. Start your 14-day trial by then and keep today's price for as long as you stay subscribed.</p>
+
+                <div class="pricing-grid cols-3" id="pricing-grid-beginner" data-level="beginner">
+                    <div class="pricing-card featured anim-up" data-level="beginner" data-tier="solo">
                         <div class="pricing-badge">Most Popular</div>
                         <div class="pricing-save-badge" style="display:none">Save 17%</div>
                         <div class="pricing-header">
-                            <h3>Pro Solo</h3>
-                            <p class="pricing-desc">Full power, 1 device</p>
+                            <h3>Beginner Solo</h3>
+                            <p class="pricing-desc">1 device</p>
                         </div>
                         <div class="pricing-price">
-                            <span class="price-amount" data-monthly="$39" data-annual="$390">$39</span>
+                            <span class="price-amount">$24.99</span>
+                            <span class="price-period" data-monthly="/ month" data-annual="/ year">/ month</span>
+                        </div>
+                        <p class="pricing-effective" style="display:none">That's just $20.75/month</p>
+                        <p class="pricing-trial">14-day trial included. After November 30 this plan is $29.99/month; start your trial by then and keep $24.99.</p>
+                        <ul class="pricing-features">
+                            <li><span class="pf-check">&#10003;</span> The starter butlers: Amazon Deals with Expired Butler cleanup, Message Brands with Keywords &amp; Filters, Daily Commission Butler, Video and Photo Reload, your Foyer page, plus every free tool</li>
+                            <li><span class="pf-check">&#10003;</span> AI included: 150 actions a month on Influencer Butler's own key, no OpenAI account needed</li>
+                            <li><span class="pf-check">&#10003;</span> A guided fast track to your first posts</li>
+                            <li><span class="pf-check">&#10003;</span> Upgrade to Power User in one click, any time, no new key</li>
+                            <li><span class="pf-check">&#10003;</span> 1 device</li>
+                        </ul>
+                        <a class="btn btn-primary btn-block checkout-btn" href="#" data-plan="beginner-solo-monthly" data-plan-monthly="beginner-solo-monthly" data-plan-annual="beginner-solo-annual">Start 14-day trial</a>
+                    </div>
+
+                    <div class="pricing-card anim-up" data-level="beginner" data-tier="trio">
+                        <div class="pricing-save-badge" style="display:none">Save 17%</div>
+                        <div class="pricing-header">
+                            <h3>Beginner Trio</h3>
+                            <p class="pricing-desc">Up to 3 devices</p>
+                        </div>
+                        <div class="pricing-price">
+                            <span class="price-amount">$44.99</span>
+                            <span class="price-period" data-monthly="/ month" data-annual="/ year">/ month</span>
+                        </div>
+                        <p class="pricing-effective" style="display:none">That's just $37.42/month</p>
+                        <p class="pricing-trial">14-day trial included. After November 30 this plan is $53.99/month; start your trial by then and keep $44.99.</p>
+                        <ul class="pricing-features">
+                            <li><span class="pf-check">&#10003;</span> The starter butlers: Amazon Deals with Expired Butler cleanup, Message Brands with Keywords &amp; Filters, Daily Commission Butler, Video and Photo Reload, your Foyer page, plus every free tool</li>
+                            <li><span class="pf-check">&#10003;</span> AI included: 150 actions a month on Influencer Butler's own key, no OpenAI account needed</li>
+                            <li><span class="pf-check">&#10003;</span> A guided fast track to your first posts</li>
+                            <li><span class="pf-check">&#10003;</span> Upgrade to Power User in one click, any time, no new key</li>
+                            <li><span class="pf-check">&#10003;</span> Up to 3 devices</li>
+                        </ul>
+                        <a class="btn btn-primary btn-block checkout-btn" href="#" data-plan="beginner-trio-monthly" data-plan-monthly="beginner-trio-monthly" data-plan-annual="beginner-trio-annual">Start 14-day trial</a>
+                    </div>
+
+                    <div class="pricing-card anim-up" data-level="beginner" data-tier="agency">
+                        <div class="pricing-save-badge" style="display:none">Save 17%</div>
+                        <div class="pricing-header">
+                            <h3>Beginner Agency</h3>
+                            <p class="pricing-desc">Up to 25 devices</p>
+                        </div>
+                        <div class="pricing-price">
+                            <span class="price-amount">$199</span>
+                            <span class="price-period" data-monthly="/ month" data-annual="/ year">/ month</span>
+                        </div>
+                        <p class="pricing-effective" style="display:none">That's just $165.83/month</p>
+                        <p class="pricing-trial">14-day trial included. After November 30 this plan is $239/month; start your trial by then and keep $199.</p>
+                        <ul class="pricing-features">
+                            <li><span class="pf-check">&#10003;</span> The starter butlers: Amazon Deals with Expired Butler cleanup, Message Brands with Keywords &amp; Filters, Daily Commission Butler, Video and Photo Reload, your Foyer page, plus every free tool</li>
+                            <li><span class="pf-check">&#10003;</span> AI included: 150 actions a month on Influencer Butler's own key, no OpenAI account needed</li>
+                            <li><span class="pf-check">&#10003;</span> A guided fast track to your first posts</li>
+                            <li><span class="pf-check">&#10003;</span> Upgrade to Power User in one click, any time, no new key</li>
+                            <li><span class="pf-check">&#10003;</span> Up to 25 devices</li>
+                        </ul>
+                        <a class="btn btn-primary btn-block checkout-btn" href="#" data-plan="beginner-agency-monthly" data-plan-monthly="beginner-agency-monthly" data-plan-annual="beginner-agency-annual">Start 14-day trial</a>
+                    </div>
+                </div>
+
+                <div class="pricing-grid" id="pricing-grid-power" data-level="power" hidden>
+                    <div class="pricing-card featured anim-up" data-level="power" data-tier="solo">
+                        <div class="pricing-badge">Most Popular</div>
+                        <div class="pricing-save-badge" style="display:none">Save 17%</div>
+                        <div class="pricing-header">
+                            <h3>Power User Solo</h3>
+                            <p class="pricing-desc">1 device</p>
+                        </div>
+                        <div class="pricing-price">
+                            <span class="price-amount">$39</span>
                             <span class="price-period" data-monthly="/ month" data-annual="/ year">/ month</span>
                         </div>
                         <p class="pricing-effective" style="display:none">That's just $32.50/month</p>
-                        <p class="pricing-trial">14-day Pro trial included - cancel before day 14 to avoid charges. After conversion, all sales final.</p>
+                        <p class="pricing-trial">14-day trial included. After November 30 this plan is $49/month; start your trial by then and keep $39.</p>
                         <ul class="pricing-features">
-                            <li style="align-items:flex-start;"><span class="pf-check">&#10003;</span> <span>All 50+ automation tools<small style="display:block;font-size:0.78rem;line-height:1.5;color:#475569;">AI butlers use your own OpenAI key, billed by OpenAI, not us. <a href="/help/tutorials/openai-api-setup" style="color:#c2410c;text-decoration:underline;">How it works</a></small></span></li>
-                            <li><span class="pf-check">&#10003;</span> <strong>Unlimited</strong> CC brand messages</li>
-                            <li><span class="pf-check">&#10003;</span> <strong>Unlimited</strong> Instagram DMs</li>
-                            <li><span class="pf-check">&#10003;</span> Commission harvesting</li>
-                            <li><span class="pf-check">&#10003;</span> Deep link &amp; affiliate integrations</li>
-                            <li><span class="pf-check">&#10003;</span> 1 activated device</li>
+                            <li><span class="pf-check">&#10003;</span> All 50+ automation tools</li>
+                            <li><span class="pf-check">&#10003;</span> <span><strong>Unlimited</strong> CC brand messages and Instagram DMs</span></li>
+                            <li><span class="pf-check">&#10003;</span> Commission harvesting, deep links and affiliate integrations</li>
+                            <li style="align-items:flex-start;"><span class="pf-check">&#10003;</span> <span>Unlimited AI on your own OpenAI key<small style="display:block;font-size:0.78rem;line-height:1.5;color:#475569;">Billed by OpenAI, not us, usually pennies. <a href="/help/tutorials/openai-api-setup" style="color:#c2410c;text-decoration:underline;">How it works</a></small></span></li>
+                            <li><span class="pf-check">&#10003;</span> 1:1 call booking with the team</li>
+                            <li><span class="pf-check">&#10003;</span> 1 device</li>
                         </ul>
-                        <a class="btn btn-primary btn-block checkout-btn" href="#" data-plan="monthly" data-plan-monthly="monthly" data-plan-annual="annual">Buy Now!</a>
+                        <a class="btn btn-primary btn-block checkout-btn" href="#" data-plan="power-solo-monthly" data-plan-monthly="power-solo-monthly" data-plan-annual="power-solo-annual">Start 14-day trial</a>
                     </div>
 
-                    <!-- PRO TRIO -->
-                    <div class="pricing-card anim-up">
+                    <div class="pricing-card anim-up" data-level="power" data-tier="trio">
                         <div class="pricing-save-badge" style="display:none">Save 17%</div>
                         <div class="pricing-header">
-                            <h3>Pro Trio</h3>
-                            <p class="pricing-desc">For small teams - up to 3 devices</p>
+                            <h3>Power User Trio</h3>
+                            <p class="pricing-desc">Up to 3 devices</p>
                         </div>
                         <div class="pricing-price">
-                            <span class="price-amount" data-monthly="$69" data-annual="$690">$69</span>
+                            <span class="price-amount">$69</span>
                             <span class="price-period" data-monthly="/ month" data-annual="/ year">/ month</span>
                         </div>
                         <p class="pricing-effective" style="display:none">That's just $57.50/month</p>
-                        <p class="pricing-trial">14-day Pro trial included - cancel before day 14 to avoid charges. After conversion, all sales final.</p>
+                        <p class="pricing-trial">14-day trial included. After November 30 this plan is $83/month; start your trial by then and keep $69.</p>
                         <ul class="pricing-features">
-                            <li><span class="pf-check">&#10003;</span> Everything in Pro Solo</li>
-                            <li><span class="pf-check">&#10003;</span> Up to 3 activated devices</li>
-                            <li><span class="pf-check">&#10003;</span> Shared seat pool</li>
+                            <li><span class="pf-check">&#10003;</span> All 50+ automation tools</li>
+                            <li><span class="pf-check">&#10003;</span> <span><strong>Unlimited</strong> CC brand messages and Instagram DMs</span></li>
+                            <li><span class="pf-check">&#10003;</span> Commission harvesting, deep links and affiliate integrations</li>
+                            <li style="align-items:flex-start;"><span class="pf-check">&#10003;</span> <span>Unlimited AI on your own OpenAI key<small style="display:block;font-size:0.78rem;line-height:1.5;color:#475569;">Billed by OpenAI, not us, usually pennies. <a href="/help/tutorials/openai-api-setup" style="color:#c2410c;text-decoration:underline;">How it works</a></small></span></li>
+                            <li><span class="pf-check">&#10003;</span> 1:1 call booking with the team</li>
+                            <li><span class="pf-check">&#10003;</span> Up to 3 devices</li>
                         </ul>
-                        <a class="btn btn-primary btn-block checkout-btn" href="#" data-plan="duo-monthly" data-plan-monthly="duo-monthly" data-plan-annual="duo-annual">Buy Now!</a>
+                        <a class="btn btn-primary btn-block checkout-btn" href="#" data-plan="power-trio-monthly" data-plan-monthly="power-trio-monthly" data-plan-annual="power-trio-annual">Start 14-day trial</a>
                     </div>
 
-                    <!-- PRO TEAM -->
-                    <div class="pricing-card anim-up">
+                    <div class="pricing-card anim-up" data-level="power" data-tier="team">
                         <div class="pricing-save-badge" style="display:none">Save 17%</div>
                         <div class="pricing-header">
-                            <h3>Pro Team</h3>
-                            <p class="pricing-desc">For creator teams - up to 10 devices</p>
+                            <h3>Power User Team</h3>
+                            <p class="pricing-desc">Up to 10 devices</p>
                         </div>
                         <div class="pricing-price">
-                            <span class="price-amount" data-monthly="$129" data-annual="$1,290">$129</span>
+                            <span class="price-amount">$129</span>
                             <span class="price-period" data-monthly="/ month" data-annual="/ year">/ month</span>
                         </div>
                         <p class="pricing-effective" style="display:none">That's just $107.50/month</p>
-                        <p class="pricing-trial">14-day Pro trial included - cancel before day 14 to avoid charges. After conversion, all sales final.</p>
+                        <p class="pricing-trial">14-day trial included. After November 30 this plan is $155/month; start your trial by then and keep $129.</p>
                         <ul class="pricing-features">
-                            <li><span class="pf-check">&#10003;</span> Everything in Pro Trio</li>
-                            <li><span class="pf-check">&#10003;</span> Up to 10 activated devices</li>
-                            <li><span class="pf-check">&#10003;</span> Shared seat pool for your team</li>
-                            <li><span class="pf-check">&#10003;</span> Priority email support</li>
+                            <li><span class="pf-check">&#10003;</span> All 50+ automation tools</li>
+                            <li><span class="pf-check">&#10003;</span> <span><strong>Unlimited</strong> CC brand messages and Instagram DMs</span></li>
+                            <li><span class="pf-check">&#10003;</span> Commission harvesting, deep links and affiliate integrations</li>
+                            <li style="align-items:flex-start;"><span class="pf-check">&#10003;</span> <span>Unlimited AI on your own OpenAI key<small style="display:block;font-size:0.78rem;line-height:1.5;color:#475569;">Billed by OpenAI, not us, usually pennies. <a href="/help/tutorials/openai-api-setup" style="color:#c2410c;text-decoration:underline;">How it works</a></small></span></li>
+                            <li><span class="pf-check">&#10003;</span> 1:1 call booking with the team</li>
+                            <li><span class="pf-check">&#10003;</span> Up to 10 devices</li>
                         </ul>
-                        <a class="btn btn-primary btn-block checkout-btn" href="#" data-plan="team-monthly" data-plan-monthly="team-monthly" data-plan-annual="team-annual">Buy Now!</a>
+                        <a class="btn btn-primary btn-block checkout-btn" href="#" data-plan="power-team-monthly" data-plan-monthly="power-team-monthly" data-plan-annual="power-team-annual">Start 14-day trial</a>
                     </div>
 
-                    <!-- PRO AGENCY -->
-                    <div class="pricing-card anim-up">
+                    <div class="pricing-card anim-up" data-level="power" data-tier="agency">
                         <div class="pricing-save-badge" style="display:none">Save 17%</div>
                         <div class="pricing-header">
-                            <h3>Pro Agency</h3>
-                            <p class="pricing-desc">For agencies - up to 25 devices</p>
+                            <h3>Power User Agency</h3>
+                            <p class="pricing-desc">Up to 25 devices</p>
                         </div>
                         <div class="pricing-price">
-                            <span class="price-amount" data-monthly="$299" data-annual="$2,990">$299</span>
+                            <span class="price-amount">$299</span>
                             <span class="price-period" data-monthly="/ month" data-annual="/ year">/ month</span>
                         </div>
                         <p class="pricing-effective" style="display:none">That's just $249.17/month</p>
-                        <p class="pricing-trial">14-day Pro trial included - cancel before day 14 to avoid charges. After conversion, all sales final.</p>
+                        <p class="pricing-trial">14-day trial included. After November 30 this plan is $359/month; start your trial by then and keep $299.</p>
                         <ul class="pricing-features">
-                            <li><span class="pf-check">&#10003;</span> Everything in Pro Team</li>
-                            <li><span class="pf-check">&#10003;</span> Up to 25 activated devices</li>
-                            <li><span class="pf-check">&#10003;</span> Priority feature requests</li>
-                            <li><span class="pf-check">&#10003;</span> Dedicated support</li>
-                            <li><span class="pf-check">&#10003;</span> Early access to new butlers</li>
+                            <li><span class="pf-check">&#10003;</span> All 50+ automation tools</li>
+                            <li><span class="pf-check">&#10003;</span> <span><strong>Unlimited</strong> CC brand messages and Instagram DMs</span></li>
+                            <li><span class="pf-check">&#10003;</span> Commission harvesting, deep links and affiliate integrations</li>
+                            <li style="align-items:flex-start;"><span class="pf-check">&#10003;</span> <span>Unlimited AI on your own OpenAI key<small style="display:block;font-size:0.78rem;line-height:1.5;color:#475569;">Billed by OpenAI, not us, usually pennies. <a href="/help/tutorials/openai-api-setup" style="color:#c2410c;text-decoration:underline;">How it works</a></small></span></li>
+                            <li><span class="pf-check">&#10003;</span> 1:1 call booking with the team</li>
+                            <li><span class="pf-check">&#10003;</span> Up to 25 devices</li>
                         </ul>
-                        <a class="btn btn-primary btn-block checkout-btn" href="#" data-plan="agency-monthly" data-plan-monthly="agency-monthly" data-plan-annual="agency-annual">Buy Now!</a>
+                        <a class="btn btn-primary btn-block checkout-btn" href="#" data-plan="power-agency-monthly" data-plan-monthly="power-agency-monthly" data-plan-annual="power-agency-annual">Start 14-day trial</a>
                     </div>
                 </div>
-                <p style="text-align:center;font-size:0.85rem;color:var(--muted);margin-top:1.5rem;max-width:820px;margin-left:auto;margin-right:auto;line-height:1.6;">By proceeding, you agree to our <a href="legal/terms.html" style="color:var(--brand-700);text-decoration:underline;">Terms of Service</a>, <a href="legal/eula.html" style="color:var(--brand-700);text-decoration:underline;">EULA</a>, and <a href="legal/refund.html" style="color:var(--brand-700);text-decoration:underline;">Refund Policy</a>. <strong>This is an automatically-renewing subscription.</strong> Your payment method will be charged the recurring price of the plan you select (Pro Solo from $39/month or $390/year; Pro Trio, Pro Team, and Pro Agency are higher) at the end of the 14-day free trial and on each renewal date thereafter until you cancel. You authorize these recurring charges by starting the trial and providing a payment instrument. <strong>All sales are final after the trial converts</strong> - cancel anytime before day 14 to avoid any charge. We do not refund the current or any past billing period, or the unused remainder of an annual plan. The software is delivered electronically on payment; you expressly consent to immediate performance and waive any statutory right of withdrawal. Before initiating a chargeback, PayPal claim, or bank dispute, contact <a href="mailto:hello@influencerbutler.com" style="color:var(--brand-700);text-decoration:underline;">hello@influencerbutler.com</a> - filing a dispute without contacting us first is a material breach of these terms.</p>
+                <ul class="trust-row" aria-label="Plan guarantees">
+                    <li>14-day trial on every paid plan</li>
+                    <li>Cancel any time before day 14</li>
+                    <li>Windows and Mac</li>
+                    <li><a href="/security">How we protect your accounts</a></li>
+                </ul>
+                <p style="text-align:center;font-size:0.85rem;color:var(--muted);margin-top:1.5rem;max-width:820px;margin-left:auto;margin-right:auto;line-height:1.6;">By proceeding, you agree to our <a href="legal/terms.html" style="color:var(--brand-700);text-decoration:underline;">Terms of Service</a>, <a href="legal/eula.html" style="color:var(--brand-700);text-decoration:underline;">EULA</a>, and <a href="legal/refund.html" style="color:var(--brand-700);text-decoration:underline;">Refund Policy</a>. <strong>This is an automatically-renewing subscription.</strong> Your payment method will be charged the recurring price of the plan you select (Beginner Solo from <span class="js-price" data-level="beginner" data-tier="solo" data-cycle="monthly">$24.99</span>/month or <span class="js-price" data-level="beginner" data-tier="solo" data-cycle="annual">$249</span>/year; Power User and larger plans are higher) at the end of the 14-day free trial and on each renewal date thereafter until you cancel. You authorize these recurring charges by starting the trial and providing a payment instrument. <strong>All sales are final after the trial converts</strong> - cancel anytime before day 14 to avoid any charge. We do not refund the current or any past billing period, or the unused remainder of an annual plan. The software is delivered electronically on payment; you expressly consent to immediate performance and waive any statutory right of withdrawal. Before initiating a chargeback, PayPal claim, or bank dispute, contact <a href="mailto:hello@influencerbutler.com" style="color:var(--brand-700);text-decoration:underline;">hello@influencerbutler.com</a> - filing a dispute without contacting us first is a material breach of these terms.</p>
                 <script>
                     (function () {
                         const checkoutButtons = document.querySelectorAll('.checkout-btn');
 
-                        // Plan strings the checkout APIs (/api/checkout, /api/checkout/guest)
-                        // accept. Bare "monthly"/"annual" alias to Pro Solo for back-compat.
+                        // Beginner / Power User plan strings the checkout APIs (/api/checkout,
+                        // /api/checkout/guest) accept. Mirrors levelPlanString() in
+                        // src/lib/pricing-constants.ts.
                         const ALLOWED_PLANS = [
-                            'monthly', 'annual',
-                            'solo-monthly', 'solo-annual',
-                            'duo-monthly', 'duo-annual',
-                            'team-monthly', 'team-annual',
-                            'agency-monthly', 'agency-annual',
+                            'beginner-solo-monthly', 'beginner-solo-annual',
+                            'beginner-trio-monthly', 'beginner-trio-annual',
+                            'beginner-agency-monthly', 'beginner-agency-annual',
+                            'power-solo-monthly', 'power-solo-annual',
+                            'power-trio-monthly', 'power-trio-annual',
+                            'power-team-monthly', 'power-team-annual',
+                            'power-agency-monthly', 'power-agency-annual',
                         ];
 
-                        // Billing cadence toggle: swap displayed prices + the data-plan each
-                        // CTA submits, without a round-trip. Defaults to monthly (matches /pricing).
+                        // Prices in cents [monthly, annual], both families. Mirrors LEVEL_PRICE_CENTS
+                        // and PRICE_CHANGE in src/lib/pricing-constants.ts: checkouts that start at
+                        // or after PRICE_CHANGE_AT pay the "next" prices, so this static page flips
+                        // on its own too. Keep both in sync when prices change.
+                        const PRICE_CHANGE_AT = Date.parse('2026-12-01T08:00:00Z');
+                        const PRICES = {"current":{"beginner":{"solo":[2499,24900],"trio":[4499,44900],"agency":[19900,199000]},"power":{"solo":[3900,39000],"trio":[6900,69000],"team":[12900,129000],"agency":[29900,299000]}},"next":{"beginner":{"solo":[2999,29900],"trio":[5399,53900],"agency":[23900,239000]},"power":{"solo":[4900,49000],"trio":[8300,83000],"team":[15500,155000],"agency":[35900,359000]}}};
+                        const lockOpen = Date.now() < PRICE_CHANGE_AT;
+                        const table = lockOpen ? PRICES.current : PRICES.next;
+                        const money = (cents) => {
+                            const n = cents / 100;
+                            return '$' + (cents % 100 === 0
+                                ? n.toLocaleString('en-US')
+                                : n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                        };
+                        const priceOf = (level, tier, cycle) => {
+                            const row = table[level] && table[level][tier];
+                            return row ? row[cycle === 'annual' ? 1 : 0] : null;
+                        };
+
+                        // Every "from $X" mention outside the cards (prose, legal line, stats).
+                        // Some sit below this script (FAQ), so run again once the page is parsed.
+                        const fillPrices = () => {
+                            document.querySelectorAll('.js-price').forEach((el) => {
+                                const cents = priceOf(el.getAttribute('data-level'), el.getAttribute('data-tier'), el.getAttribute('data-cycle'));
+                                if (cents != null) el.textContent = money(cents);
+                            });
+                        };
+                        fillPrices();
+                        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fillPrices);
+                        if (!lockOpen) {
+                            const note = document.getElementById('price-lock-note');
+                            if (note) note.hidden = true;
+                        }
+
+                        // Level + billing cadence toggles: swap the visible grid, the displayed
+                        // prices and the data-plan each CTA submits, without a round-trip.
+                        // Defaults to Beginner, monthly (matches /pricing).
+                        const pricingSection = document.getElementById('pricing');
+                        let billing = 'monthly';
+                        const render = () => {
+                            if (!pricingSection) return;
+                            const annual = billing === 'annual';
+                            pricingSection.querySelectorAll('.pricing-card[data-level]').forEach((card) => {
+                                const level = card.getAttribute('data-level');
+                                const tier = card.getAttribute('data-tier');
+                                const cents = priceOf(level, tier, billing);
+                                const monthly = priceOf(level, tier, 'monthly');
+                                const yearly = priceOf(level, tier, 'annual');
+                                const amount = card.querySelector('.price-amount');
+                                if (amount && cents != null) amount.textContent = money(cents);
+                                const period = card.querySelector('.price-period');
+                                if (period) period.textContent = period.getAttribute('data-' + billing) || '';
+                                const effective = card.querySelector('.pricing-effective');
+                                if (effective) {
+                                    effective.textContent = "That's just " + money(Math.round(yearly / 12)) + '/month';
+                                    effective.style.display = annual ? '' : 'none';
+                                }
+                                const save = card.querySelector('.pricing-save-badge');
+                                if (save) {
+                                    save.textContent = 'Save ' + Math.round(((monthly * 12 - yearly) / (monthly * 12)) * 100) + '%';
+                                    save.style.display = annual ? '' : 'none';
+                                }
+                                const trial = card.querySelector('.pricing-trial');
+                                if (trial) {
+                                    const unit = annual ? '/year' : '/month';
+                                    const future = PRICES.next[level][tier][annual ? 1 : 0];
+                                    trial.textContent = lockOpen
+                                        ? '14-day trial included. After November 30 this plan is ' + money(future) + unit + '; start your trial by then and keep ' + money(cents) + '.'
+                                        : '14-day trial included - cancel before day 14 to avoid charges. After conversion, all sales final.';
+                                }
+                                const btn = card.querySelector('.checkout-btn');
+                                if (btn) {
+                                    const plan = btn.getAttribute('data-plan-' + billing);
+                                    if (plan) {
+                                        btn.setAttribute('data-plan', plan);
+                                        // Real URL so the button still works without JavaScript.
+                                        btn.setAttribute('href', '/api/checkout/guest?plan=' + plan);
+                                    }
+                                }
+                            });
+                        };
+
                         const billingToggle = document.querySelector('.billing-toggle');
                         if (billingToggle) {
-                            const pricingSection = billingToggle.closest('.pricing');
                             const opts = billingToggle.querySelectorAll('.billing-opt');
-                            const applyBilling = (billing) => {
-                                const annual = billing === 'annual';
-                                opts.forEach((opt) => {
-                                    const active = opt.getAttribute('data-billing') === billing;
-                                    opt.classList.toggle('is-active', active);
-                                    opt.setAttribute('aria-selected', active ? 'true' : 'false');
-                                });
-                                pricingSection.querySelectorAll('.price-amount, .price-period').forEach((el) => {
-                                    const next = el.getAttribute('data-' + billing);
-                                    if (next !== null) el.textContent = next;
-                                });
-                                // The "/month equivalent" line and Save badge only apply to annual.
-                                pricingSection.querySelectorAll('.pricing-effective').forEach((el) => {
-                                    el.style.display = annual ? '' : 'none';
-                                });
-                                pricingSection.querySelectorAll('.pricing-save-badge').forEach((el) => {
-                                    el.style.display = annual ? '' : 'none';
-                                });
-                                pricingSection.querySelectorAll('.checkout-btn').forEach((btn) => {
-                                    const plan = btn.getAttribute('data-plan-' + billing);
-                                    if (plan) btn.setAttribute('data-plan', plan);
-                                });
-                            };
                             opts.forEach((opt) => {
-                                opt.addEventListener('click', () => applyBilling(opt.getAttribute('data-billing')));
+                                opt.addEventListener('click', () => {
+                                    billing = opt.getAttribute('data-billing') === 'annual' ? 'annual' : 'monthly';
+                                    opts.forEach((o) => {
+                                        const active = o === opt;
+                                        o.classList.toggle('is-active', active);
+                                        o.setAttribute('aria-selected', active ? 'true' : 'false');
+                                    });
+                                    render();
+                                });
                             });
-                            applyBilling('monthly');
                         }
+
+                        const levelToggle = document.querySelector('.level-toggle');
+                        if (levelToggle) {
+                            const levelOpts = levelToggle.querySelectorAll('.level-opt');
+                            levelOpts.forEach((opt) => {
+                                opt.addEventListener('click', () => {
+                                    const level = opt.getAttribute('data-level');
+                                    levelOpts.forEach((o) => {
+                                        const active = o === opt;
+                                        o.classList.toggle('is-active', active);
+                                        o.setAttribute('aria-pressed', active ? 'true' : 'false');
+                                    });
+                                    document.querySelectorAll('.pricing-grid[data-level]').forEach((g) => {
+                                        g.hidden = g.getAttribute('data-level') !== level;
+                                    });
+                                });
+                            });
+                        }
+
+                        render();
 
                         // Match the auth-token cookie specifically - other sb-* cookies
                         // (PKCE verifiers etc.) exist for anonymous visitors too, and a
@@ -1931,6 +2121,16 @@
                                 if (!ALLOWED_PLANS.includes(plan)) {
                                     return;
                                 }
+
+                                // Loading state so a slow checkout never looks like a dead click.
+                                if (button.getAttribute('aria-busy') === 'true') return;
+                                const idleLabel = button.textContent;
+                                button.setAttribute('aria-busy', 'true');
+                                button.textContent = 'Opening secure checkout...';
+                                setTimeout(() => {
+                                    button.removeAttribute('aria-busy');
+                                    button.textContent = idleLabel;
+                                }, 8000);
 
                                 if (!hasSupabaseAuthCookie()) {
                                     // Payment-first guest flow via the LS overlay.
@@ -2116,6 +2316,7 @@
                     <a href="/go/download?src=home-final" class="btn btn-primary btn-lg">Start Free</a>
                     <a href="#pricing" class="btn btn-outline-white btn-lg">See Pro Plans</a>
                 </div>
+                <p class="final-cta-note">No card needed for the free tier. Works on Windows and Mac. <a href="/security">Is it safe for my accounts?</a></p>
             </div>
         </section>
     </main>
@@ -2187,7 +2388,7 @@
                 <ul class="affiliate-band-points">
                     <li>30% recurring commission (12 mo per referral)</li>
                     <li>30-day referral cookie</li>
-                    <li>No caps &mdash; earn forever</li>
+                    <li>No caps, earn forever</li>
                 </ul>
             </div>
             <div class="affiliate-band-actions">
@@ -2260,5 +2461,25 @@
   <script src="/js/webmcp.js" defer></script>
     <script src="/js/image-lightbox.js" defer></script>
     <script src="/js/affiliate-touch.js" defer></script>
+    <!-- Mobile sticky CTA: shown on phones after the hero, hidden while hero, pricing or final CTA are on screen. -->
+    <div class="mobile-cta" id="mobile-cta" hidden>
+        <a href="/go/download?src=home-sticky" class="btn btn-primary">Start Free</a>
+        <a href="#pricing" class="mobile-cta-link">See plans</a>
+    </div>
+    <script>
+      (function () {
+        var bar = document.getElementById('mobile-cta');
+        if (!bar || !('IntersectionObserver' in window)) return;
+        var targets = ['hero', 'pricing'].map(function (id) { return document.getElementById(id); });
+        var fin = document.querySelector('.final-cta');
+        if (fin) targets.push(fin);
+        var visible = new Set();
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) { e.isIntersecting ? visible.add(e.target) : visible.delete(e.target); });
+          bar.hidden = visible.size > 0;
+        });
+        targets.forEach(function (t) { if (t) io.observe(t); });
+      })();
+    </script>
   </body>
 </html>

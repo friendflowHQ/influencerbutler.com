@@ -881,6 +881,42 @@ h3 { font-size: 1.25rem; font-weight: 600; line-height: 1.3; }
 .pricing-effective { font-size: 0.85rem; color: var(--brand-700); font-weight: 600; margin-bottom: 0.25rem; }
 .pricing-trial { font-size: 0.8rem; color: var(--muted); margin-bottom: 1.5rem; }
 .pricing-features { margin-bottom: 2rem; }
+/* Beginner / Power User level picker above the cadence switch (homepage + /landing). */
+.level-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  max-width: 720px;
+  margin: 2.5rem auto 0;
+}
+.level-opt {
+  display: block;
+  text-align: left;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--bg);
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  font: inherit;
+  transition: all var(--transition);
+}
+.level-opt:hover { border-color: var(--brand-700); }
+.level-opt.is-active { border-color: var(--brand-700); background: #fff7ed; box-shadow: var(--shadow-lg); }
+.level-opt-name { display: block; font-size: 1.05rem; font-weight: 700; color: var(--text); }
+.level-opt-tag { display: block; margin-top: 0.25rem; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.45; }
+.level-toggle + .billing-toggle { margin-top: 1.25rem; }
+.price-lock-note { margin: 1rem auto 0; max-width: 640px; font-size: 0.9rem; font-weight: 600; color: var(--brand-700); }
+.pricing-grid[hidden] { display: none; }
+/* Featured card: keep "Most Popular" clear of the annual "Save N%" badge. */
+.pricing-card.featured .pricing-badge { left: 16px; transform: none; }
+.pricing-grid.cols-3 { grid-template-columns: repeat(3, 1fr); max-width: 1000px; margin-left: auto; margin-right: auto; }
+@media (max-width: 1024px) {
+  .pricing-grid.cols-3 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .pricing-grid.cols-3 { grid-template-columns: 1fr; max-width: 420px; }
+  .level-toggle { grid-template-columns: 1fr; }
+}
 .pricing-features li {
   display: flex;
   align-items: center;
@@ -1877,3 +1913,31 @@ a.feature-card:hover h3 { color: var(--brand-600); }
   margin-right: auto;
 }
 .home-video .feature-video-transcript { margin-top: 1rem; text-align: left; }
+
+/* ---- UX pass: hero demo link, how-it-works needs, plan helper, trust row, mobile CTA ---- */
+.hero-demo-link { margin: 0.75rem 0 0; font-weight: 600; }
+.hero-demo-link a { color: var(--brand-700); text-decoration: underline; text-underline-offset: 0.15em; }
+.how-needs { max-width: 760px; margin: 2rem auto 0; text-align: center; color: var(--text-secondary); line-height: 1.6; }
+.how-needs a:not(.btn) { color: var(--brand-700); font-weight: 600; text-decoration: underline; text-underline-offset: 0.15em; }
+.how-needs-cta { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; align-items: center; margin-top: 1rem; }
+.plan-helper { max-width: 760px; margin: 0 auto 1.5rem; border: 1px solid var(--border); border-radius: 12px; padding: 0.75rem 1.1rem; background: #fff; }
+.plan-helper summary { cursor: pointer; font-weight: 600; color: var(--brand-700); }
+.plan-helper ul { margin: 0.75rem 0 0; padding-left: 1.2rem; line-height: 1.6; color: var(--text-secondary); }
+.plan-helper li + li { margin-top: 0.4rem; }
+.trust-row { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; justify-content: center; margin: 1.5rem 0 0; padding: 0; font-size: 0.9rem; font-weight: 600; }
+.trust-row li::before { content: "\2713"; color: #047857; margin-right: 0.4rem; }
+.trust-row a { color: var(--brand-700); text-decoration: underline; text-underline-offset: 0.15em; }
+.final-cta-note { margin-top: 1rem; font-size: 0.9rem; opacity: 0.9; }
+.final-cta-note a { color: inherit; text-decoration: underline; }
+.checkout-btn[aria-busy="true"] { opacity: 0.7; pointer-events: none; }
+.mobile-cta { display: none; }
+@media (max-width: 720px) {
+  .mobile-cta:not([hidden]) {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
+    padding: 0.6rem 16px calc(0.6rem + env(safe-area-inset-bottom));
+    background: #fff; border-top: 1px solid var(--border); box-shadow: 0 -4px 20px rgba(0,0,0,.08);
+  }
+  .mobile-cta .btn { flex: 1; min-height: 44px; }
+  .mobile-cta-link { color: var(--brand-700); font-weight: 600; text-decoration: underline; min-height: 44px; display: inline-flex; align-items: center; }
+}
