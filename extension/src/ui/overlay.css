@@ -151,7 +151,7 @@
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #94a3b8;
+  color: #55657a;
   cursor: pointer;
   transition: color 0.12s ease, background 0.12s ease, transform 0.12s ease;
 }
@@ -173,7 +173,7 @@
   border-radius: 999px;
   background: #f0fdf4;
   color: #15803d;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1.4;
   cursor: pointer;
@@ -190,7 +190,7 @@
   background: #15803d;
 }
 
-.header .chev { color: #94a3b8; font-size: 12px; font-weight: 600; }
+.header .chev { color: #55657a; font-size: 12px; font-weight: 600; }
 
 /* Text-size and expand buttons in the header (see viewTools in ui/components.ts). */
 .header .view-tools { flex: none; display: inline-flex; align-items: center; gap: 2px; }
@@ -222,7 +222,7 @@
 
 .section h4 {
   margin: 0 0 10px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -240,7 +240,7 @@
    and readable (not hidden behind an infotip) so the monetization is disclosed
    up front, per the Chrome Web Store affiliate-disclosure rule. */
 .affiliate-note {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.45;
   color: #64748b;
 }
@@ -271,7 +271,7 @@
   border-radius: 999px;
   background: #fed7aa;
   color: #c2410c;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 800;
   font-style: normal;
   line-height: 1;
@@ -365,7 +365,7 @@
 }
 .score-badge .score-meta { display: flex; flex-direction: column; gap: 1px; }
 .score-badge .score-band { font-size: 13px; font-weight: 800; letter-spacing: 0.02em; }
-.score-badge .score-outof { font-size: 11.5px; color: #94a3b8; font-weight: 600; }
+.score-badge .score-outof { font-size: 12px; color: #55657a; font-weight: 600; }
 .score-badge.hot { background: #fff7ed; border-color: #fed7aa; }
 .score-badge.hot .score-num, .score-badge.hot .score-band { color: #c2410c; }
 .score-badge.warm { background: #fffbeb; border-color: #fde68a; }
@@ -389,7 +389,7 @@
   border-radius: 999px;
   padding: 2px 10px;
   font: inherit;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   color: #c2410c;
   background: #fff7ed;
@@ -403,7 +403,7 @@
 .snapshot-campaigns { margin-top: 10px; padding-top: 10px; border-top: 1px solid #e2e8f0; }
 .snapshot-campaigns-head {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -416,7 +416,7 @@
 .criteria li .mark { font-weight: 800; width: 14px; flex: none; text-align: center; }
 .criteria li.pass .mark { color: #16a34a; }
 .criteria li.fail .mark { color: #dc2626; }
-.criteria li.unknown .mark { color: #94a3b8; }
+.criteria li.unknown .mark { color: #55657a; }
 
 .kv { display: grid; grid-template-columns: 1fr auto; gap: 7px 12px; font-size: 13px; align-items: baseline; }
 .kv dt { color: #475569; }
@@ -436,7 +436,7 @@
 }
 .calc-card-title {
   margin: 0 0 8px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -581,7 +581,7 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
   cursor: pointer;
   user-select: none;
   font-family: inherit;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -591,7 +591,7 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
 .disclosure-head:focus-visible { outline: 2px solid #f97316; outline-offset: 2px; }
 .disclosure-caret {
   flex: none;
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1;
   transition: transform 0.15s ease;
 }
@@ -641,9 +641,9 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
   padding: 8px 10px;
 }
 .ls-tile .ls-val { font-size: 18px; font-weight: 800; color: #0f172a; line-height: 1.1; }
-.ls-tile .ls-lab { font-size: 11.5px; color: #64748b; margin-top: 2px; }
+.ls-tile .ls-lab { font-size: 12px; color: #64748b; margin-top: 2px; }
 .ls-sublabel {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: #334155;
   text-transform: uppercase;
@@ -671,7 +671,7 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
 .ls-pulse { display: flex; align-items: flex-end; gap: 3px; height: 44px; }
 .ls-pulse-bar { flex: 1; background: linear-gradient(180deg, #fdba74, #c2410c); border-radius: 3px 3px 0 0; min-height: 2px; }
 .ls-badge {
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -688,7 +688,7 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
   border: none;
   color: #c2410c;
   font-weight: 600;
-  font-size: 11.5px;
+  font-size: 12px;
   cursor: pointer;
   padding: 0;
   margin-left: auto;
@@ -705,7 +705,7 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
   padding: 6px 8px;
 }
 .pp-metric .pp-val { font-size: 15px; font-weight: 800; color: #0f172a; }
-.pp-metric .pp-lab { font-size: 10.5px; color: #64748b; }
+.pp-metric .pp-lab { font-size: 12px; color: #64748b; }
 .pp-strip { display: flex; align-items: flex-end; gap: 1px; height: 34px; }
 .pp-day { flex: 1; border-radius: 1px; min-width: 1px; }
 .pp-day.visible { background: linear-gradient(180deg, #34d399, #15803d); min-height: 3px; }
@@ -723,7 +723,7 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
   gap: 4px;
   border-radius: 999px;
   padding: 2px 9px;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   vertical-align: middle;
@@ -761,7 +761,7 @@ textarea:focus { outline: 2px solid #f97316; outline-offset: 0; border-color: tr
   align-items: center;
   border-radius: 999px;
   padding: 2px 8px;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   border: 1px solid #e2e8f0;
   background: #f8fafc;
@@ -778,7 +778,7 @@ a.tile-chip:hover { filter: brightness(0.97); }
 /* The "Upload to YouTube" action chip (a button styled like .tile-chip). */
 .tile-chip.yt-upload-btn {
   font: inherit;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   background: #eef2ff;
@@ -794,7 +794,7 @@ a.tile-chip:hover { filter: brightness(0.97); }
 .tile-convo { display: inline-flex; align-items: center; gap: 4px; }
 .tile-chip.convo-chip, .tile-chip.convo-app {
   font: inherit;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -808,7 +808,7 @@ a.tile-chip:hover { filter: brightness(0.97); }
    product image stays clear until someone asks for the details. */
 .tile-chip.camp-chip {
   font: inherit;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -833,8 +833,8 @@ a.tile-chip:hover { filter: brightness(0.97); }
 .camp-card.open { display: block; }
 .camp-sec + .camp-sec { margin-top: 8px; padding-top: 8px; border-top: 1px solid #e2e8f0; }
 .camp-title { font-weight: 800; font-size: 12px; color: #0f172a; }
-.camp-line { margin-top: 3px; font-size: 11.5px; line-height: 1.4; font-weight: 600; }
-.camp-note { margin-top: 5px; font-size: 10.5px; line-height: 1.4; color: #64748b; }
+.camp-line { margin-top: 3px; font-size: 12px; line-height: 1.4; font-weight: 600; }
+.camp-note { margin-top: 5px; font-size: 12px; line-height: 1.4; color: #64748b; }
 
 /* Improve Reach chip + advisory: the "not on detail pages" state becomes a
    clickable amber chip that expands a card naming Amazon's reason and a concrete
@@ -859,28 +859,28 @@ a.tile-chip:hover { filter: brightness(0.97); }
 .reach-advice .reach-label {
   margin-top: 8px;
   font-weight: 700;
-  font-size: 10.5px;
+  font-size: 12px;
   letter-spacing: 0.03em;
   text-transform: uppercase;
   color: #64748b;
 }
-.reach-advice .reach-reason { margin-top: 3px; font-size: 11.5px; line-height: 1.45; }
+.reach-advice .reach-reason { margin-top: 3px; font-size: 12px; line-height: 1.45; }
 .reach-advice ul { margin: 4px 0 0; padding-left: 16px; }
-.reach-advice li { margin: 3px 0; font-size: 11.5px; line-height: 1.4; }
+.reach-advice li { margin: 3px 0; font-size: 12px; line-height: 1.4; }
 .reach-advice .reach-remedy {
   margin-top: 8px;
   padding: 7px 8px;
   background: #fff7ed;
   border: 1px solid #fed7aa;
   border-radius: 8px;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.45;
   color: #9a3412;
 }
 .reach-advice .reach-open {
   display: inline-block;
   margin-top: 8px;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   color: #c2410c;
   text-decoration: none;
@@ -911,7 +911,7 @@ a.tile-chip:hover { filter: brightness(0.97); }
 .benable-open:hover { text-decoration: underline; }
 .benable-rows { display: flex; flex-direction: column; gap: 6px; }
 /* The clickable "Earned $X" chip (a button styled like .tile-chip). */
-.earn-chip { font: inherit; font-size: 11.5px; cursor: pointer; }
+.earn-chip { font: inherit; font-size: 12px; cursor: pointer; }
 .earn-chip:hover { filter: brightness(0.97); }
 
 /* Brand Keywords chip: the search keyword the "Message Brands" tool used to
@@ -932,7 +932,7 @@ a.tile-chip:hover { filter: brightness(0.97); }
   vertical-align: middle;
   cursor: default;
 }
-.bkw-chip .bkw-glyph { flex: none; font-size: 10px; opacity: 0.9; }
+.bkw-chip .bkw-glyph { flex: none; font-size: 12px; opacity: 0.9; }
 .bkw-chip .bkw-kw {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -958,7 +958,7 @@ a.tile-chip:hover { filter: brightness(0.97); }
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
   white-space: nowrap;
 }
-.vlike-badge .vlike-heart { flex: none; font-size: 11px; line-height: 1; }
+.vlike-badge .vlike-heart { flex: none; font-size: 12px; line-height: 1; }
 .vlike-badge .vlike-count { line-height: 1; }
 /* Inbound-brand variant: a brand that only messaged the creator (never pitched)
    gets its Creator Connections signal (rate + cadence) in a cooler teal so it
@@ -1058,7 +1058,7 @@ a.tile-chip:hover { filter: brightness(0.97); }
 .mtpl-pick:hover { background: #fff7ed; }
 .mtpl-label { font-size: 13px; font-weight: 600; color: #0f172a; }
 .mtpl-preview {
-  font-size: 11.5px;
+  font-size: 12px;
   color: #64748b;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1070,7 +1070,7 @@ a.tile-chip:hover { filter: brightness(0.97); }
   border: 0;
   border-radius: 8px;
   background: transparent;
-  color: #94a3b8;
+  color: #55657a;
   font-size: 16px;
   line-height: 1;
   cursor: pointer;
@@ -1114,7 +1114,7 @@ a.tile-chip:hover { filter: brightness(0.97); }
   background: #f0fdfa;
   border: 1px solid #99f6e4;
   color: #0f766e;
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 700;
   vertical-align: middle;
 }
@@ -1143,7 +1143,7 @@ a.tile-chip:hover { filter: brightness(0.97); }
   white-space: nowrap;
   cursor: default;
 }
-.ccm-pill .ccm-glyph { flex: none; font-size: 10px; opacity: 0.9; }
+.ccm-pill .ccm-glyph { flex: none; font-size: 12px; opacity: 0.9; }
 .ccm-pill .ccm-pill-text { overflow: hidden; text-overflow: ellipsis; }
 .ccm-pill.kw { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
 .ccm-pill.rate { background: #f0fdfa; border-color: #99f6e4; color: #0f766e; }
@@ -1168,13 +1168,13 @@ a.tile-chip:hover { filter: brightness(0.97); }
 .ccm-card { padding: 6px 10px; gap: 6px; }
 .ccm-card-body { display: flex; flex-direction: column; gap: 8px; }
 .ccm-card-body[hidden] { display: none; }
-.ccm-card-toggle { margin-left: auto; padding: 2px 8px; font-size: 11px; }
+.ccm-card-toggle { margin-left: auto; padding: 2px 8px; font-size: 12px; }
 .ccm-fact { font-weight: 600; color: #334155; }
-.ccm-fact + .ccm-fact::before { content: "\00b7"; margin-right: 6px; color: #94a3b8; }
+.ccm-fact + .ccm-fact::before { content: "\00b7"; margin-right: 6px; color: #55657a; }
 .ccm-hint { margin: 0; color: #475569; }
 .ccm-meter { height: 6px; border-radius: 999px; background: #e2e8f0; overflow: hidden; }
 .ccm-meter-fill { height: 100%; border-radius: 999px; background: #c2410c; }
-.ccm-row-label { font-weight: 700; font-size: 11px; color: #475569; text-transform: uppercase; letter-spacing: 0.04em; }
+.ccm-row-label { font-weight: 700; font-size: 12px; color: #475569; text-transform: uppercase; letter-spacing: 0.04em; }
 .ccm-link {
   display: inline-block;
   padding: 3px 10px;
@@ -1352,7 +1352,7 @@ a.tile-chip:hover { filter: brightness(0.97); }
   border-radius: 999px;
   padding: 2px 8px;
   font: inherit;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   border: 1px solid #e2e8f0;
@@ -1406,11 +1406,11 @@ a.tile-chip:hover { filter: brightness(0.97); }
   border-top: 1px solid #f1f5f9;
 }
 .tile-menu-heading {
-  font-size: 10.5px;
+  font-size: 12px;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #94a3b8;
+  color: #55657a;
   padding: 2px 8px 4px;
 }
 .tile-menu-item {
@@ -1432,12 +1432,12 @@ a.tile-chip:hover { filter: brightness(0.97); }
 .sent-badge {
   float: right;
   margin-left: 8px;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   color: #15803d;
 }
 .btn.sent, .tile-menu-create.sent { color: #15803d; background: #f0fdf4; border-color: #bbf7d0; }
-.tile-menu-item.has-sub::after { content: " \203A"; color: #94a3b8; float: right; }
+.tile-menu-item.has-sub::after { content: " \203A"; color: #55657a; float: right; }
 .tile-menu-item.tile-menu-cta { color: #c2410c; font-weight: 800; }
 .tile-menu-sub {
   margin: 2px 0 2px 6px;
@@ -1670,7 +1670,7 @@ a.tile-chip:hover { filter: brightness(0.97); }
 .earn-row-main { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-weight: 700; }
 .earn-row-figs { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; text-align: right; }
 .earn-amt { font-weight: 800; color: #0f172a; font-variant-numeric: tabular-nums; }
-.earn-muted { font-size: 11.5px; font-weight: 600; color: #94a3b8; }
+.earn-muted { font-size: 12px; font-weight: 600; color: #55657a; }
 .earn-store-id { font-family: ui-monospace, "SFMono-Regular", Menlo, monospace; font-size: 12px; }
 .earn-camp-name { font-weight: 700; }
 
@@ -1684,9 +1684,9 @@ a.tile-chip:hover { filter: brightness(0.97); }
   overflow-x: auto;
 }
 .earn-bar-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; min-width: 34px; }
-.earn-bar-val { font-size: 10.5px; font-weight: 700; color: #475569; white-space: nowrap; }
+.earn-bar-val { font-size: 12px; font-weight: 700; color: #475569; white-space: nowrap; }
 .earn-bar { width: 20px; border-radius: 6px 6px 0 0; background: linear-gradient(180deg, #34d399, #15803d); }
-.earn-bar-label { font-size: 10.5px; font-weight: 700; color: #94a3b8; white-space: nowrap; }
+.earn-bar-label { font-size: 12px; font-weight: 700; color: #55657a; white-space: nowrap; }
 
 /* "View breakdown" link under the product-panel earnings chips. */
 .earn-link {
@@ -1724,7 +1724,7 @@ a.tile-chip:hover { filter: brightness(0.97); }
 .inline-card > * + * { margin-top: 8px; }
 .inline-card-title {
   margin: 0;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1735,7 +1735,7 @@ a.tile-chip:hover { filter: brightness(0.97); }
 }
 .inline-avail-label {
   margin: 0;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1913,8 +1913,8 @@ a.tile-chip:hover { filter: brightness(0.97); }
 }
 
 .whats-new-meta {
-  font-size: 11.5px;
-  color: #94a3b8;
+  font-size: 12px;
+  color: #55657a;
 }
 
 .whats-new-body {
@@ -1926,7 +1926,7 @@ a.tile-chip:hover { filter: brightness(0.97); }
 
 .whats-new-heading {
   margin: 0 0 5px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -2002,7 +2002,7 @@ a.tile-chip:hover { filter: brightness(0.97); }
 }
 .vmoney-group { margin-top: 10px; }
 .vmoney-group-title { margin: 0; font-size: 12px; font-weight: 700; color: #334155; }
-.vmoney-group-hint { display: block; font-size: 11px; color: #94a3b8; margin: 1px 0 4px; }
+.vmoney-group-hint { display: block; font-size: 12px; color: #55657a; margin: 1px 0 4px; }
 .vmoney-rows { display: flex; flex-direction: column; gap: 3px; }
 .vmoney-row {
   display: flex;
@@ -2219,3 +2219,13 @@ a.tile-chip:hover { filter: brightness(0.97); }
 .tile-chip[hidden] { display: none; }
 button.tile-chip.more { font: inherit; cursor: pointer; }
 button.tile-chip.more:focus-visible { outline: 3px solid #1d4ed8; outline-offset: 2px; }
+
+/* Respect the OS "reduce motion" setting: drop transitions, fades and transforms. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
