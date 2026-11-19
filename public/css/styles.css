@@ -1941,3 +1941,20 @@ a.feature-card:hover h3 { color: var(--brand-600); }
   .mobile-cta .btn { flex: 1; min-height: 44px; }
   .mobile-cta-link { color: var(--brand-700); font-weight: 600; text-decoration: underline; min-height: 44px; display: inline-flex; align-items: center; }
 }
+
+/* ---- Features: collapsed grid with outcome-led featured cards ---- */
+.feature-grid.is-collapsed .feature-card:not(.feature-card--featured) { display: none; }
+.feature-outcome { font-size: 0.95rem !important; font-weight: 700; color: var(--text) !important; line-height: 1.4 !important; margin-bottom: 0.35rem; }
+.feature-more { text-align: center; margin-top: 1.75rem; }
+
+/* ---- Mobile: collapsed long sections ---- */
+.mobile-collapse-btn { display: block; margin: 1.25rem auto 0; min-height: 44px; }
+@media (max-width: 720px) {
+  .is-mobile-collapsed { max-height: 560px; overflow: hidden; position: relative; }
+  .is-mobile-collapsed::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 120px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0), #fff); pointer-events: none;
+  }
+  .is-mobile-collapsed .mobile-collapse-btn { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 2; background: #fff; margin: 0; }
+}
+@media (min-width: 721px) { .mobile-collapse-btn { display: none; } }

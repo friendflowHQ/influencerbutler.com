@@ -52,10 +52,33 @@
     });
   }
 
-  /* ── Feature category tabs ── */
+  /* ── Feature category tabs + "Show all tools" ──
+     Without JS every card shows. With JS the grid starts collapsed to the
+     featured cards (all cards stay in the DOM for crawlers and keyboard users).
+     Choosing a category tab, or pressing Show all, reveals the rest. */
   const tabButtons = document.querySelectorAll(".tab-btn");
-  const featureCards = document.querySelectorAll(".feature-card");
-  if (tabButtons.length && featureCards.length) {
+  const featureGrid = document.getElementById("feature-grid");
+  const featureCards = featureGrid ? featureGrid.querySelectorAll(".feature-card") : [];
+  if (featureGrid && featureCards.length) {
+    var activeTab = "all";
+    var expanded = false;
+    var moreWrap = document.getElementById("feature-more");
+    var moreBtn = document.getElementById("feature-more-btn");
+    var countEl = document.querySelector('.tab-btn[data-tab="all"] .tab-count');
+    if (countEl) countEl.textContent = String(featureCards.length);
+    var applyFeatures = function () {
+      var collapsed = activeTab === "all" && !expanded;
+      featureGrid.classList.toggle("is-collapsed", collapsed);
+      featureCards.forEach(function (card) {
+        var match = activeTab === "all" || card.getAttribute("data-category") === activeTab;
+        card.style.display = match ? "" : "none";
+      });
+      if (moreWrap) moreWrap.hidden = activeTab !== "all";
+      if (moreBtn) {
+        moreBtn.setAttribute("aria-expanded", expanded ? "true" : "false");
+        moreBtn.textContent = expanded ? "Show fewer tools" : "Show all " + featureCards.length + " tools";
+      }
+    };
     tabButtons.forEach(function (btn) {
       btn.addEventListener("click", function () {
         tabButtons.forEach(function (b) {
@@ -64,17 +87,45 @@
         });
         btn.classList.add("active");
         btn.setAttribute("aria-pressed", "true");
-        var tab = btn.getAttribute("data-tab");
-        featureCards.forEach(function (card) {
-          if (tab === "all" || card.getAttribute("data-category") === tab) {
-            card.style.display = "";
-          } else {
-            card.style.display = "none";
-          }
-        });
+        activeTab = btn.getAttribute("data-tab") || "all";
+        applyFeatures();
       });
     });
+    if (moreBtn) {
+      moreBtn.addEventListener("click", function () {
+        expanded = !expanded;
+        applyFeatures();
+        if (!expanded) featureGrid.scrollIntoView({ block: "start" });
+      });
+    }
+    applyFeatures();
   }
+
+  /* ── Mobile: collapse long marketing sections behind a "Read more" button ──
+     Progressive enhancement: on phones only, sections marked data-mobile-collapse
+     are clipped to a short height. All content stays in the DOM. */
+  var mq = window.matchMedia("(max-width: 720px)");
+  document.querySelectorAll("[data-mobile-collapse]").forEach(function (sec) {
+    var inner = sec.querySelector(".container");
+    if (!inner) return;
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "mobile-collapse-btn btn btn-outline";
+    btn.setAttribute("aria-expanded", "false");
+    btn.textContent = "Read more";
+    inner.appendChild(btn);
+    var set = function (open) {
+      sec.classList.toggle("is-mobile-collapsed", mq.matches && !open);
+      btn.hidden = !mq.matches;
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+      btn.textContent = open ? "Show less" : "Read more";
+    };
+    var open = false;
+    btn.addEventListener("click", function () { open = !open; set(open); if (!open) sec.scrollIntoView({ block: "start" }); });
+    if (mq.addEventListener) mq.addEventListener("change", function () { set(open); });
+    if (location.hash && sec.querySelector(location.hash.replace(/[^#\w-]/g, ""))) open = true;
+    set(open);
+  });
 
   /* ── FAQ accordion ── */
   var faqItems = document.querySelectorAll(".faq-item");
