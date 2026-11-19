@@ -1785,6 +1785,8 @@
 
                 <p class="price-lock-note" id="price-lock-note">Prices go up after November 30 at 11:59pm Pacific. Start your 14-day trial by then and keep today's price for as long as you stay subscribed.</p>
 
+                <p class="pricing-swipe-hint" aria-hidden="true">Swipe to compare plans &rarr;</p>
+
                 <div class="pricing-grid cols-3" id="pricing-grid-beginner" data-level="beginner">
                     <div class="pricing-card featured anim-up" data-level="beginner" data-tier="solo">
                         <div class="pricing-badge">Most Popular</div>
@@ -2333,20 +2335,18 @@
     </main>
 
     <!-- ===================== NEWSLETTER BAND ===================== -->
-    <section class="newsletter-band" style="background:#fff7ed;border-top:1px solid #fed7aa;border-bottom:1px solid #fed7aa;">
-        <div class="container" style="max-width:640px;text-align:center;padding-top:48px;padding-bottom:48px;">
-            <h2 style="margin:0 0 8px;">Not ready for a trial? Get the free newsletter.</h2>
-            <p style="margin:0 0 20px;color:#6b7280;">
-                Amazon-influencer tips, commission tactics, trending product picks, and new features.
-                No spam, unsubscribe anytime.
-            </p>
-            <form id="ib-newsletter-form" style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+    <section class="newsletter-band">
+        <div class="container newsletter-inner">
+            <div class="newsletter-copy">
+                <h2>Not ready for a trial? Get the free newsletter.</h2>
+                <p>Amazon-influencer tips, commission tactics and new features. No spam, unsubscribe anytime.</p>
+            </div>
+            <form id="ib-newsletter-form" class="newsletter-form">
                 <input id="ib-newsletter-email" type="email" required placeholder="you@example.com"
-                    aria-label="Email address"
-                    style="flex:1;min-width:240px;max-width:360px;padding:12px 16px;border:1px solid #d1d5db;border-radius:14px;font-size:0.95rem;">
+                    aria-label="Email address">
                 <button type="submit" class="btn btn-primary">Subscribe</button>
             </form>
-            <p id="ib-newsletter-msg" role="status" aria-live="polite" style="margin:14px 0 0;font-weight:600;min-height:1.2em;"></p>
+            <p id="ib-newsletter-msg" class="newsletter-msg" role="status" aria-live="polite"></p>
         </div>
     </section>
     <script>
