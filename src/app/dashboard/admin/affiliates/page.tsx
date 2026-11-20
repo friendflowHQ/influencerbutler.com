@@ -5,6 +5,8 @@ import Link from "next/link";
 import MonthlyEarningsChart, { type MonthlyBucket } from "./MonthlyEarningsChart";
 import CreditReferralTab, { type AffiliateOption } from "./CreditReferralTab";
 import TaxTasksBanner from "./TaxTasksBanner";
+import ReasonDialog from "./ReasonDialog";
+import RowActionsMenu, { type RowMenuItem } from "./RowActionsMenu";
 
 type SocialHandles = Record<string, string | null | undefined>;
 
@@ -1143,9 +1145,12 @@ export default function AdminAffiliatesPage() {
     }
   };
 
-  const rejectUser = async (userId: string, label: string) => {
-    const reason = window.prompt(`Reject ${label}? (Optional reason)`, "");
-    if (reason === null) return;
+  // Rejecting opens a confirm dialog that requires a reason (sent to the applicant).
+  const [rejectTarget, setRejectTarget] = useState<{ userId: string; label: string } | null>(null);
+  const rejectUser = (userId: string, label: string) => setRejectTarget({ userId, label });
+
+  const doRejectUser = async (userId: string, reason: string) => {
+    setRejectTarget(null);
     setRow(userId, { kind: "working", action: "reject" });
     try {
       const res = await fetch("/api/affiliates/reject", {
@@ -1309,6 +1314,20 @@ export default function AdminAffiliatesPage() {
       </div>
 
       <TaxTasksBanner onChanged={loadRoster} />
+
+      <ReasonDialog
+        open={rejectTarget !== null}
+        title={`Reject ${rejectTarget?.label ?? "this application"}?`}
+        message="The application is marked rejected and your reason is saved in the admin notes and audit log."
+        confirmLabel="Reject application"
+        reasonLabel="Reason (internal note)"
+        reasonRequired
+        reasonPlaceholder="For example: could not verify the audience."
+        onCancel={() => setRejectTarget(null)}
+        onConfirm={(reason) => {
+          if (rejectTarget) void doRejectUser(rejectTarget.userId, reason);
+        }}
+      />
 
       <nav className="flex flex-wrap gap-2 border-b border-slate-200">
         {tabs.map((t) => {
@@ -1892,6 +1911,49 @@ export default function AdminAffiliatesPage() {
   );
 }
 
+// Secondary per-row actions that live in the overflow menu.
+function rowMenuItems(
+  r: RosterRow,
+  gen: LinkRowState,
+  email: LinkRowState,
+  onGenerateCode: (row: RosterRow) => void,
+  onSetCustomCode: (row: RosterRow) => void,
+  onEmailResources: (row: RosterRow) => void,
+): RowMenuItem[] {
+  const items: RowMenuItem[] = [];
+  const live = r.appStatus !== "rejected" && (r.appStatus === "approved" || r.isAffiliate);
+  if (live) {
+    items.push({
+      key: "code",
+      label: gen.kind === "working" ? "Generating…" : r.affiliateCode ? "New code" : "Generate code",
+      onClick: () => onGenerateCode(r),
+      disabled: gen.kind === "working",
+    });
+    items.push({
+      key: "custom",
+      label: "Set custom code",
+      onClick: () => onSetCustomCode(r),
+      disabled: gen.kind === "working",
+    });
+  }
+  if ((r.appStatus === "approved" || r.isAffiliate) && r.email) {
+    items.push({
+      key: "resources",
+      label: email.kind === "working" ? "Emailing…" : "Email resources",
+      onClick: () => onEmailResources(r),
+      disabled: email.kind === "working",
+    });
+  }
+  if (r.email) {
+    items.push({
+      key: "history",
+      label: "Email history",
+      href: `/dashboard/admin/emails?recipient=${encodeURIComponent(r.email)}`,
+    });
+  }
+  return items;
+}
+
 function RosterTab({
   loading,
   error,
@@ -1998,7 +2060,7 @@ function RosterTab({
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50">
               <tr className="text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                <th className="px-4 py-3">Affiliate</th>
+                <th className="min-w-[12rem] px-4 py-3">Affiliate</th>
                 <th className="px-4 py-3">Code &amp; link</th>
                 <th className="px-4 py-3">Terms</th>
                 <th className="px-4 py-3">Status</th>
@@ -2025,7 +2087,7 @@ function RosterTab({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {rows.map((r) => {
+              {rows.map((r, rowIndex) => {
                 const state = rowState[r.userId] ?? { kind: "idle" };
                 const working = state.kind === "working";
                 const gen = genRow[r.userId] ?? { kind: "idle" };
@@ -2046,7 +2108,9 @@ function RosterTab({
                           {r.name ?? "(no name)"}
                         </p>
                       )}
-                      <p className="text-xs text-slate-500 break-all">{r.email ?? "(no email)"}</p>
+                      <p className="max-w-[16rem] truncate text-xs text-slate-500" title={r.email ?? undefined}>
+                        {r.email ?? "(no email)"}
+                      </p>
                     </td>
                     <td className="px-4 py-3">
                       <CodeCell code={r.affiliateCode} />
@@ -2132,57 +2196,30 @@ function RosterTab({
                         </div>
                       ) : (
                         <div className="flex max-w-[16rem] flex-col gap-1">
-                          {r.appStatus !== "rejected" && (r.appStatus === "approved" || r.isAffiliate) ? (
-                            <button
-                              type="button"
-                              onClick={() => onGenerateCode(r)}
-                              disabled={gen.kind === "working"}
-                              className="w-fit whitespace-nowrap rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:border-[#f97316] hover:bg-orange-50 hover:text-[#c2410c] disabled:opacity-60"
-                            >
-                              {gen.kind === "working"
-                                ? "Generating…"
-                                : r.affiliateCode
-                                  ? "New code"
-                                  : "Generate code"}
-                            </button>
-                          ) : null}
-                          {r.appStatus !== "rejected" && (r.appStatus === "approved" || r.isAffiliate) ? (
-                            <button
-                              type="button"
-                              onClick={() => onSetCustomCode(r)}
-                              disabled={gen.kind === "working"}
-                              className="w-fit whitespace-nowrap rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:border-[#f97316] hover:bg-orange-50 hover:text-[#c2410c] disabled:opacity-60"
-                            >
-                              Set custom code
-                            </button>
-                          ) : null}
+                          <div className="flex items-center gap-1.5">
+                            {r.isAffiliate || r.appStatus === "approved" ? (
+                              <Link
+                                href={`/dashboard/admin/affiliates/${r.userId}`}
+                                className="rounded-md border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-700 transition hover:border-[#f97316] hover:bg-orange-50 hover:text-[#c2410c]"
+                              >
+                                View
+                              </Link>
+                            ) : null}
+                            <RowActionsMenu
+                              label={`More actions for ${r.name ?? r.email ?? "this affiliate"}`}
+                              up={rowIndex >= rows.length - 2 && rows.length > 3}
+                              items={rowMenuItems(r, gen, email, onGenerateCode, onSetCustomCode, onEmailResources)}
+                            />
+                          </div>
                           {gen.kind === "success" ? (
                             <span className="text-xs text-emerald-700">{gen.message}</span>
                           ) : gen.kind === "error" ? (
                             <span className="text-xs text-red-700">{gen.message}</span>
                           ) : null}
-                          {(r.appStatus === "approved" || r.isAffiliate) && r.email ? (
-                            <button
-                              type="button"
-                              onClick={() => onEmailResources(r)}
-                              disabled={email.kind === "working"}
-                              className="w-fit whitespace-nowrap rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:border-[#f97316] hover:bg-orange-50 hover:text-[#c2410c] disabled:opacity-60"
-                            >
-                              {email.kind === "working" ? "Emailing…" : "Email resources"}
-                            </button>
-                          ) : null}
                           {email.kind === "success" ? (
                             <span className="text-xs text-emerald-700">{email.message}</span>
                           ) : email.kind === "error" ? (
                             <span className="text-xs text-red-700">{email.message}</span>
-                          ) : null}
-                          {r.email ? (
-                            <a
-                              href={`/dashboard/admin/emails?recipient=${encodeURIComponent(r.email)}`}
-                              className="w-fit whitespace-nowrap rounded-md border border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-700 transition hover:border-[#f97316] hover:bg-orange-50 hover:text-[#c2410c]"
-                            >
-                              Email history
-                            </a>
                           ) : null}
                           {state.kind === "success" ? (
                             <span className="text-xs text-emerald-700">{state.message}</span>
@@ -2203,7 +2240,7 @@ function RosterTab({
       <p className="text-xs text-slate-400">
         Earnings are computed from our own referred orders (self-hosted program), not Lemon Squeezy.
         Total earned is the full promised rate on every referred order; Owed is what is still
-        outstanding (plus any make-whole adjustments); Paid out is total earned minus owed. See the
+        outstanding (plus any make-whole adjustments); Paid out is the sum of successful payouts in the ledger (a Gap flag appears when total earned minus owed minus paid does not add up). See the
         Owed and Payouts tabs to pay, and the Attribution gap section under Owed for referred
         conversions whose orders were never attributed.
       </p>
@@ -2329,8 +2366,8 @@ function isDefaultTerms(percent: number | null, months: number | null): boolean 
 }
 
 function termsSummary(percent: number | null, months: number | null): string {
-  if (isDefaultTerms(percent, months)) return "30% · 12 mo (default)";
-  return `${percent}% · ${months === null ? "Lifetime" : `${months} mo`}`;
+  if (isDefaultTerms(percent, months)) return "30% × 12 mo";
+  return `${percent}% × ${months === null ? "Lifetime" : `${months} mo`}`;
 }
 
 /**
@@ -2404,20 +2441,24 @@ function TermsCell({
   if (!editing) {
     return (
       <div className="flex flex-col items-start gap-1">
-        <span
-          className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-            custom ? "bg-violet-100 text-violet-800" : "bg-slate-100 text-slate-500"
-          }`}
-        >
-          {termsSummary(row.commissionPercent, row.commissionDurationMonths)}
-        </span>
-        <button
-          type="button"
-          onClick={startEdit}
-          className="text-xs font-medium text-[#c2410c] hover:underline"
-        >
-          Edit
-        </button>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span
+            className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold ${
+              custom ? "bg-violet-100 text-violet-800" : "bg-slate-100 text-slate-600"
+            }`}
+          >
+            {termsSummary(row.commissionPercent, row.commissionDurationMonths)}
+          </span>
+          {custom ? null : <span className="text-[11px] text-slate-500">default</span>}
+          <button
+            type="button"
+            onClick={startEdit}
+            aria-label="Edit commission terms"
+            className="text-xs font-medium text-[#c2410c] hover:underline"
+          >
+            Edit
+          </button>
+        </div>
         {state.kind === "success" ? (
           <span className="text-xs text-emerald-700">{state.message}</span>
         ) : null}
@@ -2527,14 +2568,9 @@ function CompAllowanceCell({
     if (ok) setEditing(false);
   };
 
+  const [revokeOpen, setRevokeOpen] = useState(false);
   const revoke = async () => {
-    if (
-      !window.confirm(
-        "Revoke this affiliate's comp workspace? They can no longer hand out new free workspaces. Comps they have already issued keep running (cancel those one by one on the Comps page). The affiliate is emailed that their passes are paused.",
-      )
-    ) {
-      return;
-    }
+    setRevokeOpen(false);
     await onSave(row.userId, null);
   };
 
@@ -2559,9 +2595,10 @@ function CompAllowanceCell({
           {enabled ? (
             <button
               type="button"
-              onClick={revoke}
+              onClick={() => setRevokeOpen(true)}
               disabled={working}
-              className="text-xs font-medium text-red-600 hover:underline disabled:opacity-60"
+              aria-label="Revoke comp allowance"
+              className="text-xs font-medium text-red-700 hover:underline disabled:opacity-60"
             >
               {working ? "…" : "Revoke"}
             </button>
@@ -2573,6 +2610,14 @@ function CompAllowanceCell({
         {state.kind === "error" ? (
           <span className="text-xs text-red-700">{state.message}</span>
         ) : null}
+        <ReasonDialog
+          open={revokeOpen}
+          title={`Revoke comp allowance for ${row.name ?? row.email ?? "this affiliate"}?`}
+          message="They can no longer hand out new free workspaces. Comps they have already issued keep running (cancel those one by one on the Comps page). The affiliate is emailed that their passes are paused."
+          confirmLabel="Revoke allowance"
+          onCancel={() => setRevokeOpen(false)}
+          onConfirm={() => void revoke()}
+        />
       </div>
     );
   }
