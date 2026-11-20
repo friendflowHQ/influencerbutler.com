@@ -58,6 +58,53 @@ function formatDate(iso: string): string {
   }
 }
 
+// Homepage carousel shows this many cards per page (see testimonial-carousel.js).
+const CARDS_PER_PAGE = 3;
+const LONG_BODY = 220;
+
+function sourceLabel(source: string | null): string {
+  switch (source) {
+    case "email":
+      return "Email ask";
+    case "in_app":
+      return "Web dashboard";
+    case "desktop":
+      return "Desktop app";
+    case "extension":
+      return "Extension";
+    case "mobile":
+      return "Mobile app";
+    default:
+      return source ? source : "Unknown source";
+  }
+}
+
+function relativeDay(iso: string): string {
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  if (!Number.isFinite(days) || days < 0) return "";
+  if (days === 0) return "today";
+  if (days === 1) return "yesterday";
+  if (days < 60) return `${days} days ago`;
+  return `${Math.round(days / 30)} months ago`;
+}
+
+function emptyMessage(tab: Status | "all", autoApprove: boolean, minRating: number): string {
+  switch (tab) {
+    case "pending":
+      return autoApprove
+        ? `All caught up. Reviews of ${minRating}+ stars are approved automatically, so only lower ratings wait here for you.`
+        : "All caught up. Auto-approve is off, so every new review will wait here for you.";
+    case "approved":
+      return "No approved reviews yet. Approve one from Pending, or lower the auto-approve rating in Settings.";
+    case "hidden":
+      return "Nothing hidden. Use Hide on an approved review to take it off the site without deleting it.";
+    case "rejected":
+      return "Nothing rejected.";
+    default:
+      return "No reviews yet. The day-45 email and in-app banner will start filling this in.";
+  }
+}
+
 function Stars({ n }: { n: number }) {
   return (
     <span aria-label={`${n} of 5 stars`} className="text-amber-500">
@@ -78,6 +125,11 @@ export default function AdminTestimonialsPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [replyFor, setReplyFor] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [editFor, setEditFor] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editRole, setEditRole] = useState("");
+  const [editBody, setEditBody] = useState("");
 
   // Config panel state.
   const [enabled, setEnabled] = useState(true);
@@ -188,6 +240,29 @@ export default function AdminTestimonialsPage() {
     }
   };
 
+  const toggleExpanded = (id: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const startEdit = (t: Testimonial) => {
+    setEditFor(t.id);
+    setEditName(t.authorName ?? "");
+    setEditRole(t.authorRole ?? "");
+    setEditBody(t.body);
+  };
+
+  const saveEdit = async (id: string) => {
+    await mutate(
+      { action: "edit", id, authorName: editName, authorRole: editRole, body: editBody },
+      id,
+    );
+    setEditFor(null);
+  };
+
   const submitReply = async (id: string) => {
     await mutate({ action: "respond", id, response: replyText }, id);
     setReplyFor(null);
@@ -276,48 +351,71 @@ export default function AdminTestimonialsPage() {
           </div>
           <p className="mt-1 text-sm text-slate-600">
             These show on the homepage in this order (about 3 per carousel page). Use the arrows to
-            reorder; feature more approved reviews below to fill a second page.
+            reorder; feature more approved reviews below to fill a second page. Cards past the
+            &ldquo;Max shown on site&rdquo; setting ({maxCount}) are not shown.
           </p>
           <ol className="mt-4 space-y-2">
-            {featured.map((t, i) => (
-              <li
-                key={t.id}
-                className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2"
-              >
-                <span className="w-6 flex-none text-center text-sm font-semibold text-slate-400">
-                  {i + 1}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <strong className="truncate text-sm text-slate-900">
-                      {t.authorName ?? "Anonymous"}
-                    </strong>
-                    <Stars n={t.rating} />
+            {featured.map((t, i) => {
+              const overMax = i >= maxCount;
+              const pageStart = i % CARDS_PER_PAGE === 0;
+              return (
+                <li key={t.id} className="list-none">
+                  {pageStart ? (
+                    <div
+                      className={`${i === 0 ? "" : "mt-4"} mb-1 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500`}
+                    >
+                      <span>Carousel page {Math.floor(i / CARDS_PER_PAGE) + 1}</span>
+                      <span className="h-px flex-1 bg-slate-200" aria-hidden="true" />
+                    </div>
+                  ) : null}
+                  <div
+                    className={`flex items-center gap-3 rounded-lg border px-3 py-2 ${
+                      overMax
+                        ? "border-dashed border-slate-300 bg-slate-100/60 opacity-60"
+                        : "border-slate-200 bg-slate-50/60"
+                    }`}
+                  >
+                    <span className="w-6 flex-none text-center text-sm font-semibold text-slate-500">
+                      {i + 1}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <strong className="truncate text-sm text-slate-900">
+                          {t.authorName ?? "Anonymous"}
+                        </strong>
+                        <Stars n={t.rating} />
+                        {overMax ? (
+                          <span className="rounded border border-slate-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-slate-600">
+                            Not on site (over max)
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="truncate text-xs text-slate-600">&ldquo;{t.body}&rdquo;</p>
+                    </div>
+                    <div className="flex flex-none items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => moveFeatured(i, -1)}
+                        disabled={reordering || i === 0}
+                        aria-label={`Move ${t.authorName ?? "this review"} up`}
+                        className="rounded-lg border border-slate-300 px-2.5 py-1 text-sm font-medium text-slate-700 hover:bg-white disabled:opacity-40"
+                      >
+                        &uarr;
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveFeatured(i, 1)}
+                        disabled={reordering || i === featured.length - 1}
+                        aria-label={`Move ${t.authorName ?? "this review"} down`}
+                        className="rounded-lg border border-slate-300 px-2.5 py-1 text-sm font-medium text-slate-700 hover:bg-white disabled:opacity-40"
+                      >
+                        &darr;
+                      </button>
+                    </div>
                   </div>
-                  <p className="truncate text-xs text-slate-500">&ldquo;{t.body}&rdquo;</p>
-                </div>
-                <div className="flex flex-none items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => moveFeatured(i, -1)}
-                    disabled={reordering || i === 0}
-                    aria-label={`Move ${t.authorName ?? "this review"} up`}
-                    className="rounded-lg border border-slate-300 px-2.5 py-1 text-sm font-medium text-slate-700 hover:bg-white disabled:opacity-40"
-                  >
-                    &uarr;
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => moveFeatured(i, 1)}
-                    disabled={reordering || i === featured.length - 1}
-                    aria-label={`Move ${t.authorName ?? "this review"} down`}
-                    className="rounded-lg border border-slate-300 px-2.5 py-1 text-sm font-medium text-slate-700 hover:bg-white disabled:opacity-40"
-                  >
-                    &darr;
-                  </button>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ol>
         </section>
       ) : null}
@@ -345,7 +443,21 @@ export default function AdminTestimonialsPage() {
       ) : fetchError ? (
         <p className="mt-8 text-rose-600">{fetchError}</p>
       ) : items.length === 0 ? (
-        <p className="mt-8 text-sm text-slate-500">Nothing here yet.</p>
+        <div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-white px-5 py-8 text-center">
+          <p className="text-sm font-medium text-slate-800">Nothing here</p>
+          <p className="mx-auto mt-1 max-w-md text-sm text-slate-600">
+            {emptyMessage(tab, autoApprove, minRating)}
+          </p>
+          {tab === "pending" ? (
+            <button
+              type="button"
+              onClick={() => setTab("approved")}
+              className="mt-4 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Review approved reviews
+            </button>
+          ) : null}
+        </div>
       ) : (
         <div className="mt-4 space-y-4">
           {items.map((t) => (
@@ -383,11 +495,80 @@ export default function AdminTestimonialsPage() {
                 </div>
               </div>
 
-              <p className="mt-3 text-sm text-slate-700">&ldquo;{t.body}&rdquo;</p>
-              <p className="mt-1 text-xs text-slate-400">
-                {formatDate(t.createdAt)}
-                {t.source ? ` · via ${t.source}` : ""}
-                {t.consent ? "" : " · no display consent"}
+              {editFor === t.id ? (
+                <div className="mt-3 space-y-2">
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <label className="text-xs text-slate-600">
+                      Name
+                      <input
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-900"
+                      />
+                    </label>
+                    <label className="text-xs text-slate-600">
+                      Title
+                      <input
+                        value={editRole}
+                        onChange={(e) => setEditRole(e.target.value)}
+                        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-900"
+                      />
+                    </label>
+                  </div>
+                  <label className="block text-xs text-slate-600">
+                    Review text
+                    <textarea
+                      value={editBody}
+                      onChange={(e) => setEditBody(e.target.value)}
+                      rows={4}
+                      className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900"
+                    />
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => saveEdit(t.id)}
+                      disabled={busyId === t.id || editBody.trim().length < 10}
+                      className="rounded-lg bg-orange-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-orange-800 disabled:opacity-60"
+                    >
+                      Save changes
+                    </button>
+                    <button
+                      onClick={() => setEditFor(null)}
+                      className="text-sm text-slate-600 underline-offset-2 hover:underline"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p
+                    className={`mt-3 whitespace-pre-line text-sm text-slate-700 ${
+                      t.body.length > LONG_BODY && !expanded.has(t.id) ? "line-clamp-3" : ""
+                    }`}
+                  >
+                    &ldquo;{t.body}&rdquo;
+                  </p>
+                  {t.body.length > LONG_BODY ? (
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(t.id)}
+                      className="mt-1 text-xs font-medium text-orange-700 underline-offset-2 hover:underline"
+                    >
+                      {expanded.has(t.id) ? "Show less" : "Show full review"}
+                    </button>
+                  ) : null}
+                </>
+              )}
+              <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+                <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-medium text-slate-600">
+                  {sourceLabel(t.source)}
+                </span>
+                <span>
+                  {formatDate(t.createdAt)} ({relativeDay(t.createdAt)})
+                </span>
+                {t.email ? <span>{t.email}</span> : null}
+                {t.consent ? null : <span className="font-medium text-rose-700">No display consent</span>}
               </p>
 
               {t.teamResponse ? (
@@ -431,6 +612,13 @@ export default function AdminTestimonialsPage() {
                   className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
                 >
                   {t.featured ? "Unfeature" : "Feature"}
+                </button>
+                <button
+                  onClick={() => (editFor === t.id ? setEditFor(null) : startEdit(t))}
+                  disabled={busyId === t.id}
+                  className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                >
+                  {editFor === t.id ? "Cancel edit" : "Edit"}
                 </button>
                 <button
                   onClick={() => {

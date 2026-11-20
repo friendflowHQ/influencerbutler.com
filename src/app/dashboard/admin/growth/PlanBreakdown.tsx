@@ -6,6 +6,8 @@
 // charge), and MRR / average revenue count paid subscribers only.
 
 import React, { useState } from "react";
+import Link from "next/link";
+import { downloadCsv } from "@/lib/csv-download";
 import { formatUsdFromCents, type PlanBreakdownRow } from "./format";
 
 const fmt = (n: number) => n.toLocaleString("en-US");
@@ -58,9 +60,35 @@ export default function PlanBreakdown({
 
   return (
     <section className="mt-3 rounded-xl border border-slate-200 bg-white p-4">
-      <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-700">
-        Subscribers by plan
-      </h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-700">
+          Subscribers by plan
+        </h2>
+        <button
+          type="button"
+          onClick={() =>
+            downloadCsv(
+              `subscribers-by-plan-${new Date().toISOString().slice(0, 10)}.csv`,
+              ["Plan", "Paid", "Comps", "On trial", "Total", "MRR (USD)", "Avg / sub (USD)"],
+              rows.map((r) => {
+                const paid = r.active - r.comped;
+                return [
+                  r.label,
+                  paid,
+                  r.comped,
+                  r.onTrial,
+                  r.active + r.onTrial,
+                  r.mrrCents === null ? "" : (r.mrrCents / 100).toFixed(2),
+                  r.mrrCents === null || paid === 0 ? "" : (r.mrrCents / paid / 100).toFixed(2),
+                ];
+              }),
+            )
+          }
+          className="min-h-9 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-700"
+        >
+          Export CSV
+        </button>
+      </div>
       <p className="mt-1 text-xs text-slate-600">
         Live right now, whatever month is selected. Comps and add-ons are not counted as paid.
       </p>
@@ -140,7 +168,19 @@ export default function PlanBreakdown({
                   <tr className={`border-b border-slate-100 ${total === 0 ? "text-slate-500" : "text-slate-800"}`}>
                     <th scope="row" className="py-1.5 pr-3 text-left font-medium">{r.label}</th>
                     <td className="px-3 py-1.5 text-right tabular-nums">{fmt(paid)}</td>
-                    <td className="px-3 py-1.5 text-right tabular-nums">{fmt(r.comped)}</td>
+                    <td className="px-3 py-1.5 text-right tabular-nums">
+                      {r.comped > 0 ? (
+                        <Link
+                          href="/dashboard/admin/comps"
+                          title="See who has a comp"
+                          className="text-indigo-700 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-700"
+                        >
+                          {fmt(r.comped)}
+                        </Link>
+                      ) : (
+                        fmt(r.comped)
+                      )}
+                    </td>
                     <td className="px-3 py-1.5 text-right tabular-nums">{fmt(r.onTrial)}</td>
                     <td className="px-3 py-1.5 text-right font-semibold tabular-nums">{fmt(total)}</td>
                     <td className="px-3 py-1.5 text-right tabular-nums">

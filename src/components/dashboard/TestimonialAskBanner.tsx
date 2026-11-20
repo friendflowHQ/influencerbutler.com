@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
  */
 export default function TestimonialAskBanner() {
   const [show, setShow] = useState(false);
+  const [canSnooze, setCanSnooze] = useState(true);
   const [dismissing, setDismissing] = useState(false);
 
   useEffect(() => {
@@ -18,8 +19,10 @@ export default function TestimonialAskBanner() {
       try {
         const res = await fetch("/api/dashboard/testimonial-ask", { cache: "no-store" });
         if (!res.ok) return;
-        const data = (await res.json()) as { show?: boolean };
-        if (alive) setShow(data.show === true);
+        const data = (await res.json()) as { show?: boolean; canSnooze?: boolean };
+        if (!alive) return;
+        setCanSnooze(data.canSnooze !== false);
+        setShow(data.show === true);
       } catch (err) {
         console.error("TestimonialAskBanner fetch failed", err);
       }
@@ -31,14 +34,14 @@ export default function TestimonialAskBanner() {
 
   if (!show) return null;
 
-  const dismiss = async () => {
+  const dismiss = async (action: "dismiss" | "snooze") => {
     setShow(false);
     setDismissing(true);
     try {
       await fetch("/api/dashboard/testimonial-ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "dismiss" }),
+        body: JSON.stringify({ action }),
       });
     } catch {
       // banner already hidden in-memory; server dismissal is best-effort
@@ -70,12 +73,23 @@ export default function TestimonialAskBanner() {
           >
             Leave a review
           </a>
+          {canSnooze ? (
+            <button
+              type="button"
+              onClick={() => dismiss("snooze")}
+              disabled={dismissing}
+              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white disabled:opacity-60"
+            >
+              Remind me in 2 weeks
+            </button>
+          ) : null}
           <button
             type="button"
-            onClick={dismiss}
+            onClick={() => dismiss("dismiss")}
             disabled={dismissing}
-            aria-label="Dismiss"
-            className="rounded-md p-1.5 text-slate-400 hover:bg-white hover:text-slate-600 disabled:opacity-60"
+            aria-label="Don't ask again"
+            title="Don't ask again"
+            className="rounded-md p-1.5 text-slate-500 hover:bg-white hover:text-slate-700 disabled:opacity-60"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

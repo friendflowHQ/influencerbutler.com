@@ -9,6 +9,10 @@ import { useCallback, useEffect, useState } from "react";
 import Confetti from "./Confetti";
 import GaSection, { type GaResponse } from "./GaSection";
 import SearchSection, { type SearchResponse } from "./SearchSection";
+import Link from "next/link";
+import AdminToolbar from "@/components/admin/AdminToolbar";
+import StatusBanner from "@/components/admin/StatusBanner";
+import { useSharedMonth } from "@/components/admin/useSharedMonth";
 import GoalsSection, { type Goal } from "./GoalsSection";
 import Sparkline from "./Sparkline";
 import ChecklistSection from "./ChecklistSection";
@@ -93,7 +97,9 @@ const TILE_ORDER: { key: string; accent: string }[] = [
 ];
 
 export default function AdminGrowthPage() {
-  const [month, setMonth] = useState(currentMonthKey);
+  // The month follows you between admin pages (and links via ?month=).
+  const [month, setMonth] = useSharedMonth(currentMonthKey());
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const [forbidden, setForbidden] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [metricsLoading, setMetricsLoading] = useState(true);
@@ -130,6 +136,7 @@ export default function AdminGrowthPage() {
         return;
       }
       setMetrics(json);
+      setUpdatedAt(Date.now());
     } catch (err) {
       console.error(err);
       setFetchError("Network error. Please refresh.");
@@ -243,7 +250,7 @@ export default function AdminGrowthPage() {
   const mtdRange = mtd ? `${shortMonth(month)} 1-${mtd.throughDay}` : "";
   const prevMtdRange = mtd ? `${shortMonth(shiftMonth(month, -1))} 1-${mtd.throughDay}` : "";
 
-  const strip: { label: string; value: string; live?: boolean; snap?: MetricSnapshot; revenue?: boolean }[] = [
+  const strip: { label: string; value: string; live?: boolean; snap?: MetricSnapshot; revenue?: boolean; href?: string }[] = [
     {
       label: "On the site right now",
       value:
@@ -256,16 +263,19 @@ export default function AdminGrowthPage() {
       label: "Active subscribers",
       value: formatMetricValue("count", m.active_subscriptions?.current ?? null),
       snap: m.active_subscriptions,
+      href: "/dashboard/admin/users",
     },
     {
       label: "On trial",
       value: formatMetricValue("count", m.on_trial_subscriptions?.current ?? null),
       snap: m.on_trial_subscriptions,
+      href: "/dashboard/admin/users",
     },
     {
       label: isCurrentMonth ? "Revenue this month" : `Revenue in ${monthLabel(month)}`,
       value: formatMetricValue("cents", m.revenue_cents?.current ?? null),
       snap: m.revenue_cents,
+      href: "/dashboard/admin/finance",
       revenue: true,
     },
   ];
@@ -289,36 +299,58 @@ export default function AdminGrowthPage() {
     <div className="mx-auto max-w-5xl px-6 py-8">
       {confettiBursts > 0 ? <Confetti onDone={() => setConfettiBursts(0)} /> : null}
 
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Growth</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Your numbers, your goals, and what to do next - all on one page.
-          </p>
-        </div>
+      <AdminToolbar
+        title="Growth"
+        subtitle="Your numbers, your goals, and what to do next - all on one page."
+        updatedAt={updatedAt}
+        refreshing={metricsLoading}
+        onRefresh={() => void loadMetrics()}
+        below={
+          isFuture ? null : (
+            <nav aria-label="On this page" className="flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold">
+              {[
+                ["#right-now", "Right now"],
+                ["#goals", "Goals"],
+                ["#numbers", "Numbers"],
+                ["#traffic", "Traffic"],
+                ["#search", "Search"],
+                ["#checklist", "Checklist"],
+              ].map(([href, label]) => (
+                <a
+                  key={href}
+                  href={href}
+                  className="rounded py-1 text-indigo-700 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-700"
+                >
+                  {label}
+                </a>
+              ))}
+            </nav>
+          )
+        }
+      >
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setMonth((prev) => shiftMonth(prev, -1))}
-            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-600 transition hover:bg-slate-50"
+            className="min-h-9 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-600 transition hover:bg-slate-50"
             aria-label="Previous month"
           >
             ←
           </button>
-          <span className="min-w-32 text-center text-sm font-semibold text-slate-800">
+          <span className="min-w-32 text-center text-sm font-semibold text-slate-800" aria-live="polite">
             {monthLabel(month)}
           </span>
           <button
             type="button"
             onClick={() => setMonth((prev) => shiftMonth(prev, 1))}
             disabled={atMaxFuture}
-            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
+            className="min-h-9 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-600 transition hover:bg-slate-50 disabled:opacity-40"
             aria-label="Next month"
           >
             →
           </button>
         </div>
-      </div>
+      </AdminToolbar>
 
       {!isFuture && fetchError ? <p className="mt-8 text-rose-600">{fetchError}</p> : null}
 
@@ -339,7 +371,7 @@ export default function AdminGrowthPage() {
       ) : (
         <>
       {/* Right now */}
-      <section className="mt-6">
+      <section id="right-now" className="mt-6 scroll-mt-28">
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {strip.map((s) => {
             const delta = s.snap
@@ -375,7 +407,15 @@ export default function AdminGrowthPage() {
                 </p>
               ) : null}
               </div>
-              <p className="mt-1 text-xs font-medium text-slate-600">{s.label}</p>
+              <p className="mt-1 text-xs font-medium text-slate-600">
+                {s.href ? (
+                  <Link href={s.href} className="text-indigo-700 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-700">
+                    {s.label} <span aria-hidden="true">→</span>
+                  </Link>
+                ) : (
+                  s.label
+                )}
+              </p>
               {s.snap?.series && s.snap.series.some((v) => v > 0) ? (
                 <div className="mt-2" aria-hidden="true">
                   <Sparkline data={s.snap.series} stroke="#4f46e5" />
@@ -436,7 +476,7 @@ export default function AdminGrowthPage() {
       <GoalsSection month={month} catalog={catalog} onCelebrate={celebrate} onLoaded={onGoalsLoaded} />
 
       {/* Your numbers */}
-      <section className="mt-10">
+      <section id="numbers" className="mt-10 scroll-mt-28">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-700">
           Your numbers, {monthLabel(month)}
         </h2>
@@ -446,10 +486,13 @@ export default function AdminGrowthPage() {
           </p>
         ) : null}
         {metrics?.migrationPending ? (
-          <p className="mt-1 text-xs text-amber-700">
-            Trial conversions need 20260704_trial_conversion_capture.sql applied in the Supabase
-            SQL editor.
-          </p>
+          <StatusBanner
+            title="Trial conversion numbers are not available yet"
+            fix="20260704_trial_conversion_capture.sql"
+            fixLabel="Copy file name"
+          >
+            Apply this file in the Supabase SQL editor. Until then the trial conversion tiles stay empty.
+          </StatusBanner>
         ) : null}
         {metricsLoading ? (
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -485,21 +528,27 @@ export default function AdminGrowthPage() {
 
       {!isFuture ? <FoyerGrowthSection month={month} /> : null}
 
-      <GaSection
-        data={ga}
-        loading={gaLoading}
-        refreshing={gaRefreshing}
-        onRefresh={() => void loadGa(true)}
-      />
+      <div id="traffic" className="scroll-mt-28">
+        <GaSection
+          data={ga}
+          loading={gaLoading}
+          refreshing={gaRefreshing}
+          onRefresh={() => void loadGa(true)}
+        />
+      </div>
 
-      <SearchSection
-        data={search}
-        loading={searchLoading}
-        refreshing={searchRefreshing}
-        onRefresh={() => void loadSearch(true)}
-      />
+      <div id="search" className="scroll-mt-28">
+        <SearchSection
+          data={search}
+          loading={searchLoading}
+          refreshing={searchRefreshing}
+          onRefresh={() => void loadSearch(true)}
+        />
+      </div>
 
-      <ChecklistSection month={month} isCurrentMonth={isCurrentMonth} onCelebrate={celebrate} />
+      <div id="checklist" className="scroll-mt-28">
+        <ChecklistSection month={month} isCurrentMonth={isCurrentMonth} onCelebrate={celebrate} />
+      </div>
         </>
       )}
     </div>

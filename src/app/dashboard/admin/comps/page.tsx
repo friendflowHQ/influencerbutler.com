@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 type CompState =
   | "unknown-months"
@@ -378,15 +379,12 @@ export default function AdminCompsPage() {
     });
   }, [filtered, sortKey, sortDir]);
 
-  const cancelNow = async (row: CompRow) => {
-    const who = row.email ?? row.name ?? row.lsSubscriptionId;
-    if (
-      !window.confirm(
-        `Cancel the subscription for ${who}? It ends at the current period, they drop to Free, and your card is not charged again.`,
-      )
-    ) {
-      return;
-    }
+  // Cancelling asks first, in a dialog that names the person and the consequence.
+  const [confirmCancel, setConfirmCancel] = useState<CompRow | null>(null);
+  const cancelNow = (row: CompRow) => setConfirmCancel(row);
+
+  const doCancel = async (row: CompRow) => {
+    setConfirmCancel(null);
     setBusyId(row.lsSubscriptionId);
     try {
       const res = await fetch("/api/admin/comps/cancel", {
@@ -621,6 +619,27 @@ export default function AdminCompsPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-8">
+      <ConfirmDialog
+        open={confirmCancel !== null}
+        title="Cancel this subscription?"
+        message={
+          confirmCancel ? (
+            <>
+              <p>
+                <strong>{confirmCancel.email ?? confirmCancel.name ?? confirmCancel.lsSubscriptionId}</strong>
+              </p>
+              <p className="mt-1">
+                It ends at the current period, they drop to Free, and your card is not charged again.
+                This cannot be undone from here.
+              </p>
+            </>
+          ) : null
+        }
+        confirmLabel="Cancel subscription"
+        cancelLabel="Keep it"
+        onConfirm={() => confirmCancel && void doCancel(confirmCancel)}
+        onCancel={() => setConfirmCancel(null)}
+      />
       <h1 className="text-2xl font-bold tracking-tight text-slate-900">Comps</h1>
       <p className="mt-1 text-sm text-slate-600">
         Subscriptions started with a free-comp discount code, with the code used and when the free

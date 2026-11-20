@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import AdminToolbar from "@/components/admin/AdminToolbar";
+import StatusBanner from "@/components/admin/StatusBanner";
 
 type SubscriptionsBlock = {
   byStatus: Record<string, number | null>;
@@ -152,10 +154,20 @@ export default function AdminOverviewPage() {
   const [forbidden, setForbidden] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [data, setData] = useState<OverviewResponse | null>(null);
+  const [supportOpen, setSupportOpen] = useState<number | null>(null);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setFetchError(null);
+    // Support tickets live in a separate service; best-effort, the tile just hides on failure.
+    void fetch("/api/admin/support/counts", { cache: "no-store" })
+      .then((r) => (r.ok ? (r.json() as Promise<{ counts?: Record<string, number> }>) : null))
+      .then((j) => {
+        const c = j?.counts;
+        setSupportOpen(c ? (c.escalated ?? 0) + (c.user_replied ?? 0) + (c.sent ?? 0) : null);
+      })
+      .catch(() => setSupportOpen(null));
     try {
       const res = await fetch("/api/admin/overview", { cache: "no-store" });
       if (res.status === 403) {
@@ -168,6 +180,7 @@ export default function AdminOverviewPage() {
         return;
       }
       setData(json);
+      setUpdatedAt(Date.now());
     } catch (err) {
       console.error(err);
       setFetchError("Network error. Please refresh.");
@@ -200,6 +213,7 @@ export default function AdminOverviewPage() {
   const subs = data?.subscriptions;
 
   const queueTiles: { label: string; count: number | null | undefined; href: string }[] = [
+    { label: "Support tickets needing a reply", count: supportOpen ?? undefined, href: "/dashboard/admin/support" },
     { label: "Affiliate applications", count: data?.pendingAffiliates, href: "/dashboard/admin/affiliates" },
     { label: "Testimonials to review", count: data?.pendingTestimonials, href: "/dashboard/admin/testimonials" },
     { label: "Community posts to review", count: data?.pendingCommunity, href: "/dashboard/admin/community" },
@@ -207,19 +221,65 @@ export default function AdminOverviewPage() {
     { label: "Webhook errors (24h)", count: data?.webhookErrors24h, href: "/dashboard/admin/webhooks" },
   ].filter((t) => t.count !== undefined);
 
+  // Most urgent first, so the page opens on what needs a decision.
+  const sortedQueue = [...queueTiles].sort((a, b) => (b.count ?? 0) - (a.count ?? 0));
+  const allClear = queueTiles.length > 0 && queueTiles.every((t) => (t.count ?? 0) === 0);
+
+  const waitingSection =
+    queueTiles.length > 0 ? (
+      <section className="mt-6" aria-labelledby="waiting-heading">
+        <h2 id="waiting-heading" className="text-sm font-semibold uppercase tracking-wider text-slate-700">
+          Needs your attention
+        </h2>
+        {allClear ? (
+          <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900">
+            All clear. Nothing is waiting on you right now.
+          </p>
+        ) : null}
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {sortedQueue.map((tile) => {
+            const urgent = typeof tile.count === "number" && tile.count > 0;
+            return (
+              <Link
+                key={tile.href + tile.label}
+                href={tile.href}
+                className={[
+                  "rounded-xl border p-4 transition hover:shadow-sm",
+                  urgent
+                    ? "border-amber-300 bg-amber-50 hover:bg-amber-100"
+                    : "border-slate-200 bg-white hover:bg-slate-50",
+                ].join(" ")}
+              >
+                <p className={["text-2xl font-bold", urgent ? "text-amber-800" : "text-slate-900"].join(" ")}>
+                  {num(tile.count ?? null)}
+                </p>
+                <p className="mt-1 text-xs font-medium text-slate-600">{tile.label}</p>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+    ) : null;
+
   return (
     <div className="mx-auto max-w-5xl px-6 py-8">
-      <h1 className="text-2xl font-bold tracking-tight text-slate-900">Overview</h1>
-      <p className="mt-1 text-sm text-slate-600">
-        A quick read on subscriptions and everything waiting on a decision.
-      </p>
+      <AdminToolbar
+        title="Overview"
+        subtitle="What needs a decision, then a quick read on subscriptions."
+        updatedAt={updatedAt}
+        refreshing={loading}
+        onRefresh={() => void load()}
+      />
 
-      {loading ? (
-        <p className="mt-8 text-slate-500">Loading...</p>
+      {loading && !data ? (
+        <p className="mt-8 text-slate-600">Loading...</p>
       ) : fetchError ? (
-        <p className="mt-8 text-rose-600">{fetchError}</p>
+        <StatusBanner tone="error" title="Could not load the overview">
+          {fetchError}
+        </StatusBanner>
       ) : (
         <>
+          {waitingSection}
           {subs ? (
             <>
               <section className="mt-6">
@@ -289,41 +349,6 @@ export default function AdminOverviewPage() {
           ) : null}
 
           {subs ? <TrialFunnelSection /> : null}
-
-          {queueTiles.length > 0 ? (
-            <section className="mt-8">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-700">
-                Waiting on you
-              </h2>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {queueTiles.map((tile) => {
-                  const urgent = typeof tile.count === "number" && tile.count > 0;
-                  return (
-                    <Link
-                      key={tile.href + tile.label}
-                      href={tile.href}
-                      className={[
-                        "rounded-xl border p-4 transition hover:shadow-sm",
-                        urgent
-                          ? "border-amber-300 bg-amber-50 hover:bg-amber-100"
-                          : "border-slate-200 bg-white hover:bg-slate-50",
-                      ].join(" ")}
-                    >
-                      <p
-                        className={[
-                          "text-2xl font-bold",
-                          urgent ? "text-amber-700" : "text-slate-900",
-                        ].join(" ")}
-                      >
-                        {num(tile.count ?? null)}
-                      </p>
-                      <p className="mt-1 text-xs font-medium text-slate-500">{tile.label}</p>
-                    </Link>
-                  );
-                })}
-              </div>
-            </section>
-          ) : null}
         </>
       )}
     </div>

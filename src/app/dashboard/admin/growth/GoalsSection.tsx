@@ -4,6 +4,7 @@
 // goals as progress cards, and a one-time confetti when a goal is hit.
 
 import { useCallback, useEffect, useState } from "react";
+import StatusBanner from "@/components/admin/StatusBanner";
 import {
   catalogEntry,
   formatMetricValue,
@@ -118,10 +119,14 @@ export default function GoalsSection({
         Goals this month
       </h2>
       {data?.migrationPending ? (
-        <p className="mt-1 text-xs text-amber-700">
-          Goals need the growth tables: run 20260705_growth_dashboard.sql in the Supabase SQL
-          editor to light this up.
-        </p>
+        <StatusBanner
+          title="Goals are not set up yet"
+          fix="20260705_growth_dashboard.sql"
+          fixLabel="Copy file name"
+        >
+          Run this file in the Supabase SQL editor to create the growth tables. Until then goals and
+          their progress stay hidden.
+        </StatusBanner>
       ) : null}
 
       {loading ? (

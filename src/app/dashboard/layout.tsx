@@ -8,6 +8,8 @@ import EventBanner from "@/components/dashboard/EventBanner";
 import CompEndingBanner from "@/components/dashboard/CompEndingBanner";
 import PriceLockBanner from "@/components/dashboard/PriceLockBanner";
 import ConciergeBubble from "@/components/dashboard/ConciergeBubble";
+import CommandPalette from "@/components/admin/CommandPalette";
+import AdminMobileBar from "@/components/admin/AdminMobileBar";
 import AdminBadge from "@/components/dashboard/AdminBadge";
 import DashboardUserEmail from "@/components/dashboard/DashboardUserEmail";
 import OpenAppButton from "@/components/dashboard/OpenAppButton";
@@ -28,7 +30,7 @@ export default async function DashboardLayout({
     <div className="min-h-screen bg-slate-50 text-slate-900 lg:flex">
       <KeyboardShortcutsProvider>
         <Sidebar email={email} profileName={profileName} websiteHref="/" />
-        <main id="main-content" className="flex-1 px-4 pb-10 pt-20 lg:px-10 lg:py-10">
+        <main id="main-content" className="flex-1 px-4 pb-24 pt-20 lg:px-10 lg:py-10">
           <div className="mb-6 flex flex-wrap items-center gap-2">
             <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 shadow-sm">
               <Image
@@ -55,6 +57,8 @@ export default async function DashboardLayout({
         </main>
         <ShortcutHelpOverlay />
         <ConciergeBubble />
+        <CommandPalette />
+        <AdminMobileBar />
       </KeyboardShortcutsProvider>
     </div>
   );

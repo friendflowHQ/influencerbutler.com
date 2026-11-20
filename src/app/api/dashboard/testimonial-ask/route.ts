@@ -1,6 +1,7 @@
 /**
- * GET  /api/dashboard/testimonial-ask  -> { show: boolean }
- * POST /api/dashboard/testimonial-ask  { action: "dismiss" } -> { ok: true }
+ * GET  /api/dashboard/testimonial-ask  -> { show: boolean, canSnooze: boolean }
+ * POST /api/dashboard/testimonial-ask  { action: "dismiss" | "snooze" } -> { ok: true }
+ *   dismiss = never ask again; snooze = hide for 14 days, then ask once more.
  *
  * Backs the in-app "leave a testimonial" banner. Shows for a signed-in
  * subscriber who has been active ~45 days (into their second month), has not yet
@@ -17,6 +18,14 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const AGE_DAYS = 45;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const SNOOZE_DAYS = 14;
+const EMAIL_COOLDOWN_DAYS = 3;
+
+/** Snooze timestamps carry a 777 ms marker so they can be told apart from permanent dismissals. */
+function isSnoozeStamp(d: Date): boolean {
+  return d.getUTCMilliseconds() === 777;
+}
 
 type AskAdmin = {
   from: (table: string) => {
@@ -63,9 +72,37 @@ export async function GET() {
       typeof row.created_at === "string" &&
       Date.now() - new Date(row.created_at).getTime() >= AGE_DAYS * 24 * 60 * 60 * 1000;
     const notDone = !row.testimonial_submitted_at;
-    const notDismissed = !row.testimonial_banner_dismissed_at;
 
-    return NextResponse.json({ show: active && oldEnough && notDone && notDismissed });
+    // Cooldown: don't stack the banner on top of an email ask sent in the last few days.
+    const emailedAt =
+      typeof row.testimonial_requested_at === "string"
+        ? new Date(row.testimonial_requested_at).getTime()
+        : null;
+    const coolingDown = emailedAt !== null && Date.now() - emailedAt < EMAIL_COOLDOWN_DAYS * DAY_MS;
+
+    // Dismissal states (all stored in testimonial_banner_dismissed_at, no new column):
+    //   null            -> never dismissed: show, offer "Remind me later"
+    //   snooze stamp    -> ms === 777: hidden until that (future) time, then re-shown ONCE
+    //                      with no snooze option, so asks are capped at two appearances
+    //   anything else   -> permanent "don't ask again" (also every pre-snooze dismissal)
+    const dismissedRaw = row.testimonial_banner_dismissed_at;
+    let dismissalOk = true;
+    let canSnooze = true;
+    if (typeof dismissedRaw === "string" && dismissedRaw) {
+      const at = new Date(dismissedRaw);
+      if (!isSnoozeStamp(at)) {
+        dismissalOk = false;
+      } else if (at.getTime() > Date.now()) {
+        dismissalOk = false;
+      } else {
+        canSnooze = false;
+      }
+    }
+
+    return NextResponse.json({
+      show: active && oldEnough && notDone && dismissalOk && !coolingDown,
+      canSnooze,
+    });
   } catch (err) {
     console.error("testimonial-ask GET failed", err);
     return NextResponse.json({ show: false });
@@ -83,17 +120,26 @@ export async function POST(request: Request) {
   } catch {
     // fall through to bad-request below
   }
-  if (action !== "dismiss") {
+  if (action !== "dismiss" && action !== "snooze") {
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   }
 
   const admin = createAdminClient() as unknown as AskAdmin | null;
   if (!admin) return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
 
+  let stamp: Date;
+  if (action === "snooze") {
+    stamp = new Date(Date.now() + SNOOZE_DAYS * DAY_MS);
+    stamp.setUTCMilliseconds(777);
+  } else {
+    stamp = new Date();
+    if (isSnoozeStamp(stamp)) stamp.setUTCMilliseconds(778);
+  }
+
   try {
     await admin
       .from("subscriptions")
-      .update({ testimonial_banner_dismissed_at: new Date().toISOString() })
+      .update({ testimonial_banner_dismissed_at: stamp.toISOString() })
       .eq("user_id", userId);
   } catch (err) {
     console.error("testimonial-ask dismiss failed", err);

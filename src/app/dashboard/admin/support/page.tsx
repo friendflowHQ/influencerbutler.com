@@ -850,7 +850,7 @@ export default function SupportAdminPage() {
       }
       if (typing) return;
       const k = e.key;
-      if (k === "?") { e.preventDefault(); setShowHelp((v) => !v); return; }
+      if (k === "h") { e.preventDefault(); setShowHelp((v) => !v); return; }
       if (k === "/") { e.preventDefault(); searchRef.current?.focus(); return; }
       if (k === "j" || k === "ArrowDown") { e.preventDefault(); stepTicket(1); return; }
       if (k === "k" || k === "ArrowUp") { e.preventDefault(); stepTicket(-1); return; }
@@ -1088,7 +1088,7 @@ export default function SupportAdminPage() {
               Delete view
             </button>
           )}
-          <button type="button" onClick={() => setShowHelp(true)} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-slate-600 hover:bg-slate-50" aria-label="Keyboard shortcuts">?</button>
+          <button type="button" onClick={() => setShowHelp(true)} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-slate-600 hover:bg-slate-50" aria-label="Support page shortcuts (H)" title="Support page shortcuts (H)">H</button>
         </span>
       </div>
       {q.trim() ? (
@@ -1635,7 +1635,7 @@ export default function SupportAdminPage() {
                 ["A", "Archive (in a ticket)"],
                 ["Shift+S", "Mark spam (in a ticket)"],
                 ["T", "Take over (in a ticket)"],
-                ["?", "Show this help"],
+                ["H", "Show this help"],
               ] as const).map(([k, d]) => (
                 <div key={k} className="flex items-center justify-between gap-4">
                   <dt><kbd className="rounded border border-slate-300 bg-slate-50 px-1.5 py-0.5 font-mono text-xs text-slate-700">{k}</kbd></dt>
