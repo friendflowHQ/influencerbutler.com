@@ -9,6 +9,7 @@ import ReferredSignupsFunnel from "./ReferredSignupsFunnel";
 import TaxFormCard from "./TaxFormCard";
 import PayoutMethodCard from "./PayoutMethodCard";
 import CompProspectCard from "./CompProspectCard";
+import { EarningsHero, GetPaidChecklist, PayoutPipeline } from "./AffiliateTopSection";
 import { formatUsdFromCents } from "@/lib/affiliates";
 
 /**
@@ -147,9 +148,7 @@ export default function SelfHostedAffiliateDashboard({
   }
 
   const code = data.brandedCode;
-  const taxReady = data.taxStatus === "verified";
   const payoutReady = Boolean(data.paypalEmail);
-  const readyToBePaid = taxReady && payoutReady;
 
   return (
     <div className="space-y-6">
@@ -166,41 +165,43 @@ export default function SelfHostedAffiliateDashboard({
         </p>
       </header>
 
-      {!readyToBePaid ? (
-        <section className="rounded-2xl border border-[#f97316]/30 bg-gradient-to-br from-orange-50 via-white to-white p-4 sm:p-5 shadow-sm">
-          <p className="text-sm font-semibold text-slate-900">Two steps to get paid</p>
-          <p className="mt-1 text-sm text-slate-600">
-            You can share your link and start earning right now. Complete these before your first
-            payout so we can send your money:
-          </p>
-          <ul className="mt-3 space-y-1 text-sm">
-            <li className={taxReady ? "text-emerald-700" : "text-slate-700"}>
-              {taxReady ? "✓" : "○"} Tax form (W-9 / W-8BEN)
-            </li>
-            <li className={payoutReady ? "text-emerald-700" : "text-slate-700"}>
-              {payoutReady ? "✓" : "○"} PayPal payout email
-            </li>
-          </ul>
-        </section>
-      ) : null}
+      <EarningsHero
+        unpaidCents={data.owedCents + (data.adjustmentCents ?? 0)}
+        payableCents={data.payableCents ?? 0}
+        shareLink={code && !readOnly ? brandedShareLink(code) : null}
+        code={code && !readOnly ? code : null}
+      />
+
+      <PayoutPipeline
+        upcomingCents={data.upcomingCents ?? 0}
+        clearingCents={data.clearingCents ?? 0}
+        payableCents={data.payableCents ?? 0}
+        paidCents={data.paidCents}
+      />
+
+      <GetPaidChecklist taxStatus={data.taxStatus} payoutReady={payoutReady} readOnly={readOnly} />
 
       {readOnly ? (
         <div className="space-y-2">
           <div className="grid gap-4 lg:grid-cols-2">
-            <ReadOnlyTaxCard
-              taxStatus={data.taxStatus}
-              taxFormType={data.taxFormType}
-              taxForm={data.taxForm ?? null}
-            />
-            {payoutSaveUrl && data.canEditPayout ? (
-              <PayoutMethodCard
-                initialEmail={data.paypalEmail}
-                endpoint={payoutSaveUrl}
-                onChange={reload}
+            <div id="aff-tax-card">
+              <ReadOnlyTaxCard
+                taxStatus={data.taxStatus}
+                taxFormType={data.taxFormType}
+                taxForm={data.taxForm ?? null}
               />
-            ) : (
-              <ReadOnlyPayoutCard paypalEmail={data.paypalEmail} />
-            )}
+            </div>
+            <div id="aff-payout-card">
+              {payoutSaveUrl && data.canEditPayout ? (
+                <PayoutMethodCard
+                  initialEmail={data.paypalEmail}
+                  endpoint={payoutSaveUrl}
+                  onChange={reload}
+                />
+              ) : (
+                <ReadOnlyPayoutCard paypalEmail={data.paypalEmail} />
+              )}
+            </div>
           </div>
           {payoutSaveUrl && data.canEditPayout ? (
             <p className="text-xs text-slate-500">
@@ -211,8 +212,12 @@ export default function SelfHostedAffiliateDashboard({
         </div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
-          <TaxFormCard onChange={reload} />
-          <PayoutMethodCard initialEmail={data.paypalEmail} onChange={reload} />
+          <div id="aff-tax-card">
+            <TaxFormCard onChange={reload} />
+          </div>
+          <div id="aff-payout-card">
+            <PayoutMethodCard initialEmail={data.paypalEmail} onChange={reload} />
+          </div>
         </div>
       )}
 
@@ -239,14 +244,7 @@ export default function SelfHostedAffiliateDashboard({
         />
       ) : null}
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          label="Unpaid earnings"
-          value={formatUsdFromCents(data.owedCents + (data.adjustmentCents ?? 0))}
-          hint="Paid monthly via PayPal"
-          tooltip="Paid monthly via PayPal. Each order's commission clears after a short hold (about 14 days, to cover any dispute), then pays out on or around the 1st, once your balance reaches $10. Annual plans are paid a month at a time across the year. PayPal fees are not covered, so the amount that lands may be slightly less."
-        />
-        <StatCard label="Paid to date" value={formatUsdFromCents(data.paidCents)} hint="Successful payouts" />
+      <section className="grid gap-4 sm:grid-cols-2">
         <StatCard label="Referred orders" value={data.orderCount.toString()} hint="Tracked to your link/code" />
         <StatCard
           label="Commission rate"
@@ -254,34 +252,6 @@ export default function SelfHostedAffiliateDashboard({
           hint={data.durationMonths === null ? "Recurring, lifetime" : `Recurring for ${data.durationMonths} months`}
         />
       </section>
-
-      {(data.payableCents ?? 0) + (data.clearingCents ?? 0) + (data.upcomingCents ?? 0) > 0 ? (
-        <section className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-700">
-            How your unpaid earnings clear
-          </h3>
-          <div className="mt-3 grid gap-4 sm:grid-cols-3">
-            <BreakdownItem
-              label="Available now"
-              value={formatUsdFromCents(data.payableCents ?? 0)}
-              hint="Cleared the hold, ready for the next payout"
-              accent="text-emerald-700"
-            />
-            <BreakdownItem
-              label="Clearing"
-              value={formatUsdFromCents(data.clearingCents ?? 0)}
-              hint="In the ~14-day hold before it can be paid"
-              accent="text-amber-700"
-            />
-            <BreakdownItem
-              label="Upcoming"
-              value={formatUsdFromCents(data.upcomingCents ?? 0)}
-              hint="Annual plans: future months, paid as they're earned"
-              accent="text-slate-500"
-            />
-          </div>
-        </section>
-      ) : null}
 
       {data.adjustments && data.adjustments.length > 0 ? (
         <section className="rounded-xl border border-orange-200 bg-orange-50 p-4 sm:p-5">
@@ -451,26 +421,6 @@ function StatCard({
       <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{value}</p>
       {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
     </article>
-  );
-}
-
-function BreakdownItem({
-  label,
-  value,
-  hint,
-  accent,
-}: {
-  label: string;
-  value: string;
-  hint: string;
-  accent: string;
-}) {
-  return (
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p>
-      <p className={`mt-1 text-xl font-bold tracking-tight ${accent}`}>{value}</p>
-      <p className="mt-1 text-xs text-slate-500">{hint}</p>
-    </div>
   );
 }
 
