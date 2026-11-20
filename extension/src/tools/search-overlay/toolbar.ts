@@ -70,18 +70,18 @@ export type SearchToolbar = {
   // "Data updated 2h ago" label; `stale` adds the out-of-date words.
   setDataUpdated: (text: string | null, stale: boolean) => void;
   // Page-level lookup failure notice with a Retry button; hidden when `show` is false.
-  setLookupIssue: (show: boolean, onRetry: () => void) => void;
+  setLookupIssue: (show: boolean, onRetry: () => void, failed?: Array<"market" | "ccRates">) => void;
 };
 
 const RESET_EN = "Reset view";
 const RESET_COPY: Record<string, string> = { en: RESET_EN, es: "Restablecer vista", fr: "Reinitialiser la vue" };
 
-type IssueCopy = { text: string; retry: string };
-const ISSUE_EN: IssueCopy = { text: "Some estimates did not load.", retry: "Retry" };
+type IssueCopy = { text: string; retry: string; market: string; ccRates: string };
+const ISSUE_EN: IssueCopy = { text: "Some estimates did not load.", retry: "Retry", market: "Sales estimates", ccRates: "Campaign rates" };
 const ISSUE_COPY: Record<string, IssueCopy> = {
   en: ISSUE_EN,
-  es: { text: "Algunas estimaciones no se cargaron.", retry: "Reintentar" },
-  fr: { text: "Certaines estimations ne se sont pas chargees.", retry: "Reessayer" },
+  es: { text: "Algunas estimaciones no se cargaron.", retry: "Reintentar", market: "Estimaciones de ventas", ccRates: "Tarifas de campana" },
+  fr: { text: "Certaines estimations ne se sont pas chargees.", retry: "Reessayer", market: "Estimations de ventes", ccRates: "Taux de campagne" },
 };
 
 type ReportCopy = { button: string; title: string; intro: string };
@@ -368,9 +368,11 @@ Tiles found: ${tiles}`,
       dataAge.classList.toggle("stale", stale);
       dataAge.textContent = text ? (stale ? `${text} ${legend().source.stale}` : text) : "";
     },
-    setLookupIssue: (show: boolean, onRetry: () => void) => {
+    setLookupIssue: (show: boolean, onRetry: () => void, failed: Array<"market" | "ccRates"> = []) => {
       issueRetry = onRetry;
       issueWrap.hidden = !show;
+      // Name what failed so a missing chip has a visible cause (and support can see it).
+      issueText.title = failed.map((f) => issueCopy[f]).join(", ");
     },
     setEnrichStatus: (text: string) => {
       enrichStatus.textContent = text;

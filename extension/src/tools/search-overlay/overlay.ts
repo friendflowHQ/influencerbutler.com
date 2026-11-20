@@ -396,12 +396,16 @@ export async function initSearchOverlay(
   const retryers: Record<"market" | "ccRates", () => void> = { market: () => undefined, ccRates: () => undefined };
   let toolbarApi: SearchToolbar | null = null;
   const renderLookupIssue = (): void => {
-    toolbarApi?.setLookupIssue(failedLookups.size > 0, () => {
-      const names = Array.from(failedLookups);
-      failedLookups.clear();
-      renderLookupIssue();
-      for (const n of names) retryers[n]();
-    });
+    toolbarApi?.setLookupIssue(
+      failedLookups.size > 0,
+      () => {
+        const names = Array.from(failedLookups);
+        failedLookups.clear();
+        renderLookupIssue();
+        for (const n of names) retryers[n]();
+      },
+      Array.from(failedLookups),
+    );
   };
   const noteLookup = (name: "market" | "ccRates", ok: boolean): void => {
     if (ok) failedLookups.delete(name);

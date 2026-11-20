@@ -2252,10 +2252,10 @@ button.tile-chip.more:focus-visible { outline: 3px solid #1d4ed8; outline-offset
 /* Data freshness label in the search toolbar (shared/format-age.ts). */
 .search-data-age { color: #55657a; }
 .search-data-age.stale { color: #b45309; font-weight: 700; }
-.chip-pop { white-space: pre-line; }
+.chip-pop { white-space: pre-line; font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; }
 
 /* "Why is this first?" line under the search toolbar (tools/score/explain.ts). */
-.search-top-reason { font-size: 12px; line-height: 1.4; color: #475569; padding: 4px 2px 0; }
+.search-top-reason { font: 12px/1.4 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #475569; padding: 4px 2px 0; }
 
 /* Accept campaigns review sheet (tools/search-overlay/accept-sheet.ts). */
 .accept-sheet .sheet-warning { margin: 0 0 8px; font-weight: 700; color: #9a3412; font-size: 12.5px; }
@@ -2285,7 +2285,7 @@ button.tile-chip.more:focus-visible { outline: 3px solid #1d4ed8; outline-offset
   position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 2147483000;
   display: flex; flex-wrap: wrap; align-items: center; gap: 8px; max-width: min(92vw, 760px);
   padding: 10px 12px; background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
-  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.25); font-size: 12.5px; color: #0f172a;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.25); font: 12.5px/1.4 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; color: #0f172a;
 }
 .shortlist-tray[hidden] { display: none; }
 .shortlist-count { font-weight: 800; }
