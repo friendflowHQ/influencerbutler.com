@@ -9,9 +9,10 @@ import { useCallback, useEffect, useState } from "react";
 import Confetti from "./Confetti";
 import GaSection, { type GaResponse } from "./GaSection";
 import SearchSection, { type SearchResponse } from "./SearchSection";
-import GoalsSection from "./GoalsSection";
+import GoalsSection, { type Goal } from "./GoalsSection";
+import Sparkline from "./Sparkline";
 import ChecklistSection from "./ChecklistSection";
-import MetricTile from "./MetricTile";
+import MetricTile, { deltaBits } from "./MetricTile";
 import ProjectedEarnings from "./ProjectedEarnings";
 import PlanBreakdown from "./PlanBreakdown";
 import GrowthForecast from "./GrowthForecast";
@@ -217,6 +218,9 @@ export default function AdminGrowthPage() {
   }, [loadSearch]);
 
   const celebrate = useCallback(() => setConfettiBursts((n) => n + 1), []);
+  // Goals are loaded by GoalsSection; keep a copy (tagged with its month) for the revenue tile.
+  const [loadedGoals, setLoadedGoals] = useState<{ month: string; goals: Goal[] } | null>(null);
+  const onGoalsLoaded = useCallback((m: string, goals: Goal[]) => setLoadedGoals({ month: m, goals }), []);
 
   if (forbidden) {
     return (
@@ -239,7 +243,7 @@ export default function AdminGrowthPage() {
   const mtdRange = mtd ? `${shortMonth(month)} 1-${mtd.throughDay}` : "";
   const prevMtdRange = mtd ? `${shortMonth(shiftMonth(month, -1))} 1-${mtd.throughDay}` : "";
 
-  const strip: { label: string; value: string; live?: boolean }[] = [
+  const strip: { label: string; value: string; live?: boolean; snap?: MetricSnapshot; revenue?: boolean }[] = [
     {
       label: "On the site right now",
       value:
@@ -251,16 +255,35 @@ export default function AdminGrowthPage() {
     {
       label: "Active subscribers",
       value: formatMetricValue("count", m.active_subscriptions?.current ?? null),
+      snap: m.active_subscriptions,
     },
     {
       label: "On trial",
       value: formatMetricValue("count", m.on_trial_subscriptions?.current ?? null),
+      snap: m.on_trial_subscriptions,
     },
     {
       label: isCurrentMonth ? "Revenue this month" : `Revenue in ${monthLabel(month)}`,
       value: formatMetricValue("cents", m.revenue_cents?.current ?? null),
+      snap: m.revenue_cents,
+      revenue: true,
     },
   ];
+
+  // Revenue goal progress for the selected month (accepted goals only), plus a
+  // straight-line pace for the current month once a few days of data exist.
+  const revenueGoal =
+    loadedGoals?.month === month
+      ? loadedGoals.goals.find((g) => g.metric === "revenue_cents" && g.status === "accepted")
+      : undefined;
+  const revenueNow = m.revenue_cents?.current ?? null;
+  const [yearNum, monthNum] = month.split("-").map(Number);
+  const daysInMonth = new Date(Date.UTC(yearNum, monthNum, 0)).getUTCDate();
+  const dayOfMonth = mtd?.throughDay ?? new Date().getDate();
+  const paceCents =
+    isCurrentMonth && revenueNow !== null && dayOfMonth >= 3 && dayOfMonth < daysInMonth
+      ? Math.round((revenueNow / dayOfMonth) * daysInMonth)
+      : null;
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-8">
@@ -318,9 +341,18 @@ export default function AdminGrowthPage() {
       {/* Right now */}
       <section className="mt-6">
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {strip.map((s) => (
+          {strip.map((s) => {
+            const delta = s.snap
+              ? deltaBits(s.snap.current, mtd ? (s.snap.previousToDate ?? null) : s.snap.previous)
+              : null;
+            const progress =
+              s.revenue && revenueGoal && revenueNow !== null && revenueGoal.target > 0
+                ? Math.min(1, revenueNow / revenueGoal.target)
+                : null;
+            return (
             <div key={s.label} className="rounded-xl border border-slate-200 bg-white p-4">
-              <p className={`flex items-center gap-2 text-3xl font-extrabold text-slate-900`}>
+              <div className="flex items-baseline justify-between gap-2">
+              <p className="flex items-center gap-2 text-3xl font-extrabold text-slate-900">
                 {metricsLoading && !s.live ? (
                   <span className="inline-block h-8 w-14 animate-pulse rounded bg-slate-100" />
                 ) : (
@@ -333,9 +365,56 @@ export default function AdminGrowthPage() {
                   </span>
                 ) : null}
               </p>
+              {delta ? (
+                <p
+                  className={`text-xs font-semibold ${delta.tone}`}
+                  title={mtd ? `vs ${prevMtdRange}` : "vs last month"}
+                >
+                  {delta.arrow} {delta.label}
+                  <span className="sr-only"> {mtd ? `vs ${prevMtdRange}` : "vs last month"}</span>
+                </p>
+              ) : null}
+              </div>
               <p className="mt-1 text-xs font-medium text-slate-600">{s.label}</p>
+              {s.snap?.series && s.snap.series.some((v) => v > 0) ? (
+                <div className="mt-2" aria-hidden="true">
+                  <Sparkline data={s.snap.series} stroke="#4f46e5" />
+                </div>
+              ) : null}
+              {s.revenue && !metricsLoading ? (
+                progress !== null && revenueGoal ? (
+                  <div className="mt-2">
+                    <div
+                      role="progressbar"
+                      aria-label="Progress to revenue goal"
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={Math.round(progress * 100)}
+                      className="h-1.5 overflow-hidden rounded-full bg-slate-100"
+                    >
+                      <div className="h-full rounded-full bg-indigo-600" style={{ width: `${progress * 100}%` }} />
+                    </div>
+                    <p className="mt-1 text-xs text-slate-600">
+                      {Math.round(progress * 100)}% of {formatMetricValue("cents", revenueGoal.target)} goal
+                      {paceCents !== null ? (
+                        <>
+                          {" "}
+                          <span className={paceCents >= revenueGoal.target ? "font-semibold text-emerald-700" : ""}>
+                            · on pace for {formatMetricValue("cents", paceCents)}
+                          </span>
+                        </>
+                      ) : null}
+                    </p>
+                  </div>
+                ) : (
+                  <a href="#goals" className="mt-2 inline-block text-xs font-semibold text-indigo-700 hover:underline">
+                    Set a revenue goal
+                  </a>
+                )
+              ) : null}
             </div>
-          ))}
+            );
+          })}
         </div>
         <PlanBreakdown
           rows={metrics?.planBreakdown ?? null}
@@ -354,7 +433,7 @@ export default function AdminGrowthPage() {
         loading={metricsLoading && isCurrentMonth}
       />
 
-      <GoalsSection month={month} catalog={catalog} onCelebrate={celebrate} />
+      <GoalsSection month={month} catalog={catalog} onCelebrate={celebrate} onLoaded={onGoalsLoaded} />
 
       {/* Your numbers */}
       <section className="mt-10">

@@ -10,7 +10,7 @@ import {
   type CatalogEntry,
 } from "./format";
 
-type Goal = {
+export type Goal = {
   id: string;
   metric: string;
   target: number;
@@ -46,10 +46,13 @@ export default function GoalsSection({
   month,
   catalog,
   onCelebrate,
+  onLoaded,
 }: {
   month: string;
   catalog: CatalogEntry[] | null;
   onCelebrate: () => void;
+  /** Lets the page reuse the loaded goals (e.g. progress on the revenue tile). */
+  onLoaded?: (month: string, goals: Goal[]) => void;
 }) {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<GoalsResponse | null>(null);
@@ -63,6 +66,7 @@ export default function GoalsSection({
       if (!res.ok) return;
       const json = (await res.json()) as GoalsResponse;
       setData(json);
+      onLoaded?.(month, json.goals ?? []);
 
       // Fire confetti exactly once per goal: celebrate, then stamp.
       const toCelebrate = (json.goals ?? []).filter((g) => g.needsCelebration);
@@ -83,7 +87,7 @@ export default function GoalsSection({
     } finally {
       setLoading(false);
     }
-  }, [month, onCelebrate]);
+  }, [month, onCelebrate, onLoaded]);
 
   useEffect(() => {
     void load();
@@ -109,7 +113,7 @@ export default function GoalsSection({
   const suggested = goals.filter((g) => g.status === "suggested");
 
   return (
-    <section className="mt-10">
+    <section id="goals" className="mt-10 scroll-mt-6">
       <h2 className="text-sm font-semibold uppercase tracking-wider text-slate-700">
         Goals this month
       </h2>

@@ -5,15 +5,16 @@
 import Sparkline from "./Sparkline";
 import { formatMetricValue, type MetricUnit } from "./format";
 
-function deltaBits(current: number | null, previous: number | null) {
+// Tones use the 700 shades so the small delta text meets WCAG AA on white.
+export function deltaBits(current: number | null, previous: number | null) {
   if (current === null || previous === null) return null;
-  if (previous === 0 && current === 0) return { arrow: "-", tone: "text-slate-400", label: "flat" };
-  if (previous === 0) return { arrow: "↑", tone: "text-emerald-600", label: "new" };
+  if (previous === 0 && current === 0) return { arrow: "-", tone: "text-slate-600", label: "flat" };
+  if (previous === 0) return { arrow: "↑", tone: "text-emerald-700", label: "new" };
   const pct = ((current - previous) / previous) * 100;
-  if (Math.abs(pct) < 0.5) return { arrow: "-", tone: "text-slate-400", label: "flat" };
+  if (Math.abs(pct) < 0.5) return { arrow: "-", tone: "text-slate-600", label: "flat" };
   return pct > 0
-    ? { arrow: "↑", tone: "text-emerald-600", label: `${pct.toFixed(0)}%` }
-    : { arrow: "↓", tone: "text-rose-600", label: `${Math.abs(pct).toFixed(0)}%` };
+    ? { arrow: "↑", tone: "text-emerald-700", label: `${pct.toFixed(0)}%` }
+    : { arrow: "↓", tone: "text-rose-700", label: `${Math.abs(pct).toFixed(0)}%` };
 }
 
 export default function MetricTile({
