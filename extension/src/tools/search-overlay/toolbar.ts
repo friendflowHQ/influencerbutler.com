@@ -3,6 +3,7 @@ import { createInlineShadow } from "../../ui/host";
 import { el } from "../../ui/components";
 import { t } from "../../i18n";
 import { legend } from "./legend";
+import { defaultPrefs, isDefaultPrefs, type ViewPrefs } from "../../shared/view-prefs";
 import { initChatBubble } from "../chat-bubble/panel";
 import { getLocale } from "../../i18n";
 import logoUrl from "../../../static/icons/icon-48.png";
@@ -17,6 +18,12 @@ export type FilterState = { campaignOnly: boolean; minPriceCents: number | null 
 
 export type ToolbarCallbacks = {
   count: number;
+  // Remembered view (sort, filters, hidden badges). `defaultSort` is what the
+  // overlay applies with no saved view; "Reset view" returns to it.
+  defaultSort: SortKey;
+  initial?: ViewPrefs;
+  onViewChange?: (view: ViewPrefs) => void;
+  onReset?: () => void;
   onSort: (key: SortKey) => void;
   onFilter: (state: FilterState) => void;
   // Runs the video scan; the overlay reports progress through setStatus and
@@ -53,9 +60,14 @@ export type SearchToolbar = {
   // Update the accept-all button: hidden at 0, otherwise "Accept campaigns on
   // this page (N)".
   setAcceptCount: (count: number) => void;
+  // Put the controls back to a view (used by "Reset view").
+  setView: (view: ViewPrefs) => void;
   // Page-level lookup failure notice with a Retry button; hidden when `show` is false.
   setLookupIssue: (show: boolean, onRetry: () => void) => void;
 };
+
+const RESET_EN = "Reset view";
+const RESET_COPY: Record<string, string> = { en: RESET_EN, es: "Restablecer vista", fr: "Reinitialiser la vue" };
 
 type IssueCopy = { text: string; retry: string };
 const ISSUE_EN: IssueCopy = { text: "Some estimates did not load.", retry: "Retry" };
@@ -83,6 +95,16 @@ export function renderToolbar(cb: ToolbarCallbacks): SearchToolbar {
   logo.alt = "";
   brand.append(logo, el("span", "search-count", t().searchCount(cb.count)));
 
+  // The current view, remembered across searches (see shared/view-prefs.ts).
+  const view: ViewPrefs = { ...(cb.initial ?? defaultPrefs(cb.defaultSort)) };
+  let saveTimer = 0;
+  let refreshReset: () => void = () => undefined;
+  const viewChanged = (): void => {
+    refreshReset();
+    window.clearTimeout(saveTimer);
+    saveTimer = window.setTimeout(() => cb.onViewChange?.({ ...view }), 300);
+  };
+
   // Sort control.
   const sortWrap = el("label", "search-control");
   sortWrap.append(el("span", "search-control-label", t().searchSortLabel));
@@ -101,17 +123,25 @@ export function renderToolbar(cb: ToolbarCallbacks): SearchToolbar {
     opt.textContent = label;
     sort.append(opt);
   }
-  sort.addEventListener("change", () => cb.onSort(sort.value as SortKey));
+  sort.value = view.sort;
+  sort.addEventListener("change", () => {
+    view.sort = sort.value as SortKey;
+    cb.onSort(view.sort);
+    viewChanged();
+  });
   sortWrap.append(sort);
 
   // Filters: campaign-eligible only + minimum price.
-  const state: FilterState = { campaignOnly: false, minPriceCents: null };
+  const state: FilterState = { campaignOnly: view.campaignOnly, minPriceCents: view.minPriceCents };
   const campaignWrap = el("label", "search-control search-check");
   const campaign = el("input");
   campaign.type = "checkbox";
+  campaign.checked = state.campaignOnly;
   campaign.addEventListener("change", () => {
     state.campaignOnly = campaign.checked;
+    view.campaignOnly = state.campaignOnly;
     cb.onFilter({ ...state });
+    viewChanged();
   });
   campaignWrap.append(campaign, el("span", "", t().searchCampaignOnly));
 
@@ -123,10 +153,13 @@ export function renderToolbar(cb: ToolbarCallbacks): SearchToolbar {
   price.step = "5";
   price.placeholder = "0";
   price.className = "search-price";
+  price.value = state.minPriceCents !== null ? String(state.minPriceCents / 100) : "";
   price.addEventListener("change", () => {
     const dollars = parseFloat(price.value);
     state.minPriceCents = Number.isFinite(dollars) && dollars > 0 ? Math.round(dollars * 100) : null;
+    view.minPriceCents = state.minPriceCents;
     cb.onFilter({ ...state });
+    viewChanged();
   });
   priceWrap.append(price);
 
@@ -245,20 +278,47 @@ export function renderToolbar(cb: ToolbarCallbacks): SearchToolbar {
     keyBtn.setAttribute("aria-expanded", String(!keyPanel.hidden));
   });
   bar.append(keyBtn);
+  let paintHideBtn: (hidden: boolean) => void = () => undefined;
   if (cb.onToggleBadges) {
     const hideBtn = el("button", "btn secondary small") as HTMLButtonElement;
     hideBtn.type = "button";
-    hideBtn.textContent = lg.hideBadges;
-    hideBtn.setAttribute("aria-pressed", "false");
-    let hidden = false;
-    hideBtn.addEventListener("click", () => {
-      hidden = !hidden;
-      cb.onToggleBadges?.(hidden);
+    paintHideBtn = (hidden: boolean) => {
       hideBtn.textContent = hidden ? lg.showBadges : lg.hideBadges;
       hideBtn.setAttribute("aria-pressed", String(hidden));
+    };
+    paintHideBtn(view.badgesHidden);
+    hideBtn.addEventListener("click", () => {
+      view.badgesHidden = !view.badgesHidden;
+      cb.onToggleBadges?.(view.badgesHidden);
+      paintHideBtn(view.badgesHidden);
+      viewChanged();
     });
     bar.append(hideBtn);
   }
+
+  // "Reset view": only shown while the view differs from the default.
+  const resetCopy = RESET_COPY[String(getLocale()).slice(0, 2)] ?? RESET_EN;
+  const resetBtn = el("button", "btn secondary small", resetCopy) as HTMLButtonElement;
+  resetBtn.type = "button";
+  refreshReset = () => {
+    resetBtn.hidden = isDefaultPrefs(view, cb.defaultSort);
+  };
+  const applyView = (next: ViewPrefs): void => {
+    Object.assign(view, next);
+    sort.value = view.sort;
+    campaign.checked = view.campaignOnly;
+    state.campaignOnly = view.campaignOnly;
+    state.minPriceCents = view.minPriceCents;
+    price.value = view.minPriceCents !== null ? String(view.minPriceCents / 100) : "";
+    paintHideBtn(view.badgesHidden);
+    refreshReset();
+  };
+  resetBtn.addEventListener("click", () => {
+    applyView(defaultPrefs(cb.defaultSort));
+    cb.onReset?.();
+  });
+  refreshReset();
+  bar.append(resetBtn);
   // "Report a problem": opens the Feedback form with this page's context filled in.
   const reportCopy = REPORT_COPY[String(getLocale()).slice(0, 2)] ?? REPORT_EN;
   const reportBtn = el("button", "btn secondary small") as HTMLButtonElement;
@@ -283,6 +343,7 @@ Tiles found: ${tiles}`,
   root.append(bar, keyPanel);
   return {
     host,
+    setView: applyView,
     setLookupIssue: (show: boolean, onRetry: () => void) => {
       issueRetry = onRetry;
       issueWrap.hidden = !show;

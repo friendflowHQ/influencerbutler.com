@@ -1,4 +1,5 @@
 import { enableChipTips } from "../../ui/chip-tips";
+import { defaultPrefs, loadViewPrefs, priceForCurrency, saveViewPrefs } from "../../shared/view-prefs";
 import { createInlineShadow } from "../../ui/host";
 import { el } from "../../ui/components";
 import { t } from "../../i18n";
@@ -734,8 +735,25 @@ export async function initSearchOverlay(
     }
   }
 
+  // Remembered view for this retailer and page kind (sort, filters, hidden badges).
+  const defaultSort: SortKey = caps.autoSortByScore ? "score" : "relevance";
+  const prefsKey = `${module.retailer}:${detectPageType(location.href) === "deals" ? "deals" : "search"}`;
+  const pageCurrency = rows[0]?.tile.currency ?? null;
+  const savedView = await loadViewPrefs(prefsKey, defaultSort);
+  const initialView = { ...savedView, minPriceCents: priceForCurrency(savedView, pageCurrency) };
+  if (epoch !== initEpoch) return;
+
   const toolbar = renderToolbar({
     count: rows.length,
+    defaultSort,
+    initial: initialView,
+    onViewChange: (view) => void saveViewPrefs(prefsKey, { ...view, currency: pageCurrency }, defaultSort),
+    onReset: () => {
+      applySort(defaultSort);
+      applyFilter({ campaignOnly: false, minPriceCents: null });
+      setBadgesHidden(false);
+      void saveViewPrefs(prefsKey, defaultPrefs(defaultSort), defaultSort);
+    },
     onSort: applySort,
     onFilter: applyFilter,
     onScanStart: runScan,
@@ -760,7 +778,11 @@ export async function initSearchOverlay(
   mountToolbar(module.toolbarSlot(first.tile.el), toolbar.host);
   // Lead with the best opportunities. Not on Walmart or Target: reordering a
   // React-managed grid at load fights its re-renders; the toolbar sort still works.
-  if (caps.autoSortByScore) applySort("score");
+  if (caps.autoSortByScore || initialView.sort !== defaultSort) applySort(initialView.sort);
+  if (initialView.campaignOnly || initialView.minPriceCents !== null) {
+    applyFilter({ campaignOnly: initialView.campaignOnly, minPriceCents: initialView.minPriceCents });
+  }
+  if (initialView.badgesHidden) setBadgesHidden(true);
 
   // Automatic tier-1 enrichment: shared 24h cache first, then viewport-first
   // static /dp/ fetches through the serialized chain. Each arrival upgrades
