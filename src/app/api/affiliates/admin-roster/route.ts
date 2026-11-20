@@ -21,7 +21,9 @@ export const dynamic = "force-dynamic";
  * The LS list is still fetched, but only to show link state (lsLinked/lsStatus).
  *   Total earned = full promised rate on every commissionable order.
  *   Owed         = still-outstanding top-up + open make-whole adjustments.
- *   Paid out     = total earned minus owed.
+ *   Paid out     = successful rows in the affiliate_payouts ledger, the same
+ *                  figure the affiliate sees. paidGapCents flags any difference
+ *                  from (total earned - owed).
  */
 
 type AppStatus = "pending" | "approved" | "rejected" | "none";
@@ -38,6 +40,8 @@ type RosterRow = {
   totalEarningsCents: number | null;
   paidCents: number | null;
   unpaidEarningsCents: number | null;
+  /** Total earned - owed - paid (ledger). 0 when the three figures reconcile. */
+  paidGapCents: number | null;
   appliedAt: string | null;
   reviewedAt: string | null;
   commissionPercent: number | null;
@@ -215,17 +219,46 @@ export async function GET(request: Request) {
     //         Paid (Total - Owed) collapses cleanly to earned-minus-outstanding.
     // A user with no statement (not an affiliate, or no commissionable orders)
     // returns nulls, which the UI renders as "-".
+    // Paid out comes from the payout ledger (successful rows), matching the
+    // affiliate's own dashboard and the admin preview. If the ledger read
+    // fails it falls back to the derived figure (total - owed).
+    const ledgerPaidByUser = new Map<string, number>();
+    let ledgerOk = false;
+    try {
+      const { data: payouts, error: payoutsErr } = await supabase
+        .from("affiliate_payouts")
+        .select("user_id,gross_cents,status");
+      if (!payoutsErr) {
+        ledgerOk = true;
+        for (const row of payouts ?? []) {
+          if (row.status !== "success") continue;
+          const payoutUser = str(row.user_id);
+          if (!payoutUser || typeof row.gross_cents !== "number") continue;
+          ledgerPaidByUser.set(payoutUser, (ledgerPaidByUser.get(payoutUser) ?? 0) + row.gross_cents);
+        }
+      }
+    } catch (err) {
+      console.warn("admin-roster: payout ledger read skipped", err);
+    }
+
     const buildEarnings = (userId: string) => {
       const s = commissionByUser.get(userId);
       if (!s) {
-        return { totalEarningsCents: null, paidCents: null, unpaidEarningsCents: null };
+        return {
+          totalEarningsCents: null,
+          paidCents: null,
+          unpaidEarningsCents: null,
+          paidGapCents: null,
+        };
       }
       const owed = s.owedCents + s.adjustmentCents;
       const total = s.earnedCents + s.adjustmentCents;
+      const paid = ledgerOk ? (ledgerPaidByUser.get(userId) ?? 0) : Math.max(0, total - owed);
       return {
         totalEarningsCents: total,
         unpaidEarningsCents: owed,
-        paidCents: Math.max(0, total - owed),
+        paidCents: paid,
+        paidGapCents: ledgerOk ? total - owed - paid : 0,
       };
     };
 

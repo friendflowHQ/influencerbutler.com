@@ -135,6 +135,7 @@ type RosterRow = {
   totalEarningsCents: number | null;
   paidCents: number | null;
   unpaidEarningsCents: number | null;
+  paidGapCents?: number | null;
   appliedAt: string | null;
   reviewedAt: string | null;
   commissionPercent: number | null;
@@ -2001,9 +2002,24 @@ function RosterTab({
                 <th className="px-4 py-3">Code &amp; link</th>
                 <th className="px-4 py-3">Terms</th>
                 <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3 text-right">Total earned</th>
-                <th className="px-4 py-3 text-right">Paid out</th>
-                <th className="px-4 py-3 text-right">Owed</th>
+                <th
+                  className="px-4 py-3 text-right"
+                  title="All-time commission earned on every referred order, plus open adjustments."
+                >
+                  Total earned
+                </th>
+                <th
+                  className="px-4 py-3 text-right"
+                  title="Sum of successful PayPal payouts in the payout ledger. Matches the affiliate's own dashboard."
+                >
+                  Paid out
+                </th>
+                <th
+                  className="px-4 py-3 text-right"
+                  title="Still outstanding: order commissions not yet paid plus open adjustments. Includes upcoming annual months and the 14-day clearing hold."
+                >
+                  Owed
+                </th>
                 <th className="px-4 py-3">Applied</th>
                 <th className="px-4 py-3">Actions</th>
               </tr>
@@ -2058,6 +2074,17 @@ function RosterTab({
                     </td>
                     <td className="px-4 py-3 text-right text-slate-600">
                       {formatUsd(r.paidCents)}
+                      {r.paidGapCents && Math.abs(r.paidGapCents) >= 100 ? (
+                        <p
+                          className="mt-1 text-[11px] font-medium text-amber-800"
+                          title={`Total earned minus owed minus paid out leaves ${formatUsd(
+                            Math.abs(r.paidGapCents),
+                          )} unexplained. Check the payout ledger and adjustments for this affiliate.`}
+                        >
+                          Gap: {r.paidGapCents > 0 ? "+" : "-"}
+                          {formatUsd(Math.abs(r.paidGapCents))}
+                        </p>
+                      ) : null}
                     </td>
                     <td className="px-4 py-3 text-right">
                       {r.unpaidEarningsCents && r.unpaidEarningsCents > 0 ? (

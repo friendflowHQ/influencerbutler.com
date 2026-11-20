@@ -3,6 +3,7 @@ import { requirePermission } from "@/lib/admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { logAdminAction } from "@/lib/admin-audit";
 import { loadAffiliateCommissions } from "@/lib/affiliate-commissions-data";
+import { autopayCapCents, isAutopayArmed, nextAutopayRunMs } from "@/lib/affiliate-autopay-state";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -139,6 +140,20 @@ export async function GET(request: Request) {
       createdAt: (profile.created_at as string | null) ?? null,
       displayName,
       owedCents: stmt?.owedCents ?? 0,
+      // Same fields me-selfhosted returns, so the preview matches what the
+      // affiliate sees: open adjustments (part of their unpaid total), the
+      // next-run projection, and the 60-day earnings trend.
+      adjustmentCents: stmt?.adjustmentCents ?? 0,
+      adjustments: (stmt?.adjustments ?? []).map((a) => ({
+        amountCents: a.amountCents,
+        note: a.note,
+        createdAt: a.createdAt,
+      })),
+      payableAtNextRunCents: stmt?.payableAtNextRunCents ?? stmt?.payableCents ?? 0,
+      nextPayoutAt: new Date(nextAutopayRunMs()).toISOString(),
+      reviewCapCents: autopayCapCents(),
+      autopayArmed: await isAutopayArmed(admin),
+      dailyEarnings: stmt?.dailyEarnings ?? [],
       grossCents: stmt?.grossCents ?? 0,
       orderCount: stmt?.orderCount ?? 0,
       ratePercent: stmt?.ratePercent ?? 30,

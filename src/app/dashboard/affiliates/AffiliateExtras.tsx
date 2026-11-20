@@ -17,7 +17,14 @@ export type DailyEarning = { date: string; earningsCents: number };
 
 /* ------------------------------ Earnings trend ----------------------------- */
 
-export function EarningsTrend({ daily }: { daily: DailyEarning[] }) {
+export function EarningsTrend({
+  daily,
+  orderCount = 0,
+}: {
+  daily: DailyEarning[];
+  /** Lifetime referred orders, so an empty window is not described as "no orders yet". */
+  orderCount?: number;
+}) {
   const { last, deltaPct, total } = useMemo(() => {
     const last = daily.slice(-30);
     const prior = daily.slice(-60, -30);
@@ -31,7 +38,9 @@ export function EarningsTrend({ daily }: { daily: DailyEarning[] }) {
   if (last.length === 0 || total === 0) {
     return (
       <p className="text-sm text-slate-600">
-        Your earnings trend appears here after your first referred order.
+        {orderCount > 0
+          ? "No new commission in the last 30 days. Your trend returns when a new referred order lands."
+          : "Your earnings trend appears here after your first referred order."}
       </p>
     );
   }

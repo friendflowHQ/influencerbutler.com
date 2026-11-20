@@ -43,6 +43,7 @@ export function EarningsHero({
   reviewCapCents,
   autopayArmed,
   dailyEarnings,
+  orderCount = 0,
   shareLink,
   code,
 }: {
@@ -55,6 +56,7 @@ export function EarningsHero({
   /** False while auto-pay runs in shadow mode (payouts released by hand). */
   autopayArmed: boolean | null;
   dailyEarnings: DailyEarning[];
+  orderCount?: number;
   shareLink: string | null;
   code: string | null;
 }) {
@@ -132,7 +134,7 @@ export function EarningsHero({
           </div>
         ) : null}
         </div>
-        <EarningsTrend daily={dailyEarnings} />
+        <EarningsTrend daily={dailyEarnings} orderCount={orderCount} />
       </div>
     </section>
   );
@@ -181,6 +183,7 @@ export function PayoutPipeline({
   reviewCapCents,
   autopayArmed,
   paidCents,
+  unpaidCents,
 }: {
   upcomingCents: number;
   clearingCents: number;
@@ -190,7 +193,12 @@ export function PayoutPipeline({
   reviewCapCents: number | null;
   autopayArmed: boolean | null;
   paidCents: number;
+  /** Total unpaid (owed + adjustments). When it exceeds the three stages, the
+   *  remainder is shown so the numbers visibly add up. */
+  unpaidCents?: number;
 }) {
+  const stagesCents = upcomingCents + clearingCents + payableCents;
+  const otherCents = unpaidCents === undefined ? 0 : unpaidCents - stagesCents;
   const next = nextPayoutLabel(nextPayoutAt);
   const pct = Math.min(100, Math.round((payableCents / MIN_PAYOUT_CENTS) * 100));
   const meetsMinimum = payableCents >= MIN_PAYOUT_CENTS;
@@ -253,6 +261,17 @@ export function PayoutPipeline({
           meaning="Already sent to your PayPal."
         />
       </ol>
+
+      {unpaidCents !== undefined ? (
+        <p className="mt-3 text-xs text-slate-600">
+          Unpaid total {formatUsdFromCents(unpaidCents)} = Upcoming + Clearing + Payable
+          ({formatUsdFromCents(stagesCents)})
+          {Math.abs(otherCents) >= 1
+            ? ` ${otherCents > 0 ? "+" : "-"} ${formatUsdFromCents(Math.abs(otherCents))} in adjustments and other open items`
+            : ""}
+          .
+        </p>
+      ) : null}
 
       <div className="mt-4">
         <div className="flex justify-between text-xs text-slate-600">

@@ -250,6 +250,7 @@ export default function SelfHostedAffiliateDashboard({
         reviewCapCents={reviewCap}
         autopayArmed={armed}
         dailyEarnings={data.dailyEarnings ?? []}
+        orderCount={data.orderCount}
         shareLink={code && !readOnly ? brandedShareLink(code) : null}
         code={code && !readOnly ? code : null}
       />
@@ -274,6 +275,7 @@ export default function SelfHostedAffiliateDashboard({
           reviewCapCents={reviewCap}
           autopayArmed={armed}
           paidCents={data.paidCents}
+          unpaidCents={data.owedCents + (data.adjustmentCents ?? 0)}
         />
 
         {!readOnly ? <NextBestAction onNavigate={(t) => setTab(t as TabId)} /> : null}
