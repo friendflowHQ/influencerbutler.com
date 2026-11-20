@@ -8,6 +8,12 @@
 export type SignalState = "good" | "neutral" | "low" | "unknown";
 export type SignalKind = "pays" | "sells" | "campaign";
 
+// How a rating was reached, so the tooltip can say it honestly. "solid" and "modest"
+// are the guardrails: a page-relative "slow" never applies to a product that is
+// still strong in absolute terms, and a page-relative "well" never applies to one
+// that is weak in absolute terms.
+export type How = "top" | "bottom" | "middle" | "fixed" | "solid" | "modest";
+
 export type Signal = { kind: SignalKind; state: SignalState; text: string; tip: string };
 
 export type Cutoffs = { goodMin: number; neutralMin: number };
@@ -69,12 +75,37 @@ type Copy = {
   campaignNone: string;
   campaignChecking: string;
   campaignUnknown: string;
-  paysTip: (state: SignalState, text: string | null, relative: boolean) => string;
-  sellsTip: (state: SignalState, units: number | null, relative: boolean, estimated: boolean) => string;
+  paysTip: (state: SignalState, text: string | null, how: How) => string;
+  sellsTip: (state: SignalState, units: number | null, how: How, estimated: boolean) => string;
   campaignTip: (kind: "open" | "none" | "checking" | "unknown", detail: string | null) => string;
 };
 
 const ICONS: Record<SignalState, string> = { good: "✓", neutral: "–", low: "↓", unknown: "?" };
+
+const HOW_EN: Record<How, string> = {
+  top: "in the top third of this page",
+  bottom: "in the bottom third of this page",
+  middle: "in the middle of this page",
+  fixed: "a fixed level, because this page has too few products to compare",
+  solid: "lower than most of this page, but a solid level overall",
+  modest: "higher than most of this page, but still a modest level overall",
+};
+const HOW_ES: Record<How, string> = {
+  top: "en el tercio superior de esta pagina",
+  bottom: "en el tercio inferior de esta pagina",
+  middle: "en el medio de esta pagina",
+  fixed: "un nivel fijo, porque esta pagina tiene pocos productos para comparar",
+  solid: "menos que la mayoria de esta pagina, pero un nivel solido en general",
+  modest: "mas que la mayoria de esta pagina, pero aun un nivel modesto en general",
+};
+const HOW_FR: Record<How, string> = {
+  top: "dans le tiers superieur de cette page",
+  bottom: "dans le tiers inferieur de cette page",
+  middle: "au milieu de cette page",
+  fixed: "un niveau fixe, car cette page a trop peu de produits a comparer",
+  solid: "moins que la plupart de cette page, mais un niveau correct dans l'ensemble",
+  modest: "plus que la plupart de cette page, mais un niveau modeste dans l'ensemble",
+};
 
 const EN: Copy = {
   details: "Details",
@@ -86,18 +117,14 @@ const EN: Copy = {
   campaignNone: "No campaign",
   campaignChecking: "Checking...",
   campaignUnknown: "Campaign unknown",
-  paysTip: (state, text, relative) => {
+  paysTip: (state, text, kind) => {
     if (state === "unknown" || !text) return "Not enough information to estimate what this pays.";
-    const how = relative
-      ? state === "good" ? "in the top third of this page" : state === "low" ? "in the bottom third of this page" : "in the middle of this page"
-      : "a fixed level, because this page has too few products to compare";
+    const how = HOW_EN[kind];
     return `About ${text} per sale, ${how}.`;
   },
-  sellsTip: (state, units, relative, estimated) => {
+  sellsTip: (state, units, kind, estimated) => {
     if (state === "unknown" || units === null) return "Not enough information to estimate sales.";
-    const how = relative
-      ? state === "good" ? "in the top third of this page" : state === "low" ? "in the bottom third of this page" : "in the middle of this page"
-      : "a fixed level, because this page has too few products to compare";
+    const how = HOW_EN[kind];
     return `About ${units.toLocaleString("en")} sold a month${estimated ? " (estimated)" : ""}, ${how}.`;
   },
   campaignTip: (kind, detail) =>
@@ -117,18 +144,14 @@ const ES: Copy = {
   campaignNone: "Sin campana",
   campaignChecking: "Comprobando...",
   campaignUnknown: "Campana desconocida",
-  paysTip: (state, text, relative) => {
+  paysTip: (state, text, kind) => {
     if (state === "unknown" || !text) return "No hay suficiente informacion para estimar el pago.";
-    const how = relative
-      ? state === "good" ? "en el tercio superior de esta pagina" : state === "low" ? "en el tercio inferior de esta pagina" : "en el medio de esta pagina"
-      : "un nivel fijo, porque esta pagina tiene pocos productos para comparar";
+    const how = HOW_ES[kind];
     return `Unos ${text} por venta, ${how}.`;
   },
-  sellsTip: (state, units, relative, estimated) => {
+  sellsTip: (state, units, kind, estimated) => {
     if (state === "unknown" || units === null) return "No hay suficiente informacion para estimar las ventas.";
-    const how = relative
-      ? state === "good" ? "en el tercio superior de esta pagina" : state === "low" ? "en el tercio inferior de esta pagina" : "en el medio de esta pagina"
-      : "un nivel fijo, porque esta pagina tiene pocos productos para comparar";
+    const how = HOW_ES[kind];
     return `Unas ${units.toLocaleString("es")} ventas al mes${estimated ? " (estimado)" : ""}, ${how}.`;
   },
   campaignTip: (kind, detail) =>
@@ -148,18 +171,14 @@ const FR: Copy = {
   campaignNone: "Pas de campagne",
   campaignChecking: "Verification...",
   campaignUnknown: "Campagne inconnue",
-  paysTip: (state, text, relative) => {
+  paysTip: (state, text, kind) => {
     if (state === "unknown" || !text) return "Pas assez d'informations pour estimer le gain.";
-    const how = relative
-      ? state === "good" ? "dans le tiers superieur de cette page" : state === "low" ? "dans le tiers inferieur de cette page" : "au milieu de cette page"
-      : "un niveau fixe, car cette page a trop peu de produits a comparer";
+    const how = HOW_FR[kind];
     return `Environ ${text} par vente, ${how}.`;
   },
-  sellsTip: (state, units, relative, estimated) => {
+  sellsTip: (state, units, kind, estimated) => {
     if (state === "unknown" || units === null) return "Pas assez d'informations pour estimer les ventes.";
-    const how = relative
-      ? state === "good" ? "dans le tiers superieur de cette page" : state === "low" ? "dans le tiers inferieur de cette page" : "au milieu de cette page"
-      : "un niveau fixe, car cette page a trop peu de produits a comparer";
+    const how = HOW_FR[kind];
     return `Environ ${units.toLocaleString("fr")} ventes par mois${estimated ? " (estime)" : ""}, ${how}.`;
   },
   campaignTip: (kind, detail) =>
@@ -180,16 +199,26 @@ function classify(
   cutoffs: Cutoffs | null,
   fallback: { good: number; neutral: number },
   capAtNeutral: boolean,
-): { state: SignalState; relative: boolean } {
-  if (value === null || !Number.isFinite(value)) return { state: "unknown", relative: false };
+): { state: SignalState; how: How } {
+  if (value === null || !Number.isFinite(value)) return { state: "unknown", how: "fixed" };
   if (cutoffs) {
-    const state: SignalState = value >= cutoffs.goodMin ? "good" : value >= cutoffs.neutralMin ? "neutral" : "low";
-    return { state, relative: true };
+    let state: SignalState = value >= cutoffs.goodMin ? "good" : value >= cutoffs.neutralMin ? "neutral" : "low";
+    let how: How = state === "good" ? "top" : state === "low" ? "bottom" : "middle";
+    // Guardrails: page-relative ranking alone must not call a strong product slow
+    // or a weak one good (a page of 10,000-a-month sellers makes 1,000 look slow).
+    if (state === "good" && value < fallback.neutral) {
+      state = "neutral";
+      how = "modest";
+    } else if (state === "low" && value >= fallback.good) {
+      state = "neutral";
+      how = "solid";
+    }
+    return { state, how };
   }
   let state: SignalState = value >= fallback.good ? "good" : value >= fallback.neutral ? "neutral" : "low";
   // A fixed-level "good" on a local estimate would overclaim.
   if (capAtNeutral && state === "good") state = "neutral";
-  return { state, relative: false };
+  return { state, how: "fixed" };
 }
 
 export function simpleSignals(input: SimpleInput, bands: PageBands, locale: string): Signal[] {
@@ -201,7 +230,7 @@ export function simpleSignals(input: SimpleInput, bands: PageBands, locale: stri
     kind: "pays",
     state: pays.state,
     text: `${c.icons[pays.state]} ${c.pays[pays.state]}`,
-    tip: c.paysTip(pays.state, input.commissionText, pays.relative),
+    tip: c.paysTip(pays.state, input.commissionText, pays.how),
   });
 
   const sells = classify(input.units, bands.units, FALLBACK_UNITS, input.unitsEstimated);
@@ -209,7 +238,7 @@ export function simpleSignals(input: SimpleInput, bands: PageBands, locale: stri
     kind: "sells",
     state: sells.state,
     text: `${c.icons[sells.state]} ${c.sells[sells.state]}`,
-    tip: c.sellsTip(sells.state, input.units, sells.relative, input.unitsEstimated),
+    tip: c.sellsTip(sells.state, input.units, sells.how, input.unitsEstimated),
   });
 
   if (input.showCampaign) {

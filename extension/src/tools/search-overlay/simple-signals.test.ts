@@ -51,21 +51,43 @@ describe("bandsFor", () => {
 });
 
 describe("simpleSignals", () => {
+  // Cents and units, large enough to clear the absolute floors ($0.75, 50 a month).
   const bands = computeBands([
-    { commissionCents: 10, units: 10 },
-    { commissionCents: 20, units: 20 },
-    { commissionCents: 30, units: 30 },
-    { commissionCents: 40, units: 40 },
-    { commissionCents: 50, units: 50 },
-    { commissionCents: 60, units: 60 },
+    { commissionCents: 100, units: 100 },
+    { commissionCents: 200, units: 200 },
+    { commissionCents: 300, units: 300 },
+    { commissionCents: 400, units: 400 },
+    { commissionCents: 500, units: 500 },
+    { commissionCents: 600, units: 600 },
   ]);
 
   it("ranks within the page when there is a sample", () => {
-    const s = simpleSignals({ ...base, commissionCents: 60, commissionText: "$0.60", units: 10 }, bands, "en");
+    const s = simpleSignals({ ...base, commissionCents: 600, commissionText: "$6.00", units: 100 }, bands, "en");
     expect(s[0]).toMatchObject({ kind: "pays", state: "good" });
     expect(s[0]?.text).toContain("Pays well");
     expect(s[0]?.tip).toContain("top third");
     expect(s[1]).toMatchObject({ kind: "sells", state: "low" });
+  });
+
+  it("does not call a strong seller slow just because the page is stronger", () => {
+    const page = computeBands([
+      { commissionCents: 300, units: 1000 }, { commissionCents: 300, units: 2000 }, { commissionCents: 300, units: 5000 },
+      { commissionCents: 300, units: 8000 }, { commissionCents: 300, units: 10000 }, { commissionCents: 300, units: 12000 },
+    ]);
+    const s = simpleSignals({ ...base, commissionCents: 300, commissionText: "$3.00", units: 1000 }, page, "en");
+    expect(s[1]?.state).toBe("neutral");
+    expect(s[1]?.tip).toContain("solid level");
+  });
+
+  it("does not call a weak product good just because it tops a weak page", () => {
+    const page = computeBands([
+      { commissionCents: 5, units: 2 }, { commissionCents: 10, units: 4 }, { commissionCents: 15, units: 6 },
+      { commissionCents: 20, units: 8 }, { commissionCents: 30, units: 10 }, { commissionCents: 40, units: 12 },
+    ]);
+    const s = simpleSignals({ ...base, commissionCents: 40, commissionText: "$0.40", units: 12 }, page, "en");
+    expect(s[0]?.state).toBe("neutral");
+    expect(s[0]?.tip).toContain("modest level");
+    expect(s[1]?.state).toBe("neutral");
   });
 
   it("uses fixed levels on a small page and says so", () => {
