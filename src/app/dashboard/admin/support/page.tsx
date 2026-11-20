@@ -92,7 +92,10 @@ function readFileToB64(file: File): Promise<string> {
 type Bucket = { key: string; label: string; statuses: string[] };
 
 const BUCKETS: Bucket[] = [
-  { key: "attention", label: "Needs attention", statuses: ["escalated", "user_replied", "waiting_on_user"] },
+  // "Needs me" is only what a human must act on. Tickets the bot is waiting on
+  // the customer for live in their own tab so they stop burying real work.
+  { key: "needsMe", label: "Needs me", statuses: ["escalated", "user_replied"] },
+  { key: "waiting", label: "Waiting on customer", statuses: ["waiting_on_user"] },
   { key: "new", label: "New", statuses: ["sent"] },
   { key: "inProgress", label: "In progress", statuses: ["acked", "clarifying", "patching", "committed", "released"] },
   { key: "resolved", label: "Resolved", statuses: ["fixed"] },
@@ -102,6 +105,129 @@ const BUCKETS: Bucket[] = [
 ];
 
 const PRIORITIES = ["", "P0", "P1", "P2", "P3"];
+
+const PAGE_SIZE = 100;
+
+const SORTS = [
+  { key: "auto", label: "Smart order" },
+  { key: "oldest", label: "Waiting longest" },
+  { key: "newest", label: "Newest activity" },
+  { key: "priority", label: "Priority" },
+] as const;
+
+const TIME_RANGES = [
+  { key: "", label: "Any time", ms: 0 },
+  { key: "1d", label: "Last 24 hours", ms: 24 * 3600 * 1000 },
+  { key: "7d", label: "Last 7 days", ms: 7 * 24 * 3600 * 1000 },
+  { key: "30d", label: "Last 30 days", ms: 30 * 24 * 3600 * 1000 },
+] as const;
+
+const KNOWN_TIERS = ["solo", "growth", "pro", "team", "agency", "free", "trial"];
+
+const VIEWS_KEY = "ib-support-saved-views";
+
+type SavedView = {
+  name: string;
+  bucket: string;
+  priority: string;
+  tier: string;
+  type: string;
+  platform: string;
+  version: string;
+  tag: string;
+  range: string;
+  sort: string;
+};
+
+function loadViews(): SavedView[] {
+  try {
+    const raw = window.localStorage.getItem(VIEWS_KEY);
+    const parsed = raw ? (JSON.parse(raw) as SavedView[]) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function storeViews(views: SavedView[]) {
+  try { window.localStorage.setItem(VIEWS_KEY, JSON.stringify(views)); } catch { /* private mode */ }
+}
+
+// "fb-3f905396-0533-..." -> "fb-3f905396". Full id stays in the tooltip/drawer.
+function shortId(id: string): string {
+  const m = /^(fb|tf-crash|tf-screenshot)-([0-9a-z]+)/i.exec(id);
+  return m ? `${m[1]}-${m[2].slice(0, 8)}` : id.slice(0, 14);
+}
+
+// Most recent thing that happened on the ticket (customer or us).
+function lastActivity(t: Ticket): number {
+  return Math.max(Number(t.repliedAt || 0), Number(t.submittedAt || 0));
+}
+
+function ticketTags(t: Ticket): string[] {
+  return (t.tags || "").split(/[,\s]+/).map((x) => x.trim().toLowerCase()).filter(Boolean);
+}
+
+// A short "who has the ball" chip, derived from status + the tags the bots set.
+function botState(t: Ticket): { label: string; tone: string } | null {
+  const tags = ticketTags(t);
+  if (t.status === "escalated") return { label: "needs you", tone: "bg-rose-50 text-rose-700" };
+  if (t.status === "user_replied") return { label: "customer replied", tone: "bg-amber-50 text-amber-700" };
+  if (tags.includes("auto-answered")) return { label: "auto-answered", tone: "bg-violet-50 text-violet-700" };
+  if (tags.includes("autopilot-queue")) return { label: "bot queued", tone: "bg-slate-100 text-slate-600" };
+  if (tags.includes("awaiting-fix")) return { label: "awaiting fix", tone: "bg-sky-50 text-sky-700" };
+  if (tags.some((x) => x.startsWith("eng-"))) return { label: "engineering", tone: "bg-sky-50 text-sky-700" };
+  if (t.status === "waiting_on_user") return { label: "bot asked customer", tone: "bg-slate-100 text-slate-600" };
+  return null;
+}
+
+const PRIORITY_RANK: Record<string, number> = { P0: 0, P1: 1, P2: 2, P3: 3 };
+
+// Split a reply body into the new text and the quoted history ("> ..." lines or
+// an "On <date> ... wrote:" header onward) so long threads stay readable.
+function splitQuoted(body: string): { fresh: string; quoted: string } {
+  const lines = (body || "").split("\n");
+  let cut = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i].trim();
+    if (/^on .{5,120} wrote:?$/i.test(l) || /^-{2,}\s*original message\s*-{2,}$/i.test(l) || (l.startsWith(">") && i > 0)) {
+      cut = i;
+      break;
+    }
+  }
+  if (cut <= 0) return { fresh: body || "", quoted: "" };
+  return { fresh: lines.slice(0, cut).join("\n").trimEnd(), quoted: lines.slice(cut).join("\n") };
+}
+
+// Turn bare http(s) URLs into links (text stays escaped by React).
+function Linkified({ text }: { text: string }) {
+  const parts = text.split(/(https?:\/\/[^\s<>"')]+)/g);
+  return (
+    <>
+      {parts.map((p, i) =>
+        /^https?:\/\//.test(p) ? (
+          <a key={i} href={p} target="_blank" rel="noreferrer" className="text-orange-700 underline">{p}</a>
+        ) : (
+          <span key={i}>{p}</span>
+        ),
+      )}
+    </>
+  );
+}
+
+type Health = {
+  sweep: { mode: "live" | "shadow"; minConfidence: number; maxSendsPerRun: number };
+  engineeringAutopilot: "live" | "shadow";
+  lastBotAt: number | null;
+  stale: boolean;
+  expectedCadence: string;
+  autoAnswered24h: number;
+  needsMeCount: number;
+  oldestNeedsMeAt: number | null;
+  autoClose: { waitingOnUserDays: number; noReplyDays: number };
+};
+
+type SuggestMeta = { confidence: number | null; grounded: boolean; action: string; reason: string };
 
 const STATUS_OPTIONS = [
   "sent", "acked", "clarifying", "waiting_on_user", "user_replied",
@@ -274,9 +400,23 @@ export default function SupportAdminPage() {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [error, setError] = useState<string | null>(null);
 
-  const [bucket, setBucket] = useState<string>("attention");
+  const [bucket, setBucket] = useState<string>("needsMe");
   const [priority, setPriority] = useState<string>("");
   const [tier, setTier] = useState<string>("");
+  const [typeFilter, setTypeFilter] = useState<string>("");
+  const [platformFilter, setPlatformFilter] = useState<string>("");
+  const [versionFilter, setVersionFilter] = useState<string>("");
+  const [tagFilter, setTagFilter] = useState<string>("");
+  const [range, setRange] = useState<string>("");
+  const [sort, setSort] = useState<string>("auto");
+  const [limit, setLimit] = useState<number>(PAGE_SIZE);
+  const [views, setViews] = useState<SavedView[]>([]);
+  const [cursorId, setCursorId] = useState<string | null>(null);
+  const [health, setHealth] = useState<Health | null>(null);
+  const [suggestMeta, setSuggestMeta] = useState<SuggestMeta | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
+  const searchRef = useRef<HTMLInputElement | null>(null);
+  const replyRef = useRef<HTMLTextAreaElement | null>(null);
   // qInput is what is typed; q is the applied search (debounced, or on Enter).
   const [qInput, setQInput] = useState<string>("");
   const [q, setQ] = useState<string>("");
@@ -326,8 +466,11 @@ export default function SupportAdminPage() {
       if (activeBucket.statuses.length && !q.trim()) qs.set("statuses", activeBucket.statuses.join(","));
       if (priority) qs.set("priority", priority);
       if (tier.trim()) qs.set("tier", tier.trim());
+      if (typeFilter) qs.set("classification", typeFilter);
+      const rangeMs = TIME_RANGES.find((r) => r.key === range)?.ms ?? 0;
+      if (rangeMs) qs.set("since", String(Date.now() - rangeMs));
       if (q.trim()) qs.set("q", q.trim());
-      qs.set("limit", "100");
+      qs.set("limit", String(limit));
       const res = await fetch(`/api/admin/support/list?${qs.toString()}`, { cache: "no-store" });
       if (seq !== listSeq.current) return;
       if (res.status === 403) { setForbidden(true); return; }
@@ -342,7 +485,21 @@ export default function SupportAdminPage() {
     } finally {
       if (seq === listSeq.current) setLoading(false);
     }
-  }, [activeBucket, priority, tier, q]);
+  }, [activeBucket, priority, tier, typeFilter, range, q, limit]);
+
+  // Any filter change starts paging over from the first page.
+  const filterKey = [bucket, priority, tier, typeFilter, range, q].join("|");
+  useEffect(() => { setLimit(PAGE_SIZE); }, [filterKey]);
+
+  const fetchHealth = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/support/health", { cache: "no-store" });
+      if (!res.ok) return;
+      setHealth((await res.json()) as Health);
+    } catch { /* banner just stays hidden */ }
+  }, []);
+
+  useEffect(() => { setViews(loadViews()); }, []);
 
   // Apply the typed search after a short pause (Enter applies it at once).
   useEffect(() => {
@@ -367,6 +524,9 @@ export default function SupportAdminPage() {
       setReplyAdvance(true);
       setReplyAttachments([]);
       setReplyInlineImages([]);
+      setSuggestMeta(null);
+      setSuggestReason("");
+      setCursorId(t.id);
     } finally {
       setDetailBusy(false);
     }
@@ -401,6 +561,7 @@ export default function SupportAdminPage() {
   useEffect(() => {
     fetchCounts();
     fetchList();
+    fetchHealth();
     try {
       const id = new URLSearchParams(window.location.search).get("ticket");
       if (id) openTicket(id);
@@ -569,6 +730,12 @@ export default function SupportAdminPage() {
       if (!res.ok || !json.ok) { setActionMsg(json.error || "Could not draft a reply."); return; }
       if (json.subject) setReplySubject(json.subject.slice(0, 180));
       if (json.body) setReplyBody(json.body);
+      setSuggestMeta({
+        confidence: typeof json.confidence === "number" ? json.confidence : null,
+        grounded: !!json.grounded,
+        action: json.action || "",
+        reason: json.reason || "",
+      });
       const conf = typeof json.confidence === "number" ? ` · ${Math.round(json.confidence * 100)}% sure` : "";
       const grounded = json.grounded ? "grounded in help articles" : "no matching help article found, review carefully";
       setSuggestReason(`Draft ready (${grounded}${conf}). Review and edit before sending.`);
@@ -579,6 +746,125 @@ export default function SupportAdminPage() {
       setSuggesting(false);
     }
   }, [selected]);
+
+  // Facet options come from what is loaded, so they always match real data.
+  const facets = useMemo(() => {
+    const platforms = new Set<string>();
+    const versions = new Set<string>();
+    const tiers = new Set<string>(KNOWN_TIERS);
+    const tags = new Set<string>();
+    for (const t of tickets) {
+      if (t.platform) platforms.add(t.platform);
+      if (t.appVersion) versions.add(t.appVersion);
+      if (t.licenseTier) tiers.add(t.licenseTier.toLowerCase());
+      for (const g of ticketTags(t)) tags.add(g);
+    }
+    const sortAlpha = (s: Set<string>) => Array.from(s).sort((a, b) => a.localeCompare(b));
+    return {
+      platforms: sortAlpha(platforms),
+      versions: Array.from(versions).sort((a, b) => b.localeCompare(a, undefined, { numeric: true })),
+      tiers: sortAlpha(tiers),
+      tags: sortAlpha(tags),
+    };
+  }, [tickets]);
+
+  // Client-side facets the Worker does not filter on, then the chosen sort.
+  const visible = useMemo(() => {
+    let list = tickets;
+    if (platformFilter) list = list.filter((t) => t.platform === platformFilter);
+    if (versionFilter) list = list.filter((t) => t.appVersion === versionFilter);
+    if (tagFilter) list = list.filter((t) => ticketTags(t).includes(tagFilter));
+    const mode = sort === "auto"
+      ? (bucket === "needsMe" || bucket === "waiting" ? "priority" : "newest")
+      : sort;
+    const out = [...list];
+    if (mode === "oldest") out.sort((a, b) => lastActivity(a) - lastActivity(b));
+    else if (mode === "newest") out.sort((a, b) => lastActivity(b) - lastActivity(a));
+    else {
+      out.sort((a, b) => {
+        const pa = PRIORITY_RANK[a.priority] ?? 2;
+        const pb = PRIORITY_RANK[b.priority] ?? 2;
+        return pa - pb || lastActivity(a) - lastActivity(b);
+      });
+    }
+    return out;
+  }, [tickets, platformFilter, versionFilter, tagFilter, sort, bucket]);
+
+  const saveView = useCallback(() => {
+    const name = window.prompt("Name this view (e.g. Mac crashes this week)");
+    if (!name || !name.trim()) return;
+    const v: SavedView = {
+      name: name.trim().slice(0, 40), bucket, priority, tier, type: typeFilter,
+      platform: platformFilter, version: versionFilter, tag: tagFilter, range, sort,
+    };
+    const next = [...views.filter((x) => x.name !== v.name), v];
+    setViews(next);
+    storeViews(next);
+  }, [views, bucket, priority, tier, typeFilter, platformFilter, versionFilter, tagFilter, range, sort]);
+
+  const applyView = useCallback((name: string) => {
+    const v = views.find((x) => x.name === name);
+    if (!v) return;
+    setBucket(v.bucket); setPriority(v.priority); setTier(v.tier); setTypeFilter(v.type);
+    setPlatformFilter(v.platform); setVersionFilter(v.version); setTagFilter(v.tag);
+    setRange(v.range); setSort(v.sort);
+  }, [views]);
+
+  const deleteView = useCallback((name: string) => {
+    const next = views.filter((x) => x.name !== name);
+    setViews(next);
+    storeViews(next);
+  }, [views]);
+
+  const clearFilters = useCallback(() => {
+    setPriority(""); setTier(""); setTypeFilter(""); setPlatformFilter("");
+    setVersionFilter(""); setTagFilter(""); setRange(""); setSort("auto");
+  }, []);
+
+  const filtersActive = !!(priority || tier || typeFilter || platformFilter || versionFilter || tagFilter || range);
+
+  // Move through the visible list (list cursor, or next/prev inside the drawer).
+  const stepTicket = useCallback((delta: number) => {
+    if (!visible.length) return;
+    const from = selected?.id ?? cursorId;
+    const idx = from ? visible.findIndex((t) => t.id === from) : -1;
+    const nextIdx = idx < 0 ? (delta > 0 ? 0 : visible.length - 1) : Math.min(visible.length - 1, Math.max(0, idx + delta));
+    const next = visible[nextIdx];
+    if (!next) return;
+    setCursorId(next.id);
+    if (selected) void openTicket(next.id);
+  }, [visible, selected, cursorId, openTicket]);
+
+  // Keyboard shortcuts. The handler is re-bound whenever its inputs change, and
+  // ignores keystrokes while typing in a field or with a modifier held.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      const typing = !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable);
+      if (e.key === "Escape") {
+        if (showHelp) setShowHelp(false);
+        else if (selected && !typing) setSelected(null);
+        else if (userView && !typing) setUserView(null);
+        return;
+      }
+      if (typing) return;
+      const k = e.key;
+      if (k === "?") { e.preventDefault(); setShowHelp((v) => !v); return; }
+      if (k === "/") { e.preventDefault(); searchRef.current?.focus(); return; }
+      if (k === "j" || k === "ArrowDown") { e.preventDefault(); stepTicket(1); return; }
+      if (k === "k" || k === "ArrowUp") { e.preventDefault(); stepTicket(-1); return; }
+      if (k === "Enter" && !selected && cursorId) { e.preventDefault(); void openTicket(cursorId); return; }
+      if (!selected || detailBusy) return;
+      if (k === "r") { e.preventDefault(); replyRef.current?.focus(); return; }
+      if (k === "e") { e.preventDefault(); void doTriage({ status: "fixed" }, "Resolving…"); return; }
+      if (k === "a") { e.preventDefault(); void doTriage({ status: "archived" }, "Archiving…"); return; }
+      if (k === "S") { e.preventDefault(); void doTriage({ status: "spam", classification: "spam" }, "Marking spam…"); return; }
+      if (k === "t") { e.preventDefault(); void doTriage({ status: "escalated", escalatedReason: "Taken over from the dashboard" }, "Taking over…"); return; }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selected, userView, showHelp, cursorId, detailBusy, stepTicket, openTicket, doTriage]);
 
   if (forbidden) {
     return (
@@ -608,12 +894,44 @@ export default function SupportAdminPage() {
         </div>
         <button
           type="button"
-          onClick={() => { fetchList(); fetchCounts(); }}
+          onClick={() => { fetchList(); fetchCounts(); fetchHealth(); }}
           className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
         >
           Refresh
         </button>
       </div>
+
+      {/* Pipeline health: is the AI team running, and in which mode? */}
+      {health && (
+        <div
+          role="status"
+          className={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border px-4 py-2.5 text-sm ${
+            health.stale ? "border-amber-200 bg-amber-50 text-amber-900" : "border-slate-200 bg-white text-slate-600"
+          }`}
+        >
+          <span className="font-medium text-slate-900">AI support team</span>
+          <span>
+            Bot last active:{" "}
+            <strong className={health.stale ? "text-amber-800" : "text-slate-800"}>{health.lastBotAt ? ago(health.lastBotAt) : "no activity found"}</strong>
+            {health.stale ? ` (expected ${health.expectedCadence})` : ""}
+          </span>
+          <span>
+            Auto-replies:{" "}
+            <span className={`rounded px-1.5 py-0.5 text-xs font-semibold ${health.sweep.mode === "live" ? "bg-emerald-50 text-emerald-800" : "bg-slate-100 text-slate-700"}`}>
+              {health.sweep.mode === "live" ? "LIVE" : "SHADOW (drafts only)"}
+            </span>{" "}
+            <span className="text-slate-500">min {Math.round(health.sweep.minConfidence * 100)}% sure, max {health.sweep.maxSendsPerRun} per run</span>
+          </span>
+          <span>Sent in the last 24h: <strong className="text-slate-800">{health.autoAnswered24h}</strong></span>
+          <span>
+            Needs you: <strong className="text-slate-800">{health.needsMeCount}</strong>
+            {health.oldestNeedsMeAt ? <span className="text-slate-500"> (oldest {ago(health.oldestNeedsMeAt)})</span> : null}
+          </span>
+          <span className="text-slate-500">
+            Auto-close: {health.autoClose.waitingOnUserDays}d waiting on customer, {health.autoClose.noReplyDays}d with no reply
+          </span>
+        </div>
+      )}
 
       {/* Queue tiles */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -647,10 +965,15 @@ export default function SupportAdminPage() {
               type="button"
               onClick={() => setBucket(b.key)}
               className={`rounded-full px-3 py-1 text-sm font-medium transition ${
-                bucket === b.key ? "bg-[#f97316] text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                bucket === b.key ? "bg-[#c2410c] text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
               {b.label}
+              {b.statuses.length > 0 && b.key !== "resolved" && b.key !== "archived" && b.key !== "spam" ? (
+                <span className={`ml-1.5 text-xs ${bucket === b.key ? "text-white/90" : "text-slate-500"}`}>
+                  {b.statuses.reduce((n, s) => n + (counts[s] ?? 0), 0).toLocaleString("en-US")}
+                </span>
+              ) : null}
             </button>
           ))}
         </div>
@@ -662,12 +985,18 @@ export default function SupportAdminPage() {
         >
           {PRIORITIES.map((p) => <option key={p || "any"} value={p}>{p || "Any priority"}</option>)}
         </select>
+        <label className="sr-only" htmlFor="support-tier">Tier filter</label>
         <input
+          id="support-tier"
+          list="support-tier-options"
           value={tier}
           onChange={(e) => setTier(e.target.value)}
           placeholder="Tier (e.g. growth)"
           className="w-36 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-700"
         />
+        <datalist id="support-tier-options">
+          {facets.tiers.map((x) => <option key={x} value={x} />)}
+        </datalist>
         <form
           role="search"
           onSubmit={(e) => {
@@ -680,6 +1009,7 @@ export default function SupportAdminPage() {
           <label className="sr-only" htmlFor="support-search">Search tickets</label>
           <input
             id="support-search"
+            ref={searchRef}
             type="search"
             value={qInput}
             onChange={(e) => setQInput(e.target.value)}
@@ -693,6 +1023,73 @@ export default function SupportAdminPage() {
             Search
           </button>
         </form>
+      </div>
+      {/* Second filter row: facets, sort, saved views */}
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        {([
+          { id: "type", label: "Type", value: typeFilter, set: setTypeFilter, all: "Any type", opts: ["bug", "feature", "question", "spam"] },
+          { id: "platform", label: "Platform", value: platformFilter, set: setPlatformFilter, all: "Any platform", opts: facets.platforms },
+          { id: "version", label: "App version", value: versionFilter, set: setVersionFilter, all: "Any version", opts: facets.versions },
+          { id: "tag", label: "Tag", value: tagFilter, set: setTagFilter, all: "Any tag", opts: facets.tags },
+        ] as const).map((f) => (
+          <span key={f.id}>
+            <label className="sr-only" htmlFor={`support-${f.id}`}>{f.label} filter</label>
+            <select
+              id={`support-${f.id}`}
+              value={f.value}
+              onChange={(e) => f.set(e.target.value)}
+              className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-slate-700"
+            >
+              <option value="">{f.all}</option>
+              {f.opts.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </span>
+        ))}
+        <span>
+          <label className="sr-only" htmlFor="support-range">Date range</label>
+          <select id="support-range" value={range} onChange={(e) => setRange(e.target.value)} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-slate-700">
+            {TIME_RANGES.map((r) => <option key={r.key || "any"} value={r.key}>{r.label}</option>)}
+          </select>
+        </span>
+        <span>
+          <label className="sr-only" htmlFor="support-sort">Sort</label>
+          <select id="support-sort" value={sort} onChange={(e) => setSort(e.target.value)} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-slate-700">
+            {SORTS.map((s) => <option key={s.key} value={s.key}>Sort: {s.label}</option>)}
+          </select>
+        </span>
+        {filtersActive && (
+          <button type="button" onClick={clearFilters} className="font-medium text-orange-700 underline">Clear filters</button>
+        )}
+        <span className="ml-auto flex items-center gap-2">
+          {views.length > 0 && (
+            <span>
+              <label className="sr-only" htmlFor="support-views">Saved views</label>
+              <select
+                id="support-views"
+                value=""
+                onChange={(e) => { if (e.target.value) applyView(e.target.value); }}
+                className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-slate-700"
+              >
+                <option value="">Saved views</option>
+                {views.map((v) => <option key={v.name} value={v.name}>{v.name}</option>)}
+              </select>
+            </span>
+          )}
+          <button type="button" onClick={saveView} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 font-medium text-slate-700 hover:bg-slate-50">Save view</button>
+          {views.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                const name = window.prompt(`Delete which saved view?\n${views.map((v) => v.name).join(", ")}`);
+                if (name) deleteView(name.trim());
+              }}
+              className="text-slate-500 underline"
+            >
+              Delete view
+            </button>
+          )}
+          <button type="button" onClick={() => setShowHelp(true)} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-slate-600 hover:bg-slate-50" aria-label="Keyboard shortcuts">?</button>
+        </span>
       </div>
       {q.trim() ? (
         <p className="-mt-2 text-xs text-slate-500">
@@ -721,22 +1118,31 @@ export default function SupportAdminPage() {
               <th className="px-3 py-2">Title</th>
               <th className="px-3 py-2">Tier</th>
               <th className="px-3 py-2">User</th>
+              <th className="px-3 py-2">Last activity</th>
               <th className="px-3 py-2">Age</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {loading ? (
-              <tr><td colSpan={8} className="px-3 py-8 text-center text-slate-400">Loading…</td></tr>
-            ) : tickets.length === 0 ? (
-              <tr><td colSpan={8} className="px-3 py-8 text-center text-slate-400">No tickets in this view.</td></tr>
+            {loading && visible.length === 0 ? (
+              <tr><td colSpan={9} className="px-3 py-8 text-center text-slate-400">Loading…</td></tr>
+            ) : visible.length === 0 ? (
+              <tr><td colSpan={9} className="px-3 py-8 text-center text-slate-400">No tickets in this view.</td></tr>
             ) : (
-              tickets.map((t) => (
+              visible.map((t) => {
+                const bs = botState(t);
+                return (
                 <tr
                   key={t.id}
                   onClick={() => openTicket(t.id)}
-                  className={`cursor-pointer hover:bg-slate-50 ${selected?.id === t.id ? "bg-orange-50/50" : ""}`}
+                  aria-selected={cursorId === t.id}
+                  className={`cursor-pointer hover:bg-slate-50 ${selected?.id === t.id ? "bg-orange-50/50" : ""} ${cursorId === t.id && selected?.id !== t.id ? "bg-slate-50 outline outline-2 -outline-offset-2 outline-orange-300" : ""}`}
                 >
-                  <td className="px-3 py-2 font-mono text-xs text-slate-400" title={t.id}>{t.id}</td>
+                  <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-slate-500" title={t.id}>
+                    {t.status === "user_replied" || t.status === "escalated" ? (
+                      <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-rose-500 align-middle" aria-label="Needs your attention" />
+                    ) : null}
+                    {shortId(t.id)}
+                  </td>
                   <td className="px-3 py-2">
                     <span className={`inline-block rounded px-1.5 py-0.5 text-xs font-semibold ${priorityClasses(t.priority)}`}>{t.priority || "P2"}</span>
                   </td>
@@ -744,7 +1150,20 @@ export default function SupportAdminPage() {
                     <span className={`inline-block rounded px-1.5 py-0.5 text-xs font-medium ${statusClasses(t.status)}`}>{t.status}</span>
                   </td>
                   <td className="px-3 py-2 text-slate-600">{t.classification || t.type}</td>
-                  <td className="px-3 py-2 text-slate-900">{t.title || "(no title)"}</td>
+                  <td className="px-3 py-2 text-slate-900">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); void openTicket(t.id); }}
+                      className="text-left hover:underline"
+                    >
+                      {t.title || "(no title)"}
+                    </button>
+                    <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
+                      {bs && <span className={`rounded px-1.5 py-0.5 font-medium ${bs.tone}`}>{bs.label}</span>}
+                      {t.platform ? <span>{t.platform}</span> : null}
+                      {t.appVersion ? <span>v{String(t.appVersion).replace(/^v/i, "")}</span> : null}
+                    </div>
+                  </td>
                   <td className="px-3 py-2 text-slate-500">{t.licenseTier || "—"}</td>
                   <td className="px-3 py-2 text-slate-500">
                     {t.userEmail ? (
@@ -760,12 +1179,33 @@ export default function SupportAdminPage() {
                       "anon"
                     )}
                   </td>
-                  <td className="px-3 py-2 text-slate-500">{ago(t.submittedAt)}</td>
+                  <td className="whitespace-nowrap px-3 py-2 text-slate-700" title={fullTime(lastActivity(t) || null)}>{ago(lastActivity(t) || null)}</td>
+                  <td className="whitespace-nowrap px-3 py-2 text-slate-500">{ago(t.submittedAt)}</td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>
+        <div className="flex items-center justify-between border-t border-slate-100 px-3 py-2 text-xs text-slate-500">
+          <span>
+            Showing {visible.length.toLocaleString("en-US")}
+            {visible.length !== tickets.length ? ` of ${tickets.length.toLocaleString("en-US")} loaded` : ""}
+            {!q.trim() && activeBucket.statuses.length > 0 && !filtersActive
+              ? ` of ${activeBucket.statuses.reduce((n, s) => n + (counts[s] ?? 0), 0).toLocaleString("en-US")} in this tab`
+              : ""}
+          </span>
+          {tickets.length >= limit && (
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => setLimit((n) => n + PAGE_SIZE)}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            >
+              {loading ? "Loading…" : `Load ${PAGE_SIZE} more`}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Per-user history drawer: sits under the ticket drawer (z-30 vs z-40),
@@ -855,15 +1295,67 @@ export default function SupportAdminPage() {
                 <h2 className="mt-2 text-lg font-semibold text-slate-900">{selected.title || "(no title)"}</h2>
                 <p className="mt-0.5 font-mono text-xs text-slate-400">{selected.id}</p>
               </div>
-              <button type="button" onClick={() => setSelected(null)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100" aria-label="Close">✕</button>
+              <div className="flex shrink-0 items-center gap-1">
+                <button type="button" onClick={() => stepTicket(-1)} className="rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50" aria-label="Previous ticket (K)" title="Previous ticket (K)">← Prev</button>
+                <button type="button" onClick={() => stepTicket(1)} className="rounded-lg border border-slate-200 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50" aria-label="Next ticket (J)" title="Next ticket (J)">Next →</button>
+                <button type="button" onClick={() => setSelected(null)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100" aria-label="Close">✕</button>
+              </div>
             </div>
 
-            {actionMsg && <div className="mt-3 rounded-lg bg-slate-50 px-3 py-1.5 text-sm text-slate-600">{actionMsg}</div>}
+            {actionMsg &&<div className="mt-3 rounded-lg bg-slate-50 px-3 py-1.5 text-sm text-slate-600">{actionMsg}</div>}
 
             {/* Release / handling state banner */}
             {(() => { const rs = releaseState(selected); return (
               <div className={`mt-3 rounded-lg px-3 py-2 text-sm font-medium ${rs.tone}`}>{rs.text}</div>
             ); })()}
+
+            {/* What the bot did and why it stopped: so you do not have to dig through notes */}
+            {(() => {
+              const bs = botState(selected);
+              const tags = ticketTags(selected);
+              const hasAny = bs || selected.escalatedReason || suggestMeta || selected.lastTriagedAt;
+              if (!hasAny) return null;
+              const pct = suggestMeta?.confidence != null ? Math.round(suggestMeta.confidence * 100) : null;
+              return (
+                <section className="mt-3 rounded-xl border border-slate-200 bg-white p-3 text-sm" aria-label="Bot assessment">
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Bot assessment</h3>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    {bs && <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${bs.tone}`}>{bs.label}</span>}
+                    {tags.map((g) => (
+                      <span key={g} className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600">{g}</span>
+                    ))}
+                    <span className="text-xs text-slate-500">
+                      {selected.lastTriagedAt ? `last worked ${ago(selected.lastTriagedAt)}` : "bot has not worked this yet"}
+                    </span>
+                  </div>
+                  {selected.escalatedReason && (
+                    <p className="mt-2 text-slate-700"><span className="font-medium text-rose-700">Why it was handed back:</span> {selected.escalatedReason}</p>
+                  )}
+                  {suggestMeta ? (
+                    <div className="mt-2">
+                      <div className="flex items-center gap-2 text-xs text-slate-600">
+                        <span>Draft confidence</span>
+                        {pct != null ? (
+                          <>
+                            <div className="h-2 w-28 overflow-hidden rounded-full bg-slate-100" role="img" aria-label={`${pct} percent confident`}>
+                              <div className={`h-full ${pct >= 75 ? "bg-emerald-600" : pct >= 50 ? "bg-amber-500" : "bg-rose-500"}`} style={{ width: `${pct}%` }} />
+                            </div>
+                            <span className="font-semibold text-slate-800">{pct}%</span>
+                          </>
+                        ) : <span>n/a</span>}
+                        <span className={suggestMeta.grounded ? "text-emerald-700" : "text-amber-700"}>
+                          {suggestMeta.grounded ? "grounded in help articles" : "no matching help article"}
+                        </span>
+                        {suggestMeta.action ? <span className="text-slate-500">bot would: {suggestMeta.action.replace(/_/g, " ")}</span> : null}
+                      </div>
+                      {suggestMeta.reason ? <p className="mt-1 text-xs text-slate-600">{suggestMeta.reason}</p> : null}
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-xs text-slate-500">Click Suggest reply below to see how confident the bot is and why.</p>
+                  )}
+                </section>
+              );
+            })()}
 
             <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
               <div><dt className="text-slate-400">Type</dt><dd className="text-slate-700">{selected.classification || selected.type}</dd></div>
@@ -950,15 +1442,38 @@ export default function SupportAdminPage() {
             {/* Reply thread */}
             <section className="mt-4">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Conversation</h3>
-              <ol className="mt-1 space-y-2">
+              <ol className="mt-2 space-y-3">
                 {(selected.replies ?? []).length === 0 && <li className="text-sm text-slate-400">No replies yet.</li>}
-                {(selected.replies ?? []).map((r) => (
-                  <li key={r.id} className={`rounded-lg p-2 text-sm ${r.direction === "inbound" ? "bg-amber-50" : "bg-slate-50"}`}>
-                    <div className="text-xs text-slate-400">{r.direction} · {r.author} · {fullTime(r.sentAt)}</div>
-                    <pre className="mt-1 whitespace-pre-wrap break-words text-slate-700">{r.body}</pre>
-                    <AttachmentGallery items={r.attachments} />
-                  </li>
-                ))}
+                {(selected.replies ?? []).map((r) => {
+                  const mine = r.direction === "outbound";
+                  const who = r.author === "user" ? "Customer" : r.author === "bot" ? "Bot (automatic)" : "You (human support)";
+                  const tone = r.author === "user"
+                    ? "bg-amber-50 text-slate-800"
+                    : r.author === "bot"
+                      ? "bg-violet-50 text-slate-800"
+                      : "bg-sky-50 text-slate-800";
+                  const { fresh, quoted } = splitQuoted(r.body || "");
+                  return (
+                    <li key={r.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                      <div className={`max-w-[92%] rounded-2xl px-3 py-2 text-sm ${tone}`}>
+                        <div className="text-xs font-medium text-slate-500">
+                          {who} <span className="font-normal text-slate-400">· {fullTime(r.sentAt)}</span>
+                        </div>
+                        {r.subject && r.direction === "outbound" ? (
+                          <div className="mt-0.5 text-xs text-slate-500">Subject: {r.subject}</div>
+                        ) : null}
+                        <div className="mt-1 whitespace-pre-wrap break-words"><Linkified text={fresh} /></div>
+                        {quoted ? (
+                          <details className="mt-1">
+                            <summary className="cursor-pointer text-xs text-slate-500 hover:text-slate-700">Show quoted text</summary>
+                            <div className="mt-1 whitespace-pre-wrap break-words border-l-2 border-slate-300 pl-2 text-xs text-slate-500">{quoted}</div>
+                          </details>
+                        ) : null}
+                        <AttachmentGallery items={r.attachments} />
+                      </div>
+                    </li>
+                  );
+                })}
               </ol>
             </section>
 
@@ -1025,7 +1540,7 @@ export default function SupportAdminPage() {
                   </div>
                   {suggestReason && <p className="mt-2 text-xs text-slate-500">{suggestReason}</p>}
                   <input value={replySubject} onChange={(e) => setReplySubject(e.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm" placeholder="Subject" />
-                  <textarea value={replyBody} onChange={(e) => setReplyBody(e.target.value)} onPaste={onReplyPaste} rows={6} className="mt-2 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm" placeholder={"Hi,\n\nWarmly,\nYour Influencer Butler Team"} />
+                  <textarea ref={replyRef} aria-label="Reply body" value={replyBody} onChange={(e) => setReplyBody(e.target.value)} onPaste={onReplyPaste} rows={6} className="mt-2 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm" placeholder={"Hi,\n\nWarmly,\nYour Influencer Butler Team"} />
 
                   {/* Attach files / paste images */}
                   <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -1096,6 +1611,38 @@ export default function SupportAdminPage() {
                 <p className="mt-2 text-sm text-slate-400">This ticket was submitted anonymously, so there is no address to reply to.</p>
               )}
             </section>
+          </div>
+        </div>
+      )}
+
+      {/* Keyboard shortcuts */}
+      {showHelp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40" onClick={() => setShowHelp(false)} role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
+          <div className="w-full max-w-sm rounded-xl bg-white p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold text-slate-900">Keyboard shortcuts</h2>
+              <button type="button" onClick={() => setShowHelp(false)} className="rounded-lg p-1 text-slate-500 hover:bg-slate-100" aria-label="Close">✕</button>
+            </div>
+            <dl className="mt-3 space-y-1.5 text-sm">
+              {([
+                ["J / ↓", "Next ticket"],
+                ["K / ↑", "Previous ticket"],
+                ["Enter", "Open the highlighted ticket"],
+                ["Esc", "Close drawer"],
+                ["/", "Search"],
+                ["R", "Reply (in a ticket)"],
+                ["E", "Resolve (in a ticket)"],
+                ["A", "Archive (in a ticket)"],
+                ["Shift+S", "Mark spam (in a ticket)"],
+                ["T", "Take over (in a ticket)"],
+                ["?", "Show this help"],
+              ] as const).map(([k, d]) => (
+                <div key={k} className="flex items-center justify-between gap-4">
+                  <dt><kbd className="rounded border border-slate-300 bg-slate-50 px-1.5 py-0.5 font-mono text-xs text-slate-700">{k}</kbd></dt>
+                  <dd className="text-slate-600">{d}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
         </div>
       )}
