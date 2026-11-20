@@ -428,6 +428,8 @@ export async function initSearchOverlay(
   };
   run.signal.addEventListener("abort", () => bandsTimer && clearTimeout(bandsTimer), { once: true });
   const failedLookups = new Set<"market" | "ccRates">();
+  // Why each failed lookup failed (HTTP status), shown in the notice tooltip.
+  const lookupDetail: Record<string, string> = {};
   const retryers: Record<"market" | "ccRates", () => void> = { market: () => undefined, ccRates: () => undefined };
   let toolbarApi: SearchToolbar | null = null;
   const renderLookupIssue = (): void => {
@@ -440,6 +442,7 @@ export async function initSearchOverlay(
         for (const n of names) retryers[n]();
       },
       Array.from(failedLookups),
+      lookupDetail,
     );
   };
   const noteLookup = (name: "market" | "ccRates", ok: boolean): void => {
@@ -458,9 +461,14 @@ export async function initSearchOverlay(
       .then((res) => {
         if (epoch !== initEpoch) return;
         if (!res?.ok) {
-          noteLookup("market", res?.migrationPending === true);
+          // 401/403 means this key is not entitled to market data: nothing to retry.
+          const notEntitled = res?.httpStatus === 401 || res?.httpStatus === 403;
+          if (res?.httpStatus) lookupDetail.market = `HTTP ${res.httpStatus}`;
+          else delete lookupDetail.market;
+          noteLookup("market", res?.migrationPending === true || notEntitled);
           return;
         }
+        delete lookupDetail.market;
         noteLookup("market", true);
         scheduleBands();
         const newest = res.products.map((p) => p.capturedAt).filter(Boolean).sort().pop() ?? null;

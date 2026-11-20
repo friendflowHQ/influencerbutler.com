@@ -75,7 +75,7 @@ export type SearchToolbar = {
   // "Data updated 2h ago" label; `stale` adds the out-of-date words.
   setDataUpdated: (text: string | null, stale: boolean) => void;
   // Page-level lookup failure notice with a Retry button; hidden when `show` is false.
-  setLookupIssue: (show: boolean, onRetry: () => void, failed?: Array<"market" | "ccRates">) => void;
+  setLookupIssue: (show: boolean, onRetry: () => void, failed?: Array<"market" | "ccRates">, details?: Record<string, string>) => void;
 };
 
 const CHIP_EN = "Simple view";
@@ -397,11 +397,11 @@ Tiles found: ${tiles}`,
       dataAge.classList.toggle("stale", stale);
       dataAge.textContent = text ? (stale ? `${text} ${legend().source.stale}` : text) : "";
     },
-    setLookupIssue: (show: boolean, onRetry: () => void, failed: Array<"market" | "ccRates"> = []) => {
+    setLookupIssue: (show: boolean, onRetry: () => void, failed: Array<"market" | "ccRates"> = [], details: Record<string, string> = {}) => {
       issueRetry = onRetry;
       issueWrap.hidden = !show;
       // Name what failed so a missing chip has a visible cause (and support can see it).
-      issueText.title = failed.map((f) => issueCopy[f]).join(", ");
+      issueText.title = failed.map((f) => (details[f] ? `${issueCopy[f]} (${details[f]})` : issueCopy[f])).join(", ");
     },
     setEnrichStatus: (text: string) => {
       enrichStatus.textContent = text;

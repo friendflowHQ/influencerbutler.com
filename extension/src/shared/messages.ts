@@ -1208,6 +1208,9 @@ export type MarketResult = {
 export type MarketBatchResult = {
   ok: boolean;
   migrationPending?: boolean;
+  // HTTP status when the server answered with an error (401/403 means the key is not
+  // entitled, which is not a failure to retry); absent for a network miss.
+  httpStatus?: number;
   products: MarketProduct[];
 };
 

@@ -83,7 +83,7 @@ export async function getMarketBatch(
       | { ok?: boolean; migrationPending?: boolean; products?: MarketProduct[] }
       | null;
     if (data?.migrationPending) return { ok: false, migrationPending: true, products: [] };
-    if (!res.ok || !data || !data.ok || !Array.isArray(data.products)) return EMPTY_BATCH;
+    if (!res.ok || !data || !data.ok || !Array.isArray(data.products)) return { ...EMPTY_BATCH, httpStatus: res.status };
     return { ok: true, products: data.products };
   } catch {
     return EMPTY_BATCH;
