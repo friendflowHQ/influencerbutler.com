@@ -157,6 +157,9 @@ export type Settings = {
   // The user's own saved list of deal-aggregator URLs for the Deal Sites
   // Harvester, on top of the curated list served from the site.
   dealSources: string[];
+  // Hostnames (no www) where the user paused every overlay from the popup's
+  // "Pause on this site" row. Checked once per page run in the content script.
+  pausedHosts: string[];
   // Cross-device relay: the default desktop app on ANOTHER computer to send
   // commands to when no local app is running here (e.g. queue a harvested deal
   // to post from the other machine). Chosen in the popup's Remote devices
@@ -1075,6 +1078,7 @@ export const DEFAULTS: StorageShape = {
     linkButler: { smartRouting: false, pixels: [] },
     creatorMode: "both",
     dealSources: [],
+    pausedHosts: [],
     relayDefaultTarget: null,
     locale: "auto",
     tools: {

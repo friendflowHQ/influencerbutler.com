@@ -575,3 +575,47 @@ html.mobile #app-code-input { flex: 1 1 auto; max-width: none; }
 .key-banner-x { padding: 0 6px; font-size: 16px; line-height: 1; }
 .change-key { margin: 10px 0; padding-top: 8px; border-top: 1px solid var(--slate-200, #e5e7eb); }
 .change-key-heading { margin: 0; font-size: 13px; }
+
+/* Header connection pill: icon + text so state never relies on color alone. */
+.conn-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  background: transparent;
+  cursor: pointer;
+}
+.conn-pill:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.conn-pill[data-state="connected"] { color: #15803d; }
+.conn-pill[data-state="syncing"] { color: #1d4ed8; }
+.conn-pill[data-state="partial"] { color: #b45309; }
+.conn-pill[data-state="problem"], .conn-pill[data-state="disconnected"] { color: #b91c1c; }
+@media (prefers-reduced-motion: no-preference) {
+  .conn-pill[data-state="syncing"] .conn-icon { animation: conn-spin 1.2s linear infinite; }
+}
+@keyframes conn-spin { to { transform: rotate(360deg); } }
+
+/* Collapsible card groups (Connect, Tools). Hidden when every card inside is hidden. */
+.card-group { display: block; }
+.card-group:not(:has(> .card:not([hidden]))) { display: none; }
+.card-group > summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--slate-600);
+  padding: 6px 4px;
+  list-style: none;
+}
+.card-group > summary::-webkit-details-marker { display: none; }
+.card-group > summary::before { content: "\25B8"; display: inline-block; margin-right: 6px; transition: transform 0.12s ease; }
+.card-group[open] > summary::before { transform: rotate(90deg); }
+.card-group > summary:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; border-radius: 6px; }
+.card-group > .card { margin-top: 8px; }
+@media (prefers-reduced-motion: reduce) { .card-group > summary::before { transition: none; } }

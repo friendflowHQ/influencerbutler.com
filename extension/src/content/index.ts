@@ -25,6 +25,7 @@ import { deriveCreatorId, deriveVideoId } from "../amazon/video-identity";
 import { extractSignals, marketplaceFromUrl, type ProductSignals } from "../amazon/product-signals";
 import { query, applySelectorOverrides } from "../amazon/selectors";
 import { getFlags } from "../flags/cache";
+import { isHostPaused } from "../shared/paused-hosts";
 import { renderVideoCounts } from "../tools/video-counts/product-panel";
 import { initOrderHistory } from "../tools/video-counts/order-history";
 import { initOrdersButler } from "../tools/orders-butler/harvester";
@@ -502,6 +503,11 @@ async function runForPage(): Promise<void> {
   const settings = await getSettings();
   setLocale(settings.locale);
   lastStatus = { pageType, toolSummaries: [] };
+  // The user paused Influencer Butler on this site from the popup.
+  if (isHostPaused(settings.pausedHosts, location.hostname)) {
+    log("content", "paused on this site by the user");
+    return;
+  }
   videosStillPending = false;
   videoLikesActive = false;
   log("content", `page type: ${pageType} (${retailer})`);

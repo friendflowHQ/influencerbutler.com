@@ -3,6 +3,8 @@ import { createInlineShadow } from "../../ui/host";
 import { el } from "../../ui/components";
 import { t } from "../../i18n";
 import { legend } from "./legend";
+import { initChatBubble } from "../chat-bubble/panel";
+import { getLocale } from "../../i18n";
 import logoUrl from "../../../static/icons/icon-48.png";
 
 // The bar the overlay drops above the search grid: sort the results by Butler
@@ -51,6 +53,24 @@ export type SearchToolbar = {
   // Update the accept-all button: hidden at 0, otherwise "Accept campaigns on
   // this page (N)".
   setAcceptCount: (count: number) => void;
+  // Page-level lookup failure notice with a Retry button; hidden when `show` is false.
+  setLookupIssue: (show: boolean, onRetry: () => void) => void;
+};
+
+type IssueCopy = { text: string; retry: string };
+const ISSUE_EN: IssueCopy = { text: "Some estimates did not load.", retry: "Retry" };
+const ISSUE_COPY: Record<string, IssueCopy> = {
+  en: ISSUE_EN,
+  es: { text: "Algunas estimaciones no se cargaron.", retry: "Reintentar" },
+  fr: { text: "Certaines estimations ne se sont pas chargees.", retry: "Reessayer" },
+};
+
+type ReportCopy = { button: string; title: string; intro: string };
+const REPORT_EN: ReportCopy = { button: "Report a problem", title: "Problem with the search page badges", intro: "What looked wrong on this page?" };
+const REPORT_COPY: Record<string, ReportCopy> = {
+  en: REPORT_EN,
+  es: { button: "Informar de un problema", title: "Problema con las insignias de la pagina de busqueda", intro: "Que se veia mal en esta pagina?" },
+  fr: { button: "Signaler un probleme", title: "Probleme avec les badges de la page de recherche", intro: "Qu'est-ce qui semblait incorrect sur cette page ?" },
 };
 
 export function renderToolbar(cb: ToolbarCallbacks): SearchToolbar {
@@ -183,13 +203,26 @@ export function renderToolbar(cb: ToolbarCallbacks): SearchToolbar {
   // never overwrite each other.
   const enrichStatus = el("span", "search-status");
 
+  // Shown when a page-level lookup (estimates, campaign rates) failed, so a
+  // missing chip is never a silent mystery. Retry re-runs only what failed.
+  const issueCopy = ISSUE_COPY[String(getLocale()).slice(0, 2)] ?? ISSUE_EN;
+  const issueWrap = el("span", "search-control search-lookup-issue");
+  issueWrap.setAttribute("role", "status");
+  issueWrap.hidden = true;
+  const issueText = el("span", "search-status", issueCopy.text);
+  const issueBtn = el("button", "btn secondary small", issueCopy.retry) as HTMLButtonElement;
+  issueBtn.type = "button";
+  let issueRetry: () => void = () => undefined;
+  issueBtn.addEventListener("click", () => issueRetry());
+  issueWrap.append(issueText, issueBtn);
+
   bar.append(brand, sortWrap);
   if (cb.showCampaignFilter !== false) bar.append(campaignWrap);
   bar.append(priceWrap);
   if (cb.showScan !== false) bar.append(scanWrap);
   if (cb.showSendDeals && cb.onSendDeals) bar.append(sendWrap);
   if (cb.onAcceptAll) bar.append(acceptWrap);
-  bar.append(enrichStatus);
+  bar.append(enrichStatus, issueWrap);
 
   // "?" key to the chips: a toggled panel under the bar, keyboard reachable.
   const lg = legend();
@@ -226,9 +259,34 @@ export function renderToolbar(cb: ToolbarCallbacks): SearchToolbar {
     });
     bar.append(hideBtn);
   }
+  // "Report a problem": opens the Feedback form with this page's context filled in.
+  const reportCopy = REPORT_COPY[String(getLocale()).slice(0, 2)] ?? REPORT_EN;
+  const reportBtn = el("button", "btn secondary small") as HTMLButtonElement;
+  reportBtn.type = "button";
+  reportBtn.textContent = reportCopy.button;
+  reportBtn.addEventListener("click", () => {
+    initChatBubble();
+    const tiles = cb.count;
+    window.dispatchEvent(
+      new CustomEvent("ib-open-report", {
+        detail: {
+          title: reportCopy.title,
+          description: `${reportCopy.intro}
+
+Page: ${location.href}
+Tiles found: ${tiles}`,
+        },
+      }),
+    );
+  });
+  bar.append(reportBtn);
   root.append(bar, keyPanel);
   return {
     host,
+    setLookupIssue: (show: boolean, onRetry: () => void) => {
+      issueRetry = onRetry;
+      issueWrap.hidden = !show;
+    },
     setEnrichStatus: (text: string) => {
       enrichStatus.textContent = text;
     },

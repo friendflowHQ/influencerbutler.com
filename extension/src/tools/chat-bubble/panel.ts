@@ -761,6 +761,20 @@ class ChatBubble {
     this.build();
     document.documentElement.append(host);
     this.startReplyPolling();
+    // Other overlays (the search toolbar's "Report a problem") open the report
+    // form with the page context already filled in.
+    window.addEventListener("ib-open-report", (event) => {
+      const detail = (event as CustomEvent<{ title?: string; description?: string }>).detail ?? {};
+      this.show("report");
+      try {
+        this.typeSel.value = "bug";
+        if (!this.titleInput.value && detail.title) this.titleInput.value = detail.title;
+        if (!this.descInput.value && detail.description) this.descInput.value = detail.description;
+        this.logsChk.checked = true;
+      } catch {
+        /* the form is best-effort prefill */
+      }
+    });
   }
 
   // Poll for support replies: refresh the unread badge, and auto-open the bubble

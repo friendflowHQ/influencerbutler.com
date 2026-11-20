@@ -18,6 +18,7 @@
           <button id="zoom-out" class="gear" type="button" aria-label="Zoom out" title="Zoom out (Ctrl -)">A-</button>
           <button id="zoom-in" class="gear" type="button" aria-label="Zoom in" title="Zoom in (Ctrl +)">A+</button>
         </span>
+        <button id="conn-pill" class="conn-pill" type="button" hidden></button>
         <span class="tag" data-i18n="tagFree">Free</span>
         <button id="open-options" class="gear" type="button" aria-label="API integrations" title="API integrations">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -111,6 +112,11 @@
         <p id="page-status-text" class="muted" data-i18n="checkingTab">Checking the current tab...</p>
         <ul id="page-status-list" class="stats" hidden></ul>
         <button id="take-tour" type="button" class="secondary" hidden data-i18n="takeTour">Take a quick tour of this page</button>
+        <label id="pause-row" class="row toggle" hidden>
+          <input id="pause-toggle" type="checkbox" />
+          <span id="pause-label">Pause on this site</span>
+        </label>
+        <p id="pause-hint" class="muted small" hidden></p>
       </section>
 
       <section id="account" class="card">

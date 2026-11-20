@@ -23,6 +23,9 @@ import { detectRetailerForUrl } from "../content/page-type";
 import { retailerModule } from "../retailers/module";
 import { copyButton } from "../ui/components";
 import { getSettings, patchSettings } from "../storage/store";
+import { isHostPaused, withHostPaused } from "../shared/paused-hosts";
+import { pauseStrings } from "./pause-strings";
+import { deriveConnection, pillCopy } from "./connection-status";
 import { getFlags, type EventBanner } from "../flags/cache";
 import type { Settings, WatchCondition } from "../storage/schema";
 import {
@@ -88,6 +91,7 @@ async function init(): Promise<void> {
     renderProductLists(),
   ]);
   wirePopupZoom();
+  void renderConnectionPill();
   // The Feedback Butler card was replaced by the same chat bubble the product pages
   // show: bug report + screenshots (picker / paste) + reply email + diagnostics.
   initChatBubble({ popup: true });
@@ -122,8 +126,81 @@ async function init(): Promise<void> {
   }
   // The left-hand section nav is wired last, once every card's visibility has
   // settled, so the nav mirrors exactly which cards are on screen.
+  await groupPopupCards();
   wireSectionNav();
   syncNavVisibility();
+}
+
+// Popup grouping: Connect (account, desktop app, relay) and Tools (the launcher
+// cards) fold into two collapsible groups so the popup opens on "This page" and
+// the essentials instead of a dozen cards. The cards keep their ids and
+// handlers; they are only moved. A group is open when the user last left it open;
+// Connect starts open until the user has signed in and paired. Storage is
+// per-popup localStorage, wrapped so blocked storage just uses the defaults.
+const GROUP_STATE_KEY = "ib_popup_groups";
+const GROUPS: Array<{ id: string; label: Record<string, string>; cards: string[]; defaultOpen: (needsSetup: boolean) => boolean }> = [
+  {
+    id: "group-connect",
+    label: { en: "Connect", es: "Conectar", fr: "Connexion" },
+    cards: ["account", "app-bridge", "relay-card"],
+    defaultOpen: (needsSetup) => needsSetup,
+  },
+  {
+    id: "group-tools",
+    label: { en: "Tools", es: "Herramientas", fr: "Outils" },
+    cards: ["ai-assistant-card", "social-schedule-card", "deal-harvester", "link-butler", "clean-link-card", "watchlist-card", "lists-card"],
+    defaultOpen: () => false,
+  },
+];
+
+function readGroupState(): Record<string, boolean> {
+  try {
+    return JSON.parse(localStorage.getItem(GROUP_STATE_KEY) ?? "{}") as Record<string, boolean>;
+  } catch {
+    return {};
+  }
+}
+
+function saveGroupState(id: string, open: boolean): void {
+  try {
+    localStorage.setItem(GROUP_STATE_KEY, JSON.stringify({ ...readGroupState(), [id]: open }));
+  } catch {
+    // storage unavailable: the choice just is not remembered
+  }
+}
+
+async function groupPopupCards(): Promise<void> {
+  const locale = String(getLocale()).slice(0, 2);
+  let needsSetup = false;
+  try {
+    const [auth, paired] = await Promise.all([sendToBackground<AuthStatus>({ kind: "GET_AUTH_STATUS" }), isPairedLocal()]);
+    needsSetup = !auth?.signedIn || !paired;
+  } catch {
+    needsSetup = true;
+  }
+  const saved = readGroupState();
+  for (const group of GROUPS) {
+    const cards = group.cards.map((id) => document.getElementById(id)).filter((c): c is HTMLElement => !!c);
+    const first = cards[0];
+    if (!first || !first.parentElement) continue;
+    const details = document.createElement("details");
+    details.id = group.id;
+    details.className = "card-group";
+    details.open = saved[group.id] ?? group.defaultOpen(needsSetup);
+    const summary = document.createElement("summary");
+    summary.textContent = group.label[locale] ?? group.label.en ?? "";
+    details.append(summary);
+    first.before(details);
+    for (const card of cards) details.append(card);
+    details.addEventListener("toggle", () => saveGroupState(group.id, details.open));
+  }
+}
+
+// Open the collapsed group around a card (if any) so a nav or pill jump lands
+// on something visible.
+function revealCard(el: HTMLElement | null): void {
+  const group = el?.closest("details.card-group");
+  if (group instanceof HTMLDetailsElement && !group.open) group.open = true;
 }
 
 // The popup is user-resizable: popup.css gives <body> an explicit size plus
@@ -183,6 +260,7 @@ function wireSectionNav(): void {
     if (!anchor) return;
     event.preventDefault();
     const target = document.getElementById(decodeURIComponent(anchor.hash.slice(1)));
+    revealCard(target);
     target?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
 
@@ -1214,6 +1292,76 @@ function renderEventBanner(banner: EventBanner | null): void {
   card.hidden = false;
 }
 
+// "Pause on this site": a persisted per-host switch that turns every overlay
+// off there. The page is reloaded so existing overlays go away immediately.
+async function setupPauseRow(tabId: number, url: string, statusText: HTMLElement): Promise<void> {
+  const row = byId("pause-row");
+  const toggle = byId<HTMLInputElement>("pause-toggle");
+  const hint = byId("pause-hint");
+  const strings = pauseStrings();
+  let hostname: string;
+  try {
+    hostname = new URL(url).hostname;
+  } catch {
+    return;
+  }
+  const settings = await getSettings();
+  const paused = isHostPaused(settings.pausedHosts, hostname);
+  byId("pause-label").textContent = strings.label(hostname.replace(/^www\./, ""));
+  toggle.checked = paused;
+  row.hidden = false;
+  hint.textContent = strings.hint;
+  hint.hidden = !paused;
+  if (paused) statusText.textContent = strings.pausedStatus;
+  toggle.onchange = async () => {
+    const current = await getSettings();
+    await patchSettings({ pausedHosts: withHostPaused(current.pausedHosts, hostname, toggle.checked) });
+    hint.hidden = !toggle.checked;
+    try {
+      await chrome.tabs.reload(tabId);
+    } catch {
+      // tab gone: nothing to reload
+    }
+  };
+}
+
+// Header pill: one summary of sign-in, desktop pairing and sync. Click jumps to
+// the card that fixes it.
+async function renderConnectionPill(): Promise<void> {
+  const pill = byId<HTMLButtonElement>("conn-pill");
+  try {
+    const [auth, appPaired] = await Promise.all([
+      sendToBackground<AuthStatus>({ kind: "GET_AUTH_STATUS" }),
+      isPairedLocal(),
+    ]);
+    const summary = deriveConnection({
+      signedIn: !!auth?.signedIn,
+      appPaired,
+      queueDepth: auth?.queueDepth ?? 0,
+      lastSyncError: auth?.lastSyncError ?? null,
+    });
+    const { label, hint } = pillCopy(summary);
+    const icon = { connected: "✓", syncing: "↻", problem: "!", partial: "◐", disconnected: "○" }[summary.state];
+    pill.replaceChildren();
+    const mark = document.createElement("span");
+    mark.className = "conn-icon";
+    mark.setAttribute("aria-hidden", "true");
+    mark.textContent = icon;
+    pill.append(mark, document.createTextNode(label));
+    pill.dataset.state = summary.state;
+    pill.title = hint;
+    pill.setAttribute("aria-label", `${label}. ${hint}`);
+    pill.onclick = () => {
+      const target = document.getElementById(summary.target);
+      revealCard(target);
+      target?.scrollIntoView({ block: "start" });
+    };
+    pill.hidden = false;
+  } catch {
+    pill.hidden = true;
+  }
+}
+
 async function renderPageStatus(): Promise<void> {
   const text = byId("page-status-text");
   const list = byId("page-status-list");
@@ -1249,6 +1397,7 @@ async function renderPageStatus(): Promise<void> {
     // GET_PAGE_STATUS on either. Any other host has no tools to report.
     // detectRetailerForUrl covers every Amazon marketplace (amazon.ca, .co.uk, ...).
     const onSupportedSite = Boolean(tab?.url && detectRetailerForUrl(tab.url));
+    if (tab?.id && tab.url && onSupportedSite) await setupPauseRow(tab.id, tab.url, text);
     const tourBtn = byId<HTMLButtonElement>("take-tour");
     tourBtn.hidden = true;
     if (!tab?.id || !onSupportedSite) {

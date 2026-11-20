@@ -1,3 +1,4 @@
+import { enableChipTips } from "../../ui/chip-tips";
 import { createInlineShadow } from "../../ui/host";
 import { el } from "../../ui/components";
 import { t } from "../../i18n";
@@ -375,28 +376,58 @@ export async function initSearchOverlay(
   // when the migration is unapplied (the worker returns nothing), so the tiles
   // just keep their other chips. boughtPastMonth from the pool also feeds the
   // score before the per-tile /dp/ enrichment lands.
-  void sendToBackground<MarketBatchResult>({
-    kind: "GET_MARKET_BATCH",
-    asins: rows.map((r) => r.tile.asin),
-    marketplace,
-    retailer: module.retailer,
-  }).then((res) => {
-    if (epoch !== initEpoch || !res.ok) return;
-    const byAsin = new Map(res.products.map((p) => [p.asin.toUpperCase(), p]));
-    for (const row of rows) {
-      const product = byAsin.get(row.tile.asin.toUpperCase());
-      if (product) {
-        row.market = product;
-        recompute(row, settings);
-        renderBadge(row, settings);
-      }
-    }
-  });
+  // Page-level lookups that can fail (worker asleep, network miss). A failure is
+  // reported once in the toolbar with a Retry, instead of the chips silently
+  // vanishing. Signed-out users and an unapplied migration are not failures.
+  const failedLookups = new Set<"market" | "ccRates">();
+  const retryers: Record<"market" | "ccRates", () => void> = { market: () => undefined, ccRates: () => undefined };
+  let toolbarApi: SearchToolbar | null = null;
+  const renderLookupIssue = (): void => {
+    toolbarApi?.setLookupIssue(failedLookups.size > 0, () => {
+      const names = Array.from(failedLookups);
+      failedLookups.clear();
+      renderLookupIssue();
+      for (const n of names) retryers[n]();
+    });
+  };
+  const noteLookup = (name: "market" | "ccRates", ok: boolean): void => {
+    if (ok) failedLookups.delete(name);
+    else if (hud.signedIn) failedLookups.add(name);
+    renderLookupIssue();
+  };
+
+  const runMarket = (): void => {
+    void sendToBackground<MarketBatchResult>({
+      kind: "GET_MARKET_BATCH",
+      asins: rows.map((r) => r.tile.asin),
+      marketplace,
+      retailer: module.retailer,
+    })
+      .then((res) => {
+        if (epoch !== initEpoch) return;
+        if (!res?.ok) {
+          noteLookup("market", res?.migrationPending === true);
+          return;
+        }
+        noteLookup("market", true);
+        const byAsin = new Map(res.products.map((p) => [p.asin.toUpperCase(), p]));
+        for (const row of rows) {
+          const product = byAsin.get(row.tile.asin.toUpperCase());
+          if (product) {
+            row.market = product;
+            recompute(row, settings);
+            renderBadge(row, settings);
+          }
+        }
+      })
+      .catch(() => noteLookup("market", false));
+  };
+  retryers.market = runMarket;
+  runMarket();
 
   // The accept-all button's count follows the rows: recomputed whenever a rate
   // lands or an accept finishes. `toolbarApi` is set once the toolbar exists
   // (the rate lookups can resolve before or after that).
-  let toolbarApi: SearchToolbar | null = null;
   const refreshAcceptAll = (): void => {
     toolbarApi?.setAcceptCount(acceptableRows(rows, settings).length);
   };
@@ -414,10 +445,16 @@ export async function initSearchOverlay(
     : ccFromRates
       ? rows.map((r) => r.tile.asin)
       : rows.filter((r) => r.flags.cc || r.flags.spcc).map((r) => r.tile.asin);
-  if (campaignAsins.length > 0) {
-    void sendToBackground<CcRatesResult>({ kind: "LOOKUP_CC_RATES", asins: campaignAsins }).then(
+  const runCcRates = (): void => {
+    void sendToBackground<CcRatesResult>({ kind: "LOOKUP_CC_RATES", asins: campaignAsins })
+      .then(
       (res) => {
-        if (epoch !== initEpoch || !res.ok) return;
+        if (epoch !== initEpoch) return;
+        if (!res?.ok) {
+          noteLookup("ccRates", false);
+          return;
+        }
+        noteLookup("ccRates", true);
         // The catalogue Bloom filter has ~1% false positives, and a campaign may
         // have ended or filled up. When the rate table answered and has no open
         // campaign for a CC-flagged tile, drop the flag so it stops reading
@@ -438,8 +475,11 @@ export async function initSearchOverlay(
         }
         refreshAcceptAll();
       },
-    );
-  }
+    )
+      .catch(() => noteLookup("ccRates", false));
+  };
+  retryers.ccRates = runCcRates;
+  if (campaignAsins.length > 0) runCcRates();
 
   // Amazon's own SPCC ("Earn on Clicks") forecast for the SPCC-flagged tiles,
   // so a tile with no CC commission rate can still show a real $/click number
@@ -713,6 +753,8 @@ export async function initSearchOverlay(
       module.retailer === "amazon" && settings.tools.standaloneAccept ? acceptAllOnPage : undefined,
   });
   toolbarApi = toolbar;
+  // A lookup may have failed before the toolbar existed: show it now.
+  renderLookupIssue();
   refreshAcceptAll();
 
   mountToolbar(module.toolbarSlot(first.tile.el), toolbar.host);
@@ -976,6 +1018,7 @@ function mountBadge(tile: SearchTile, body: HTMLElement, module: RetailerModule)
   const wrap = el("div", "tile-badge");
   wrap.append(body);
   root.append(wrap);
+  enableChipTips(wrap);
   // Mount inside the tile card (see RetailerModule.badgeSlot), not the stretched
   // tile root, or the chips paint over the next tile's title.
   module.badgeSlot(tile.el).append(host);
