@@ -173,6 +173,8 @@ const nextConfig: NextConfig = {
       { source: "/legal/build-week-rules", destination: "/legal/build-week-rules.html" },
       { source: "/legal/accessibility", destination: "/legal/accessibility.html" },
       { source: "/security", destination: "/security.html" },
+      { source: "/es", destination: "/es-home.html" },
+      { source: "/fr", destination: "/fr-home.html" },
       { source: "/es/security", destination: "/security-es.html" },
       { source: "/fr/security", destination: "/security-fr.html" },
     ];

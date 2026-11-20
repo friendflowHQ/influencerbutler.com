@@ -52,6 +52,22 @@
     });
   }
 
+  /* ── Resources dropdown (desktop header) ── */
+  document.querySelectorAll(".nav-dropdown").forEach(function (dd) {
+    var toggle = dd.querySelector(".nav-dropdown-toggle");
+    if (!toggle) return;
+    var setOpen = function (open) {
+      dd.classList.toggle("open", open);
+      toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    };
+    toggle.addEventListener("click", function (e) { e.stopPropagation(); setOpen(!dd.classList.contains("open")); });
+    document.addEventListener("click", function (e) { if (!dd.contains(e.target)) setOpen(false); });
+    dd.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { setOpen(false); toggle.focus(); }
+    });
+    dd.addEventListener("focusout", function (e) { if (!dd.contains(e.relatedTarget)) setOpen(false); });
+  });
+
   /* ── Feature category tabs + "Show all tools" ──
      Without JS every card shows. With JS the grid starts collapsed to the
      featured cards (all cards stay in the DOM for crawlers and keyboard users).
