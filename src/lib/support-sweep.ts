@@ -54,6 +54,8 @@ export type WorkerTicket = {
   priority?: string;
   userEmail?: string;
   licenseTier?: string;
+  appVersion?: string;
+  platform?: string;
   submittedAt?: number | null;
   lastTriagedAt?: number | null;
   repliedAt?: number | null;
@@ -183,7 +185,36 @@ const SYSTEM_PROMPT = [
   "- Choose action=hold if the help excerpts do not actually contain the answer. Never invent steps, URLs, or settings.",
   "- Never use an em dash (the long dash). Use a colon, comma, or hyphen instead.",
   "- Keep the body under 250 words. Do not promise refunds, credits, or fixes.",
+  "- You may also be given customer context (plan, platform, app version) and a few diagnostic log lines.",
+  "  Use plan, platform and version only to tailor the steps (for example Mac versus Windows menus).",
+  "  If the log lines show an error that plausibly explains the problem, choose action=hold and say so in reason.",
+  "  Never quote or mention the logs to the customer, and never tell them to update unless the help excerpts say so.",
 ].join("\n");
+
+/** True when the owner has taken the ticket over from the dashboard. */
+export function isHumanOwned(t: WorkerTicket): boolean {
+  return (t.tags || "")
+    .split(/[,\s]+/)
+    .some((x) => x.trim().toLowerCase() === "human-owned");
+}
+
+const LOG_SIGNAL_RE =
+  /\b(error|exception|fail(?:ed|ure)?|timeout|timed out|denied|unauthorized|forbidden|rate.?limit|checkpoint|captcha|crash|fatal|ECONN\w*|ENOTFOUND|HTTP (?:4|5)\d\d)\b/i;
+
+/**
+ * Boil the customer's auto-attached log bundle down to a few signal lines so
+ * the model can tailor its answer (or hold on a real fault) without being fed
+ * 128 KB of noise. Returned oldest first, newest last.
+ */
+export function logDigest(logTail: string | undefined, maxLines = 12, maxChars = 1400): string {
+  if (!logTail || !logTail.trim()) return "";
+  const lines = logTail.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const hits: string[] = [];
+  for (let i = lines.length - 1; i >= 0 && hits.length < maxLines; i--) {
+    if (LOG_SIGNAL_RE.test(lines[i])) hits.push(lines[i].slice(0, 220));
+  }
+  return hits.reverse().join("\n").slice(-maxChars);
+}
 
 async function callJson(system: string, user: string): Promise<Record<string, unknown> | null> {
   const providers = [resolveTextProvider(), openAiFallbackProvider()].filter(
@@ -245,12 +276,18 @@ export async function draftReplyForTicket(t: WorkerTicket): Promise<DraftResult 
     .map((r) => `${r.author || "?"}: ${(r.body || "").slice(0, 600)}`)
     .join("\n");
 
+  const logs = logDigest(t.logTail);
   const user = [
     `Ticket title: ${t.title || "(none)"}`,
     `Ticket body: ${(t.description || "").slice(0, 1500)}`,
     t.classification ? `Bot classification: ${t.classification}` : "",
     t.priority ? `Priority: ${t.priority}` : "",
+    t.licenseTier ? `Customer plan: ${t.licenseTier}` : "",
+    t.platform ? `Platform: ${t.platform}` : "",
+    t.appVersion ? `App version: ${t.appVersion}` : "",
     "",
+    logs ? "Diagnostic log lines (internal, newest last):" : "",
+    logs,
     "Recent conversation (oldest first):",
     thread || "(no prior messages)",
     "",
@@ -415,6 +452,9 @@ export async function runSupportSweep(opts?: { dryRun?: boolean }): Promise<Swee
     if (getRes.ok) {
       full = (getRes.data.ticket ?? (getRes.data as WorkerTicket)) || lite;
     }
+
+    // The owner took this ticket over: the bots stay out until it is released.
+    if (isHumanOwned(full)) continue;
 
     const email = (full.userEmail || "").trim();
     if (!email) {

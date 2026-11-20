@@ -171,6 +171,7 @@ function ticketTags(t: Ticket): string[] {
 // A short "who has the ball" chip, derived from status + the tags the bots set.
 function botState(t: Ticket): { label: string; tone: string } | null {
   const tags = ticketTags(t);
+  if (tags.includes("human-owned")) return { label: "you own this", tone: "bg-indigo-50 text-indigo-700" };
   if (t.status === "escalated") return { label: "needs you", tone: "bg-rose-50 text-rose-700" };
   if (t.status === "user_replied") return { label: "customer replied", tone: "bg-amber-50 text-amber-700" };
   if (tags.includes("auto-answered")) return { label: "auto-answered", tone: "bg-violet-50 text-violet-700" };
@@ -823,6 +824,24 @@ export default function SupportAdminPage() {
 
   const filtersActive = !!(priority || tier || typeFilter || platformFilter || versionFilter || tagFilter || range);
 
+  // Taking over marks the ticket human-owned: the sweep and the autopilot both
+  // hard-skip tagged tickets until "Release to bot" removes the tag.
+  const takeOver = useCallback(() => {
+    if (!selected) return;
+    const tags = ticketTags(selected);
+    if (!tags.includes("human-owned")) tags.push("human-owned");
+    void doTriage(
+      { status: "escalated", escalatedReason: "Taken over from the dashboard", tags: tags.join(", ") },
+      "Taking over…",
+    );
+  }, [selected, doTriage]);
+
+  const releaseToBot = useCallback(() => {
+    if (!selected) return;
+    const tags = ticketTags(selected).filter((x) => x !== "human-owned");
+    void doTriage({ tags: tags.join(", ") }, "Releasing to the bot…");
+  }, [selected, doTriage]);
+
   // Move through the visible list (list cursor, or next/prev inside the drawer).
   const stepTicket = useCallback((delta: number) => {
     if (!visible.length) return;
@@ -860,11 +879,11 @@ export default function SupportAdminPage() {
       if (k === "e") { e.preventDefault(); void doTriage({ status: "fixed" }, "Resolving…"); return; }
       if (k === "a") { e.preventDefault(); void doTriage({ status: "archived" }, "Archiving…"); return; }
       if (k === "S") { e.preventDefault(); void doTriage({ status: "spam", classification: "spam" }, "Marking spam…"); return; }
-      if (k === "t") { e.preventDefault(); void doTriage({ status: "escalated", escalatedReason: "Taken over from the dashboard" }, "Taking over…"); return; }
+      if (k === "t") { e.preventDefault(); takeOver(); return; }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [selected, userView, showHelp, cursorId, detailBusy, stepTicket, openTicket, doTriage]);
+  }, [selected, userView, showHelp, cursorId, detailBusy, stepTicket, openTicket, doTriage, takeOver]);
 
   if (forbidden) {
     return (
@@ -1328,6 +1347,9 @@ export default function SupportAdminPage() {
                       {selected.lastTriagedAt ? `last worked ${ago(selected.lastTriagedAt)}` : "bot has not worked this yet"}
                     </span>
                   </div>
+                  {tags.includes("human-owned") && (
+                    <p className="mt-2 text-xs text-indigo-700">You own this ticket. The auto-reply sweep and the autopilot will not touch it until you click Release to bot.</p>
+                  )}
                   {selected.escalatedReason && (
                     <p className="mt-2 text-slate-700"><span className="font-medium text-rose-700">Why it was handed back:</span> {selected.escalatedReason}</p>
                   )}
@@ -1511,7 +1533,11 @@ export default function SupportAdminPage() {
                 </button>
               </div>
               <div className="mt-2 flex flex-wrap gap-2">
-                <button type="button" disabled={detailBusy} onClick={() => doTriage({ status: "escalated", escalatedReason: "Taken over from the dashboard" }, "Taking over…")} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50">Take over</button>
+                {ticketTags(selected).includes("human-owned") ? (
+                  <button type="button" disabled={detailBusy} onClick={releaseToBot} title="Let the bot work this ticket again" className="rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-1.5 text-sm font-medium text-indigo-800 hover:bg-indigo-100 disabled:opacity-50">Release to bot</button>
+                ) : (
+                  <button type="button" disabled={detailBusy} onClick={takeOver} title="Mark as yours: the sweep and autopilot will leave it alone" className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50">Take over</button>
+                )}
                 <button type="button" disabled={detailBusy} onClick={() => doTriage({ status: "spam", classification: "spam" }, "Marking spam…")} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50">Mark spam</button>
                 <button type="button" disabled={detailBusy} onClick={() => doTriage({ status: "fixed" }, "Resolving…")} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50">Resolve</button>
                 <button type="button" disabled={detailBusy} onClick={() => doTriage({ status: "archived" }, "Archiving…")} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50">Archive</button>
@@ -1634,7 +1660,7 @@ export default function SupportAdminPage() {
                 ["E", "Resolve (in a ticket)"],
                 ["A", "Archive (in a ticket)"],
                 ["Shift+S", "Mark spam (in a ticket)"],
-                ["T", "Take over (in a ticket)"],
+                ["T", "Take over: bots stay out (in a ticket)"],
                 ["H", "Show this help"],
               ] as const).map(([k, d]) => (
                 <div key={k} className="flex items-center justify-between gap-4">
