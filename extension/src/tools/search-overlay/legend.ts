@@ -14,6 +14,7 @@ type LegendDict = {
   scanFailed: (n: number) => string;
   title: string;
   rows: Array<{ chip: string; text: string }>;
+  source: { catalogue: (age: string | null) => string; estimated: string; dataUpdated: (age: string) => string; stale: string };
   tips: { score: string; commission: string; bsr: string; owned: string; posted: string; coupon: string; deal: string };
 };
 
@@ -41,6 +42,12 @@ const EN: LegendDict = {
     coupon: "Amazon shows a coupon on this product",
     deal: "This product is on a deal right now",
   },
+  source: {
+    catalogue: (age) => age ? `Source: shared catalogue, updated ${age}` : "Source: shared catalogue",
+    estimated: "Source: estimated from this page",
+    dataUpdated: (age) => `Data updated ${age}`,
+    stale: "(may be out of date)",
+  },
 };
 
 const ES: LegendDict = {
@@ -67,6 +74,12 @@ const ES: LegendDict = {
     coupon: "Amazon muestra un cupon en este producto",
     deal: "Este producto esta en oferta ahora",
   },
+  source: {
+    catalogue: (age) => age ? `Fuente: catalogo compartido, actualizado ${age}` : "Fuente: catalogo compartido",
+    estimated: "Fuente: estimado a partir de esta pagina",
+    dataUpdated: (age) => `Datos actualizados ${age}`,
+    stale: "(puede estar desactualizado)",
+  },
 };
 
 const FR: LegendDict = {
@@ -92,6 +105,12 @@ const FR: LegendDict = {
     posted: "Vous avez deja publie une video pour ce produit",
     coupon: "Amazon affiche un coupon sur ce produit",
     deal: "Ce produit est en promotion actuellement",
+  },
+  source: {
+    catalogue: (age) => age ? `Source : catalogue partage, mis a jour ${age}` : "Source : catalogue partage",
+    estimated: "Source : estime a partir de cette page",
+    dataUpdated: (age) => `Donnees mises a jour ${age}`,
+    stale: "(peut etre obsolete)",
   },
 };
 

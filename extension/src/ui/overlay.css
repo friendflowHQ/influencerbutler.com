@@ -2248,3 +2248,8 @@ button.tile-chip.more:focus-visible { outline: 3px solid #1d4ed8; outline-offset
   box-shadow: 0 6px 18px rgba(15, 23, 42, 0.3);
   pointer-events: none;
 }
+
+/* Data freshness label in the search toolbar (shared/format-age.ts). */
+.search-data-age { color: #55657a; }
+.search-data-age.stale { color: #b45309; font-weight: 700; }
+.chip-pop { white-space: pre-line; }

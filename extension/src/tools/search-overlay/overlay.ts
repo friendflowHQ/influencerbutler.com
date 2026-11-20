@@ -1,8 +1,9 @@
 import { enableChipTips } from "../../ui/chip-tips";
+import { formatAge, isStale } from "../../shared/format-age";
 import { defaultPrefs, loadViewPrefs, priceForCurrency, saveViewPrefs } from "../../shared/view-prefs";
 import { createInlineShadow } from "../../ui/host";
 import { el } from "../../ui/components";
-import { t } from "../../i18n";
+import { getLocale, t } from "../../i18n";
 import { legend } from "./legend";
 import { log } from "../../shared/log";
 import { runPool } from "../../shared/pool";
@@ -411,6 +412,9 @@ export async function initSearchOverlay(
           return;
         }
         noteLookup("market", true);
+        const newest = res.products.map((p) => p.capturedAt).filter(Boolean).sort().pop() ?? null;
+        const age = formatAge(newest, Date.now(), String(getLocale()));
+        toolbarApi?.setDataUpdated(age ? legend().source.dataUpdated(age) : null, isStale(newest, Date.now()));
         const byAsin = new Map(res.products.map((p) => [p.asin.toUpperCase(), p]));
         for (const row of rows) {
           const product = byAsin.get(row.tile.asin.toUpperCase());
@@ -1171,13 +1175,13 @@ function renderBadge(row: Row, settings: Settings): void {
   const estUnits = estUnitsFor(row);
   if (estUnits !== null) {
     const chip = el("span", "tile-chip", t().tileEstUnits(estUnits.toLocaleString()));
-    chip.title = t().estUnitsTip;
+    chip.title = withSource(t().estUnitsTip, row);
     body.append(chip);
   }
   const revenueCents = revenueCentsFor(row);
   if (revenueCents !== null) {
     const chip = el("span", "tile-chip", t().tileRevenue(formatCompactMoney(revenueCents, row.tile.currency)));
-    chip.title = t().estRevenueTip;
+    chip.title = withSource(t().estRevenueTip, row);
     body.append(chip);
   }
   // Best-seller rank + its category, from the pooled snapshot or the per-tile
@@ -1185,7 +1189,7 @@ function renderBadge(row: Row, settings: Settings): void {
   const bsrRank = row.market?.bsrRank ?? row.dp?.bestsellerRank?.rank ?? null;
   const bsrCategory = row.market?.bsrCategory ?? row.dp?.bestsellerRank?.category ?? null;
   if (bsrRank != null) {
-    body.append(tipped(el("span", "tile-chip", t().tileBsr(bsrRank.toLocaleString(), bsrCategory)), legend().tips.bsr));
+    body.append(tipped(el("span", "tile-chip", t().tileBsr(bsrRank.toLocaleString(), bsrCategory)), withSource(legend().tips.bsr, row)));
   }
   if (row.flags.cc || row.flags.spcc) {
     // A guaranteed CC commission rate always wins over the SPCC forecast when
@@ -1344,6 +1348,16 @@ function mountToolbar(slot: Element | null, host: HTMLElement): void {
 }
 
 // Attach a hover/screen-reader explanation to a chip.
+// Where an estimate came from and how old it is, appended to the chip tip.
+function withSource(tip: string, row: Row): string {
+  const src = legend().source;
+  const line = row.market
+    ? src.catalogue(formatAge(row.market.capturedAt, Date.now(), String(getLocale())))
+    : src.estimated;
+  return `${tip}
+${line}`;
+}
+
 function tipped(chip: HTMLElement, tip: string): HTMLElement {
   chip.title = tip;
   return chip;

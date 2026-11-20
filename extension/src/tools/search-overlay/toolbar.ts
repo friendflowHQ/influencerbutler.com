@@ -62,6 +62,8 @@ export type SearchToolbar = {
   setAcceptCount: (count: number) => void;
   // Put the controls back to a view (used by "Reset view").
   setView: (view: ViewPrefs) => void;
+  // "Data updated 2h ago" label; `stale` adds the out-of-date words.
+  setDataUpdated: (text: string | null, stale: boolean) => void;
   // Page-level lookup failure notice with a Retry button; hidden when `show` is false.
   setLookupIssue: (show: boolean, onRetry: () => void) => void;
 };
@@ -238,6 +240,8 @@ export function renderToolbar(cb: ToolbarCallbacks): SearchToolbar {
 
   // Shown when a page-level lookup (estimates, campaign rates) failed, so a
   // missing chip is never a silent mystery. Retry re-runs only what failed.
+  const dataAge = el("span", "search-status search-data-age");
+  dataAge.hidden = true;
   const issueCopy = ISSUE_COPY[String(getLocale()).slice(0, 2)] ?? ISSUE_EN;
   const issueWrap = el("span", "search-control search-lookup-issue");
   issueWrap.setAttribute("role", "status");
@@ -255,7 +259,7 @@ export function renderToolbar(cb: ToolbarCallbacks): SearchToolbar {
   if (cb.showScan !== false) bar.append(scanWrap);
   if (cb.showSendDeals && cb.onSendDeals) bar.append(sendWrap);
   if (cb.onAcceptAll) bar.append(acceptWrap);
-  bar.append(enrichStatus, issueWrap);
+  bar.append(enrichStatus, dataAge, issueWrap);
 
   // "?" key to the chips: a toggled panel under the bar, keyboard reachable.
   const lg = legend();
@@ -344,6 +348,11 @@ Tiles found: ${tiles}`,
   return {
     host,
     setView: applyView,
+    setDataUpdated: (text: string | null, stale: boolean) => {
+      dataAge.hidden = !text;
+      dataAge.classList.toggle("stale", stale);
+      dataAge.textContent = text ? (stale ? `${text} ${legend().source.stale}` : text) : "";
+    },
     setLookupIssue: (show: boolean, onRetry: () => void) => {
       issueRetry = onRetry;
       issueWrap.hidden = !show;
