@@ -63,6 +63,13 @@ type Ticket = {
   repliedAt: number | null;
   logTail?: string;
   replies?: Reply[];
+  // Real customer when the ticket was auto-filed under the owner address
+  // (call / Concierge sessions). Replies go here, not to userEmail.
+  requesterEmail?: string;
+  // Human-side data from Supabase (assignee, notes, bot draft), attached by the list route.
+  assignee?: string;
+  noteCount?: number;
+  draftId?: string | null;
   // Attachments that arrived on the email that OPENED the ticket (inbound
   // screenshots / files); per-reply attachments live on each Reply instead.
   attachments?: Attachment[];
@@ -96,6 +103,8 @@ const BUCKETS: Bucket[] = [
   // the customer for live in their own tab so they stop burying real work.
   { key: "needsMe", label: "Needs me", statuses: ["escalated", "user_replied"] },
   { key: "waiting", label: "Waiting on customer", statuses: ["waiting_on_user"] },
+  // Special tab: drafts the sweep wrote but did not send. Loaded from /drafts.
+  { key: "drafts", label: "Bot drafts", statuses: [] },
   { key: "new", label: "New", statuses: ["sent"] },
   { key: "inProgress", label: "In progress", statuses: ["acked", "clarifying", "patching", "committed", "released"] },
   { key: "resolved", label: "Resolved", statuses: ["fixed"] },
@@ -226,6 +235,23 @@ type Health = {
   needsMeCount: number;
   oldestNeedsMeAt: number | null;
   autoClose: { waitingOnUserDays: number; noReplyDays: number };
+};
+
+type TicketNote = { id: string; authorEmail: string; body: string; createdAt: string };
+
+type BotDraft = {
+  id: string;
+  ticketId: string;
+  title: string;
+  customerEmail: string;
+  priority: string;
+  subject: string;
+  body: string;
+  confidence: number | null;
+  grounded: boolean;
+  classification: string;
+  reason: string;
+  createdAt: string;
 };
 
 type SuggestMeta = { confidence: number | null; grounded: boolean; action: string; reason: string };
@@ -414,6 +440,15 @@ export default function SupportAdminPage() {
   const [views, setViews] = useState<SavedView[]>([]);
   const [cursorId, setCursorId] = useState<string | null>(null);
   const [health, setHealth] = useState<Health | null>(null);
+  const [myEmail, setMyEmail] = useState("");
+  const [mineOnly, setMineOnly] = useState(false);
+  const [metaPending, setMetaPending] = useState(false);
+  const [draftRows, setDraftRows] = useState<BotDraft[]>([]);
+  const [draftCount, setDraftCount] = useState<number | null>(null);
+  const [activeDraft, setActiveDraft] = useState<BotDraft | null>(null);
+  const [notes, setNotes] = useState<TicketNote[]>([]);
+  const [noteText, setNoteText] = useState("");
+  const [assignee, setAssignee] = useState("");
   const [suggestMeta, setSuggestMeta] = useState<SuggestMeta | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const searchRef = useRef<HTMLInputElement | null>(null);
@@ -455,10 +490,29 @@ export default function SupportAdminPage() {
     } catch { /* tile row just won't render */ }
   }, []);
 
+  const loadDrafts = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/support/drafts", { cache: "no-store" });
+      if (res.status === 403) { setForbidden(true); return; }
+      const json = (await res.json()) as { drafts?: BotDraft[]; migrationPending?: boolean; error?: string };
+      if (!res.ok) { setError(json.error || "Failed to load drafts"); return; }
+      setDraftRows(json.drafts ?? []);
+      setDraftCount((json.drafts ?? []).length);
+      if (json.migrationPending) setMetaPending(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load drafts");
+    }
+  }, []);
+
   const fetchList = useCallback(async () => {
     const seq = ++listSeq.current;
     setLoading(true);
     setError(null);
+    if (activeBucket.key === "drafts" && !q.trim()) {
+      await loadDrafts();
+      if (seq === listSeq.current) { setTickets([]); setLoading(false); }
+      return;
+    }
     try {
       const qs = new URLSearchParams();
       // A search looks across every status: the ticket you are hunting for by
@@ -475,9 +529,13 @@ export default function SupportAdminPage() {
       const res = await fetch(`/api/admin/support/list?${qs.toString()}`, { cache: "no-store" });
       if (seq !== listSeq.current) return;
       if (res.status === 403) { setForbidden(true); return; }
-      const json = (await res.json()) as { tickets?: Ticket[]; error?: string };
+      const json = (await res.json()) as {
+        tickets?: Ticket[]; error?: string; admin?: { email?: string }; metaPending?: boolean;
+      };
       if (seq !== listSeq.current) return;
       if (!res.ok) { setError(json.error || "Failed to load"); setTickets([]); return; }
+      if (json.admin?.email) setMyEmail(json.admin.email.toLowerCase());
+      setMetaPending(!!json.metaPending);
       setTickets(json.tickets ?? []);
     } catch (e) {
       if (seq !== listSeq.current) return;
@@ -486,7 +544,7 @@ export default function SupportAdminPage() {
     } finally {
       if (seq === listSeq.current) setLoading(false);
     }
-  }, [activeBucket, priority, tier, typeFilter, range, q, limit]);
+  }, [activeBucket, priority, tier, typeFilter, range, q, limit, loadDrafts]);
 
   // Any filter change starts paging over from the first page.
   const filterKey = [bucket, priority, tier, typeFilter, range, q].join("|");
@@ -508,6 +566,37 @@ export default function SupportAdminPage() {
     return () => clearTimeout(t);
   }, [qInput]);
 
+  // Notes, assignee and any pending bot draft live in Supabase, not the Worker,
+  // so they load beside the ticket. A pending draft pre-fills the reply box.
+  const loadTicketExtras = useCallback(async (id: string) => {
+    try {
+      const [nRes, dRes] = await Promise.all([
+        fetch(`/api/admin/support/notes?id=${encodeURIComponent(id)}`, { cache: "no-store" }),
+        fetch(`/api/admin/support/drafts?ticket=${encodeURIComponent(id)}`, { cache: "no-store" }),
+      ]);
+      if (nRes.ok) {
+        const nj = (await nRes.json()) as { notes?: TicketNote[]; assignee?: string; migrationPending?: boolean };
+        setNotes(nj.notes ?? []);
+        setAssignee(nj.assignee ?? "");
+        if (nj.migrationPending) setMetaPending(true);
+      }
+      if (dRes.ok) {
+        const dj = (await dRes.json()) as { draft?: BotDraft | null };
+        if (dj.draft) {
+          setActiveDraft(dj.draft);
+          setReplySubject(dj.draft.subject.slice(0, 180));
+          setReplyBody(dj.draft.body);
+          setSuggestMeta({
+            confidence: dj.draft.confidence,
+            grounded: dj.draft.grounded,
+            action: "auto_answer",
+            reason: dj.draft.reason,
+          });
+        }
+      }
+    } catch { /* extras are optional; the ticket itself already loaded */ }
+  }, []);
+
   const openTicket = useCallback(async (id: string) => {
     setActionMsg("");
     setDetailBusy(true);
@@ -528,10 +617,15 @@ export default function SupportAdminPage() {
       setSuggestMeta(null);
       setSuggestReason("");
       setCursorId(t.id);
+      setActiveDraft(null);
+      setNotes([]);
+      setNoteText("");
+      setAssignee(t.assignee || "");
+      void loadTicketExtras(t.id);
     } finally {
       setDetailBusy(false);
     }
-  }, []);
+  }, [loadTicketExtras]);
 
   // Load every ticket a user has submitted. The Worker's /agent/inbox `q` is a
   // fuzzy match over title/text/email, so exact-filter on userEmail afterwards
@@ -550,7 +644,7 @@ export default function SupportAdminPage() {
         return;
       }
       const mine = (json.tickets ?? [])
-        .filter((t) => (t.userEmail || "").toLowerCase() === target)
+        .filter((t) => (t.userEmail || "").toLowerCase() === target || (t.requesterEmail || "").toLowerCase() === target)
         .sort((a, b) => (b.submittedAt ?? 0) - (a.submittedAt ?? 0));
       setUserView({ email, tickets: mine, loading: false, error: null });
     } catch (e) {
@@ -563,6 +657,7 @@ export default function SupportAdminPage() {
     fetchCounts();
     fetchList();
     fetchHealth();
+    void loadDrafts();
     try {
       const id = new URLSearchParams(window.location.search).get("ticket");
       if (id) openTicket(id);
@@ -684,6 +779,7 @@ export default function SupportAdminPage() {
           subject: replySubject.trim(),
           body: replyBody.trim(),
           ...(advance ? { advanceStatus: "waiting_on_user" } : {}),
+          ...(selected.requesterEmail ? { toRequester: true } : {}),
           ...(replyAttachments.length
             ? { attachments: replyAttachments.map((m) => ({ filename: m.filename, content: m.b64, contentType: m.contentType })) }
             : {}),
@@ -692,9 +788,19 @@ export default function SupportAdminPage() {
             : {}),
         }),
       });
-      const json = (await res.json()) as { ok?: boolean; error?: string };
+      const json = (await res.json()) as { ok?: boolean; error?: string; warning?: string };
       if (!res.ok || !json.ok) { setActionMsg(json.error || "Reply failed"); return; }
-      setActionMsg("Reply sent.");
+      setActionMsg(json.warning ? `Reply sent. Warning: ${json.warning}` : "Reply sent.");
+      if (activeDraft) {
+        const edited = replyBody.trim() !== activeDraft.body.trim();
+        void fetch("/api/admin/support/drafts", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ draftId: activeDraft.id, outcome: edited ? "edited_sent" : "sent" }),
+        });
+        setActiveDraft(null);
+        void loadDrafts();
+      }
       setReplyBody("");
       setReplyAttachments([]);
       setReplyInlineImages([]);
@@ -704,7 +810,55 @@ export default function SupportAdminPage() {
     } finally {
       setDetailBusy(false);
     }
-  }, [selected, replySubject, replyBody, replyAdvance, replyAttachments, replyInlineImages, openTicket, fetchList, fetchCounts]);
+  }, [selected, replySubject, replyBody, replyAdvance, replyAttachments, replyInlineImages, activeDraft, openTicket, fetchList, fetchCounts, loadDrafts]);
+
+  const rejectDraft = useCallback(async () => {
+    if (!activeDraft) return;
+    const reason = window.prompt("Why reject this draft? (optional, helps tune the bot)");
+    if (reason === null) return;
+    const res = await fetch("/api/admin/support/drafts", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ draftId: activeDraft.id, outcome: "rejected", reason }),
+    });
+    if (!res.ok) { setActionMsg("Could not reject the draft."); return; }
+    if (replyBody.trim() === activeDraft.body.trim()) {
+      setReplyBody("");
+      setReplySubject(`Re: ${selected?.title || ""}`.slice(0, 180));
+    }
+    setActiveDraft(null);
+    setSuggestMeta(null);
+    setActionMsg("Draft rejected.");
+    void loadDrafts();
+    void fetchList();
+  }, [activeDraft, replyBody, selected, loadDrafts, fetchList]);
+
+  const saveNote = useCallback(async () => {
+    if (!selected || !noteText.trim()) return;
+    const res = await fetch("/api/admin/support/notes", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: selected.id, body: noteText }),
+    });
+    const json = (await res.json().catch(() => ({}))) as { error?: string };
+    if (!res.ok) { setActionMsg(json.error || "Could not save the note."); return; }
+    setNoteText("");
+    void loadTicketExtras(selected.id);
+    void fetchList();
+  }, [selected, noteText, loadTicketExtras, fetchList]);
+
+  const doAssign = useCallback(async (who: string) => {
+    if (!selected) return;
+    const res = await fetch("/api/admin/support/assign", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: selected.id, assignee: who }),
+    });
+    const json = (await res.json().catch(() => ({}))) as { error?: string; assignee?: string };
+    if (!res.ok) { setActionMsg(json.error || "Could not assign."); return; }
+    setAssignee(json.assignee ?? "");
+    void fetchList();
+  }, [selected, fetchList]);
 
   // Draft a grounded reply with AI and drop it into the reply box for review.
   const doSuggest = useCallback(async () => {
@@ -775,6 +929,7 @@ export default function SupportAdminPage() {
     if (platformFilter) list = list.filter((t) => t.platform === platformFilter);
     if (versionFilter) list = list.filter((t) => t.appVersion === versionFilter);
     if (tagFilter) list = list.filter((t) => ticketTags(t).includes(tagFilter));
+    if (mineOnly) list = list.filter((t) => !!myEmail && (t.assignee || "").toLowerCase() === myEmail);
     const mode = sort === "auto"
       ? (bucket === "needsMe" || bucket === "waiting" ? "priority" : "newest")
       : sort;
@@ -789,7 +944,7 @@ export default function SupportAdminPage() {
       });
     }
     return out;
-  }, [tickets, platformFilter, versionFilter, tagFilter, sort, bucket]);
+  }, [tickets, platformFilter, versionFilter, tagFilter, mineOnly, myEmail, sort, bucket]);
 
   const saveView = useCallback(() => {
     const name = window.prompt("Name this view (e.g. Mac crashes this week)");
@@ -988,6 +1143,9 @@ export default function SupportAdminPage() {
               }`}
             >
               {b.label}
+              {b.key === "drafts" && draftCount !== null && draftCount > 0 ? (
+                <span className={`ml-1.5 text-xs ${bucket === b.key ? "text-white/90" : "text-slate-500"}`}>{draftCount}</span>
+              ) : null}
               {b.statuses.length > 0 && b.key !== "resolved" && b.key !== "archived" && b.key !== "spam" ? (
                 <span className={`ml-1.5 text-xs ${bucket === b.key ? "text-white/90" : "text-slate-500"}`}>
                   {b.statuses.reduce((n, s) => n + (counts[s] ?? 0), 0).toLocaleString("en-US")}
@@ -1076,6 +1234,10 @@ export default function SupportAdminPage() {
             {SORTS.map((s) => <option key={s.key} value={s.key}>Sort: {s.label}</option>)}
           </select>
         </span>
+        <label className="flex items-center gap-1.5 text-slate-700">
+          <input type="checkbox" checked={mineOnly} onChange={(e) => setMineOnly(e.target.checked)} className="rounded border-slate-300" />
+          Assigned to me
+        </label>
         {filtersActive && (
           <button type="button" onClick={clearFilters} className="font-medium text-orange-700 underline">Clear filters</button>
         )}
@@ -1124,9 +1286,58 @@ export default function SupportAdminPage() {
       ) : null}
 
       {error && <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</div>}
+      {metaPending && (
+        <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          Notes, assignees and bot drafts need one database step: paste{" "}
+          <code className="rounded bg-white px-1 py-0.5 text-xs">supabase/migrations/20261121_support_notes_assignee_drafts.sql</code>{" "}
+          into the Supabase SQL editor. Everything else works without it.
+        </div>
+      )}
+
+      {/* Bot drafts: replies the sweep wrote but did not send. Review, edit, send or reject. */}
+      {bucket === "drafts" && !q.trim() && (
+        <div className="rounded-xl border border-slate-200 bg-white">
+          <p className="border-b border-slate-100 px-4 py-3 text-sm text-slate-600">
+            These are replies the auto-reply sweep would have sent. Open one to review it in the reply box, edit if needed,
+            then send or reject. Your approve, edit and reject choices show how ready the bot is to run live.
+          </p>
+          {loading && draftRows.length === 0 ? (
+            <p className="px-4 py-8 text-center text-sm text-slate-400">Loading…</p>
+          ) : draftRows.length === 0 ? (
+            <p className="px-4 py-8 text-center text-sm text-slate-400">No drafts waiting. New ones appear after the next sweep run.</p>
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {draftRows.map((d) => (
+                <li key={d.id}>
+                  <button
+                    type="button"
+                    onClick={() => void openTicket(d.ticketId)}
+                    className="block w-full px-4 py-3 text-left hover:bg-slate-50"
+                  >
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <span className={`rounded px-1.5 py-0.5 font-semibold ${priorityClasses(d.priority)}`}>{d.priority || "P2"}</span>
+                      <span className="font-mono text-slate-500">{shortId(d.ticketId)}</span>
+                      {d.confidence != null ? (
+                        <span className={`rounded px-1.5 py-0.5 font-medium ${d.confidence >= 0.75 ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-800"}`}>
+                          {Math.round(d.confidence * 100)}% sure
+                        </span>
+                      ) : null}
+                      <span className={d.grounded ? "text-emerald-700" : "text-amber-700"}>{d.grounded ? "grounded in help articles" : "no help article match"}</span>
+                      <span className="ml-auto text-slate-500">{ago(Date.parse(d.createdAt) || null)}</span>
+                    </div>
+                    <div className="mt-1 text-sm font-medium text-slate-900">{d.title || "(no title)"}</div>
+                    <div className="text-xs text-slate-500">{d.customerEmail || "no email"}</div>
+                    <p className="mt-1 line-clamp-2 text-sm text-slate-600">{d.body}</p>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+      <div className={`overflow-x-auto rounded-xl border border-slate-200 bg-white ${bucket === "drafts" && !q.trim() ? "hidden" : ""}`}>
         <table className="min-w-full divide-y divide-slate-100 text-sm">
           <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
             <tr>
@@ -1179,6 +1390,14 @@ export default function SupportAdminPage() {
                     </button>
                     <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
                       {bs && <span className={`rounded px-1.5 py-0.5 font-medium ${bs.tone}`}>{bs.label}</span>}
+                      {t.draftId ? <span className="rounded bg-violet-50 px-1.5 py-0.5 font-medium text-violet-700">bot draft ready</span> : null}
+                      {t.assignee ? (
+                        <span className="rounded bg-indigo-50 px-1.5 py-0.5 font-medium text-indigo-700" title={`Assigned to ${t.assignee}`}>
+                          {t.assignee.toLowerCase() === myEmail ? "mine" : t.assignee.split("@")[0]}
+                        </span>
+                      ) : null}
+                      {t.noteCount ? <span className="rounded bg-amber-50 px-1.5 py-0.5 font-medium text-amber-800" title="Internal notes">{t.noteCount} note{t.noteCount === 1 ? "" : "s"}</span> : null}
+                      {t.requesterEmail ? <span className="rounded bg-slate-100 px-1.5 py-0.5 text-slate-600" title={`Customer: ${t.requesterEmail}`}>from call/chat</span> : null}
                       {t.platform ? <span>{t.platform}</span> : null}
                       {t.appVersion ? <span>v{String(t.appVersion).replace(/^v/i, "")}</span> : null}
                     </div>
@@ -1404,6 +1623,32 @@ export default function SupportAdminPage() {
               <div><dt className="text-slate-400">Submitted</dt><dd className="text-slate-700">{fullTime(selected.submittedAt)}</dd></div>
               <div><dt className="text-slate-400">Last worked by bot</dt><dd className="text-slate-700">{selected.lastTriagedAt ? fullTime(selected.lastTriagedAt) : "not yet"}</dd></div>
               <div><dt className="text-slate-400">Last reply</dt><dd className="text-slate-700">{selected.repliedAt ? fullTime(selected.repliedAt) : "none"}</dd></div>
+              {selected.requesterEmail && (
+                <div className="col-span-2">
+                  <dt className="text-slate-400">Customer (ticket auto-filed from a call or chat)</dt>
+                  <dd className="text-slate-700">
+                    <button
+                      type="button"
+                      onClick={() => { openUserHistory(selected.requesterEmail || ""); setSelected(null); }}
+                      className="text-left underline decoration-slate-300 decoration-dotted underline-offset-2 hover:text-[#f97316]"
+                    >
+                      {selected.requesterEmail}
+                    </button>
+                  </dd>
+                </div>
+              )}
+              <div className="col-span-2">
+                <dt className="text-slate-400">Assigned to</dt>
+                <dd className="flex flex-wrap items-center gap-2 text-slate-700">
+                  <span>{assignee ? (assignee.toLowerCase() === myEmail ? "You" : assignee) : "Nobody"}</span>
+                  {assignee.toLowerCase() !== myEmail && myEmail ? (
+                    <button type="button" onClick={() => void doAssign("me")} className="rounded-lg border border-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700 hover:bg-slate-50">Assign to me</button>
+                  ) : null}
+                  {assignee ? (
+                    <button type="button" onClick={() => void doAssign("")} className="rounded-lg border border-slate-200 px-2 py-0.5 text-xs text-slate-600 hover:bg-slate-50">Unassign</button>
+                  ) : null}
+                </dd>
+              </div>
               <div><dt className="text-slate-400">Shipped in</dt><dd className="text-slate-700">{selected.resolvedVersion ? `v${String(selected.resolvedVersion).replace(/^v/i, "")}${selected.resolvedAt ? ` (${fullTime(selected.resolvedAt)})` : ""}` : "—"}</dd></div>
               {selected.fixCommitSha && <div><dt className="text-slate-400">Branch</dt><dd className="text-slate-700">main</dd></div>}
               {selected.escalatedReason && <div className="col-span-2"><dt className="text-slate-400">Escalated reason</dt><dd className="text-rose-700">{selected.escalatedReason}</dd></div>}
@@ -1499,6 +1744,42 @@ export default function SupportAdminPage() {
               </ol>
             </section>
 
+            {/* Internal notes: never emailed, never read or overwritten by the bots */}
+            <section className="mt-5 rounded-xl border border-amber-200 bg-amber-50/50 p-3" aria-label="Internal notes">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-amber-800">Internal notes <span className="font-normal normal-case text-amber-700">(private, the customer never sees these)</span></h3>
+              {notes.length === 0 ? (
+                <p className="mt-2 text-sm text-slate-500">No notes yet.</p>
+              ) : (
+                <ul className="mt-2 space-y-2">
+                  {notes.map((n) => (
+                    <li key={n.id} className="rounded-lg bg-white px-3 py-2 text-sm text-slate-800">
+                      <div className="text-xs text-slate-500">{n.authorEmail} · {fullTime(Date.parse(n.createdAt) || null)}</div>
+                      <div className="mt-0.5 whitespace-pre-wrap break-words"><Linkified text={n.body} /></div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <label className="mt-2 block text-sm">
+                <span className="sr-only">Add an internal note</span>
+                <textarea
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  rows={2}
+                  maxLength={4000}
+                  placeholder="Add a private note for the team..."
+                  className="w-full rounded-lg border border-amber-200 bg-white px-2 py-1.5 text-sm"
+                />
+              </label>
+              <button
+                type="button"
+                disabled={!noteText.trim()}
+                onClick={() => void saveNote()}
+                className="mt-1 rounded-lg bg-amber-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-800 disabled:opacity-50"
+              >
+                Add note
+              </button>
+            </section>
+
             {/* Triage controls */}
             <section className="mt-5 rounded-xl border border-slate-200 p-3">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Triage</h3>
@@ -1565,6 +1846,21 @@ export default function SupportAdminPage() {
                     <span className="text-xs text-slate-400">AI drafts a grounded reply. You review and send.</span>
                   </div>
                   {suggestReason && <p className="mt-2 text-xs text-slate-500">{suggestReason}</p>}
+                  {selected.requesterEmail && (
+                    <p className="mt-2 rounded-lg bg-slate-50 px-3 py-1.5 text-xs text-slate-700">
+                      This ticket was auto-filed from a call or chat. Your reply goes to the customer, <strong>{selected.requesterEmail}</strong>, not to the ticket owner.
+                    </p>
+                  )}
+                  {activeDraft && (
+                    <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-xs text-violet-900">
+                      <span>
+                        <strong>Bot draft loaded</strong>
+                        {activeDraft.confidence != null ? ` (${Math.round(activeDraft.confidence * 100)}% sure` : " ("}
+                        {activeDraft.grounded ? ", grounded in help articles)" : ", no help article match)"}. Edit it if needed, then Send reply.
+                      </span>
+                      <button type="button" onClick={() => void rejectDraft()} className="ml-auto rounded-lg border border-violet-300 bg-white px-2 py-0.5 font-medium text-violet-900 hover:bg-violet-100">Reject draft</button>
+                    </div>
+                  )}
                   <input value={replySubject} onChange={(e) => setReplySubject(e.target.value)} className="mt-2 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm" placeholder="Subject" />
                   <textarea ref={replyRef} aria-label="Reply body" value={replyBody} onChange={(e) => setReplyBody(e.target.value)} onPaste={onReplyPaste} rows={6} className="mt-2 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm" placeholder={"Hi,\n\nWarmly,\nYour Influencer Butler Team"} />
 

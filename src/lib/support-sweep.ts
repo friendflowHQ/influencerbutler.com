@@ -22,6 +22,7 @@
 import { callSupportWorker } from "@/lib/support-worker";
 import { resolveTextProvider, openAiFallbackProvider } from "@/lib/ai-concierge/llm";
 import { searchHelp } from "@/lib/ai-concierge/agent";
+import { saveBotDraft } from "@/lib/support-meta";
 
 const SITE = "https://www.influencerbutler.com";
 const EM_DASH = String.fromCharCode(0x2014);
@@ -53,6 +54,8 @@ export type WorkerTicket = {
   status?: string;
   priority?: string;
   userEmail?: string;
+  /** Real customer when the ticket was auto-filed under the owner address (call / Concierge). */
+  requesterEmail?: string;
   licenseTier?: string;
   appVersion?: string;
   platform?: string;
@@ -336,6 +339,22 @@ async function sendAutoReply(t: WorkerTicket, draft: DraftResult): Promise<boole
   return true;
 }
 
+/** Keep a draft the sweep wrote but did not send, for review in the dashboard. */
+async function storeDraft(t: WorkerTicket, draft: DraftResult): Promise<void> {
+  await saveBotDraft({
+    ticketId: t.id,
+    title: t.title || "(no title)",
+    customerEmail: (t.userEmail || "").trim(),
+    priority: t.priority || "",
+    subject: draft.subject,
+    body: draft.body,
+    confidence: draft.confidence,
+    grounded: draft.grounded,
+    classification: draft.classification,
+    reason: draft.reason,
+  });
+}
+
 /** Best-effort: add a tag to a ticket without disturbing existing tags. */
 export async function tagTicket(t: WorkerTicket, tag: string): Promise<void> {
   const existing = (t.tags || "")
@@ -478,6 +497,14 @@ export async function runSupportSweep(opts?: { dryRun?: boolean }): Promise<Swee
       continue;
     }
 
+    // Auto-filed from a call or Concierge session: userEmail is the owner, the
+    // real customer is the requester, and they never opened this ticket. A bot
+    // must not email them, so hand it to a human.
+    if ((full.requesterEmail || "").trim()) {
+      pushNeedsYou(report, full, age, "Filed from a call or Concierge session, a human should decide whether to contact the customer");
+      continue;
+    }
+
     if (SENSITIVE_RE.test(`${full.title || ""} ${full.description || ""}`)) {
       pushNeedsYou(report, full, age, "Sensitive topic (refund/cancel/legal), needs a human");
       continue;
@@ -524,14 +551,17 @@ export async function runSupportSweep(opts?: { dryRun?: boolean }): Promise<Swee
     }
 
     if (!live) {
-      // Shadow / dry-run: surface the draft, never send.
+      // Shadow / dry-run: surface the draft, never send. Real shadow runs also
+      // store it so it can be reviewed (and sent) from the dashboard.
       report.drafts.push(draftItem(full, draft));
+      if (!dryRun) await storeDraft(full, draft);
       continue;
     }
 
     if (sends >= maxSends()) {
       // Cap reached: hold as a draft; the next sweep sends it. Not an owner item.
       report.drafts.push(draftItem(full, draft));
+      if (!dryRun) await storeDraft(full, draft);
       continue;
     }
 

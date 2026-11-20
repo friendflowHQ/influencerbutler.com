@@ -231,6 +231,13 @@ export async function submitSupportTicket(input: {
   platform?: string;
   appVersion?: string;
   tags?: string;
+  /**
+   * The real customer, for tickets auto-filed under the owner address (call and
+   * Concierge sessions). Stored by the Worker as requester_email so the dashboard
+   * can show their history and send replies to them. Honored only because this
+   * request carries the agent token (see below); a public /submit cannot set it.
+   */
+  requesterEmail?: string;
   /** Optional diagnostics text (ASCII-safe), stored as the ticket's log tail. */
   logs?: string;
 }): Promise<{ ok: boolean; id: string | null }> {
@@ -241,6 +248,10 @@ export async function submitSupportTicket(input: {
   const headers: Record<string, string> = { "content-type": "application/json" };
   const sharedKey = process.env.FEEDBACK_SHARED_KEY;
   if (sharedKey) headers["x-ib-key"] = sharedKey;
+  // Trusted-source marker: lets the Worker accept requesterEmail and tags, which
+  // it ignores on an ordinary public submit. Harmless to an older Worker.
+  const agentToken = process.env.SUPPORT_BOT_TOKEN;
+  if (agentToken && (input.requesterEmail || input.tags)) headers["x-ib-agent-token"] = agentToken;
 
   const type = input.type === "feature" ? "feature" : input.type === "question" ? "question" : "bug";
   try {
@@ -260,6 +271,7 @@ export async function submitSupportTicket(input: {
         // field, so this is a best-effort hint only (provenance also lives in
         // the description). Harmless if dropped upstream.
         ...(input.tags ? { tags: input.tags } : {}),
+        ...(input.requesterEmail ? { requesterEmail: input.requesterEmail } : {}),
         submittedAt: new Date().toISOString(),
       }),
     });

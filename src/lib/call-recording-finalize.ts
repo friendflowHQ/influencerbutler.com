@@ -102,6 +102,7 @@ async function fileTicketsFromCall(
       title: item.title,
       description: `${item.description}${provenance}`,
       userEmail: filedOwner || undefined,
+      requesterEmail: booking.user_email || undefined,
       platform: "call-notes",
       tags: "from-call",
     });

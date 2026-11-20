@@ -32,6 +32,9 @@ type ReplyBody = {
   advanceStatus?: string;
   attachments?: unknown;
   inlineImages?: unknown;
+  // Ticket was auto-filed from a call / Concierge session under the owner
+  // address; send to the real customer (the Worker's requester_email) instead.
+  toRequester?: boolean;
 };
 
 export async function POST(request: Request) {
@@ -66,8 +69,10 @@ export async function POST(request: Request) {
   }
   if (media.attachments.length) payload.attachments = media.attachments;
   if (media.inlineImages.length) payload.inlineImages = media.inlineImages;
+  const toRequester = body.toRequester === true;
+  if (toRequester) payload.toRequester = true;
 
-  const result = await callSupportWorker<{ resendMessageId?: string | null }>(
+  const result = await callSupportWorker<{ resendMessageId?: string | null; emailedToRequester?: boolean }>(
     `/agent/tickets/${encodeURIComponent(id)}/reply`,
     { method: "POST", body: payload },
   );
@@ -83,8 +88,20 @@ export async function POST(request: Request) {
       advanceStatus: payload.advanceStatus ?? null,
       attachments: media.attachments.length,
       inlineImages: media.inlineImages.length,
+      toRequester,
     },
   });
 
-  return NextResponse.json({ ok: true, resendMessageId: result.data.resendMessageId ?? null });
+  // An older Worker ignores toRequester and emails the ticket owner. It never
+  // reports emailedToRequester, so surface that instead of failing silently.
+  const warning =
+    toRequester && result.data.emailedToRequester !== true
+      ? "the feedback Worker has not been updated, so this went to the ticket owner address instead of the customer"
+      : undefined;
+
+  return NextResponse.json({
+    ok: true,
+    resendMessageId: result.data.resendMessageId ?? null,
+    ...(warning ? { warning } : {}),
+  });
 }

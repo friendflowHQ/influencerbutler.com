@@ -82,6 +82,7 @@ async function fileTickets(session: ConciergeSessionRow, transcript: string, sum
       title: item.title,
       description: `${item.description}${provenance}`,
       userEmail: filedOwner || undefined,
+      requesterEmail: session.user_email || undefined,
       platform: "ai-concierge",
       tags: "from-concierge",
     });
