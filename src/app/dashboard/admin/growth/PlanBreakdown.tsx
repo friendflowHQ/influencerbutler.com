@@ -62,12 +62,35 @@ export default function PlanBreakdown({
         Subscribers by plan
       </h2>
       <p className="mt-1 text-xs text-slate-600">
-        Live right now, whatever month is selected. Add-on subscriptions are not counted. Comps are
-        free grants that never charge, so they are left out of the Active subscribers tile (which
-        equals Paid here), the goals and the projections. MRR (list price, yearly plans divided by
-        12) and Avg / sub (MRR per paid subscriber, per month) count paid subscribers only. Other
-        discounts are not reflected.
+        Live right now, whatever month is selected. Comps and add-ons are not counted as paid.
       </p>
+      <details className="group mt-1 text-xs text-slate-600">
+        <summary className="inline-flex cursor-pointer list-none items-center gap-1 font-semibold text-indigo-700 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-700 [&::-webkit-details-marker]:hidden">
+          <span aria-hidden="true" className="inline-block transition-transform group-open:rotate-90">▸</span>
+          How these numbers are counted
+        </summary>
+        <dl className="mt-1.5 space-y-1 rounded-lg border border-slate-200 bg-slate-50 p-3">
+          <div>
+            <dt className="inline font-semibold text-slate-800">Comps: </dt>
+            <dd className="inline">
+              free grants that never charge. They are left out of the Active subscribers tile (which
+              equals Paid here), the goals and the projections.
+            </dd>
+          </div>
+          <div>
+            <dt className="inline font-semibold text-slate-800">MRR: </dt>
+            <dd className="inline">list price, with yearly plans divided by 12. Paid subscribers only.</dd>
+          </div>
+          <div>
+            <dt className="inline font-semibold text-slate-800">Avg / sub: </dt>
+            <dd className="inline">MRR per paid subscriber, per month.</dd>
+          </div>
+          <div>
+            <dt className="inline font-semibold text-slate-800">Not reflected: </dt>
+            <dd className="inline">add-on subscriptions and other discounts.</dd>
+          </div>
+        </dl>
+      </details>
       {!compsKnown ? (
         <p className="mt-1 text-xs font-medium text-amber-700">
           The comp list could not be read, so every active subscriber is shown as paid. Treat the

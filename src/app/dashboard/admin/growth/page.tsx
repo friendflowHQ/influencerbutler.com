@@ -239,7 +239,7 @@ export default function AdminGrowthPage() {
   const mtdRange = mtd ? `${shortMonth(month)} 1-${mtd.throughDay}` : "";
   const prevMtdRange = mtd ? `${shortMonth(shiftMonth(month, -1))} 1-${mtd.throughDay}` : "";
 
-  const strip: { label: string; value: string; live?: boolean; tone: string }[] = [
+  const strip: { label: string; value: string; live?: boolean }[] = [
     {
       label: "On the site right now",
       value:
@@ -247,22 +247,18 @@ export default function AdminGrowthPage() {
           ? ga.realtimeActiveUsers.toLocaleString("en-US")
           : "-",
       live: Boolean(ga?.configured && typeof ga.realtimeActiveUsers === "number"),
-      tone: "text-emerald-600",
     },
     {
       label: "Active subscribers",
       value: formatMetricValue("count", m.active_subscriptions?.current ?? null),
-      tone: "text-indigo-600",
     },
     {
       label: "On trial",
       value: formatMetricValue("count", m.on_trial_subscriptions?.current ?? null),
-      tone: "text-sky-600",
     },
     {
       label: isCurrentMonth ? "Revenue this month" : `Revenue in ${monthLabel(month)}`,
       value: formatMetricValue("cents", m.revenue_cents?.current ?? null),
-      tone: "text-amber-600",
     },
   ];
 
@@ -324,7 +320,7 @@ export default function AdminGrowthPage() {
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {strip.map((s) => (
             <div key={s.label} className="rounded-xl border border-slate-200 bg-white p-4">
-              <p className={`flex items-center gap-2 text-3xl font-extrabold ${s.tone}`}>
+              <p className={`flex items-center gap-2 text-3xl font-extrabold text-slate-900`}>
                 {metricsLoading && !s.live ? (
                   <span className="inline-block h-8 w-14 animate-pulse rounded bg-slate-100" />
                 ) : (
@@ -337,7 +333,7 @@ export default function AdminGrowthPage() {
                   </span>
                 ) : null}
               </p>
-              <p className="mt-1 text-xs font-medium text-slate-500">{s.label}</p>
+              <p className="mt-1 text-xs font-medium text-slate-600">{s.label}</p>
             </div>
           ))}
         </div>
