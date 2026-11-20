@@ -1,0 +1,56 @@
+---
+title: Connect your own AI assistant to see what your butlers are doing
+summary: Turn on a private, read-only link so Claude, Cursor or another AI assistant on your computer can tell you what ran, what needs you, and what is coming up.
+category: Getting Started
+---
+
+## What it is
+
+The AI assistant connection lets an AI assistant you already use (Claude Code, Claude Desktop, Cursor and others) look at your Influencer Butler app and answer questions about it. You can ask things like "what ran today?", "does anything need me?" or "how did Message Brands do this week?" and get an answer based on your real activity.
+
+It is read-only. The assistant can see status and activity totals. It cannot start or stop a butler, post, send a message or change a setting. It never sees passwords, message text or customer details.
+
+It is off until you turn it on, and it only works on the same computer the app runs on. Nothing goes through the internet.
+
+## Turn it on
+
+1. Open **Settings** in the app and find the **AI assistant connection** card
+1. Switch on **Allow an AI assistant on this computer to connect**
+1. The status line changes to "On. Ready on port ..." and three items appear: the **Address**, the **Key** and a **Claude Code setup line**
+1. Leave the app running. The connection only works while the app is open
+
+## Connect Claude Code
+
+1. In the card, click **Copy** next to the **Claude Code setup line**
+1. Open a terminal and paste the line, then press Enter
+1. Start Claude Code and ask "what are my butlers doing right now?"
+
+## Connect another assistant
+
+Any assistant that supports MCP servers over HTTP can connect.
+
+1. Add a new MCP server in that assistant's settings
+1. Paste the **Address** from the card as the server address
+1. Send the **Key** as a Bearer token in the Authorization header. Click **Show** if you need to read it, or **Copy** to paste it
+1. If the assistant only supports local command-line servers, use a small bridge tool such as mcp-remote and point it at the same address and key
+
+## What you can ask
+
+The assistant gets four read-only tools:
+
+- **List butlers**: every butler with its state (idle, running, paused or stopped by an error) and what it is doing now
+- **Butler status**: one butler in detail, including its progress and the last error if it failed
+- **Needs attention**: only the butlers that stopped with an error
+- **Activity**: runs, results and what is scheduled next, for the last 1 to 90 days, for everything or for one butler
+
+## Keep it safe
+
+1. Treat the **Key** like a password. Anyone who has it can read your butler status from this computer
+1. To cut off an assistant, click **Replace key**, then click again to confirm. The old key stops working at once
+1. To turn the whole thing off, switch the toggle off. Nothing listens until you switch it on again
+
+## Good to know
+
+- After you replace the key, update it in your assistant, because the old one no longer works
+- If the card says it could not start, another program may be using its port. Switch it off and on again, or restart the app
+- It shows what the app knows on this computer. Butlers on another computer are not included

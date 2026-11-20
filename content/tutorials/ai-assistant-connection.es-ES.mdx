@@ -1,0 +1,56 @@
+---
+title: Conecta tu propio asistente de IA para ver lo que hacen tus butlers
+summary: Activa un enlace privado y de solo lectura para que Claude, Cursor u otro asistente de IA de tu ordenador te diga qué se ejecutó, qué te necesita y qué viene a continuación.
+category: Getting Started
+---
+
+## Qué es
+
+La conexión con asistente de IA permite que un asistente de IA que ya usas (Claude Code, Claude Desktop, Cursor y otros) mire tu aplicación de Influencer Butler y responda preguntas sobre ella. Puedes preguntar cosas como "¿qué se ejecutó hoy?", "¿hay algo que me necesite?" o "¿cómo le fue a Message Brands esta semana?" y recibir una respuesta basada en tu actividad real.
+
+Es de solo lectura. El asistente puede ver el estado y los totales de actividad. No puede iniciar ni detener un butler, publicar, enviar un mensaje ni cambiar una configuración. Nunca ve contraseñas, textos de mensajes ni datos de clientes.
+
+Está desactivada hasta que la actives y solo funciona en el mismo ordenador donde corre la aplicación. Nada pasa por internet.
+
+## Actívala
+
+1. Abre **Configuración** en la aplicación y busca la tarjeta **Conexión con asistente de IA**
+1. Activa **Permitir que un asistente de IA de este ordenador se conecte**
+1. La línea de estado cambia a "Activada. Lista en el puerto ..." y aparecen tres elementos: la **Dirección**, la **Clave** y una **Línea de configuración para Claude Code**
+1. Deja la aplicación abierta. La conexión solo funciona mientras la aplicación está abierta
+
+## Conecta Claude Code
+
+1. En la tarjeta, haz clic en **Copiar** junto a la **Línea de configuración para Claude Code**
+1. Abre una terminal, pega la línea y pulsa Intro
+1. Inicia Claude Code y pregunta "¿qué están haciendo mis butlers ahora mismo?"
+
+## Conecta otro asistente
+
+Cualquier asistente que admita servidores MCP por HTTP puede conectarse.
+
+1. Añade un servidor MCP nuevo en la configuración de ese asistente
+1. Pega la **Dirección** de la tarjeta como dirección del servidor
+1. Envía la **Clave** como token Bearer en el encabezado Authorization. Haz clic en **Mostrar** si necesitas leerla, o en **Copiar** para pegarla
+1. Si el asistente solo admite servidores locales de línea de comandos, usa una pequeña herramienta puente como mcp-remote y apúntala a la misma dirección y clave
+
+## Qué puedes preguntar
+
+El asistente recibe cuatro herramientas de solo lectura:
+
+- **Listar butlers**: cada butler con su estado (inactivo, en marcha, en pausa o detenido por un error) y lo que está haciendo ahora
+- **Estado de un butler**: un butler en detalle, con su progreso y el último error si falló
+- **Necesita atención**: solo los butlers que se detuvieron por un error
+- **Actividad**: ejecuciones, resultados y lo que sigue programado, de los últimos 1 a 90 días, de todo o de un solo butler
+
+## Mantenla segura
+
+1. Trata la **Clave** como una contraseña. Quien la tenga puede leer el estado de tus butlers desde este ordenador
+1. Para cortar a un asistente, haz clic en **Reemplazar clave** y vuelve a hacer clic para confirmar. La clave anterior deja de funcionar al instante
+1. Para desactivarlo todo, apaga el interruptor. Nada escucha hasta que lo vuelvas a activar
+
+## Conviene saber
+
+- Después de reemplazar la clave, actualízala en tu asistente, porque la anterior ya no funciona
+- Si la tarjeta dice que no pudo iniciarse, es posible que otro programa use su puerto. Apágala y vuelve a encenderla, o reinicia la aplicación
+- Muestra lo que la aplicación sabe en este ordenador. Los butlers de otro ordenador no se incluyen

@@ -26,6 +26,18 @@
       ]
     },
     {
+      "id": "ai-assistant-connection",
+      "title": "Connect your own AI assistant to see what your butlers are doing",
+      "category": "Getting Started",
+      "summary": "Turn on a private, read-only link so Claude, Cursor or another AI assistant on your computer can tell you what ran, what needs you, and what is coming up.",
+      "order": 4,
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
+    },
+    {
       "id": "tiktok-creator-stats",
       "title": "TikTok Creator Stats: your followers and recent video performance",
       "category": "TikTok",
