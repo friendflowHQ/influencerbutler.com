@@ -6,8 +6,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useKeyboardShortcutsContext } from "@/contexts/KeyboardShortcutsContext";
-import { ADMIN_NAV_GROUPS, visibleAdminNav } from "@/lib/admin-nav";
-import { useAdminAttention } from "@/components/admin/useAdminAttention";
 
 // Sidebar is cramped, so the single button points at the /download chooser page
 // where the user picks Windows or Mac, rather than stacking platform buttons.
@@ -218,8 +216,39 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
     };
   }, []);
 
-  const adminNavItems = useMemo(() => visibleAdminNav(adminRole, adminPerms), [adminRole, adminPerms]);
-  const attention = useAdminAttention(adminRole !== null);
+  const adminNavItems = useMemo(() => {
+    if (!adminRole) return [];
+    const perms = new Set(adminPerms);
+    const isAdmin = adminRole === "admin";
+    // `built` gates links to pages that exist; flip on as pages ship.
+    const items = [
+      { href: "/dashboard/admin", label: "Overview", perm: "reports.view", built: true },
+      { href: "/dashboard/admin/growth", label: "Growth", perm: "reports.view", built: true },
+      { href: "/dashboard/admin/finance", label: "Finance", perm: "finance.view", built: true },
+      { href: "/dashboard/admin/stores", label: "Creator stores", perm: "finance.view", built: true },
+      { href: "/dashboard/admin/emails", label: "Emails", perm: "reports.view", built: true },
+      { href: "/dashboard/admin/bundle", label: "Bundle", perm: "marketing.send", built: true },
+      { href: "/dashboard/admin/blog", label: "Blog", perm: "blog.manage", built: true },
+      { href: "/dashboard/admin/affiliates", label: "Affiliates", perm: "affiliates.view", built: true },
+      { href: "/dashboard/admin/community", label: "Community", perm: "community.view", built: true },
+      { href: "/dashboard/admin/support", label: "Support", perm: "support.view", built: true },
+      { href: "/dashboard/admin/extension-feedback", label: "Extension feedback", perm: "support.view", built: true },
+      { href: "/dashboard/admin/scheduling", label: "Scheduling", perm: "scheduling.view", built: true },
+      { href: "/dashboard/admin/events", label: "Events", perm: "events.manage", built: true },
+      { href: "/dashboard/admin/catalogue-harvest", label: "Catalogue", perm: "catalogue.view", built: true },
+      { href: "/dashboard/admin/activity", label: "Activity widget", perm: "activity.manage", built: true },
+      { href: "/dashboard/admin/testimonials", label: "Testimonials", perm: "testimonials.moderate", built: true },
+      { href: "/dashboard/admin/cancellations", label: "Cancellations", perm: "reports.view", built: true },
+      { href: "/dashboard/admin/users", label: "Users", perm: "users.view", built: true },
+      { href: "/dashboard/admin/comps", label: "Comps", perm: "licenses.view", built: true },
+      { href: "/dashboard/admin/invites", label: "Invites", perm: "licenses.view", built: true },
+      { href: "/dashboard/admin/webhooks", label: "Webhooks", perm: "webhooks.view", built: true },
+      { href: "/dashboard/admin/audit", label: "Audit log", perm: "audit.view", built: true },
+      { href: "/dashboard/admin/staff", label: "Assistants", perm: "staff.manage", built: true },
+      { href: "/dashboard/admin/ai-sessions", label: "AI Concierge sessions", perm: "ai_sessions.view", built: true },
+    ];
+    return items.filter((i) => i.built && (isAdmin || perms.has(i.perm)));
+  }, [adminRole, adminPerms]);
 
   const userDisplay = useMemo(() => {
     if (profileDisplayName && profileDisplayName.trim().length > 0) return profileDisplayName;
@@ -386,58 +415,38 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
             <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
               {adminRole === "admin" ? "Admin" : "Assistant"}
             </p>
-            <button
-              type="button"
-              onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true }))}
-              className="mt-2 flex min-h-11 w-full items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"
-            >
-              <span>Jump to...</span>
-              <kbd className="rounded border border-slate-300 bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-600">Ctrl K</kbd>
-            </button>
-            <nav className="mt-2 flex flex-col gap-3" aria-label="Admin navigation">
-              {ADMIN_NAV_GROUPS.map((group) => {
-                const items = adminNavItems.filter((i) => i.group === group);
-                if (items.length === 0) return null;
+            <nav className="mt-2 flex flex-col gap-1" aria-label="Admin navigation">
+              {adminNavItems.map((item) => {
+                const isActive = pathname === item.href;
+                const badge =
+                  item.href === "/dashboard/admin/testimonials" && pendingTestimonials > 0
+                    ? pendingTestimonials
+                    : null;
                 return (
-                  <div key={group} role="group" aria-label={group} className="flex flex-col gap-1">
-                    <p className="px-3 pt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                      {group}
-                    </p>
-                    {items.map((item) => {
-                      const isActive = pathname === item.href;
-                      const count =
-                        attention[item.href] ??
-                        (item.href === "/dashboard/admin/testimonials" ? pendingTestimonials : 0);
-                      const badge = count > 0 ? count : null;
-                      return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          onClick={() => setIsMobileOpen(false)}
-                          aria-current={isActive ? "page" : undefined}
-                          className={[
-                            "flex min-h-11 items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm font-medium transition",
-                            isActive
-                              ? "bg-indigo-600 text-white shadow-sm"
-                              : "text-slate-700 hover:bg-indigo-50 hover:text-indigo-700",
-                          ].join(" ")}
-                        >
-                          <span>{item.label}</span>
-                          {badge !== null ? (
-                            <span
-                              className={[
-                                "inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold",
-                                isActive ? "bg-white text-indigo-700" : "bg-rose-700 text-white",
-                              ].join(" ")}
-                              aria-label={`${badge} waiting`}
-                            >
-                              {badge}
-                            </span>
-                          ) : null}
-                        </Link>
-                      );
-                    })}
-                  </div>
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setIsMobileOpen(false)}
+                    className={[
+                      "flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm font-medium transition",
+                      isActive
+                        ? "bg-indigo-600 text-white shadow-sm"
+                        : "text-slate-700 hover:bg-indigo-50 hover:text-indigo-700",
+                    ].join(" ")}
+                  >
+                    <span>{item.label}</span>
+                    {badge !== null ? (
+                      <span
+                        className={[
+                          "inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold",
+                          isActive ? "bg-white text-indigo-700" : "bg-rose-500 text-white",
+                        ].join(" ")}
+                        aria-label={`${badge} awaiting review`}
+                      >
+                        {badge}
+                      </span>
+                    ) : null}
+                  </Link>
                 );
               })}
             </nav>
