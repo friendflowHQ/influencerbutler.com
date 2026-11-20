@@ -1,5 +1,6 @@
 import { enableChipTips } from "../../ui/chip-tips";
 import { formatAge, isStale } from "../../shared/format-age";
+import { explainCopy, explainScore } from "../score/explain";
 import { defaultPrefs, loadViewPrefs, priceForCurrency, saveViewPrefs } from "../../shared/view-prefs";
 import { createInlineShadow } from "../../ui/host";
 import { el } from "../../ui/components";
@@ -57,6 +58,9 @@ const DONE_ATTR = "data-ib-search";
 const SCAN_CAP = 20;
 
 type Row = {
+  // Set on the single top-ranked tile after a Best-score sort: the reason text
+  // (possibly empty). Undefined everywhere else.
+  topPick?: string;
   // Where the creator stands with this product's brand ("Messaged", "Brand
   // responded", ...), from the cached Creator Connections inbox and the app.
   convo: ConversationChip | null;
@@ -560,7 +564,7 @@ export async function initSearchOverlay(
     }
   };
 
-  const applySort = (key: SortKey): void => {
+  const applySortRows = (key: SortKey): void => {
     if (caps.sortStrategy === "grouped") {
       applyGroupedSort(key);
       return;
@@ -575,6 +579,33 @@ export async function initSearchOverlay(
     if (top && top !== anchor.nextSibling) top.before(anchor);
     const sorted = [...rows].sort(comparator(key));
     for (const row of sorted) parent.insertBefore(row.tile.el, anchor);
+  };
+
+  // "Top pick": after a Best-score sort, the first visible tile gets a marker chip
+  // and the toolbar says why it is first. Cleared by any other sort.
+  const markTopPick = (key: SortKey): void => {
+    for (const row of rows) {
+      if (row.topPick !== undefined) {
+        row.topPick = undefined;
+        renderBadge(row, settings);
+      }
+    }
+    toolbarApi?.setTopPickReason(null);
+    if (key !== "score" || rows.length < 3) return;
+    const top = [...rows]
+      .sort(comparator("score"))
+      .find((r) => r.tile.el.isConnected && r.tile.el.style.display !== "none");
+    if (!top) return;
+    const locale = String(getLocale());
+    const reason = explainScore(top.score, { estimated: !top.market?.estimateCalibrated, locale });
+    top.topPick = reason;
+    renderBadge(top, settings);
+    toolbarApi?.setTopPickReason(reason ? explainCopy(locale).why(reason) : null);
+  };
+
+  const applySort = (key: SortKey): void => {
+    applySortRows(key);
+    markTopPick(key);
   };
 
   // Sponsored duplicates hydrate in after init (observed live: the whole first
@@ -1145,6 +1176,11 @@ function renderBadge(row: Row, settings: Settings): void {
   const scoreChip = el("span", `tile-score ${row.score.band}`, String(row.score.score));
   scoreChip.title = legend().tips.score;
   body.append(scoreChip);
+  if (row.topPick !== undefined) {
+    const pick = el("span", "tile-chip good top-pick", explainCopy(String(getLocale())).topPick);
+    if (row.topPick) pick.title = row.topPick;
+    body.append(pick);
+  }
   // Verdict first: the yes/no is what the creator scans for.
   if (row.verdict.state === "approved") {
     const chip = el("span", "tile-chip good", t().tileApproved);

@@ -47,7 +47,7 @@ export type ScoreInputs = {
 
 // Weights sum to 100. Commission and open-slot dominate because they are what
 // actually decide whether a video here earns; campaign eligibility is a bonus.
-const WEIGHTS = {
+export const WEIGHTS = {
   commission: 30,
   slot: 25,
   demand: 20,

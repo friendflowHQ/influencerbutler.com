@@ -2253,3 +2253,6 @@ button.tile-chip.more:focus-visible { outline: 3px solid #1d4ed8; outline-offset
 .search-data-age { color: #55657a; }
 .search-data-age.stale { color: #b45309; font-weight: 700; }
 .chip-pop { white-space: pre-line; }
+
+/* "Why is this first?" line under the search toolbar (tools/score/explain.ts). */
+.search-top-reason { font-size: 12px; line-height: 1.4; color: #475569; padding: 4px 2px 0; }

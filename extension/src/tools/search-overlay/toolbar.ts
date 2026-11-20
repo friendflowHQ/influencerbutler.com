@@ -62,6 +62,8 @@ export type SearchToolbar = {
   setAcceptCount: (count: number) => void;
   // Put the controls back to a view (used by "Reset view").
   setView: (view: ViewPrefs) => void;
+  // "Why is this first?" line under the bar; null hides it.
+  setTopPickReason: (text: string | null) => void;
   // "Data updated 2h ago" label; `stale` adds the out-of-date words.
   setDataUpdated: (text: string | null, stale: boolean) => void;
   // Page-level lookup failure notice with a Retry button; hidden when `show` is false.
@@ -344,10 +346,17 @@ Tiles found: ${tiles}`,
     );
   });
   bar.append(reportBtn);
-  root.append(bar, keyPanel);
+  const topLine = el("div", "search-top-reason");
+  topLine.setAttribute("role", "status");
+  topLine.hidden = true;
+  root.append(bar, topLine, keyPanel);
   return {
     host,
     setView: applyView,
+    setTopPickReason: (text: string | null) => {
+      topLine.hidden = !text;
+      topLine.textContent = text ?? "";
+    },
     setDataUpdated: (text: string | null, stale: boolean) => {
       dataAge.hidden = !text;
       dataAge.classList.toggle("stale", stale);
