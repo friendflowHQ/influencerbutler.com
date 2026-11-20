@@ -2,6 +2,7 @@ import { enableChipTips } from "../../ui/chip-tips";
 import { formatAge, isStale } from "../../shared/format-age";
 import { explainCopy, explainScore } from "../score/explain";
 import { openAcceptSheet } from "./accept-sheet";
+import { initShortlist, shortlistButton, teardownShortlist } from "./shortlist";
 import { orderItems } from "./accept-sheet-model";
 import { defaultPrefs, loadViewPrefs, priceForCurrency, saveViewPrefs } from "../../shared/view-prefs";
 import { createInlineShadow } from "../../ui/host";
@@ -189,6 +190,7 @@ export async function initSearchOverlay(
   )) {
     host.remove();
   }
+  teardownShortlist();
   for (const tile of Array.from(document.querySelectorAll(`[${DONE_ATTR}]`))) {
     tile.removeAttribute(DONE_ATTR);
   }
@@ -832,6 +834,23 @@ export async function initSearchOverlay(
   renderLookupIssue();
   refreshAcceptAll();
 
+  initShortlist({
+    locale: String(getLocale()),
+    appConnected: () => hud.connected,
+    // Each pick becomes a Content Butler card, one command per product (the same
+    // command the per-tile menu sends), so nothing is mislabeled as a deal.
+    sendToApp: async (products) => {
+      let ok = true;
+      for (const product of products) {
+        const res = await sendToBackground<HudCommandResult>({
+          kind: "SEND_HUD_COMMAND",
+          command: { type: "content.push", product },
+        });
+        if (!res?.ok) ok = false;
+      }
+      return { ok };
+    },
+  });
   mountToolbar(module.toolbarSlot(first.tile.el), toolbar.host);
   // Lead with the best opportunities. Not on Walmart or Target: reordering a
   // React-managed grid at load fights its re-renders; the toolbar sort still works.
@@ -1298,6 +1317,18 @@ function renderBadge(row: Row, settings: Settings): void {
   // The "..." action menu: Add to list / Copy link / Open page always, plus the
   // desktop-bridge actions when the app is paired (else an upsell). Mounted last
   // so it sits at the end of the chip row.
+  body.append(
+    shortlistButton({
+      asin: row.tile.asin,
+      marketplace: row.marketplace,
+      title: row.tile.title,
+      imageUrl: row.tile.imageUrl,
+      priceCents: row.tile.priceCents ?? row.market?.priceCents ?? null,
+      currency: row.tile.currency ?? null,
+      href: row.tile.href,
+      retailer: row.retailer,
+    }),
+  );
   mountTileMenuButton(
     body,
     {
