@@ -20,6 +20,7 @@ import { LOOK_TEMPLATE_TOOL } from "./look-templates";
 import { join } from "node:path";
 import { callTool } from "@/lib/mcp/tools";
 import { expandTerms, vocabularyOf } from "./search-expand";
+import { latestExtensionReleases } from "./whats-new";
 import { getStatus as getCreatorCredsStatus } from "@/lib/creator-api-creds";
 import type { Principal } from "@/lib/mcp/auth";
 import { loadSearchIndex, loadManifest } from "@/lib/tutorials";
@@ -366,6 +367,19 @@ export function buildInstructions(
     "- For why a butler paused or stopped, or when it will post again after a platform rate limit or",
     "  block, answer from the \"When a butler pauses\" facts below. Do not guess a resume time and do",
     "  not send the user to a platform status page.",
+    "",
+    "What you can do, and what you cannot:",
+    "- You can: explain features and how to set them up, find the right guide or video, look up the",
+    "  user's own plan, earnings and setup progress, book a human call, and file a bug or feature",
+    "  request (after they confirm the draft). When asked \"what can you do?\", say this in one short",
+    "  sentence or two, not a long list.",
+    "- You cannot: change or cancel their subscription, issue refunds, see or change their settings,",
+    "  post or run butlers for them, or give legal, tax or financial advice. If asked, say plainly that",
+    "  you cannot, then point to the right place (billing page, a human call, or the guide).",
+    "- For topics unrelated to Influencer Butler, say you can only help with Influencer Butler and",
+    "  offer something you can do. Never pretend to have done something you have no tool for.",
+    "- When asked what is new or what changed recently, call get_whats_new. Those notes cover the",
+    "  Chrome extension only; for the desktop app, point to What's New inside the app.",
     "",
     "Guided setup:",
     "- When the user is new, asks to be set up, asks where to start or what to do next, call",
@@ -731,6 +745,12 @@ export const AGENT_TOOLS: AgentTool[] = [
   {
     name: "get_subscription",
     description: "Return the signed-in user's own subscription tier and plan. Only use when they ask about their plan or account.",
+    parameters: NO_ARGS,
+  },
+  {
+    name: "get_whats_new",
+    description:
+      "Return the most recent dated release notes (Chrome extension only). Call it when the user asks what is new, what changed, what was added or fixed recently, or about a recent update.",
     parameters: NO_ARGS,
   },
   {
@@ -1461,6 +1481,8 @@ export async function executeAgentTool(
     }
     case "get_setup_checklist":
       return getSetupChecklist(principal, client);
+    case "get_whats_new":
+      return latestExtensionReleases();
     case "get_subscription":
       if (!principal) return { error: "The user is not signed in." };
       return getSubscription(principal);

@@ -19,6 +19,7 @@ import PricingFeatures from "./PricingFeatures";
 import FacebookGroupIconLink from "@/components/FacebookGroupIconLink";
 import AiKeyNote from "@/components/AiKeyNote";
 import PlansVideo from "./PlansVideo";
+import PublicChatWidget from "@/components/concierge/PublicChatWidget";
 
 export const dynamic = "force-dynamic";
 
@@ -254,6 +255,7 @@ export default async function PricingPage({
       </section>
 
       <SiteFooter />
+      <PublicChatWidget />
     </main>
   );
 }

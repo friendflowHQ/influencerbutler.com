@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { loadSearchIndex } from "@/lib/tutorials";
 import { HelpSearch } from "./help-search";
+import PublicChatWidget from "@/components/concierge/PublicChatWidget";
 
 export const metadata = {
   title: "Help & Tutorials - Influencer Butler",
@@ -55,6 +56,7 @@ export default async function HelpLandingPage() {
           <HelpSearch items={items} />
         )}
       </section>
+      <PublicChatWidget />
     </main>
   );
 }

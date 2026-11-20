@@ -14,141 +14,35 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { SUPPORT_HOURS } from "@/lib/support-hours";
+import { nudgeForPath, type Nudge } from "@/lib/concierge-nudges";
+import {
+  type Role,
+  type Rating,
+  type Entry,
+  type Extras,
+  FEEDBACK_REASONS,
+  renderRichText,
+  safeImages,
+  safeVideo,
+  safeCallTypes,
+  safeSources,
+  uiLocale,
+  uiPlatform,
+} from "@/components/concierge/shared";
 
-type Role = "you" | "butler";
-type ReplyImage = { url: string; alt: string };
-type ReplyVideo = { title: string; url: string };
-type ReplyCallType = { key: string; label: string; userMinutes: number; requiresSubscription: boolean; description: string };
-type ReplySource = { title: string; url: string };
-type Rating = "up" | "down";
-type Entry = {
-  id: number;
-  role: Role;
-  text: string;
-  images?: ReplyImage[];
-  video?: ReplyVideo;
-  callTypes?: ReplyCallType[];
-  sources?: ReplySource[];
-  rating?: Rating;
-};
-type Extras = Pick<Entry, "images" | "video" | "callTypes" | "sources">;
 
-// Links the assistant writes (markdown or bare) only become clickable when they
-// point at our own site or YouTube; anything else stays plain text.
-const LINK_HOSTS = new Set([
-  "influencerbutler.com",
-  "www.influencerbutler.com",
-  "youtube.com",
-  "www.youtube.com",
-  "youtu.be",
-]);
-const LINK_RE = /\[([^\]]+)\]\(([^\s)]+)\)|(https?:\/\/[^\s)<>]+)/g;
-const FEEDBACK_REASONS = ["Wrong answer", "Didn't answer my question", "Out of date"];
-
-function safeHref(raw: string): string | null {
-  if (raw.startsWith("/") && !raw.startsWith("//")) return raw;
-  try {
-    const u = new URL(raw);
-    if (u.protocol !== "https:" || !LINK_HOSTS.has(u.hostname)) return null;
-    return u.toString();
-  } catch {
-    return null;
-  }
-}
-
-function renderRichText(text: string): React.ReactNode[] {
-  const out: React.ReactNode[] = [];
-  let last = 0;
-  let key = 0;
-  for (const m of text.matchAll(LINK_RE)) {
-    const at = m.index ?? 0;
-    const label = m[1] ?? m[3];
-    const href = safeHref(m[2] ?? m[3]);
-    if (at > last) out.push(text.slice(last, at));
-    if (href) {
-      out.push(
-        <a
-          key={key++}
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-medium text-orange-700 underline hover:text-orange-800"
-        >
-          {label}
-        </a>,
-      );
-    } else {
-      out.push(m[0]);
-    }
-    last = at + m[0].length;
-  }
-  if (last < text.length) out.push(text.slice(last));
-  return out;
-}
-
-function safeVideo(raw: unknown): ReplyVideo | undefined {
-  if (!raw || typeof raw !== "object") return undefined;
-  const v = raw as Record<string, unknown>;
-  if (typeof v.url !== "string" || !v.url.startsWith("https://www.youtube.com/")) return undefined;
-  return { url: v.url, title: typeof v.title === "string" ? v.title.slice(0, 120) : "Watch the tutorial" };
-}
-
-function safeCallTypes(raw: unknown): ReplyCallType[] | undefined {
-  const list = (raw as { callTypes?: unknown } | null)?.callTypes;
-  if (!Array.isArray(list)) return undefined;
-  const out: ReplyCallType[] = [];
-  for (const c of list.slice(0, 3)) {
-    if (!c || typeof c !== "object" || typeof c.key !== "string" || typeof c.label !== "string") continue;
-    out.push({
-      key: c.key.slice(0, 20),
-      label: c.label.slice(0, 80),
-      userMinutes: typeof c.userMinutes === "number" ? c.userMinutes : 0,
-      requiresSubscription: !!c.requiresSubscription,
-      description: typeof c.description === "string" ? c.description.slice(0, 200) : "",
-    });
-  }
-  return out.length ? out : undefined;
-}
-
-function safeSources(raw: unknown): ReplySource[] | undefined {
-  if (!Array.isArray(raw)) return undefined;
-  const out = raw
-    .filter(
-      (s): s is ReplySource =>
-        !!s && typeof s.title === "string" && typeof s.url === "string" && s.url.startsWith("https://www.influencerbutler.com/help/"),
-    )
-    .slice(0, 2)
-    .map((s) => ({ title: s.title.slice(0, 120), url: s.url }));
-  return out.length ? out : undefined;
-}
-
-function uiLocale(): string {
-  return typeof navigator !== "undefined" && navigator.language ? navigator.language : "en-US";
-}
-
-function uiPlatform(): string | undefined {
-  if (typeof navigator === "undefined") return undefined;
-  if (/Mac/i.test(navigator.userAgent)) return "darwin";
-  if (/Win/i.test(navigator.userAgent)) return "win32";
-  return undefined;
-}
+const NUDGE_DISMISSED_KEY = "ib_concierge_nudges_dismissed_v1";
+const NUDGE_OFF_KEY = "ib_concierge_nudges_off_v1";
+const NUDGE_SESSION_KEY = "ib_concierge_nudge_shown_v1";
+const NUDGE_DELAY_MS = 8000;
 
 const FULL_PAGE = "/dashboard/ai-concierge";
 const BOOK_URL = "/dashboard/book";
 const STORAGE_KEY = "ib_concierge_bubble_v1";
 const HISTORY_SENT = 12;
-// Only same-origin tutorial screenshots ever render in the chat.
-const IMAGE_URL_PREFIX = "https://www.influencerbutler.com/assets/";
 
 type Persisted = { entries: Entry[]; startedAt: number; sessionId: string | null; savedCount: number };
 
-function safeImages(raw: unknown): ReplyImage[] {
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .filter((i): i is ReplyImage => !!i && typeof i.url === "string" && i.url.startsWith(IMAGE_URL_PREFIX))
-    .slice(0, 4)
-    .map((i) => ({ url: i.url, alt: typeof i.alt === "string" ? i.alt : "" }));
-}
 
 // A one-line memory of the last thing the user asked, kept in this browser only
 // (never sent anywhere) so a later visit can offer to pick up where they left off.
@@ -249,6 +143,8 @@ export default function ConciergeBubble() {
   const [reasonFor, setReasonFor] = useState<number | null>(null);
   // What they asked last time (a previous visit), offered once on a fresh chat.
   const [memory, setMemory] = useState<Memory | null>(null);
+  // The contextual tip card shown above the launcher, when there is one.
+  const [nudge, setNudge] = useState<Nudge | null>(null);
 
   const entriesRef = useRef<Entry[]>([]);
   const idRef = useRef(0);
@@ -333,6 +229,45 @@ export default function ConciergeBubble() {
   useEffect(() => {
     if (open) inputRef.current?.focus();
   }, [open]);
+
+  // A single, quiet tip per session: after a few seconds on a page that has one,
+  // when the chat is closed and unused. Dismissals and "no tips" live in this
+  // browser only.
+  useEffect(() => {
+    setNudge(null);
+    if (open || entries.length > 0) return;
+    const candidate = nudgeForPath(pathname);
+    if (!candidate) return;
+    try {
+      if (localStorage.getItem(NUDGE_OFF_KEY) === "1") return;
+      if (sessionStorage.getItem(NUDGE_SESSION_KEY) === "1") return;
+      const gone = JSON.parse(localStorage.getItem(NUDGE_DISMISSED_KEY) || "[]") as unknown;
+      if (Array.isArray(gone) && gone.includes(candidate.id)) return;
+    } catch {
+      return; // storage blocked: skip tips rather than nag on every page
+    }
+    const timer = window.setTimeout(() => {
+      setNudge(candidate);
+      try {
+        sessionStorage.setItem(NUDGE_SESSION_KEY, "1");
+      } catch {
+        // ignore
+      }
+    }, NUDGE_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, [pathname, open, entries.length]);
+
+  const dismissNudge = useCallback((id: string, never = false) => {
+    setNudge(null);
+    try {
+      if (never) localStorage.setItem(NUDGE_OFF_KEY, "1");
+      const gone = JSON.parse(localStorage.getItem(NUDGE_DISMISSED_KEY) || "[]") as unknown;
+      const list = Array.isArray(gone) ? gone.filter((g): g is string => typeof g === "string") : [];
+      if (!list.includes(id)) localStorage.setItem(NUDGE_DISMISSED_KEY, JSON.stringify([...list, id].slice(-20)));
+    } catch {
+      // ignore
+    }
+  }, []);
 
   // Best-effort transcript save. Serialized so a second save reuses the row id
   // the first one created instead of inserting a duplicate.
@@ -580,7 +515,8 @@ export default function ConciergeBubble() {
             <div>
               <span className="inline-block max-w-[85%] rounded-2xl bg-slate-100 px-3 py-2 text-sm text-slate-800">
                 {firstName ? `Hi ${firstName}! ` : "Hi! "}I&apos;m Butler AI. Ask me anything about Influencer Butler. I&apos;m an AI
-                assistant, not a person.
+                assistant, not a person. I can explain features, find guides and videos, check your plan, and book a human
+                call. I can&apos;t change your billing or run butlers for you.
               </span>
             </div>
             {entries.length === 0 && memory && (
@@ -803,6 +739,43 @@ export default function ConciergeBubble() {
               <SupportHoursTip />
             </span>
           </form>
+        </div>
+      )}
+
+      {!open && nudge && (
+        <div
+          role="note"
+          aria-label="Tip from Butler AI"
+          className="max-w-[260px] rounded-2xl border border-orange-200 border-b-[3px] border-b-orange-700 bg-white px-3 py-2.5 text-sm text-slate-800 shadow-lg"
+        >
+          <p>{nudge.text}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                dismissNudge(nudge.id);
+                setOpen(true);
+                void send(nudge.question);
+              }}
+              className="rounded-full bg-orange-700 px-3 py-1 text-xs font-medium text-white hover:bg-orange-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2"
+            >
+              Ask Butler AI
+            </button>
+            <button
+              type="button"
+              onClick={() => dismissNudge(nudge.id)}
+              className="rounded-full px-2 py-1 text-xs text-slate-700 underline focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"
+            >
+              No thanks
+            </button>
+            <button
+              type="button"
+              onClick={() => dismissNudge(nudge.id, true)}
+              className="rounded-full px-2 py-1 text-xs text-slate-700 underline focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"
+            >
+              Never show tips
+            </button>
+          </div>
         </div>
       )}
 
