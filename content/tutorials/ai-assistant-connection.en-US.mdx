@@ -8,7 +8,7 @@ category: Getting Started
 
 The AI assistant connection lets an AI assistant you already use (Claude Code, Claude Desktop, Cursor and others) look at your Influencer Butler app and answer questions about it. You can ask things like "what ran today?", "does anything need me?" or "how did Message Brands do this week?" and get an answer based on your real activity.
 
-It is read-only. The assistant can see status and activity totals. It cannot start or stop a butler, post, send a message or change a setting. It never sees passwords, message text or customer details.
+It is read-only. The assistant can see butler status, which sites are signed in, schedules, run results and your earnings totals. It cannot start or stop a butler, post, send a message or change a setting. It never sees passwords, message text or customer details.
 
 It is off until you turn it on, and it only works on the same computer the app runs on. Nothing goes through the internet.
 
@@ -25,6 +25,12 @@ It is off until you turn it on, and it only works on the same computer the app r
 1. Open a terminal and paste the line, then press Enter
 1. Start Claude Code and ask "what are my butlers doing right now?"
 
+## Connect Claude Desktop or Cursor
+
+1. In the card, click **Copy** next to **Claude Desktop or Cursor setup**
+1. Paste it into the assistant's MCP settings file (for Claude Desktop, open Settings, then Developer, then Edit Config). If the file already has other servers, add only the influencer-butler entry
+1. Restart the assistant. It runs with the Influencer Butler app itself, so there is nothing else to install
+
 ## Connect another assistant
 
 Any assistant that supports MCP servers over HTTP can connect.
@@ -36,12 +42,19 @@ Any assistant that supports MCP servers over HTTP can connect.
 
 ## What you can ask
 
-The assistant gets four read-only tools:
+The assistant gets these read-only tools:
 
-- **List butlers**: every butler with its state (idle, running, paused or stopped by an error) and what it is doing now
-- **Butler status**: one butler in detail, including its progress and the last error if it failed
+- **Briefing**: one call for the morning picture: what is running, what is stuck, signed-out sites, earnings and what runs next. Start here for "what needs me today?"
+- **Earnings**: yesterday, this month, a month forecast, your streak, a split by type and the last 14 days
+- **Top earners**: the products that have earned the most
+- **Sign-ins**: which sites the app is signed in to. A signed-out site is the most common reason a butler does nothing
+- **Up next**: what is scheduled in the next 24 hours
+- **List butlers** and **Butler status**: every butler with its state, or one in detail with its progress and last error
 - **Needs attention**: only the butlers that stopped with an error
-- **Activity**: runs, results and what is scheduled next, for the last 1 to 90 days, for everything or for one butler
+- **Run history**: a butler's recent runs and how each ended, so it can explain a failure
+- **Activity**: runs, results and what is scheduled next, for the last 1 to 90 days
+
+Try asking: "Give me my morning briefing", "Why did Message Brands fail last night?" or "What were my top earners this month?"
 
 ## Keep it safe
 

@@ -8,7 +8,7 @@ category: Getting Started
 
 La connexion à un assistant IA permet à un assistant IA que vous utilisez déjà (Claude Code, Claude Desktop, Cursor et d'autres) de regarder votre application Influencer Butler et de répondre à des questions. Vous pouvez demander « qu'est-ce qui a tourné aujourd'hui ? », « y a-t-il quelque chose qui a besoin de moi ? » ou « comment Message Brands s'en est-il sorti cette semaine ? » et obtenir une réponse fondée sur votre activité réelle.
 
-C'est en lecture seule. L'assistant peut voir l'état et les totaux d'activité. Il ne peut ni démarrer ni arrêter un butler, ni publier, ni envoyer un message, ni modifier un paramètre. Il ne voit jamais de mots de passe, de textes de messages ni de données clients.
+C'est en lecture seule. L'assistant peut voir l'état des butlers, les sites où vous êtes connecté, les planifications, les résultats des exécutions et vos totaux de gains. Il ne peut ni démarrer ni arrêter un butler, ni publier, ni envoyer un message, ni modifier un paramètre. Il ne voit jamais de mots de passe, de textes de messages ni de données clients.
 
 La connexion est désactivée tant que vous ne l'activez pas, et elle ne fonctionne que sur l'ordinateur où tourne l'application. Rien ne passe par Internet.
 
@@ -25,6 +25,12 @@ La connexion est désactivée tant que vous ne l'activez pas, et elle ne fonctio
 1. Ouvrez un terminal, collez la ligne, puis appuyez sur Entrée
 1. Lancez Claude Code et demandez « que font mes butlers en ce moment ? »
 
+## Connecter Claude Desktop ou Cursor
+
+1. Dans la carte, cliquez sur **Copier** à côté de **Configuration pour Claude Desktop ou Cursor**
+1. Collez-le dans le fichier de configuration MCP de l'assistant (pour Claude Desktop, ouvrez Paramètres, puis Développeur, puis Modifier la configuration). Si le fichier contient déjà d'autres serveurs, ajoutez uniquement l'entrée influencer-butler
+1. Redémarrez l'assistant. Il fonctionne avec l'application Influencer Butler elle-même, vous n'avez donc rien d'autre à installer
+
 ## Connecter un autre assistant
 
 Tout assistant qui prend en charge les serveurs MCP par HTTP peut se connecter.
@@ -36,12 +42,19 @@ Tout assistant qui prend en charge les serveurs MCP par HTTP peut se connecter.
 
 ## Ce que vous pouvez demander
 
-L'assistant dispose de quatre outils en lecture seule :
+L'assistant dispose de ces outils en lecture seule :
 
-- **Lister les butlers** : chaque butler avec son état (inactif, en cours, en pause ou arrêté par une erreur) et ce qu'il fait en ce moment
-- **État d'un butler** : un butler en détail, avec sa progression et la dernière erreur s'il a échoué
+- **Briefing** : un seul appel pour le point du matin : ce qui tourne, ce qui est bloqué, les sites déconnectés, les gains et ce qui arrive ensuite. Commencez ici avec « qu'est-ce qui a besoin de moi aujourd'hui ? »
+- **Gains** : hier, ce mois-ci, une prévision du mois, votre série, une répartition par type et les 14 derniers jours
+- **Meilleurs produits** : les produits qui ont le plus rapporté
+- **Connexions** : sur quels sites l'application est connectée. Un site déconnecté est la raison la plus courante pour laquelle un butler ne fait rien
+- **À venir** : ce qui est prévu dans les 24 prochaines heures
+- **Lister les butlers** et **État d'un butler** : chaque butler avec son état, ou un seul en détail avec sa progression et sa dernière erreur
 - **Besoin d'attention** : uniquement les butlers arrêtés par une erreur
-- **Activité** : exécutions, résultats et ce qui est prévu ensuite, sur les 1 à 90 derniers jours, pour tout ou pour un seul butler
+- **Historique des exécutions** : les dernières exécutions d'un butler et comment chacune s'est terminée, pour pouvoir expliquer un échec
+- **Activité** : exécutions, résultats et ce qui est prévu ensuite, sur les 1 à 90 derniers jours
+
+Essayez de demander : « Donne-moi mon briefing du matin », « Pourquoi Message Brands a-t-il échoué cette nuit ? » ou « Quels ont été mes meilleurs produits ce mois-ci ? »
 
 ## La garder en sécurité
 

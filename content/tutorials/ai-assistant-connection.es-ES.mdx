@@ -8,7 +8,7 @@ category: Getting Started
 
 La conexión con asistente de IA permite que un asistente de IA que ya usas (Claude Code, Claude Desktop, Cursor y otros) mire tu aplicación de Influencer Butler y responda preguntas sobre ella. Puedes preguntar cosas como "¿qué se ejecutó hoy?", "¿hay algo que me necesite?" o "¿cómo le fue a Message Brands esta semana?" y recibir una respuesta basada en tu actividad real.
 
-Es de solo lectura. El asistente puede ver el estado y los totales de actividad. No puede iniciar ni detener un butler, publicar, enviar un mensaje ni cambiar una configuración. Nunca ve contraseñas, textos de mensajes ni datos de clientes.
+Es de solo lectura. El asistente puede ver el estado de los butlers, en qué sitios has iniciado sesión, las programaciones, los resultados de las ejecuciones y tus totales de ganancias. No puede iniciar ni detener un butler, publicar, enviar un mensaje ni cambiar una configuración. Nunca ve contraseñas, textos de mensajes ni datos de clientes.
 
 Está desactivada hasta que la actives y solo funciona en el mismo ordenador donde corre la aplicación. Nada pasa por internet.
 
@@ -25,6 +25,12 @@ Está desactivada hasta que la actives y solo funciona en el mismo ordenador don
 1. Abre una terminal, pega la línea y pulsa Intro
 1. Inicia Claude Code y pregunta "¿qué están haciendo mis butlers ahora mismo?"
 
+## Conecta Claude Desktop o Cursor
+
+1. En la tarjeta, haz clic en **Copiar** junto a **Configuración para Claude Desktop o Cursor**
+1. Pégalo en el archivo de configuración de MCP del asistente (en Claude Desktop, abre Configuración, luego Desarrollador y después Editar configuración). Si el archivo ya tiene otros servidores, añade solo la entrada influencer-butler
+1. Reinicia el asistente. Funciona con la propia aplicación de Influencer Butler, así que no hay nada más que instalar
+
 ## Conecta otro asistente
 
 Cualquier asistente que admita servidores MCP por HTTP puede conectarse.
@@ -36,12 +42,19 @@ Cualquier asistente que admita servidores MCP por HTTP puede conectarse.
 
 ## Qué puedes preguntar
 
-El asistente recibe cuatro herramientas de solo lectura:
+El asistente recibe estas herramientas de solo lectura:
 
-- **Listar butlers**: cada butler con su estado (inactivo, en marcha, en pausa o detenido por un error) y lo que está haciendo ahora
-- **Estado de un butler**: un butler en detalle, con su progreso y el último error si falló
+- **Resumen**: una sola llamada para ver el panorama de la mañana: qué está en marcha, qué está atascado, sitios sin sesión iniciada, ganancias y qué viene a continuación. Empieza aquí con "¿qué necesita mi atención hoy?"
+- **Ganancias**: ayer, este mes, una previsión del mes, tu racha, un desglose por tipo y los últimos 14 días
+- **Mejores productos**: los productos que más han ganado
+- **Inicios de sesión**: en qué sitios tiene la sesión iniciada la aplicación. Un sitio sin sesión es el motivo más común de que un butler no haga nada
+- **Lo próximo**: lo que está programado para las próximas 24 horas
+- **Listar butlers** y **Estado de un butler**: cada butler con su estado, o uno en detalle con su progreso y su último error
 - **Necesita atención**: solo los butlers que se detuvieron por un error
-- **Actividad**: ejecuciones, resultados y lo que sigue programado, de los últimos 1 a 90 días, de todo o de un solo butler
+- **Historial de ejecuciones**: las ejecuciones recientes de un butler y cómo terminó cada una, para que pueda explicar un fallo
+- **Actividad**: ejecuciones, resultados y lo que sigue programado, de los últimos 1 a 90 días
+
+Prueba a preguntar: "Dame mi resumen de la mañana", "¿Por qué falló Message Brands anoche?" o "¿Cuáles fueron mis mejores productos este mes?"
 
 ## Mantenla segura
 
