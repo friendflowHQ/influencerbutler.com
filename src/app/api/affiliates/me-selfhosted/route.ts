@@ -1,3 +1,4 @@
+import { autopayCapCents, nextAutopayRunMs } from "@/lib/affiliate-autopay-state";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -114,6 +115,13 @@ export async function GET() {
       payableCents: stmt?.payableCents ?? 0,
       clearingCents: stmt?.clearingCents ?? 0,
       upcomingCents: stmt?.upcomingCents ?? 0,
+      // What the next monthly auto-pay run (1st, 14:00 UTC) will find payable,
+      // and when that run is, so the dashboard can show a real landing date.
+      payableAtNextRunCents: stmt?.payableAtNextRunCents ?? stmt?.payableCents ?? 0,
+      nextPayoutAt: new Date(nextAutopayRunMs()).toISOString(),
+      // Auto-pay holds anything over the review cap for a manual disburse, so the
+      // dashboard can say that run may land a few days late.
+      reviewCapCents: autopayCapCents(),
       // null = lifetime (custom deals like Samantha); a number = capped window.
       // When there's no statement yet, a default affiliate is capped at 12 months.
       durationMonths: stmt ? stmt.durationMonths : 12,

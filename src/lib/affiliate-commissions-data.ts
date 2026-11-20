@@ -23,6 +23,7 @@ import {
   type CommissionLine,
   type PayableLine,
 } from "@/lib/affiliate-commissions";
+import { nextAutopayRunMs } from "@/lib/affiliate-autopay-state";
 import { billingIntervalForVariantId } from "@/lib/lemonsqueezy";
 import {
   loadOpenAdjustmentsByUser,
@@ -53,6 +54,9 @@ export type AffiliateStatement = {
   payableCents: number;
   /** Recognized but still inside the clearing buffer (not payable yet). */
   clearingCents: number;
+  /** Projected payable balance at the next auto-pay run (what that run would
+   *  pay, before the $10 minimum), so the dashboard can show a real landing date. */
+  payableAtNextRunCents?: number;
   /** Not yet recognized: future amortization periods of annual commissions. */
   upcomingCents: number;
   /** Per-order payable detail, for the incremental PayPal disburse path. */
@@ -258,6 +262,14 @@ export async function loadAffiliateCommissions(opts: {
       allOrders,
     );
 
+    const payableAtNextRun = computeAffiliatePayable(
+      terms,
+      affOrders.filter((o) => !o.reconciledAt),
+      paidByOrder,
+      nextAutopayRunMs(nowMs),
+      allOrders,
+    );
+
     const openAdj = adjustmentsByUser.get(userId) ?? [];
     const periodAdj = opts.period
       ? openAdj.filter(
@@ -285,6 +297,7 @@ export async function loadAffiliateCommissions(opts: {
       earnedCents,
       payableCents: payable.payableCents,
       clearingCents: payable.clearingCents,
+      payableAtNextRunCents: payableAtNextRun.payableCents,
       upcomingCents: payable.upcomingCents,
       payableLines: payable.lines,
       lines: owed.lines,

@@ -44,6 +44,11 @@ type SelfHostedData = {
   payableCents?: number;
   clearingCents?: number;
   upcomingCents?: number;
+  // Projected payable balance at the next auto-pay run, and when that run is.
+  payableAtNextRunCents?: number;
+  nextPayoutAt?: string;
+  // Payouts above this are held for a quick manual review before release.
+  reviewCapCents?: number;
   grossCents: number;
   orderCount: number;
   ratePercent: number;
@@ -167,7 +172,9 @@ export default function SelfHostedAffiliateDashboard({
 
       <EarningsHero
         unpaidCents={data.owedCents + (data.adjustmentCents ?? 0)}
-        payableCents={data.payableCents ?? 0}
+        payableAtNextRunCents={data.payableAtNextRunCents ?? data.payableCents ?? 0}
+        nextPayoutAt={data.nextPayoutAt ?? null}
+        reviewCapCents={data.reviewCapCents ?? null}
         shareLink={code && !readOnly ? brandedShareLink(code) : null}
         code={code && !readOnly ? code : null}
       />
@@ -176,6 +183,9 @@ export default function SelfHostedAffiliateDashboard({
         upcomingCents={data.upcomingCents ?? 0}
         clearingCents={data.clearingCents ?? 0}
         payableCents={data.payableCents ?? 0}
+        payableAtNextRunCents={data.payableAtNextRunCents ?? data.payableCents ?? 0}
+        nextPayoutAt={data.nextPayoutAt ?? null}
+        reviewCapCents={data.reviewCapCents ?? null}
         paidCents={data.paidCents}
       />
 
@@ -275,7 +285,8 @@ export default function SelfHostedAffiliateDashboard({
           label="Payout schedule"
           value="Monthly"
           hint="On or around the 1st, via PayPal"
-          tooltip="We pay monthly via PayPal. A month's earnings are held through the following month (a buffer for refunds), then paid on or around the 1st of the month after. Example: earnings from July are paid in early September."
+          tooltip="We pay monthly via PayPal, on or around the 1st. Each order's commission is held for 14 days first (a short buffer so refunds and disputes settle), then paid in the next run once your balance is at least $10. Example: an order on Jul 10 clears Jul 24 and is paid Aug 1; an order on Jul 25 clears Aug 8 and is paid Sep 1."
+
         />
         <InfoRow
           label="Minimum payout"

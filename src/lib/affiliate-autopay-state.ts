@@ -17,6 +17,16 @@ export function autopayPeriod(): string {
   return `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
+/** The next monthly auto-pay run (14:00 UTC on the 1st, see vercel.json), as
+ *  epoch ms. Returns today's run if it has not fired yet. */
+export function nextAutopayRunMs(nowMs: number = Date.now()): number {
+  const now = new Date(nowMs);
+  const thisMonth = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 14, 0, 0);
+  return thisMonth > nowMs
+    ? thisMonth
+    : Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 14, 0, 0);
+}
+
 /**
  * Whether auto-pay is armed (may actually move money): the env var
  * AFFILIATE_AUTOPAY_ENABLED="true" forces it on; otherwise the dashboard toggle,

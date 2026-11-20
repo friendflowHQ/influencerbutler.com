@@ -14,28 +14,47 @@ import { formatUsdFromCents } from "@/lib/affiliates";
 
 const MIN_PAYOUT_CENTS = 1000;
 
-/** The 1st of next month, e.g. "Dec 1". Payouts run on or around the 1st. */
-function nextPayoutLabel(now: Date = new Date()): { label: string; days: number } {
-  const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+/** The next auto-pay run (server-provided, 14:00 UTC on the 1st), formatted
+ *  like "Dec 1" with a day count. Falls back to the 1st of next month. */
+function nextPayoutLabel(
+  nextPayoutAt: string | null,
+  now: Date = new Date(),
+): { label: string; days: number } {
+  const parsed = nextPayoutAt ? new Date(nextPayoutAt) : null;
+  const next =
+    parsed && Number.isFinite(parsed.getTime())
+      ? parsed
+      : new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const days = Math.max(1, Math.ceil((next.getTime() - now.getTime()) / 86_400_000));
-  const label = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(next);
+  const label = new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(next);
   return { label, days };
 }
 
 export function EarningsHero({
   unpaidCents,
-  payableCents,
+  payableAtNextRunCents,
+  nextPayoutAt,
+  reviewCapCents,
   shareLink,
   code,
 }: {
   unpaidCents: number;
-  payableCents: number;
+  /** Payable balance projected for the next auto-pay run. */
+  payableAtNextRunCents: number;
+  nextPayoutAt: string | null;
+  /** Payouts above this wait for a manual review before release. */
+  reviewCapCents: number | null;
   shareLink: string | null;
   code: string | null;
 }) {
   const [copied, setCopied] = useState<"link" | "code" | null>(null);
-  const next = nextPayoutLabel();
-  const meetsMinimum = payableCents >= MIN_PAYOUT_CENTS;
+  const next = nextPayoutLabel(nextPayoutAt);
+  const meetsMinimum = payableAtNextRunCents >= MIN_PAYOUT_CENTS;
+  const heldForReview = reviewCapCents !== null && payableAtNextRunCents > reviewCapCents;
 
   const copy = async (text: string, which: "link" | "code") => {
     try {
@@ -64,9 +83,11 @@ export function EarningsHero({
             {formatUsdFromCents(unpaidCents)}
           </p>
           <p className="mt-1 text-sm text-slate-600">
-            {meetsMinimum
+            {meetsMinimum && heldForReview
+              ? `Scheduled for the ${next.label} run. Payouts over ${formatUsdFromCents(reviewCapCents ?? 0)} get a quick manual review first, so this one may land a few days later.`
+              : meetsMinimum
               ? `Next payout: ${next.label} (in ${next.days} ${next.days === 1 ? "day" : "days"})`
-              : `Payouts start once ${formatUsdFromCents(MIN_PAYOUT_CENTS)} is available. Next run: ${next.label}.`}
+              : `${formatUsdFromCents(payableAtNextRunCents)} of ${formatUsdFromCents(MIN_PAYOUT_CENTS)} will be payable by the ${next.label} run. It rolls to the next one.`}
           </p>
         </div>
 
@@ -131,16 +152,24 @@ export function PayoutPipeline({
   upcomingCents,
   clearingCents,
   payableCents,
+  payableAtNextRunCents,
+  nextPayoutAt,
+  reviewCapCents,
   paidCents,
 }: {
   upcomingCents: number;
   clearingCents: number;
   payableCents: number;
+  payableAtNextRunCents: number;
+  nextPayoutAt: string | null;
+  reviewCapCents: number | null;
   paidCents: number;
 }) {
-  const next = nextPayoutLabel();
+  const next = nextPayoutLabel(nextPayoutAt);
   const pct = Math.min(100, Math.round((payableCents / MIN_PAYOUT_CENTS) * 100));
   const meetsMinimum = payableCents >= MIN_PAYOUT_CENTS;
+  const runMeetsMinimum = payableAtNextRunCents >= MIN_PAYOUT_CENTS;
+  const runHeld = reviewCapCents !== null && payableAtNextRunCents > reviewCapCents;
 
   return (
     <section
@@ -156,10 +185,11 @@ export function PayoutPipeline({
             How payouts work
           </summary>
           <p className="mt-2 max-w-md text-xs text-slate-600 sm:text-right">
-            Each order&apos;s commission clears after a short hold (about 14 days, to cover any
-            dispute), then pays out on or around the 1st once your balance reaches $10. Annual plans
-            are paid a month at a time across the year. PayPal fees are not covered, so the amount
-            that lands may be slightly less.
+            Each order&apos;s commission is held for 14 days (a buffer so refunds and disputes settle),
+            then paid in the next run on or around the 1st, once your balance reaches $10. Annual
+            plans are paid a month at a time across the year. Payouts over a set amount get a quick
+            manual review first. PayPal fees are not covered, so the amount that lands may be
+            slightly less.
           </p>
         </details>
       </div>
@@ -170,7 +200,7 @@ export function PayoutPipeline({
         <PipelineStep
           label="Payable"
           value={formatUsdFromCents(payableCents)}
-          hint={meetsMinimum ? `Pays ${next.label}` : "Below $10 minimum"}
+          hint={runMeetsMinimum ? (runHeld ? `${next.label}, after review` : `Pays ${next.label}`) : "Below $10 minimum"}
           highlight
         />
         <PipelineStep label="Paid" value={formatUsdFromCents(paidCents)} hint="To date" />
