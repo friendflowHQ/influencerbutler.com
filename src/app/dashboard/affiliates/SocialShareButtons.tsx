@@ -36,7 +36,7 @@ export default function SocialShareButtons({ link, message, label }: Props) {
     },
     {
       name: "Facebook",
-      bg: "bg-[#1877F2] hover:bg-[#0d6ad8]",
+      bg: "bg-[#1558b0] hover:bg-[#124a94]",
       onClick: () =>
         openShare(
           `https://www.facebook.com/sharer/sharer.php?u=${encodedLink}&quote=${encodedMessage}`,
@@ -49,7 +49,7 @@ export default function SocialShareButtons({ link, message, label }: Props) {
     },
     {
       name: "WhatsApp",
-      bg: "bg-[#25D366] hover:bg-[#1ebd5a]",
+      bg: "bg-emerald-700 hover:bg-emerald-800",
       onClick: () => openShare(`https://wa.me/?text=${encodedMessageWithLink}`),
       icon: (
         <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current" aria-hidden>
@@ -59,7 +59,7 @@ export default function SocialShareButtons({ link, message, label }: Props) {
     },
     {
       name: "Reddit",
-      bg: "bg-[#FF4500] hover:bg-[#e03d00]",
+      bg: "bg-[#c2410c] hover:bg-[#9a3412]",
       onClick: () =>
         openShare(
           `https://www.reddit.com/submit?url=${encodedLink}&title=${encodedMessage}`,

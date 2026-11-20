@@ -10,6 +10,7 @@ import {
   computeAffiliateEarnedCents,
   computeAffiliateOwed,
   computeAffiliatePayable,
+  computeDailyEarnings,
   computeOrderOwed,
   orderCommission,
   orderEconomics,
@@ -445,5 +446,33 @@ describe("periodBounds / orderInPeriod", () => {
     expect(orderInPeriod(order({ createdAt: "2026-06-15T00:00:00.000Z" }), bounds)).toBe(true);
     expect(orderInPeriod(order({ createdAt: "2026-07-01T00:00:00.000Z" }), bounds)).toBe(false);
     expect(orderInPeriod(order({ createdAt: "2026-05-31T23:59:59.000Z" }), bounds)).toBe(false);
+  });
+});
+
+describe("computeDailyEarnings", () => {
+  const NOW = Date.parse("2026-03-10T12:00:00.000Z");
+
+  it("zero-fills the window oldest first and ends today", () => {
+    const out = computeDailyEarnings(LIFETIME_70, [], undefined, NOW, 5);
+    expect(out.map((d) => d.date)).toEqual([
+      "2026-03-06",
+      "2026-03-07",
+      "2026-03-08",
+      "2026-03-09",
+      "2026-03-10",
+    ]);
+    expect(out.every((d) => d.earningsCents === 0)).toBe(true);
+  });
+
+  it("buckets each order's full commission on the day it was placed", () => {
+    const orders = [
+      order({ lsOrderId: "a", createdAt: "2026-03-09T08:00:00.000Z", buyerUserId: "b1" }),
+      order({ lsOrderId: "b", createdAt: "2026-03-09T20:00:00.000Z", buyerUserId: "b2" }),
+      order({ lsOrderId: "old", createdAt: "2026-01-01T00:00:00.000Z", buyerUserId: "b3" }),
+    ];
+    const out = computeDailyEarnings(LIFETIME_70, orders, undefined, NOW, 5);
+    // $100 order at 70% = $70 each; the January order is outside the window.
+    expect(out.find((d) => d.date === "2026-03-09")?.earningsCents).toBe(14000);
+    expect(out.reduce((s, d) => s + d.earningsCents, 0)).toBe(14000);
   });
 });

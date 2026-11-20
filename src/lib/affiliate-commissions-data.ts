@@ -11,6 +11,8 @@ import {
   computeAffiliateEarnedCents,
   computeAffiliateOwed,
   computeAffiliatePayable,
+  computeDailyEarnings,
+  type DailyEarning,
   monthKeyOf,
   orderEconomics,
   orderInPeriod,
@@ -57,6 +59,8 @@ export type AffiliateStatement = {
   /** Projected payable balance at the next auto-pay run (what that run would
    *  pay, before the $10 minimum), so the dashboard can show a real landing date. */
   payableAtNextRunCents?: number;
+  /** Commission earned per UTC day, last 60 days (zero-filled, oldest first). */
+  dailyEarnings?: DailyEarning[];
   /** Not yet recognized: future amortization periods of annual commissions. */
   upcomingCents: number;
   /** Per-order payable detail, for the incremental PayPal disburse path. */
@@ -298,6 +302,7 @@ export async function loadAffiliateCommissions(opts: {
       payableCents: payable.payableCents,
       clearingCents: payable.clearingCents,
       payableAtNextRunCents: payableAtNextRun.payableCents,
+      dailyEarnings: computeDailyEarnings(terms, affOrders, allOrders, nowMs),
       upcomingCents: payable.upcomingCents,
       payableLines: payable.lines,
       lines: owed.lines,

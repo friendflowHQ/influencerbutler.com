@@ -74,7 +74,7 @@ export default function PayoutMethodCard({
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="mt-3 text-sm font-medium text-[#f97316] underline underline-offset-2"
+            className="mt-3 text-sm font-medium text-orange-700 underline underline-offset-2"
           >
             Change PayPal email
           </button>
@@ -87,6 +87,7 @@ export default function PayoutMethodCard({
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
             <input
               type="email"
+              aria-label="PayPal email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
@@ -96,7 +97,7 @@ export default function PayoutMethodCard({
               type="button"
               onClick={save}
               disabled={saving}
-              className="inline-flex items-center justify-center rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#ea580c] disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-lg bg-orange-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-800 disabled:opacity-60"
             >
               {saving ? "Saving..." : "Save"}
             </button>

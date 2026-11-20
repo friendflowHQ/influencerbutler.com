@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { formatUsdFromCents } from "@/lib/affiliates";
+import { EarningsTrend, type DailyEarning } from "./AffiliateExtras";
 
 /**
  * Top-of-dashboard pieces for the self-hosted affiliate dashboard:
@@ -39,6 +40,8 @@ export function EarningsHero({
   payableAtNextRunCents,
   nextPayoutAt,
   reviewCapCents,
+  autopayArmed,
+  dailyEarnings,
   shareLink,
   code,
 }: {
@@ -48,13 +51,17 @@ export function EarningsHero({
   nextPayoutAt: string | null;
   /** Payouts above this wait for a manual review before release. */
   reviewCapCents: number | null;
+  /** False while auto-pay runs in shadow mode (payouts released by hand). */
+  autopayArmed: boolean | null;
+  dailyEarnings: DailyEarning[];
   shareLink: string | null;
   code: string | null;
 }) {
   const [copied, setCopied] = useState<"link" | "code" | null>(null);
   const next = nextPayoutLabel(nextPayoutAt);
   const meetsMinimum = payableAtNextRunCents >= MIN_PAYOUT_CENTS;
-  const heldForReview = reviewCapCents !== null && payableAtNextRunCents > reviewCapCents;
+  const overCap = reviewCapCents !== null && payableAtNextRunCents > reviewCapCents;
+  const heldForReview = overCap || autopayArmed === false;
 
   const copy = async (text: string, which: "link" | "code") => {
     try {
@@ -71,7 +78,7 @@ export function EarningsHero({
       aria-labelledby="aff-hero-label"
       className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
     >
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+      <div className="grid gap-5 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] sm:items-center">
         <div>
           <p
             id="aff-hero-label"
@@ -84,15 +91,15 @@ export function EarningsHero({
           </p>
           <p className="mt-1 text-sm text-slate-600">
             {meetsMinimum && heldForReview
-              ? `Scheduled for the ${next.label} run. Payouts over ${formatUsdFromCents(reviewCapCents ?? 0)} get a quick manual review first, so this one may land a few days later.`
+              ? overCap
+                ? `Scheduled for the ${next.label} run. Payouts over ${formatUsdFromCents(reviewCapCents ?? 0)} get a quick manual review first, so this one may land a few days later.`
+                : `Scheduled for the ${next.label} run. Our team reviews payouts before release right now, so allow a few extra days.`
               : meetsMinimum
               ? `Next payout: ${next.label} (in ${next.days} ${next.days === 1 ? "day" : "days"})`
               : `${formatUsdFromCents(payableAtNextRunCents)} of ${formatUsdFromCents(MIN_PAYOUT_CENTS)} will be payable by the ${next.label} run. It rolls to the next one.`}
           </p>
-        </div>
-
         {shareLink || code ? (
-          <div className="flex flex-wrap gap-2" aria-live="polite">
+          <div className="mt-4 flex flex-wrap gap-2" aria-live="polite">
             {shareLink ? (
               <button
                 type="button"
@@ -113,6 +120,8 @@ export function EarningsHero({
             ) : null}
           </div>
         ) : null}
+        </div>
+        <EarningsTrend daily={dailyEarnings} />
       </div>
     </section>
   );
@@ -155,6 +164,7 @@ export function PayoutPipeline({
   payableAtNextRunCents,
   nextPayoutAt,
   reviewCapCents,
+  autopayArmed,
   paidCents,
 }: {
   upcomingCents: number;
@@ -163,13 +173,15 @@ export function PayoutPipeline({
   payableAtNextRunCents: number;
   nextPayoutAt: string | null;
   reviewCapCents: number | null;
+  autopayArmed: boolean | null;
   paidCents: number;
 }) {
   const next = nextPayoutLabel(nextPayoutAt);
   const pct = Math.min(100, Math.round((payableCents / MIN_PAYOUT_CENTS) * 100));
   const meetsMinimum = payableCents >= MIN_PAYOUT_CENTS;
   const runMeetsMinimum = payableAtNextRunCents >= MIN_PAYOUT_CENTS;
-  const runHeld = reviewCapCents !== null && payableAtNextRunCents > reviewCapCents;
+  const runHeld =
+    (reviewCapCents !== null && payableAtNextRunCents > reviewCapCents) || autopayArmed === false;
 
   return (
     <section
@@ -235,7 +247,7 @@ export function PayoutPipeline({
 
 type TaxStatus = "not_submitted" | "submitted" | "verified" | "rejected";
 
-function jumpTo(id: string) {
+export function jumpTo(id: string) {
   const el = document.getElementById(id);
   if (!el) return;
   el.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -292,10 +304,13 @@ export function GetPaidChecklist({
   taxStatus,
   payoutReady,
   readOnly,
+  onJump = jumpTo,
 }: {
   taxStatus: TaxStatus;
   payoutReady: boolean;
   readOnly: boolean;
+  /** Where "Add now" goes. Defaults to scrolling to the card on this page. */
+  onJump?: (id: string) => void;
 }) {
   const taxReady = taxStatus === "verified";
   const done = Number(taxReady) + Number(payoutReady);
@@ -350,14 +365,14 @@ export function GetPaidChecklist({
           title="Tax form (W-9 / W-8BEN)"
           hint={taxHint}
           action={taxAction}
-          onAction={() => jumpTo("aff-tax-card")}
+          onAction={() => onJump("aff-tax-card")}
         />
         <CheckRow
           done={payoutReady}
           title="PayPal payout email"
           hint="Where we send your monthly payout."
           action={readOnly ? undefined : "Add now"}
-          onAction={() => jumpTo("aff-payout-card")}
+          onAction={() => onJump("aff-payout-card")}
         />
       </ul>
     </section>

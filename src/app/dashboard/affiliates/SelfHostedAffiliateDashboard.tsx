@@ -9,7 +9,18 @@ import ReferredSignupsFunnel from "./ReferredSignupsFunnel";
 import TaxFormCard from "./TaxFormCard";
 import PayoutMethodCard from "./PayoutMethodCard";
 import CompProspectCard from "./CompProspectCard";
-import { EarningsHero, GetPaidChecklist, PayoutPipeline } from "./AffiliateTopSection";
+import {
+  EarningsHero,
+  GetPaidChecklist,
+  PayoutPipeline,
+  jumpTo,
+} from "./AffiliateTopSection";
+import {
+  NextBestAction,
+  PayoutHistory,
+  QrCard,
+  type DailyEarning,
+} from "./AffiliateExtras";
 import { formatUsdFromCents } from "@/lib/affiliates";
 
 /**
@@ -49,6 +60,10 @@ type SelfHostedData = {
   nextPayoutAt?: string;
   // Payouts above this are held for a quick manual review before release.
   reviewCapCents?: number;
+  // False while auto-pay runs in shadow mode (team releases payouts by hand).
+  autopayArmed?: boolean;
+  // Commission earned per UTC day, last 60 days, oldest first.
+  dailyEarnings?: DailyEarning[];
   grossCents: number;
   orderCount: number;
   ratePercent: number;
@@ -112,6 +127,20 @@ export default function SelfHostedAffiliateDashboard({
   // Bump to re-fetch after a child (tax form / payout method) changes.
   const [reloadKey, setReloadKey] = useState(0);
   const reload = () => setReloadKey((k) => k + 1);
+  const [tab, setTabState] = useState<TabId>(() => tabFromHash());
+  const setTab = (next: TabId) => {
+    setTabState(next);
+    try {
+      window.history.replaceState(null, "", `#${next}`);
+    } catch {
+      /* non-critical */
+    }
+  };
+  // "Add now" in the checklist lives on the Get paid tab: switch, then scroll.
+  const jumpToCard = (id: string) => {
+    setTab("paid");
+    window.setTimeout(() => jumpTo(id), 60);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -155,10 +184,15 @@ export default function SelfHostedAffiliateDashboard({
   const code = data.brandedCode;
   const payoutReady = Boolean(data.paypalEmail);
 
+  const heroPayableNext = data.payableAtNextRunCents ?? data.payableCents ?? 0;
+  const reviewCap = data.reviewCapCents ?? null;
+  const armed = data.autopayArmed ?? null;
+  const showPerformance = !readOnly || Boolean(referredSignupsUrl);
+
   return (
     <div className="space-y-6">
       <header>
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-700">
           Affiliate dashboard
         </p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
@@ -172,150 +206,268 @@ export default function SelfHostedAffiliateDashboard({
 
       <EarningsHero
         unpaidCents={data.owedCents + (data.adjustmentCents ?? 0)}
-        payableAtNextRunCents={data.payableAtNextRunCents ?? data.payableCents ?? 0}
+        payableAtNextRunCents={heroPayableNext}
         nextPayoutAt={data.nextPayoutAt ?? null}
-        reviewCapCents={data.reviewCapCents ?? null}
+        reviewCapCents={reviewCap}
+        autopayArmed={armed}
+        dailyEarnings={data.dailyEarnings ?? []}
         shareLink={code && !readOnly ? brandedShareLink(code) : null}
         code={code && !readOnly ? code : null}
       />
 
-      <PayoutPipeline
-        upcomingCents={data.upcomingCents ?? 0}
-        clearingCents={data.clearingCents ?? 0}
-        payableCents={data.payableCents ?? 0}
-        payableAtNextRunCents={data.payableAtNextRunCents ?? data.payableCents ?? 0}
-        nextPayoutAt={data.nextPayoutAt ?? null}
-        reviewCapCents={data.reviewCapCents ?? null}
-        paidCents={data.paidCents}
+      <GetPaidChecklist
+        taxStatus={data.taxStatus}
+        payoutReady={payoutReady}
+        readOnly={readOnly}
+        onJump={jumpToCard}
       />
 
-      <GetPaidChecklist taxStatus={data.taxStatus} payoutReady={payoutReady} readOnly={readOnly} />
+      <TabBar tab={tab} onChange={setTab} showPerformance={showPerformance} />
 
-      {readOnly ? (
-        <div className="space-y-2">
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div id="aff-tax-card">
-              <ReadOnlyTaxCard
-                taxStatus={data.taxStatus}
-                taxFormType={data.taxFormType}
-                taxForm={data.taxForm ?? null}
-              />
-            </div>
-            <div id="aff-payout-card">
-              {payoutSaveUrl && data.canEditPayout ? (
-                <PayoutMethodCard
-                  initialEmail={data.paypalEmail}
-                  endpoint={payoutSaveUrl}
-                  onChange={reload}
-                />
-              ) : (
-                <ReadOnlyPayoutCard paypalEmail={data.paypalEmail} />
-              )}
-            </div>
-          </div>
-          {payoutSaveUrl && data.canEditPayout ? (
-            <p className="text-xs text-slate-500">
-              You&apos;re setting this on the affiliate&apos;s behalf. They can also add or change
-              their PayPal email themselves in their own dashboard.
-            </p>
-          ) : null}
-        </div>
-      ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div id="aff-tax-card">
-            <TaxFormCard onChange={reload} />
-          </div>
-          <div id="aff-payout-card">
-            <PayoutMethodCard initialEmail={data.paypalEmail} onChange={reload} />
-          </div>
-        </div>
-      )}
-
-      {code ? (
-        <BrandedCodeCard
-          code={code}
-          shareLink={brandedShareLink(code)}
-          durationMonths={data.durationMonths}
+      <TabPanel id="overview" tab={tab}>
+        <PayoutPipeline
+          upcomingCents={data.upcomingCents ?? 0}
+          clearingCents={data.clearingCents ?? 0}
+          payableCents={data.payableCents ?? 0}
+          payableAtNextRunCents={heroPayableNext}
+          nextPayoutAt={data.nextPayoutAt ?? null}
+          reviewCapCents={reviewCap}
+          autopayArmed={armed}
+          paidCents={data.paidCents}
         />
-      ) : null}
 
-      {code ? <LinkBuilder code={code} /> : null}
+        {!readOnly ? <NextBestAction onNavigate={(t) => setTab(t as TabId)} /> : null}
 
-      {data.comp?.enabled && !readOnly ? <CompProspectCard /> : null}
-
-      <AffiliateClickAnalytics endpoint={clicksUrl} />
-
-      {/* The affiliate's own dashboard uses the default endpoint; the admin
-          "view as" page passes an affiliate-scoped admin endpoint so the
-          panel shows there too (the default one would 403 for an admin). */}
-      {!readOnly || referredSignupsUrl ? (
-        <ReferredSignupsFunnel
-          endpoint={referredSignupsUrl ?? "/api/affiliates/referred-signups"}
-        />
-      ) : null}
-
-      <section className="grid gap-4 sm:grid-cols-2">
-        <StatCard label="Referred orders" value={data.orderCount.toString()} hint="Tracked to your link/code" />
-        <StatCard
-          label="Commission rate"
-          value={`${data.ratePercent}%`}
-          hint={data.durationMonths === null ? "Recurring, lifetime" : `Recurring for ${data.durationMonths} months`}
-        />
-      </section>
-
-      {data.adjustments && data.adjustments.length > 0 ? (
-        <section className="rounded-xl border border-orange-200 bg-orange-50 p-4 sm:p-5">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-orange-800">
-            Adjustments included in your unpaid earnings
-          </h3>
-          <ul className="mt-3 space-y-2">
-            {data.adjustments.map((a, i) => (
-              <li key={i} className="flex flex-wrap items-baseline justify-between gap-2 rounded-lg border border-orange-200 bg-white p-3 text-sm">
-                <span className="text-slate-700">{a.note || "Commission adjustment"}</span>
-                <span className="font-semibold text-slate-900">{formatUsdFromCents(a.amountCents)}</span>
-              </li>
-            ))}
-          </ul>
+        <section className="grid gap-4 sm:grid-cols-2">
+          <StatCard label="Referred orders" value={data.orderCount.toString()} hint="Tracked to your link/code" />
+          <StatCard
+            label="Commission rate"
+            value={`${data.ratePercent}%`}
+            hint={data.durationMonths === null ? "Recurring, lifetime" : `Recurring for ${data.durationMonths} months`}
+          />
         </section>
+
+        {data.adjustments && data.adjustments.length > 0 ? (
+          <section className="rounded-xl border border-orange-200 bg-orange-50 p-4 sm:p-5">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-orange-800">
+              Adjustments included in your unpaid earnings
+            </h2>
+            <ul className="mt-3 space-y-2">
+              {data.adjustments.map((a, i) => (
+                <li key={i} className="flex flex-wrap items-baseline justify-between gap-2 rounded-lg border border-orange-200 bg-white p-3 text-sm">
+                  <span className="text-slate-700">{a.note || "Commission adjustment"}</span>
+                  <span className="font-semibold text-slate-900">{formatUsdFromCents(a.amountCents)}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <InfoRow label="Cookie window" value="30 days" hint="Last-click attribution" />
+          <InfoRow
+            label="Payout schedule"
+            value="Monthly"
+            hint="On or around the 1st, via PayPal"
+            tooltip="We pay monthly via PayPal, on or around the 1st. Each order's commission is held for 14 days first (a short buffer so refunds and disputes settle), then paid in the next run once your balance is at least $10. Example: an order on Jul 10 clears Jul 24 and is paid Aug 1; an order on Jul 25 clears Aug 8 and is paid Sep 1."
+          />
+          <InfoRow
+            label="Minimum payout"
+            value="$10"
+            hint="Balances under $10 roll over to the next month"
+            tooltip="You need at least $10 in unpaid earnings to be paid out. Anything under $10 stays on your balance and rolls into the next monthly run."
+          />
+          <InfoRow
+            label="Payout method"
+            value={data.paypalEmail ? "PayPal" : "Not set"}
+            hint={data.paypalEmail ?? (readOnly ? "No PayPal email on file yet" : "Add your PayPal email in Get paid")}
+          />
+        </section>
+      </TabPanel>
+
+      <TabPanel id="promote" tab={tab}>
+        {code ? (
+          <BrandedCodeCard
+            code={code}
+            shareLink={brandedShareLink(code)}
+            durationMonths={data.durationMonths}
+          />
+        ) : (
+          <p className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
+            Your branded code appears here once it is generated.
+          </p>
+        )}
+        {code ? <QrCard link={brandedShareLink(code)} /> : null}
+        {code ? <LinkBuilder code={code} /> : null}
+        {code ? (
+          <SocialShareButtons
+            link={brandedShareLink(code)}
+            message={`Use my code ${code} for 15% off Influencer Butler - automation for creators and influencers that's actually worth it.`}
+            label="Share in one click"
+          />
+        ) : null}
+        {data.comp?.enabled && !readOnly ? <CompProspectCard /> : null}
+        {!readOnly ? (
+          <section className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-slate-200 bg-white p-5 text-sm shadow-sm">
+            <span className="font-semibold text-slate-900">Need ideas?</span>
+            <Link href="/dashboard/affiliates/playbook" className="font-medium text-orange-700 hover:text-orange-800">
+              Open the playbook
+            </Link>
+            <Link href="/dashboard/affiliates/planner" className="font-medium text-orange-700 hover:text-orange-800">
+              Plan your posts
+            </Link>
+          </section>
+        ) : null}
+      </TabPanel>
+
+      {showPerformance ? (
+        <TabPanel id="performance" tab={tab}>
+          <AffiliateClickAnalytics endpoint={clicksUrl} />
+          {/* The affiliate's own dashboard uses the default endpoint; the admin
+              "view as" page passes an affiliate-scoped admin endpoint so the
+              panel shows there too (the default one would 403 for an admin). */}
+          <ReferredSignupsFunnel
+            endpoint={referredSignupsUrl ?? "/api/affiliates/referred-signups"}
+          />
+        </TabPanel>
       ) : null}
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <InfoRow label="Cookie window" value="30 days" hint="Last-click attribution" />
-        <InfoRow
-          label="Payout schedule"
-          value="Monthly"
-          hint="On or around the 1st, via PayPal"
-          tooltip="We pay monthly via PayPal, on or around the 1st. Each order's commission is held for 14 days first (a short buffer so refunds and disputes settle), then paid in the next run once your balance is at least $10. Example: an order on Jul 10 clears Jul 24 and is paid Aug 1; an order on Jul 25 clears Aug 8 and is paid Sep 1."
-
-        />
-        <InfoRow
-          label="Minimum payout"
-          value="$10"
-          hint="Balances under $10 roll over to the next month"
-          tooltip="You need at least $10 in unpaid earnings to be paid out. Anything under $10 stays on your balance and rolls into the next monthly run."
-        />
-        <InfoRow
-          label="Payout method"
-          value={data.paypalEmail ? "PayPal" : "Not set"}
-          hint={data.paypalEmail ?? (readOnly ? "No PayPal email on file yet" : "Add your PayPal email above")}
-        />
-      </section>
-
-      {code ? (
-        <SocialShareButtons
-          link={brandedShareLink(code)}
-          message={`Use my code ${code} for 15% off Influencer Butler - automation for creators and influencers that's actually worth it.`}
-          label="Share in one click"
-        />
-      ) : null}
+      <TabPanel id="paid" tab={tab}>
+        {readOnly ? (
+          <div className="space-y-2">
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div id="aff-tax-card">
+                <ReadOnlyTaxCard
+                  taxStatus={data.taxStatus}
+                  taxFormType={data.taxFormType}
+                  taxForm={data.taxForm ?? null}
+                />
+              </div>
+              <div id="aff-payout-card">
+                {payoutSaveUrl && data.canEditPayout ? (
+                  <PayoutMethodCard
+                    initialEmail={data.paypalEmail}
+                    endpoint={payoutSaveUrl}
+                    onChange={reload}
+                  />
+                ) : (
+                  <ReadOnlyPayoutCard paypalEmail={data.paypalEmail} />
+                )}
+              </div>
+            </div>
+            {payoutSaveUrl && data.canEditPayout ? (
+              <p className="text-xs text-slate-500">
+                You&apos;re setting this on the affiliate&apos;s behalf. They can also add or change
+                their PayPal email themselves in their own dashboard.
+              </p>
+            ) : null}
+          </div>
+        ) : (
+          <>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div id="aff-tax-card">
+                <TaxFormCard onChange={reload} />
+              </div>
+              <div id="aff-payout-card">
+                <PayoutMethodCard initialEmail={data.paypalEmail} onChange={reload} />
+              </div>
+            </div>
+            <PayoutHistory />
+          </>
+        )}
+      </TabPanel>
 
       <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
         Questions about a payout?{" "}
-        <Link href="/contact" className="font-medium text-[#f97316] hover:text-[#ea580c]">
+        <Link href="/contact" className="font-medium text-orange-700 hover:text-orange-800">
           Contact our affiliate team
         </Link>
         .
       </div>
+    </div>
+  );
+}
+
+type TabId = "overview" | "promote" | "performance" | "paid";
+
+const TABS: { id: TabId; label: string }[] = [
+  { id: "overview", label: "Overview" },
+  { id: "promote", label: "Promote" },
+  { id: "performance", label: "Performance" },
+  { id: "paid", label: "Get paid" },
+];
+
+function tabFromHash(): TabId {
+  if (typeof window === "undefined") return "overview";
+  const h = window.location.hash.replace("#", "");
+  return TABS.some((t) => t.id === h) ? (h as TabId) : "overview";
+}
+
+function TabBar({
+  tab,
+  onChange,
+  showPerformance,
+}: {
+  tab: TabId;
+  onChange: (t: TabId) => void;
+  showPerformance: boolean;
+}) {
+  const tabs = TABS.filter((t) => showPerformance || t.id !== "performance");
+  const onKey = (e: React.KeyboardEvent<HTMLButtonElement>, i: number) => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    e.preventDefault();
+    const next = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+    onChange(next.id);
+    document.getElementById(`aff-tab-${next.id}`)?.focus();
+  };
+  return (
+    <div
+      role="tablist"
+      aria-label="Affiliate dashboard sections"
+      className="flex gap-1 overflow-x-auto border-b border-slate-200"
+    >
+      {tabs.map((t, i) => (
+        <button
+          key={t.id}
+          id={`aff-tab-${t.id}`}
+          type="button"
+          role="tab"
+          aria-selected={tab === t.id}
+          aria-controls={`aff-panel-${t.id}`}
+          tabIndex={tab === t.id ? 0 : -1}
+          onClick={() => onChange(t.id)}
+          onKeyDown={(e) => onKey(e, i)}
+          className={`-mb-px flex-none whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-orange-700 ${
+            tab === t.id
+              ? "border-orange-700 text-orange-700"
+              : "border-transparent text-slate-600 hover:text-slate-900"
+          }`}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function TabPanel({
+  id,
+  tab,
+  children,
+}: {
+  id: TabId;
+  tab: TabId;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      role="tabpanel"
+      id={`aff-panel-${id}`}
+      aria-labelledby={`aff-tab-${id}`}
+      hidden={tab !== id}
+      className="space-y-6"
+    >
+      {children}
     </div>
   );
 }
@@ -349,7 +501,7 @@ function BrandedCodeCard({
 
   return (
     <section className="rounded-2xl border-2 border-[#f97316]/40 bg-gradient-to-br from-orange-50 via-white to-amber-50 p-6 shadow-md">
-      <p className="text-xs font-bold uppercase tracking-wider text-[#f97316]">
+      <p className="text-xs font-bold uppercase tracking-wider text-orange-700">
         ★ Your branded promo code
       </p>
       <p className="mt-1 text-sm text-slate-700">
@@ -364,7 +516,7 @@ function BrandedCodeCard({
         <button
           type="button"
           onClick={() => copy(code, "code")}
-          className="ml-auto rounded-md bg-[#f97316] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
+          className="ml-auto rounded-md bg-orange-700 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-orange-800"
         >
           {copiedCode ? "Copied!" : "Copy code"}
         </button>
@@ -378,6 +530,7 @@ function BrandedCodeCard({
           <input
             type="text"
             readOnly
+            aria-label="Your pre-filled share link"
             value={shareLink}
             onClick={(e) => (e.target as HTMLInputElement).select()}
             className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-sm text-slate-800 outline-none focus:border-[#f97316] focus:ring-2 focus:ring-[#f97316]/20"
@@ -385,7 +538,7 @@ function BrandedCodeCard({
           <button
             type="button"
             onClick={() => copy(shareLink, "link")}
-            className="rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
+            className="rounded-lg bg-orange-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-800"
           >
             {copiedLink ? "Copied!" : "Copy link"}
           </button>

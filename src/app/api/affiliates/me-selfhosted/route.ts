@@ -1,4 +1,4 @@
-import { autopayCapCents, nextAutopayRunMs } from "@/lib/affiliate-autopay-state";
+import { autopayCapCents, isAutopayArmed, nextAutopayRunMs } from "@/lib/affiliate-autopay-state";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -122,6 +122,9 @@ export async function GET() {
       // Auto-pay holds anything over the review cap for a manual disburse, so the
       // dashboard can say that run may land a few days late.
       reviewCapCents: autopayCapCents(),
+      // False while auto-pay runs in shadow mode: the team releases payouts by hand.
+      autopayArmed: await isAutopayArmed(admin),
+      dailyEarnings: stmt?.dailyEarnings ?? [],
       // null = lifetime (custom deals like Samantha); a number = capped window.
       // When there's no statement yet, a default affiliate is capped at 12 months.
       durationMonths: stmt ? stmt.durationMonths : 12,

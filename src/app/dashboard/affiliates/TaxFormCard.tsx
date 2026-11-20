@@ -112,7 +112,7 @@ export default function TaxFormCard({ onChange }: Props) {
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="mt-3 inline-flex items-center rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
+          className="mt-3 inline-flex items-center rounded-lg bg-orange-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-800"
         >
           {status === "rejected" ? "Fix and resubmit" : "Complete tax form"}
         </button>
@@ -364,7 +364,7 @@ function TaxFormEditor({
             type="button"
             onClick={submit}
             disabled={!canSubmit}
-            className="inline-flex items-center rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#ea580c] disabled:opacity-60"
+            className="inline-flex items-center rounded-lg bg-orange-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-800 disabled:opacity-60"
           >
             {submitting ? "Submitting..." : "Submit tax form"}
           </button>

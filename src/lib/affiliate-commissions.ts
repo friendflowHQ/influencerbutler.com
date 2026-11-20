@@ -362,6 +362,44 @@ export function amortizationPeriods(interval: BillingInterval | null | undefined
   return interval === "year" ? 12 : 1;
 }
 
+/** One day of earned commission, for the dashboard sparkline. */
+export type DailyEarning = { date: string; earningsCents: number };
+
+/**
+ * Commission earned per UTC day over the last `days` days (zero-filled, oldest
+ * first). Counts each commissionable order's full commission (LS-paid + owed)
+ * on the day the order was placed, the same basis as computeAffiliateEarnedCents.
+ */
+export function computeDailyEarnings(
+  terms: AffiliateTerms | null | undefined,
+  orders: CommissionOrder[],
+  allOrders: CommissionOrder[] | undefined,
+  nowMs: number,
+  days = 60,
+): DailyEarning[] {
+  const firstByBuyer = buildFirstOrderByBuyer(allOrders ?? orders);
+  const dayMs = 24 * 60 * 60 * 1000;
+  const todayStart = Math.floor(nowMs / dayMs) * dayMs;
+  const buckets = new Map<string, number>();
+  const out: DailyEarning[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const key = new Date(todayStart - i * dayMs).toISOString().slice(0, 10);
+    buckets.set(key, 0);
+    out.push({ date: key, earningsCents: 0 });
+  }
+  for (const order of orders) {
+    if (!order.createdAt) continue;
+    const key = new Date(order.createdAt).toISOString().slice(0, 10);
+    if (!buckets.has(key)) continue;
+    const firstMs = order.buyerUserId ? firstByBuyer.get(order.buyerUserId) ?? null : null;
+    const econ = orderEconomics(order, terms, firstMs);
+    if (!econ) continue;
+    buckets.set(key, (buckets.get(key) ?? 0) + econ.lsPaidCents + econ.owedCents);
+  }
+  for (const d of out) d.earningsCents = buckets.get(d.date) ?? 0;
+  return out;
+}
+
 /** Money breakdown for one order at a point in time (`nowMs`). */
 export type OrderCommission = {
   grossCents: number;
