@@ -41,6 +41,83 @@ function duration(a: string, b: string | null): string {
   return m < 1 ? "<1 min" : `${m} min`;
 }
 
+type QualityData = {
+  days: number;
+  feedback: {
+    up: number;
+    down: number;
+    bySurface: Record<string, { up: number; down: number }>;
+    recentDown: Array<{ surface: string | null; reason: string | null; question: string | null; answer: string | null; created_at: string }>;
+    missing: boolean;
+  };
+  misses: { top: Array<{ query: string; count: number; confidence: string; lastSeen: string }>; missing: boolean };
+};
+
+// Answer quality: thumbs ratio, the answers people marked unhelpful, and the
+// searches that found no guide (topics that need a new tutorial or video).
+function QualitySection() {
+  const [data, setData] = useState<QualityData | null>(null);
+  useEffect(() => {
+    fetch("/api/admin/ai-feedback?days=30", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => setData(j))
+      .catch(() => setData(null));
+  }, []);
+  if (!data) return null;
+  const { feedback: f, misses: m } = data;
+  const total = f.up + f.down;
+  const helpful = total ? Math.round((f.up / total) * 100) : null;
+  return (
+    <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4">
+      <h2 className="text-base font-semibold text-slate-900">Answer quality, last {data.days} days</h2>
+      {f.missing || m.missing ? (
+        <p className="rounded bg-amber-50 px-3 py-2 text-xs text-amber-900">
+          {f.missing && "ai_concierge_feedback table is not applied yet. "}
+          {m.missing && "ai_concierge_search_misses table is not applied yet. "}
+          Run the matching files in supabase/migrations in the Supabase SQL editor.
+        </p>
+      ) : null}
+      <div className="flex flex-wrap gap-6 text-sm">
+        <div><p className="text-2xl font-semibold text-slate-900">{helpful === null ? "-" : `${helpful}%`}</p><p className="text-xs text-slate-500">found helpful ({total} ratings)</p></div>
+        {Object.entries(f.bySurface).map(([surface, c]) => (
+          <div key={surface}><p className="text-lg font-semibold text-slate-900">{c.up} up / {c.down} down</p><p className="text-xs text-slate-500">{surface}</p></div>
+        ))}
+      </div>
+      <div>
+        <h3 className="text-sm font-semibold text-slate-800">Topics with no good guide ({m.top.length})</h3>
+        {m.top.length === 0 ? (
+          <p className="mt-1 text-xs text-slate-500">None recorded yet.</p>
+        ) : (
+          <ul className="mt-1 divide-y divide-slate-100 text-sm">
+            {m.top.map((t) => (
+              <li key={t.query} className="flex items-baseline justify-between gap-3 py-1.5">
+                <span className="min-w-0 truncate text-slate-700">{t.query}</span>
+                <span className="shrink-0 text-xs text-slate-500">{t.count}x{t.confidence === "none" ? " (no match)" : " (weak)"}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <div>
+        <h3 className="text-sm font-semibold text-slate-800">Recent answers marked unhelpful</h3>
+        {f.recentDown.length === 0 ? (
+          <p className="mt-1 text-xs text-slate-500">None yet.</p>
+        ) : (
+          <ul className="mt-1 space-y-3 text-sm">
+            {f.recentDown.map((r, i) => (
+              <li key={i} className="rounded-lg bg-slate-50 p-3">
+                <p className="text-xs text-slate-500">{fmt(r.created_at)} · {r.surface || "unknown"}{r.reason ? ` · ${r.reason}` : ""}</p>
+                <p className="mt-1 font-medium text-slate-800">{r.question || "-"}</p>
+                <p className="mt-1 line-clamp-3 whitespace-pre-wrap text-slate-600">{r.answer || "-"}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export default function AiSessionsPage() {
   const [forbidden, setForbidden] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -75,6 +152,8 @@ export default function AiSessionsPage() {
     <div className="space-y-5">
       <h1 className="text-xl font-semibold text-slate-900">Butler AI sessions</h1>
       <p className="text-sm text-slate-500">Instant AI demo and support conversations, newest first. Click a row for the summary.</p>
+
+      <QualitySection />
 
       {isStale && (
         <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">

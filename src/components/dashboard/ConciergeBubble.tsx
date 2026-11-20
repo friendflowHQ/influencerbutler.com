@@ -237,6 +237,22 @@ export default function ConciergeBubble() {
   // Restore the conversation and look up the first name once, after mount.
   useEffect(() => {
     setStarters(starterQuestions());
+    // Swap in starters tailored to the plan, account age, language and computer.
+    // The static set above stays if this fails.
+    (async () => {
+      try {
+        const qs = new URLSearchParams({ locale: uiLocale() });
+        const platform = uiPlatform();
+        if (platform) qs.set("platform", platform);
+        const res = await fetch(`/api/ai-concierge/starters?${qs.toString()}`, { cache: "no-store" });
+        if (!res.ok) return;
+        const json = (await res.json()) as { starters?: unknown };
+        const list = Array.isArray(json.starters) ? json.starters.filter((s): s is string => typeof s === "string").slice(0, 4) : [];
+        if (list.length) setStarters(list);
+      } catch {
+        // keep the static starters
+      }
+    })();
     const saved = readPersisted();
     if (saved) {
       entriesRef.current = saved.entries;
@@ -445,6 +461,11 @@ export default function ConciergeBubble() {
   // The full page is the chat already, so the bubble would be redundant there.
   if (pathname?.startsWith(FULL_PAGE)) return null;
 
+  // The booking page pre-fills "what is this call about" from the user's own
+  // latest question, so they never have to explain it twice.
+  const lastQuestion = [...entries].reverse().find((e) => e.role === "you")?.text ?? "";
+  const bookHref = lastQuestion ? `${BOOK_URL}?topic=${encodeURIComponent(lastQuestion.slice(0, 300))}` : BOOK_URL;
+
   return (
     <div className="fixed bottom-5 right-5 z-[45] flex flex-col items-end gap-3 print:hidden">
       {open && (
@@ -557,7 +578,7 @@ export default function ConciergeBubble() {
                       {e.callTypes.map((ct) => (
                         <a
                           key={ct.key}
-                          href={BOOK_URL}
+                          href={bookHref}
                           className="mt-2 block rounded-lg border border-slate-200 px-3 py-2 no-underline hover:border-orange-400 hover:bg-orange-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"
                         >
                           <span className="block text-sm font-medium text-slate-900">
@@ -689,7 +710,7 @@ export default function ConciergeBubble() {
               </button>
             </div>
             <span className="mt-2 inline-flex items-center gap-2">
-              <a href={BOOK_URL} className="text-xs text-orange-700 underline hover:text-orange-800">
+              <a href={bookHref} className="text-xs text-orange-700 underline hover:text-orange-800">
                 Book a human call instead
               </a>
               <SupportHoursTip />

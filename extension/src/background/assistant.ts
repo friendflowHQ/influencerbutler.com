@@ -178,6 +178,27 @@ export async function assistantChat(messages: AiChatTurn[], page?: string, local
   }
 }
 
+// Starter questions tailored to the account (new, trial, Pro). Empty list on any
+// failure, so the page keeps its built-in chips.
+export async function assistantStarters(locale?: string): Promise<{ ok: boolean; starters: string[] }> {
+  const key = await licenseKey();
+  if (!key) return { ok: false, starters: [] };
+  try {
+    const qs = new URLSearchParams();
+    if (locale) qs.set("locale", locale.slice(0, 12));
+    const meta = clientMeta();
+    if (meta.platform) qs.set("platform", meta.platform);
+    const res = await fetch(`${ENDPOINTS.aiStarters}?${qs.toString()}`, { headers: { Authorization: `Bearer ${key}` } });
+    const data = (await res.json().catch(() => null)) as { starters?: unknown } | null;
+    const list = Array.isArray(data?.starters)
+      ? (data!.starters as unknown[]).filter((s): s is string => typeof s === "string").map((s) => s.slice(0, 120)).slice(0, 4)
+      : [];
+    return { ok: res.ok && list.length > 0, starters: list };
+  } catch {
+    return { ok: false, starters: [] };
+  }
+}
+
 // Thumbs up/down on an answer. Best-effort; the result is never shown as an error.
 export async function assistantFeedback(msg: {
   rating: "up" | "down";

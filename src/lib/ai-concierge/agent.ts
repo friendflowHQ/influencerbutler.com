@@ -348,6 +348,8 @@ export function buildInstructions(
     "Grounding rules:",
     "- For any specific how-to, setup, or troubleshooting question, CALL the search_help tool and",
     "  base your answer on what it returns. Do not guess steps.",
+    "- search_help also returns a confidence (\"ok\", \"low\" or \"none\"). On \"low\" or \"none\", say you are",
+    "  not fully sure, do not invent steps, and offer a human call (offer_booking) after any partial help.",
     "- For pricing or plan questions, call get_pricing. For what a feature (butler) does and its",
     "  tier, call list_features.",
     "- When the signed-in user asks about their own earnings or plan, call get_earnings_summary or",
@@ -871,7 +873,21 @@ export type HelpHit = {
   videoId?: string;
   /** Watch url for that video, so the model can offer show_video for this id. */
   videoUrl?: string;
+  /** Keyword-match score (title hits weigh 5x); used to grade confidence. */
+  score?: number;
 };
+
+/** How well search_help matched: "none" (no tutorial), "low" (body-only hits), or "ok". */
+export type HelpConfidence = "none" | "low" | "ok";
+
+// One title/summary term hit scores 6 (1 body + 5 title). Below that the best
+// tutorial only matched in passing, so the answer should be hedged.
+const LOW_CONFIDENCE_SCORE = 6;
+
+export function helpConfidence(hits: HelpHit[]): HelpConfidence {
+  if (!hits.length) return "none";
+  return (hits[0]!.score ?? 0) < LOW_CONFIDENCE_SCORE ? "low" : "ok";
+}
 
 /** Public YouTube watch url for a video id. */
 export function youtubeWatchUrl(videoId: string): string {
@@ -930,13 +946,14 @@ export async function searchHelp(query: string, locale?: string): Promise<HelpHi
     .sort((a, b) => b.score - a.score)
     .slice(0, SEARCH_RESULT_LIMIT);
 
-  return scored.map(({ e }) => {
+  return scored.map(({ e, score }) => {
     const hit: HelpHit = {
       id: e.id,
       title: e.title,
       summary: e.summary,
       url: `${SITE}/help/tutorials/${e.id}`,
       snippet: snippetFor(e.text, terms),
+      score,
     };
     // Screenshots come from the tutorial body ( /assets/-only, see tutorials.ts ).
     // Absolute urls so every chat surface can render them without a base.
@@ -964,6 +981,25 @@ function snippetFor(text: string, terms: string[]): string {
   }
   const start = Math.max(0, (at < 0 ? 0 : at) - 120);
   return text.slice(start, start + 320).trim();
+}
+
+// Best-effort log of a search that found nothing (or only a weak match), so the
+// owner can see which topics need a new tutorial. Never throws or blocks.
+async function logSearchMiss(query: string, confidence: HelpConfidence, client?: ClientMeta): Promise<void> {
+  try {
+    const admin = getAdmin();
+    const q = (query || "").trim().slice(0, 300);
+    if (!admin || !q) return;
+    const { error } = await admin.from("ai_concierge_search_misses").insert({
+      query: q,
+      confidence,
+      surface: client?.surface?.slice(0, 40) ?? null,
+      locale: client?.locale ?? null,
+    });
+    if (error) console.error("[ai-concierge/search-miss]", error.message);
+  } catch (err) {
+    console.error("[ai-concierge/search-miss] threw", err);
+  }
 }
 
 export async function getSubscription(principal: Principal): Promise<unknown> {
@@ -1262,7 +1298,21 @@ export async function executeAgentTool(
   switch (name) {
     case "search_help": {
       const q = typeof args.query === "string" ? args.query : "";
-      return { results: await searchHelp(q, client?.locale) };
+      const results = await searchHelp(q, client?.locale);
+      const confidence = helpConfidence(results);
+      if (confidence !== "ok") void logSearchMiss(q, confidence, client);
+      return {
+        results,
+        confidence,
+        ...(confidence !== "ok"
+          ? {
+              note:
+                confidence === "none"
+                  ? "No help guide matched. Do not guess steps. Say you are not sure, ask one clarifying question if useful, and offer a human via offer_booking or offer_human_call."
+                  : "Only a weak match. Say you are not fully sure, share only what the results clearly support, and offer a human via offer_booking or offer_human_call.",
+            }
+          : {}),
+      };
     }
     case "start_walkthrough": {
       if (client?.surface !== "desktop") {

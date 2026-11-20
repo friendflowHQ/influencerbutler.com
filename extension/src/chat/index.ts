@@ -99,11 +99,22 @@ function main(): void {
   const log = el("div", "chat-log");
 
   const suggestWrap = el("div", "chat-suggest");
-  for (const s of SUGGESTIONS) {
-    const chip = el("button", "chat-chip", s);
-    chip.onclick = () => void send(s);
-    suggestWrap.appendChild(chip);
+  function renderChips(list: readonly string[]): void {
+    suggestWrap.textContent = "";
+    for (const s of list) {
+      const chip = el("button", "chat-chip", s);
+      chip.onclick = () => void send(s);
+      suggestWrap.appendChild(chip);
+    }
   }
+  renderChips(SUGGESTIONS);
+  // Swap in chips tailored to the account (new, trial, Pro) once the server
+  // answers; the built-in set stays on any failure or once the user has asked.
+  void sendToBackground<{ ok: boolean; starters: string[] }>({ kind: "AI_STARTERS", locale: getLocale() })
+    .then((res) => {
+      if (res && res.ok && res.starters.length && messages.length === 0) renderChips(res.starters);
+    })
+    .catch(() => undefined);
 
   const input = el("input", "chat-input");
   input.type = "text";
@@ -423,6 +434,8 @@ function main(): void {
     sendBtn.disabled = true;
     input.value = "";
     suggestWrap.style.display = "none";
+    // "Talk to a human" carries the question so the call note is pre-filled.
+    human.href = `https://www.influencerbutler.com/dashboard/book?topic=${encodeURIComponent(content.slice(0, 300))}`;
 
     // One screenshot per conversation reaches the server: drop older ones.
     if (image) for (const m of messages) delete m.images;

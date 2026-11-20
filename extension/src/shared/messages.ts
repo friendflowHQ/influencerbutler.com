@@ -310,6 +310,7 @@ export type RuntimeMessage =
   | { kind: "OPENAI_COMPLETE"; prompt: string }
   // page: host + path of the tab the chat is on (no query string); locale: UI language.
   | { kind: "AI_CHAT"; messages: AiChatTurn[]; page?: string; locale?: string }
+  | { kind: "AI_STARTERS"; locale?: string }
   | { kind: "AI_FEEDBACK"; rating: "up" | "down"; reason?: string; question?: string; answer?: string; page?: string; locale?: string }
   | { kind: "BOOKING_SLOTS"; callType: "demo" | "support" }
   | { kind: "BOOKING_CREATE"; callType: "demo" | "support"; startMs: number; name: string; timezone: string }

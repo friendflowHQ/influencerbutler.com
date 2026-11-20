@@ -82,7 +82,13 @@ export default function BookCallPage() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
+  // The Butler AI chat links here with ?topic=<the user's question> so the call
+  // note is pre-filled. Read once, client side only.
   const [topic, setTopic] = useState("");
+  useEffect(() => {
+    const prefill = (new URLSearchParams(window.location.search).get("topic") || "").slice(0, 300);
+    if (prefill) setTopic(prefill);
+  }, []);
   const [topics, setTopics] = useState<string[]>([]);
   const [name, setName] = useState("");
   const [consent, setConsent] = useState(false);

@@ -62,6 +62,7 @@ import { initSocialContextMenu, openComposeWindow } from "./social-compose-windo
 import {
   assistantChat,
   assistantFeedback,
+  assistantStarters,
   assistantBookingSlots,
   assistantBookingCreate,
   assistantVoiceSession,
@@ -492,6 +493,9 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       return true;
     case "AI_CHAT":
       void assistantChat(message.messages, message.page, message.locale).then(sendResponse);
+      return true;
+    case "AI_STARTERS":
+      void assistantStarters(message.locale).then(sendResponse);
       return true;
     case "AI_FEEDBACK":
       void assistantFeedback(message).then(sendResponse);

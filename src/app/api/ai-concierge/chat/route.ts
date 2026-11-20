@@ -40,7 +40,10 @@ const MAX_SOURCES = 2;
 
 // Pull the top guides out of a search_help tool result (same-site urls only).
 function sourcesFromSearch(result: unknown): SourceLink[] {
-  const hits = (result as { results?: Array<{ title?: unknown; url?: unknown }> } | null)?.results;
+  const found = result as { results?: Array<{ title?: unknown; url?: unknown }>; confidence?: string } | null;
+  // A weak match would show a misleading "full guide" chip, so only confident hits get one.
+  if (found?.confidence && found.confidence !== "ok") return [];
+  const hits = found?.results;
   if (!Array.isArray(hits)) return [];
   const out: SourceLink[] = [];
   for (const h of hits) {

@@ -34,6 +34,7 @@ export const ENDPOINTS = {
   // AI concierge text chat (same brain as the website + desktop app).
   aiChat: `${API_BASE}/api/ai-concierge/chat`,
   aiFeedback: `${API_BASE}/api/ai-concierge/feedback`,
+  aiStarters: `${API_BASE}/api/ai-concierge/starters`,
   // In-chat 1:1 booking (the booking card fetches live times + books inline).
   bookingSlots: `${API_BASE}/api/booking/slots`,
   bookingCreate: `${API_BASE}/api/booking/create`,
