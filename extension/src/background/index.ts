@@ -169,6 +169,7 @@ import {
 import { applySync, initSettingsSyncOnChange, previewSync } from "./settings-sync";
 import { API_BASE } from "../shared/constants";
 import { getState, patchIntegrationsGlobal, getSettings, patchSettings } from "../storage/store";
+import { ensureMilestonesSeeded } from "../shared/milestones-store";
 import type { AuthStatus, RuntimeMessage } from "../shared/messages";
 import { warn } from "../shared/log";
 import { summarizeCommand } from "../shared/desktop-activity";
@@ -236,6 +237,9 @@ chrome.runtime.onInstalled.addListener((details) => {
   // Record the install/update so the post-update "What's New" notice knows
   // whether (and what) to announce. A fresh install announces nothing.
   void noteInstall(details.reason, details.previousVersion);
+  // First-success moments: a fresh install starts empty; an update marks what the
+  // person already did as done so they are not told "first" about old activity.
+  void ensureMilestonesSeeded().catch(() => undefined);
   // On a FRESH install (never on updates), open the in-extension guided
   // walkthrough. It steps the user through account, storefront, tools, and
   // pairing the desktop app, writing real settings as they go, and replaces the

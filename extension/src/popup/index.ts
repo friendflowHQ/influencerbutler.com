@@ -27,6 +27,7 @@ import { isHostPaused, withHostPaused } from "../shared/paused-hosts";
 import { pauseStrings } from "./pause-strings";
 import { deriveConnection, pillCopy } from "./connection-status";
 import { renderActivityCard } from "./activity";
+import { renderGettingStarted } from "./getting-started";
 import { getFlags, type EventBanner } from "../flags/cache";
 import type { Settings, WatchCondition } from "../storage/schema";
 import {
@@ -94,6 +95,11 @@ async function init(): Promise<void> {
   wirePopupZoom();
   void renderConnectionPill();
   void renderActivityCard();
+  void renderGettingStarted((cardId) => {
+    const target = document.getElementById(cardId);
+    revealCard(target);
+    target?.scrollIntoView({ block: "start" });
+  });
   // The Feedback Butler card was replaced by the same chat bubble the product pages
   // show: bug report + screenshots (picker / paste) + reply email + diagnostics.
   initChatBubble({ popup: true });
@@ -1332,13 +1338,13 @@ async function setupPauseRow(tabId: number, url: string, statusText: HTMLElement
 }
 
 const CHIP_DETAIL_LABEL: Record<string, string> = {
-  es: "Vista simple en los resultados de busqueda (tres senales claras por producto)",
-  fr: "Vue simple dans les resultats de recherche (trois signaux clairs par produit)",
+  es: "Vista simple en los resultados de búsqueda (tres señales claras por producto)",
+  fr: "Vue simple dans les résultats de recherche (trois signaux clairs par produit)",
 };
 
 const SHORTCUT_LABEL: Record<string, string> = {
-  es: "Atajos de una tecla en los resultados de busqueda (j, k, s, ?)",
-  fr: "Raccourcis a une touche dans les resultats de recherche (j, k, s, ?)",
+  es: "Atajos de una tecla en los resultados de búsqueda (j, k, s, ?)",
+  fr: "Raccourcis à une touche dans les résultats de recherche (j, k, s, ?)",
 };
 
 // Header pill: one summary of sign-in, desktop pairing and sync. Click jumps to

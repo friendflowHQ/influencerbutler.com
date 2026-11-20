@@ -60,7 +60,7 @@ const ES: LegendDict = {
   scanFailed: (n) => `Fallaron ${n} escaneo${n === 1 ? "" : "s"} de video. Haz clic en Escanear de nuevo.`,
   title: "Que significan los chips",
   rows: [
-    { chip: "Senales de vista simple", text: "Paga, Se vende y Campana comparan cada producto con los demas de esta pagina (el tercio superior es bien). El boton Vista simple de la barra vuelve a todos los chips; Detalles abre un producto." },
+    { chip: "Señales de vista simple", text: "Paga, Se vende y Campaña comparan cada producto con los demás de esta página (el tercio superior es bien). El boton Vista simple de la barra vuelve a todos los chips; Detalles abre un producto." },
     { chip: "Puntuacion (naranja, ambar, gris)", text: "Puntuacion Butler de lo prometedor que es el producto para ti. Naranja es caliente, ambar tibio, gris frio." },
     { chip: "Chips verdes", text: "Buenas noticias: Butler Approved, ya lo tienes, o una campana de Creator Connections / SPCC a la que puedes unirte." },
     { chip: "Chips ambar", text: "Aviso, por ejemplo un producto que ya publicaste." },
@@ -77,8 +77,8 @@ const ES: LegendDict = {
     deal: "Este producto esta en oferta ahora",
   },
   source: {
-    catalogue: (age) => age ? `Fuente: catalogo compartido, actualizado ${age}` : "Fuente: catalogo compartido",
-    estimated: "Fuente: estimado a partir de esta pagina",
+    catalogue: (age) => age ? `Fuente: catálogo compartido, actualizado ${age}` : "Fuente: catálogo compartido",
+    estimated: "Fuente: estimado a partir de esta página",
     dataUpdated: (age) => `Datos actualizados ${age}`,
     stale: "(puede estar desactualizado)",
   },
@@ -93,7 +93,7 @@ const FR: LegendDict = {
   scanFailed: (n) => `${n} analyse${n === 1 ? "" : "s"} video en echec. Cliquez de nouveau sur Analyser.`,
   title: "Signification des pastilles",
   rows: [
-    { chip: "Signaux de la vue simple", text: "Paye, Se vend et Campagne comparent chaque produit aux autres de cette page (le tiers superieur est bien). Le bouton Vue simple de la barre revient a toutes les pastilles ; Details ouvre un produit." },
+    { chip: "Signaux de la vue simple", text: "Payé, Se vend et Campagne comparent chaque produit aux autres de cette page (le tiers supérieur est bien). Le bouton Vue simple de la barre revient à toutes les pastilles ; Détails ouvre un produit." },
     { chip: "Score (orange, ambre, gris)", text: "Score Butler du potentiel du produit pour vous. Orange chaud, ambre tiede, gris froid." },
     { chip: "Pastilles vertes", text: "Bonne nouvelle : Butler Approved, deja possede, ou une campagne Creator Connections / SPCC a rejoindre." },
     { chip: "Pastilles ambre", text: "Attention, par exemple un produit deja publie." },
@@ -110,10 +110,10 @@ const FR: LegendDict = {
     deal: "Ce produit est en promotion actuellement",
   },
   source: {
-    catalogue: (age) => age ? `Source : catalogue partage, mis a jour ${age}` : "Source : catalogue partage",
-    estimated: "Source : estime a partir de cette page",
-    dataUpdated: (age) => `Donnees mises a jour ${age}`,
-    stale: "(peut etre obsolete)",
+    catalogue: (age) => age ? `Source : catalogue partagé, mis à jour ${age}` : "Source : catalogue partagé",
+    estimated: "Source : estimé à partir de cette page",
+    dataUpdated: (age) => `Données mises à jour ${age}`,
+    stale: "(peut être obsolète)",
   },
 };
 

@@ -63,7 +63,7 @@ const ES: TourDict = {
       { title: "Activa o desactiva herramientas", body: "Abre el popup de la barra y baja hasta la lista de herramientas. La tarjeta 'Esta pagina' te dice que esta activo aqui." },
     ],
     search: [
-      { title: "Senales de dinero en cada resultado", body: "Cada producto muestra chips: puntuacion Butler, comision estimada, ranking de ventas y si ya lo tienes o lo publicaste. Pasa el cursor por un chip para ver que significa. Prefieres menos? Usa el boton Vista simple de la barra para ver tres senales claras: paga, se vende y campana." },
+      { title: "Senales de dinero en cada resultado", body: "Cada producto muestra chips: puntuacion Butler, comision estimada, ranking de ventas y si ya lo tienes o lo publicaste. Pasa el cursor por un chip para ver que significa. ¿Prefieres menos? Usa el botón Vista simple de la barra para ver tres señales claras: paga, se vende y campaña." },
       { title: "Filtra y ordena por dinero", body: "Usa la barra de Influencer Butler sobre los resultados para ordenar por comision u ocultar productos. El boton ? muestra la leyenda de colores." },
       { title: "No se ve nada?", body: "Verifica que Search overlay este activado en el popup. Si la app de escritorio esta cerrada, algunos chips (como ganancias) no aparecen hasta abrirla." },
     ],
@@ -91,7 +91,7 @@ const FR: TourDict = {
       { title: "Activer ou desactiver des outils", body: "Ouvrez le popup de la barre et descendez jusqu'a la liste des outils. La carte 'Cette page' indique ce qui est actif ici." },
     ],
     search: [
-      { title: "Signaux d'argent sur chaque resultat", body: "Chaque produit affiche des pastilles : score Butler, commission estimee, rang des ventes et si vous le possedez ou l'avez publie. Survolez une pastille pour sa signification. Moins de details ? Utilisez le bouton Vue simple de la barre pour trois signaux clairs : gain, ventes et campagne." },
+      { title: "Signaux d'argent sur chaque resultat", body: "Chaque produit affiche des pastilles : score Butler, commission estimee, rang des ventes et si vous le possedez ou l'avez publie. Survolez une pastille pour sa signification. Moins de détails ? Utilisez le bouton Vue simple de la barre pour trois signaux clairs : gain, ventes et campagne." },
       { title: "Filtrer et trier par argent", body: "Utilisez la barre Influencer Butler au-dessus des resultats pour trier par commission ou masquer des produits. Le bouton ? affiche la legende des couleurs." },
       { title: "Rien ne s'affiche ?", body: "Verifiez que Search overlay est active dans le popup. Si l'application de bureau est fermee, certaines pastilles (comme les gains) restent masquees jusqu'a son ouverture." },
     ],

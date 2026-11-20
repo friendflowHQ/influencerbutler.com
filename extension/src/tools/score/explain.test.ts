@@ -44,6 +44,6 @@ describe("explainScore", () => {
   it("adds the estimated marker and localizes", () => {
     const score = computeButlerScore({ ...base, priceCents: 9000, commissionRatePct: 12, membership: { cc: true, spcc: false } }, settings);
     expect(explainScore(score, { estimated: true, locale: "en" })).toMatch(/\(estimated\)$/);
-    expect(explainScore(score, { estimated: false, locale: "es" })).toMatch(/comision|campana/);
+    expect(explainScore(score, { estimated: false, locale: "es" })).toMatch(/comisión|campaña/);
   });
 });

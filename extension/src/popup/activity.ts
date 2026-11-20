@@ -51,20 +51,20 @@ const EN: Copy = {
 const ES: Copy = {
   heading: "Actividad",
   day: "24 horas",
-  week: "7 dias",
-  empty: "Nada todavia. Aqui apareceran las campanas aceptadas, lo enviado a la app de escritorio y los problemas.",
+  week: "7 días",
+  empty: "Nada todavía. Aquí aparecerán las campañas aceptadas, lo enviado a la app de escritorio y los problemas.",
   counts: (c) => {
-    const parts = [`${c.accepted} aceptadas${c.acceptedAuto ? ` (${c.acceptedAuto} automaticas)` : ""}`, `${c.sentToApp} enviados a la app`];
+    const parts = [`${c.accepted} aceptadas${c.acceptedAuto ? ` (${c.acceptedAuto} automáticas)` : ""}`, `${c.sentToApp} enviados a la app`];
     if (c.failures) parts.push(`${c.failures} problema${c.failures === 1 ? "" : "s"}`);
     return parts.join(", ");
   },
   event: (e) =>
     e.kind === "accepted-auto"
-      ? `Campana aceptada automaticamente`
+      ? `Campaña aceptada automáticamente`
       : e.kind === "accepted-manual"
-        ? `Aceptaste una campana`
+        ? `Aceptaste una campaña`
         : e.kind === "accepted"
-          ? `Campana aceptada`
+          ? `Campaña aceptada`
           : e.kind === "sent"
             ? `Enviado a la app: ${e.detail}${e.count > 1 ? ` (x${e.count})` : ""}`
             : e.kind === "send-failed"
@@ -73,27 +73,27 @@ const ES: Copy = {
   report: "Informar",
 };
 const FR: Copy = {
-  heading: "Activite",
+  heading: "Activité",
   day: "24 heures",
   week: "7 jours",
-  empty: "Rien pour l'instant. Les campagnes acceptees, les envois a l'application de bureau et les problemes apparaitront ici.",
+  empty: "Rien pour l'instant. Les campagnes acceptées, les envois à l'application de bureau et les problèmes apparaîtront ici.",
   counts: (c) => {
-    const parts = [`${c.accepted} acceptee${c.accepted === 1 ? "" : "s"}${c.acceptedAuto ? ` (${c.acceptedAuto} automatique${c.acceptedAuto === 1 ? "" : "s"})` : ""}`, `${c.sentToApp} envoye${c.sentToApp === 1 ? "" : "s"} a l'appli`];
-    if (c.failures) parts.push(`${c.failures} probleme${c.failures === 1 ? "" : "s"}`);
+    const parts = [`${c.accepted} acceptée${c.accepted === 1 ? "" : "s"}${c.acceptedAuto ? ` (${c.acceptedAuto} automatique${c.acceptedAuto === 1 ? "" : "s"})` : ""}`, `${c.sentToApp} envoyé${c.sentToApp === 1 ? "" : "s"} à l'appli`];
+    if (c.failures) parts.push(`${c.failures} problème${c.failures === 1 ? "" : "s"}`);
     return parts.join(", ");
   },
   event: (e) =>
     e.kind === "accepted-auto"
-      ? `Campagne acceptee automatiquement`
+      ? `Campagne acceptée automatiquement`
       : e.kind === "accepted-manual"
-        ? `Vous avez accepte une campagne`
+        ? `Vous avez accepté une campagne`
         : e.kind === "accepted"
-          ? `Campagne acceptee`
+          ? `Campagne acceptée`
           : e.kind === "sent"
-            ? `Envoye a l'appli : ${e.detail}${e.count > 1 ? ` (x${e.count})` : ""}`
+            ? `Envoyé à l'appli : ${e.detail}${e.count > 1 ? ` (x${e.count})` : ""}`
             : e.kind === "send-failed"
               ? `Appli injoignable : ${e.detail}${e.count > 1 ? ` (x${e.count})` : ""}`
-              : `Un outil a rencontre un probleme : ${e.detail}`,
+              : `Un outil a rencontré un problème : ${e.detail}`,
   report: "Signaler",
 };
 

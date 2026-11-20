@@ -1,6 +1,7 @@
 import overlayCss from "../../ui/overlay.css";
 import { UI_PREFIX } from "../../shared/constants";
 import { el } from "../../ui/components";
+import { noteMilestone } from "../../ui/milestone-toast";
 import {
   sendToBackground,
   type GenerateLinkResult,
@@ -77,7 +78,7 @@ const ES: Copy = {
   add: "Preseleccionar",
   added: "Preseleccionado",
   count: (n, max) => `${n} de ${max} seleccionados`,
-  full: (max) => `La lista corta esta llena (${max}). Quita uno para agregar otro.`,
+  full: (max) => `La lista corta está llena (${max}). Quita uno para agregar otro.`,
   addToList: "Agregar a lista",
   listLabel: "Lista",
   newList: "Nueva lista...",
@@ -98,28 +99,28 @@ const ES: Copy = {
   toggleLabel: (title) => `Lista corta: ${title}`,
 };
 const FR: Copy = {
-  add: "Preseleccion",
-  added: "Preselectionne",
-  count: (n, max) => `${n} sur ${max} selectionnes`,
-  full: (max) => `La preseleccion est pleine (${max}). Retirez-en un pour en ajouter.`,
-  addToList: "Ajouter a une liste",
+  add: "Présélection",
+  added: "Présélectionné",
+  count: (n, max) => `${n} sur ${max} sélectionnés`,
+  full: (max) => `La présélection est pleine (${max}). Retirez-en un pour en ajouter.`,
+  addToList: "Ajouter à une liste",
   listLabel: "Liste",
   newList: "Nouvelle liste...",
   newListName: "Nom de la nouvelle liste",
   copyLinks: "Copier les liens",
-  sendToApp: "Envoyer a Content Butler",
+  sendToApp: "Envoyer à Content Butler",
   appNotConnected: "Connectez l'application de bureau pour envoyer.",
   clear: "Effacer",
-  region: "Preseleccion",
+  region: "Présélection",
   working: "En cours...",
-  addedTo: (n, list) => `${n} ajoute${n === 1 ? "" : "s"} a ${list}`,
-  listFailed: "Impossible d'ajouter a la liste.",
-  skipped: (n) => `${n} n'ont pas pu etre ajoutes`,
-  copied: (n) => `${n} lien${n === 1 ? "" : "s"} copie${n === 1 ? "" : "s"}`,
+  addedTo: (n, list) => `${n} ajouté${n === 1 ? "" : "s"} à ${list}`,
+  listFailed: "Impossible d'ajouter à la liste.",
+  skipped: (n) => `${n} n'ont pas pu être ajoutés`,
+  copied: (n) => `${n} lien${n === 1 ? "" : "s"} copié${n === 1 ? "" : "s"}`,
   copyFailed: "Impossible de copier les liens.",
-  sent: (n) => `${n} envoye${n === 1 ? "" : "s"} a l'appli`,
+  sent: (n) => `${n} envoyé${n === 1 ? "" : "s"} à l'appli`,
   sendFailed: "Appli injoignable.",
-  toggleLabel: (title) => `Preseleccion : ${title}`,
+  toggleLabel: (title) => `Présélection : ${title}`,
 };
 
 function copyFor(locale: string): Copy {
@@ -365,7 +366,10 @@ function mountTray(): void {
       listsLoaded = false;
       const base = added > 0 ? c().addedTo(added, listName || listSelect.selectedOptions[0]?.textContent || "") : c().listFailed;
       status.textContent = skipped > 0 && added > 0 ? `${base}. ${c().skipped(skipped)}` : base;
-      if (added > 0) void loadLists(listId);
+      if (added > 0) {
+        void loadLists(listId);
+        void noteMilestone("firstList");
+      }
     } catch {
       status.textContent = c().listFailed;
     } finally {

@@ -3088,7 +3088,7 @@ const es: Dict = {
   sumSearchOverlay: "Overlay de búsqueda",
   searchCount: (n) => `${n} productos puntuados`,
   searchSortLabel: "Ordenar:",
-  sortScore: "Mejor para mi",
+  sortScore: "Mejor para mí",
   sortCommission: "Mayor comisión",
   sortRevenue: "Ingresos estimados",
   sortPriceAsc: "Precio: de menor a mayor",

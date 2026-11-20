@@ -11,12 +11,12 @@ const EN: PauseDict = {
 };
 const ES: PauseDict = {
   label: (host) => `Pausar en ${host}`,
-  hint: "Influencer Butler esta desactivado en este sitio. Desmarca para volver a activarlo.",
+  hint: "Influencer Butler está desactivado en este sitio. Desmarca para volver a activarlo.",
   pausedStatus: "En pausa en este sitio.",
 };
 const FR: PauseDict = {
   label: (host) => `Mettre en pause sur ${host}`,
-  hint: "Influencer Butler est desactive sur ce site. Decochez pour le reactiver.",
+  hint: "Influencer Butler est désactivé sur ce site. Décochez pour le réactiver.",
   pausedStatus: "En pause sur ce site.",
 };
 

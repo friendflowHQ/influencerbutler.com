@@ -125,6 +125,6 @@ describe("simpleSignals", () => {
 
   it("localizes labels", () => {
     expect(simpleSignals({ ...base, commissionCents: 250, commissionText: "$2.50" }, noBands, "es")[0]?.text).toContain("Paga bien");
-    expect(simpleSignals({ ...base, commissionCents: 250, commissionText: "$2.50" }, noBands, "fr")[0]?.text).toContain("Bien paye");
+    expect(simpleSignals({ ...base, commissionCents: 250, commissionText: "$2.50" }, noBands, "fr")[0]?.text).toContain("Bien payé");
   });
 });

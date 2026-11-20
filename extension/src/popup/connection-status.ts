@@ -53,31 +53,31 @@ const EN: PillCopy = {
   },
 };
 const ES: PillCopy = {
-  problem: (n) => `Problema de sincronizacion (${n})`,
+  problem: (n) => `Problema de sincronización (${n})`,
   syncing: (n) => `Sincronizando ${n}`,
   connected: "Conectado",
   partial: "App sin vincular",
   disconnected: "No conectado",
   hint: {
     problem: "Hay hallazgos esperando sincronizar. Abre Cuenta para ver detalles.",
-    syncing: "Los hallazgos se estan sincronizando con tu panel.",
-    connected: "Sesion iniciada y vinculada con la app de escritorio.",
-    partial: "Sesion iniciada, pero la app de escritorio no esta vinculada. Abre App de escritorio.",
+    syncing: "Los hallazgos se están sincronizando con tu panel.",
+    connected: "Sesión iniciada y vinculada con la app de escritorio.",
+    partial: "Sesión iniciada, pero la app de escritorio no está vinculada. Abre App de escritorio.",
     disconnected: "Agrega tu clave de licencia en Cuenta para conectar.",
   },
 };
 const FR: PillCopy = {
-  problem: (n) => `Probleme de synchronisation (${n})`,
+  problem: (n) => `Problème de synchronisation (${n})`,
   syncing: (n) => `Synchronisation ${n}`,
-  connected: "Connecte",
-  partial: "Appli non associee",
-  disconnected: "Non connecte",
+  connected: "Connecté",
+  partial: "Appli non associée",
+  disconnected: "Non connecté",
   hint: {
-    problem: "Des decouvertes attendent d'etre synchronisees. Ouvrez Compte pour les details.",
-    syncing: "Les decouvertes sont en cours de synchronisation avec votre tableau de bord.",
-    connected: "Connecte et associe a l'application de bureau.",
-    partial: "Connecte, mais l'application de bureau n'est pas associee. Ouvrez Application de bureau.",
-    disconnected: "Ajoutez votre cle de licence dans Compte pour vous connecter.",
+    problem: "Des découvertes attendent d'être synchronisées. Ouvrez Compte pour les détails.",
+    syncing: "Les découvertes sont en cours de synchronisation avec votre tableau de bord.",
+    connected: "Connecté et associé à l'application de bureau.",
+    partial: "Connecté, mais l'application de bureau n'est pas associée. Ouvrez Application de bureau.",
+    disconnected: "Ajoutez votre clé de licence dans Compte pour vous connecter.",
   },
 };
 

@@ -33,9 +33,9 @@ const ES: HelpCopy = {
     ["k", "Producto anterior"],
     ["s", "Preseleccionar el producto resaltado"],
     ["?", "Mostrar esta lista"],
-    ["Alt+Shift+B", "Mostrar u ocultar insignias (cambialo en chrome://extensions/shortcuts)"],
+    ["Alt+Shift+B", "Mostrar u ocultar insignias (cámbialo en chrome://extensions/shortcuts)"],
   ],
-  toggleNote: "Las teclas solas solo funcionan cuando no estas escribiendo en un campo.",
+  toggleNote: "Las teclas solas solo funcionan cuando no estás escribiendo en un campo.",
   turnOff: "Desactivar los atajos de una tecla",
   close: "Cerrar",
 };
@@ -43,13 +43,13 @@ const FR: HelpCopy = {
   title: "Raccourcis clavier",
   rows: [
     ["j", "Produit suivant"],
-    ["k", "Produit precedent"],
-    ["s", "Preselectionner le produit mis en evidence"],
+    ["k", "Produit précédent"],
+    ["s", "Présélectionner le produit mis en évidence"],
     ["?", "Afficher cette liste"],
     ["Alt+Shift+B", "Afficher ou masquer les badges (modifiable sur chrome://extensions/shortcuts)"],
   ],
   toggleNote: "Les touches seules ne fonctionnent que si vous ne saisissez pas de texte.",
-  turnOff: "Desactiver les raccourcis a une touche",
+  turnOff: "Désactiver les raccourcis à une touche",
   close: "Fermer",
 };
 

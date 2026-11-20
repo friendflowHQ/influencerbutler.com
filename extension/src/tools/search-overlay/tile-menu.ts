@@ -2,6 +2,7 @@ import { createInlineShadow } from "../../ui/host";
 import { el } from "../../ui/components";
 import { noteSent, showSentBadge, wasSent } from "../../ui/sent-state";
 import { t } from "../../i18n";
+import { noteMilestone } from "../../ui/milestone-toast";
 import { APP_TRIAL_URL } from "../../shared/constants";
 import type { Retailer } from "../../shared/retailer";
 import { canonicalProductUrl } from "../../integrations/url";
@@ -277,6 +278,7 @@ async function populateLists(
       if (r.atItemCap) return setStatus(t().tileMenuListFull);
       const finalName = r.lists.find((l) => l.id === r.listId)?.name ?? name;
       setStatus(t().tileMenuAddedTo(finalName));
+      void noteMilestone("firstList");
     });
   };
 
@@ -352,6 +354,7 @@ function buildAppSection(
           if (res.ok) {
             noteSent(sentKey);
             showSentBadge(item);
+            void noteMilestone("firstSend");
           }
         })
         .catch(() => setStatus(t().couldNotReachApp));

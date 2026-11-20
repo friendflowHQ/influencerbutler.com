@@ -2,6 +2,7 @@ import { enableChipTips } from "../../ui/chip-tips";
 import { formatAge, isStale } from "../../shared/format-age";
 import { explainCopy, explainScore } from "../score/explain";
 import { openAcceptSheet } from "./accept-sheet";
+import { noteMilestone } from "../../ui/milestone-toast";
 import { initShortlist, shortlistButton, teardownShortlist, toggleShortlist } from "./shortlist";
 import type { ShortlistItem } from "./shortlist-model";
 import type { ShortcutAction } from "../../content/shortcuts";
@@ -821,6 +822,7 @@ export async function initSearchOverlay(
             ? t().connectAppToPair
             : res.message ?? t().couldNotReachApp,
       );
+      if (res.ok === true) void noteMilestone("firstSend");
       return res.ok === true;
     } catch {
       setStatus(t().couldNotReachApp);
@@ -958,6 +960,7 @@ export async function initSearchOverlay(
         });
         if (!res?.ok) ok = false;
       }
+      if (ok && products.length > 0) void noteMilestone("firstSend");
       return { ok };
     },
   });
@@ -1322,6 +1325,7 @@ async function acceptRow(
     brand: row.ccRate?.brand ?? null,
   });
   row.accept = result.ok ? "done" : "failed";
+  if (result.ok) void noteMilestone("firstAccept");
   row.acceptNote = describeAcceptResult(result);
   renderBadge(row, settings);
   onAcceptChange();

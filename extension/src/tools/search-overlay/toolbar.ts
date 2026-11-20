@@ -82,22 +82,22 @@ const CHIP_EN = "Simple view";
 const CHIP_COPY: Record<string, string> = { en: CHIP_EN, es: "Vista simple", fr: "Vue simple" };
 
 const RESET_EN = "Reset view";
-const RESET_COPY: Record<string, string> = { en: RESET_EN, es: "Restablecer vista", fr: "Reinitialiser la vue" };
+const RESET_COPY: Record<string, string> = { en: RESET_EN, es: "Restablecer vista", fr: "Réinitialiser la vue" };
 
 type IssueCopy = { text: string; retry: string; market: string; ccRates: string };
 const ISSUE_EN: IssueCopy = { text: "Some estimates did not load.", retry: "Retry", market: "Sales estimates", ccRates: "Campaign rates" };
 const ISSUE_COPY: Record<string, IssueCopy> = {
   en: ISSUE_EN,
-  es: { text: "Algunas estimaciones no se cargaron.", retry: "Reintentar", market: "Estimaciones de ventas", ccRates: "Tarifas de campana" },
-  fr: { text: "Certaines estimations ne se sont pas chargees.", retry: "Reessayer", market: "Estimations de ventes", ccRates: "Taux de campagne" },
+  es: { text: "Algunas estimaciones no se cargaron.", retry: "Reintentar", market: "Estimaciones de ventas", ccRates: "Tarifas de campaña" },
+  fr: { text: "Certaines estimations ne se sont pas chargées.", retry: "Réessayer", market: "Estimations de ventes", ccRates: "Taux de campagne" },
 };
 
 type ReportCopy = { button: string; title: string; intro: string };
 const REPORT_EN: ReportCopy = { button: "Report a problem", title: "Problem with the search page badges", intro: "What looked wrong on this page?" };
 const REPORT_COPY: Record<string, ReportCopy> = {
   en: REPORT_EN,
-  es: { button: "Informar de un problema", title: "Problema con las insignias de la pagina de busqueda", intro: "Que se veia mal en esta pagina?" },
-  fr: { button: "Signaler un probleme", title: "Probleme avec les badges de la page de recherche", intro: "Qu'est-ce qui semblait incorrect sur cette page ?" },
+  es: { button: "Informar de un problema", title: "Problema con las insignias de la página de búsqueda", intro: "¿Qué se veía mal en esta página?" },
+  fr: { button: "Signaler un problème", title: "Problème avec les badges de la page de recherche", intro: "Qu'est-ce qui semblait incorrect sur cette page ?" },
 };
 
 export function renderToolbar(cb: ToolbarCallbacks): SearchToolbar {

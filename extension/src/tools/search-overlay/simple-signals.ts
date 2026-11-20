@@ -91,18 +91,18 @@ const HOW_EN: Record<How, string> = {
   modest: "higher than most of this page, but still a modest level overall",
 };
 const HOW_ES: Record<How, string> = {
-  top: "en el tercio superior de esta pagina",
-  bottom: "en el tercio inferior de esta pagina",
-  middle: "en el medio de esta pagina",
-  fixed: "un nivel fijo, porque esta pagina tiene pocos productos para comparar",
-  solid: "menos que la mayoria de esta pagina, pero un nivel solido en general",
-  modest: "mas que la mayoria de esta pagina, pero aun un nivel modesto en general",
+  top: "en el tercio superior de esta página",
+  bottom: "en el tercio inferior de esta página",
+  middle: "en el medio de esta página",
+  fixed: "un nivel fijo, porque esta página tiene pocos productos para comparar",
+  solid: "menos que la mayoría de esta página, pero un nivel sólido en general",
+  modest: "más que la mayoría de esta página, pero aún un nivel modesto en general",
 };
 const HOW_FR: Record<How, string> = {
-  top: "dans le tiers superieur de cette page",
-  bottom: "dans le tiers inferieur de cette page",
+  top: "dans le tiers supérieur de cette page",
+  bottom: "dans le tiers inférieur de cette page",
   middle: "au milieu de cette page",
-  fixed: "un niveau fixe, car cette page a trop peu de produits a comparer",
+  fixed: "un niveau fixe, car cette page a trop peu de produits à comparer",
   solid: "moins que la plupart de cette page, mais un niveau correct dans l'ensemble",
   modest: "plus que la plupart de cette page, mais un niveau modeste dans l'ensemble",
 };
@@ -140,36 +140,36 @@ const ES: Copy = {
   icons: ICONS,
   pays: { good: "Paga bien", neutral: "Paga normal", low: "Paga menos", unknown: "Pago desconocido" },
   sells: { good: "Se vende bien", neutral: "Ventas normales", low: "Se vende poco", unknown: "Ventas desconocidas" },
-  campaignOpen: "Campana abierta",
-  campaignNone: "Sin campana",
+  campaignOpen: "Campaña abierta",
+  campaignNone: "Sin campaña",
   campaignChecking: "Comprobando...",
-  campaignUnknown: "Campana desconocida",
+  campaignUnknown: "Campaña desconocida",
   paysTip: (state, text, kind) => {
-    if (state === "unknown" || !text) return "No hay suficiente informacion para estimar el pago.";
+    if (state === "unknown" || !text) return "No hay suficiente información para estimar el pago.";
     const how = HOW_ES[kind];
     return `Unos ${text} por venta, ${how}.`;
   },
   sellsTip: (state, units, kind, estimated) => {
-    if (state === "unknown" || units === null) return "No hay suficiente informacion para estimar las ventas.";
+    if (state === "unknown" || units === null) return "No hay suficiente información para estimar las ventas.";
     const how = HOW_ES[kind];
     return `Unas ${units.toLocaleString("es")} ventas al mes${estimated ? " (estimado)" : ""}, ${how}.`;
   },
   campaignTip: (kind, detail) =>
-    kind === "open" ? `Una campana abierta de Creator Connections.${detail ? ` ${detail}` : ""}`
-    : kind === "none" ? "No se encontro una campana abierta de Creator Connections para este producto."
-    : kind === "checking" ? "Buscando una campana abierta."
-    : "No se pudieron comprobar las campanas. Usa Reintentar en la barra.",
+    kind === "open" ? `Una campaña abierta de Creator Connections.${detail ? ` ${detail}` : ""}`
+    : kind === "none" ? "No se encontró una campaña abierta de Creator Connections para este producto."
+    : kind === "checking" ? "Buscando una campaña abierta."
+    : "No se pudieron comprobar las campañas. Usa Reintentar en la barra.",
 };
 
 const FR: Copy = {
-  details: "Details",
-  hideDetails: "Masquer les details",
+  details: "Détails",
+  hideDetails: "Masquer les détails",
   icons: ICONS,
-  pays: { good: "Bien paye", neutral: "Paye moyennement", low: "Paye moins", unknown: "Gain inconnu" },
+  pays: { good: "Bien payé", neutral: "Payé moyennement", low: "Payé moins", unknown: "Gain inconnu" },
   sells: { good: "Se vend bien", neutral: "Ventes moyennes", low: "Se vend peu", unknown: "Ventes inconnues" },
   campaignOpen: "Campagne ouverte",
   campaignNone: "Pas de campagne",
-  campaignChecking: "Verification...",
+  campaignChecking: "Vérification...",
   campaignUnknown: "Campagne inconnue",
   paysTip: (state, text, kind) => {
     if (state === "unknown" || !text) return "Pas assez d'informations pour estimer le gain.";
@@ -179,13 +179,13 @@ const FR: Copy = {
   sellsTip: (state, units, kind, estimated) => {
     if (state === "unknown" || units === null) return "Pas assez d'informations pour estimer les ventes.";
     const how = HOW_FR[kind];
-    return `Environ ${units.toLocaleString("fr")} ventes par mois${estimated ? " (estime)" : ""}, ${how}.`;
+    return `Environ ${units.toLocaleString("fr")} ventes par mois${estimated ? " (estimé)" : ""}, ${how}.`;
   },
   campaignTip: (kind, detail) =>
     kind === "open" ? `Une campagne Creator Connections ouverte.${detail ? ` ${detail}` : ""}`
-    : kind === "none" ? "Aucune campagne Creator Connections ouverte trouvee pour ce produit."
+    : kind === "none" ? "Aucune campagne Creator Connections ouverte trouvée pour ce produit."
     : kind === "checking" ? "Recherche d'une campagne ouverte."
-    : "Impossible de verifier les campagnes. Utilisez Reessayer dans la barre.",
+    : "Impossible de vérifier les campagnes. Utilisez Réessayer dans la barre.",
 };
 
 export function copyFor(locale: string): Copy {

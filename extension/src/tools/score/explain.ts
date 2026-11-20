@@ -34,25 +34,25 @@ const EN: ExplainCopy = {
 };
 const ES: ExplainCopy = {
   phrases: {
-    commission: "comision alta",
+    commission: "comisión alta",
     slot: "espacio de video libre",
     demand: "se vende bien",
     price: "buen precio",
-    campaign: "campana abierta",
+    campaign: "campaña abierta",
   },
   estimated: "(estimado)",
-  topPick: "Mejor opcion",
-  why: (reasons) => `Por que va primero? ${reasons}`,
+  topPick: "Mejor opción",
+  why: (reasons) => `¿Por qué va primero? ${reasons}`,
 };
 const FR: ExplainCopy = {
   phrases: {
-    commission: "commission elevee",
-    slot: "place video libre",
+    commission: "commission élevée",
+    slot: "place vidéo libre",
     demand: "se vend bien",
     price: "bon prix",
     campaign: "campagne ouverte",
   },
-  estimated: "(estime)",
+  estimated: "(estimé)",
   topPick: "Meilleur choix",
   why: (reasons) => `Pourquoi en premier ? ${reasons}`,
 };
