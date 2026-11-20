@@ -1331,6 +1331,11 @@ async function setupPauseRow(tabId: number, url: string, statusText: HTMLElement
   return paused;
 }
 
+const CHIP_DETAIL_LABEL: Record<string, string> = {
+  es: "Vista simple en los resultados de busqueda (tres senales claras por producto)",
+  fr: "Vue simple dans les resultats de recherche (trois signaux clairs par produit)",
+};
+
 const SHORTCUT_LABEL: Record<string, string> = {
   es: "Atajos de una tecla en los resultados de busqueda (j, k, s, ?)",
   fr: "Raccourcis a une touche dans les resultats de recherche (j, k, s, ?)",
@@ -1685,6 +1690,13 @@ async function renderSettings(): Promise<void> {
   if (shortcutsLabel) byId("set-shortcuts-label").textContent = shortcutsLabel;
   shortcuts.checked = settings.singleKeyShortcuts !== false;
   shortcuts.onchange = () => void patchSettings({ singleKeyShortcuts: shortcuts.checked });
+
+  // Simple view: three plain-language signals per search tile (off = every Pro chip).
+  const chipDetail = byId<HTMLInputElement>("set-chip-detail");
+  const chipLabel = CHIP_DETAIL_LABEL[String(getLocale()).slice(0, 2)];
+  if (chipLabel) byId("set-chip-detail-label").textContent = chipLabel;
+  chipDetail.checked = settings.chipDetail === "simple";
+  chipDetail.onchange = () => void patchSettings({ chipDetail: chipDetail.checked ? "simple" : "pro" });
 
   const storefront = byId<HTMLInputElement>("set-storefront");
   storefront.value = settings.storefrontHandle ?? "";

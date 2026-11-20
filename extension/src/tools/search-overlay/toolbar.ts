@@ -21,6 +21,9 @@ export type ToolbarCallbacks = {
   // Remembered view (sort, filters, hidden badges). `defaultSort` is what the
   // overlay applies with no saved view; "Reset view" returns to it.
   defaultSort: SortKey;
+  // Simple / Detailed chip view (a global setting, not part of the per-page view).
+  chipDetail?: "simple" | "pro";
+  onChipDetail?: (value: "simple" | "pro") => void;
   initial?: ViewPrefs;
   onViewChange?: (view: ViewPrefs) => void;
   onReset?: () => void;
@@ -63,6 +66,8 @@ export type SearchToolbar = {
   // Flip "Hide badges" exactly as a click on its button would (used by the
   // keyboard shortcut); no-op when the toolbar has no such button.
   toggleBadges: () => void;
+  // Reflect a chip-detail change made elsewhere (popup, options).
+  setChipDetail: (value: "simple" | "pro") => void;
   // Put the controls back to a view (used by "Reset view").
   setView: (view: ViewPrefs) => void;
   // "Why is this first?" line under the bar; null hides it.
@@ -72,6 +77,9 @@ export type SearchToolbar = {
   // Page-level lookup failure notice with a Retry button; hidden when `show` is false.
   setLookupIssue: (show: boolean, onRetry: () => void, failed?: Array<"market" | "ccRates">) => void;
 };
+
+const CHIP_EN = "Simple view";
+const CHIP_COPY: Record<string, string> = { en: CHIP_EN, es: "Vista simple", fr: "Vue simple" };
 
 const RESET_EN = "Reset view";
 const RESET_COPY: Record<string, string> = { en: RESET_EN, es: "Restablecer vista", fr: "Reinitialiser la vue" };
@@ -330,6 +338,26 @@ export function renderToolbar(cb: ToolbarCallbacks): SearchToolbar {
   });
   refreshReset();
   bar.append(resetBtn);
+
+  // "Simple view": plain-language signals per tile instead of every analysis chip.
+  let paintChipDetail: (value: "simple" | "pro") => void = () => undefined;
+  if (cb.onChipDetail) {
+    const chipCopy = CHIP_COPY[String(getLocale()).slice(0, 2)] ?? CHIP_EN;
+    const chipBtn = el("button", "btn secondary small", chipCopy) as HTMLButtonElement;
+    chipBtn.type = "button";
+    let current: "simple" | "pro" = cb.chipDetail ?? "pro";
+    paintChipDetail = (value) => {
+      current = value;
+      chipBtn.setAttribute("aria-pressed", String(value === "simple"));
+    };
+    paintChipDetail(current);
+    chipBtn.addEventListener("click", () => {
+      const next = current === "simple" ? "pro" : "simple";
+      paintChipDetail(next);
+      cb.onChipDetail?.(next);
+    });
+    bar.append(chipBtn);
+  }
   // "Report a problem": opens the Feedback form with this page's context filled in.
   const reportCopy = REPORT_COPY[String(getLocale()).slice(0, 2)] ?? REPORT_EN;
   const reportBtn = el("button", "btn secondary small") as HTMLButtonElement;
@@ -358,6 +386,7 @@ Tiles found: ${tiles}`,
   return {
     host,
     setView: applyView,
+    setChipDetail: (value) => paintChipDetail(value),
     toggleBadges: () => toggleBadgesFn(),
     setTopPickReason: (text: string | null) => {
       topLine.hidden = !text;

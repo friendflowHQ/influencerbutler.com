@@ -163,6 +163,11 @@ export type Settings = {
   // Single-key shortcuts on search results (j/k/s/?). On by default; the popup
   // Settings card and the cheat sheet can turn them off.
   singleKeyShortcuts: boolean;
+  // Search-result chip detail: "simple" shows three plain-language signals per tile
+  // (Pays, Sells, Campaign); "pro" shows every analysis chip. Existing installs
+  // stay on "pro" (the default); a fresh install is switched to "simple" by the
+  // background onInstalled handler.
+  chipDetail: "simple" | "pro";
   // Cross-device relay: the default desktop app on ANOTHER computer to send
   // commands to when no local app is running here (e.g. queue a harvested deal
   // to post from the other machine). Chosen in the popup's Remote devices
@@ -1083,6 +1088,7 @@ export const DEFAULTS: StorageShape = {
     dealSources: [],
     pausedHosts: [],
     singleKeyShortcuts: true,
+    chipDetail: "pro",
     relayDefaultTarget: null,
     locale: "auto",
     tools: {

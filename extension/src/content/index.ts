@@ -188,6 +188,16 @@ async function main(): Promise<void> {
     const next = changes.ib.newValue as { settings?: { singleKeyShortcuts?: boolean } } | undefined;
     shortcutsOn = next?.settings?.singleKeyShortcuts !== false;
   });
+  // Chip view changed in the popup or options: tell the search overlay.
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== "local" || !changes.ib) return;
+    const next = changes.ib.newValue as { settings?: { chipDetail?: string } } | undefined;
+    const old = changes.ib.oldValue as { settings?: { chipDetail?: string } } | undefined;
+    const value = next?.settings?.chipDetail;
+    if ((value === "simple" || value === "pro") && value !== old?.settings?.chipDetail) {
+      window.dispatchEvent(new CustomEvent("ib-chip-detail", { detail: value }));
+    }
+  });
   chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResponse) => {
     if (message.kind === "GET_PAGE_STATUS") {
       sendResponse(lastStatus);

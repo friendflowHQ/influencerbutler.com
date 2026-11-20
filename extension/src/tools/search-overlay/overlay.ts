@@ -7,6 +7,7 @@ import type { ShortlistItem } from "./shortlist-model";
 import type { ShortcutAction } from "../../content/shortcuts";
 import { showShortcutsHelp } from "../../content/shortcuts-help";
 import { orderItems } from "./accept-sheet-model";
+import { computeBands, copyFor as simpleCopy, simpleSignals, type PageBands, type SimpleInput } from "./simple-signals";
 import { defaultPrefs, loadViewPrefs, priceForCurrency, saveViewPrefs } from "../../shared/view-prefs";
 import { createInlineShadow } from "../../ui/host";
 import { el } from "../../ui/components";
@@ -21,7 +22,7 @@ import type { DpStaticSignals } from "../../amazon/dp-static";
 import { getCache, loadFilters, membership } from "../../catalogue/cache";
 import { retailerModule, type RetailerModule } from "../../retailers/module";
 import type { Retailer } from "../../shared/retailer";
-import { getSettings, getState } from "../../storage/store";
+import { getSettings, getState, patchSettings } from "../../storage/store";
 import { resolveRatePct } from "../score/rate";
 import { computeButlerScore, type ButlerScore } from "../score/model";
 import { formatCents, formatCompactMoney } from "../calculator/model";
@@ -64,6 +65,8 @@ const DONE_ATTR = "data-ib-search";
 const SCAN_CAP = 20;
 
 type Row = {
+  // Simple view: this tile is expanded to the full Pro chips (per-tile "Details").
+  expanded?: boolean;
   // Set on the single top-ranked tile after a Best-score sort: the reason text
   // (possibly empty). Undefined everywhere else.
   topPick?: string;
@@ -396,6 +399,34 @@ export async function initSearchOverlay(
   // so the Top pick chip and reason never describe stale scores.
   let activeSort: SortKey = "relevance";
   let refreshTopPick: () => void = () => undefined;
+  // Simple view: recompute the page bands (debounced) as data lands and repaint
+  // every tile when they change; `force` repaints even when they did not.
+  pageBands = { commission: null, units: null };
+  ccLookup = "pending";
+  let bandsKey = "";
+  let bandsTimer: ReturnType<typeof setTimeout> | null = null;
+  const refreshBands = (force: boolean): void => {
+    if (epoch !== initEpoch || settings.chipDetail !== "simple") return;
+    const next = computeBands(rows.map((r) => ({ commissionCents: r.commissionCents, units: estUnitsFor(r) })));
+    const key = JSON.stringify(next);
+    if (!force && key === bandsKey) return;
+    bandsKey = key;
+    pageBands = next;
+    for (const r of rows) renderBadge(r, settings);
+  };
+  // A forced repaint stays pending until it runs: a later unforced schedule inside
+  // the debounce window must not downgrade it (the campaign state would stick).
+  let pendingForce = false;
+  const scheduleBands = (force = false): void => {
+    pendingForce = pendingForce || force;
+    if (bandsTimer) clearTimeout(bandsTimer);
+    bandsTimer = setTimeout(() => {
+      const forced = pendingForce;
+      pendingForce = false;
+      refreshBands(forced);
+    }, 250);
+  };
+  run.signal.addEventListener("abort", () => bandsTimer && clearTimeout(bandsTimer), { once: true });
   const failedLookups = new Set<"market" | "ccRates">();
   const retryers: Record<"market" | "ccRates", () => void> = { market: () => undefined, ccRates: () => undefined };
   let toolbarApi: SearchToolbar | null = null;
@@ -431,6 +462,7 @@ export async function initSearchOverlay(
           return;
         }
         noteLookup("market", true);
+        scheduleBands();
         const newest = res.products.map((p) => p.capturedAt).filter(Boolean).sort().pop() ?? null;
         const age = formatAge(newest, Date.now(), String(getLocale()));
         toolbarApi?.setDataUpdated(age ? legend().source.dataUpdated(age) : null, isStale(newest, Date.now()));
@@ -476,9 +508,13 @@ export async function initSearchOverlay(
       (res) => {
         if (epoch !== initEpoch) return;
         if (!res?.ok) {
+          ccLookup = "failed";
+          scheduleBands(true);
           noteLookup("ccRates", false);
           return;
         }
+        ccLookup = "done";
+        scheduleBands(true);
         noteLookup("ccRates", true);
         // The catalogue Bloom filter has ~1% false positives, and a campaign may
         // have ended or filled up. When the rate table answered and has no open
@@ -502,10 +538,19 @@ export async function initSearchOverlay(
         refreshTopPick();
       },
     )
-      .catch(() => noteLookup("ccRates", false));
+      .catch(() => {
+        ccLookup = "failed";
+        scheduleBands(true);
+        noteLookup("ccRates", false);
+      });
   };
   retryers.ccRates = runCcRates;
-  if (campaignAsins.length > 0) runCcRates();
+  if (campaignAsins.length > 0) {
+    ccLookup = "pending";
+    runCcRates();
+  } else {
+    ccLookup = "done";
+  }
 
   // Amazon's own SPCC ("Earn on Clicks") forecast for the SPCC-flagged tiles,
   // so a tile with no CC commission rate can still show a real $/click number
@@ -821,8 +866,20 @@ export async function initSearchOverlay(
   const initialView = { ...savedView, minPriceCents: priceForCurrency(savedView, pageCurrency) };
   if (epoch !== initEpoch) return;
 
+  // Switch the chip view for every tile (Simple signals or the full Pro chips).
+  const applyChipDetail = (value: "simple" | "pro"): void => {
+    settings.chipDetail = value;
+    if (value === "simple") refreshBands(true);
+    else for (const r of rows) renderBadge(r, settings);
+  };
+
   const toolbar = renderToolbar({
     count: rows.length,
+    chipDetail: settings.chipDetail,
+    onChipDetail: (value) => {
+      applyChipDetail(value);
+      void patchSettings({ chipDetail: value });
+    },
     defaultSort,
     initial: initialView,
     onViewChange: (view) => {
@@ -860,6 +917,21 @@ export async function initSearchOverlay(
       module.retailer === "amazon" && settings.tools.standaloneAccept ? acceptAllOnPage : undefined,
   });
   toolbarApi = toolbar;
+  // Changes made in the popup or options page arrive as a window event.
+  window.addEventListener(
+    "ib-chip-detail",
+    (event) => {
+      const value = (event as CustomEvent<string>).detail;
+      if (value !== "simple" && value !== "pro") return;
+      // Our own toolbar click already applied it (this is the storage echo).
+      if (settings.chipDetail === value) return;
+      toolbar.setChipDetail(value);
+      applyChipDetail(value);
+    },
+    { signal: run.signal },
+  );
+  // First Simple paint with the data known so far (prices give early commissions).
+  refreshBands(true);
   // A lookup may have failed before the toolbar existed: show it now.
   renderLookupIssue();
   refreshAcceptAll();
@@ -953,6 +1025,7 @@ export async function initSearchOverlay(
       if (epoch !== initEpoch) return;
       const row = rows.find((r) => r.tile.asin === asin);
       if (!row) return;
+      scheduleBands();
       row.dp = signals;
       const category = signals.category ?? signals.bestsellerRank?.category ?? null;
       row.ratePct = resolveRatePct({
@@ -1288,6 +1361,105 @@ function resolveConvo(row: Row): void {
   row.convo = chip;
 }
 
+// Reduced-price pill (Prime Day / Lightning / Rollback / "-N%"). Shared by the Pro
+// chip row and the Simple view, where it stays because it changes what the
+// creator does next. Gated by the dealSignals tool flag (remote kill switch).
+function appendDealPill(body: HTMLElement, row: Row, settings: Settings): void {
+  if (settings.tools.dealSignals) {
+    const { dealBadge, dealKind, wasPriceCents, priceCents } = row.tile;
+    const pct = dealDiscountPct(priceCents, wasPriceCents);
+    const discounted = pct != null;
+    // A coupon-only dealKind is left to the coupon chip above, so it does not
+    // trigger a second (unpriced) deal chip here.
+    const amazonDeal = dealKind === "primeday" || dealKind === "lightning" || dealKind === "reduced";
+    if (dealBadge || amazonDeal || discounted) {
+      const label =
+        dealBadge === "clearance" ? "Clearance" :
+        dealBadge === "reduced" ? "Reduced" :
+        dealBadge === "rollback" ? "Rollback" :
+        dealKind === "primeday" ? t().tileDealPrimeDay :
+        dealKind === "lightning" ? t().tileDealLightning :
+        t().tileDeal;
+      body.append(el("span", "tile-chip good", pct != null ? `${label} -${pct}%` : label));
+    }
+  }
+}
+
+// ---- Simple view ------------------------------------------------------------
+
+// Page-level state for the Simple signals. Bands are recomputed (debounced) as
+// estimates and lookups land; ccLookup says whether the campaign lookup is still
+// running or failed, so "No campaign" is never claimed before the answer is in.
+let pageBands: PageBands = { commission: null, units: null };
+let ccLookup: "pending" | "done" | "failed" = "done";
+
+function simpleInputFor(row: Row): SimpleInput {
+  const units = estUnitsFor(row);
+  const rate = row.ccRate;
+  const detail = rate
+    ? `${t().tileCampaignRate(rate.ratePct)}${rate.endsAt ? `, ${rate.endsAt.slice(0, 10)}` : ""}`
+    : row.spccRate
+      ? t().tileCampaignEpcTip
+      : null;
+  return {
+    commissionCents: row.commissionCents,
+    commissionText: row.commissionCents !== null ? formatCents(row.commissionCents, row.tile.currency) : null,
+    units,
+    unitsEstimated: !(row.market?.estimateCalibrated && row.market.estMonthlySales != null),
+    showCampaign: row.retailer === "amazon",
+    campaign: { open: row.flags.cc || row.flags.spcc, detail, lookup: ccLookup },
+  };
+}
+
+function detailsButton(row: Row, settings: Settings): HTMLButtonElement {
+  const copy = simpleCopy(String(getLocale()));
+  const btn = el("button", "tile-details-btn", row.expanded ? copy.hideDetails : copy.details) as HTMLButtonElement;
+  btn.type = "button";
+  btn.setAttribute("aria-expanded", String(!!row.expanded));
+  btn.addEventListener("click", (event) => {
+    // The badge sits inside the product tile's link area: do not navigate.
+    event.preventDefault();
+    event.stopPropagation();
+    row.expanded = !row.expanded;
+    renderBadge(row, settings);
+  });
+  return btn;
+}
+
+// The Simple row after the score and Top pick chips: the three signals, then only
+// the chips that change what the creator does next, then the usual controls.
+function appendSimpleChips(row: Row, settings: Settings, body: HTMLElement): void {
+  for (const signal of simpleSignals(simpleInputFor(row), pageBands, String(getLocale()))) {
+    const chip = el("span", `tile-chip tile-signal ${signal.state}`, signal.text);
+    chip.title = signal.tip;
+    body.append(chip);
+  }
+  if (row.owned) body.append(tipped(el("span", "tile-chip good", t().ownedGridOwned), legend().tips.owned));
+  if (row.posted) body.append(tipped(el("span", "tile-chip warn", t().ownedGridPosted), legend().tips.posted));
+  if (row.convo) body.append(buildConversationChip(row.convo));
+  if (row.flags.cc || row.flags.spcc) {
+    const accept = acceptChip(row, settings);
+    if (accept) body.append(accept);
+  }
+  appendDealPill(body, row, settings);
+  body.append(detailsButton(row, settings));
+  if (row.showWatch) body.append(watchControl(row, settings));
+  body.append(shortlistButton(shortlistItemFor(row)));
+  mountTileMenuButton(
+    body,
+    {
+      asin: row.tile.asin,
+      marketplace: row.marketplace,
+      title: row.tile.title,
+      imageUrl: row.tile.imageUrl,
+      priceCents: row.tile.priceCents ?? row.market?.priceCents ?? null,
+      href: row.tile.href,
+      retailer: row.retailer,
+    },
+    row.hud,
+  );
+}
+
 function shortlistItemFor(row: Row): ShortlistItem {
   return {
     asin: row.tile.asin,
@@ -1311,6 +1483,11 @@ function renderBadge(row: Row, settings: Settings): void {
     const pick = el("span", "tile-chip good top-pick", explainCopy(String(getLocale())).topPick);
     if (row.topPick) pick.title = row.topPick;
     body.append(pick);
+  }
+  // Simple view: three plain-language signals instead of the analysis chips.
+  if (settings.chipDetail === "simple" && !row.expanded) {
+    appendSimpleChips(row, settings, body);
+    return;
   }
   // Verdict first: the yes/no is what the creator scans for.
   if (row.verdict.state === "approved") {
@@ -1382,27 +1559,12 @@ function renderBadge(row: Row, settings: Settings): void {
   // Reduced markers via dealBadge; Amazon sets dealKind (Prime Day / Lightning /
   // reduced) and wasPriceCents read off the tile. "-N%" is locale-neutral. Gated
   // by the dealSignals tool flag so the remote kill switch can disable it.
-  if (settings.tools.dealSignals) {
-    const { dealBadge, dealKind, wasPriceCents, priceCents } = row.tile;
-    const pct = dealDiscountPct(priceCents, wasPriceCents);
-    const discounted = pct != null;
-    // A coupon-only dealKind is left to the coupon chip above, so it does not
-    // trigger a second (unpriced) deal chip here.
-    const amazonDeal = dealKind === "primeday" || dealKind === "lightning" || dealKind === "reduced";
-    if (dealBadge || amazonDeal || discounted) {
-      const label =
-        dealBadge === "clearance" ? "Clearance" :
-        dealBadge === "reduced" ? "Reduced" :
-        dealBadge === "rollback" ? "Rollback" :
-        dealKind === "primeday" ? t().tileDealPrimeDay :
-        dealKind === "lightning" ? t().tileDealLightning :
-        t().tileDeal;
-      body.append(el("span", "tile-chip good", pct != null ? `${label} -${pct}%` : label));
-    }
-  }
+  appendDealPill(body, row, settings);
   const video = videoChip(row);
   if (video) body.append(video);
   capChips(body);
+  // Expanded from Simple view: a way back to the three signals.
+  if (settings.chipDetail === "simple") body.append(detailsButton(row, settings));
   if (row.showWatch) body.append(watchControl(row, settings));
   // The "..." action menu: Add to list / Copy link / Open page always, plus the
   // desktop-bridge actions when the app is paired (else an upsell). Mounted last

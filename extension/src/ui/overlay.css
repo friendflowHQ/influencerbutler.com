@@ -2297,3 +2297,16 @@ button.tile-chip.more:focus-visible { outline: 3px solid #1d4ed8; outline-offset
 .shortcuts-table th { text-align: left; padding: 4px 12px 4px 0; white-space: nowrap; font-weight: 400; }
 .shortcuts-table td { padding: 4px 0; color: #0f172a; }
 .shortcuts-key { font-family: inherit; font-size: 12px; font-weight: 700; padding: 1px 7px; border: 1px solid #cbd5e1; border-bottom-width: 2px; border-radius: 6px; background: #f8fafc; color: #0f172a; }
+
+/* Simple view signals and the per-tile Details button (tools/search-overlay/simple-signals.ts). */
+.tile-signal { font-weight: 700; }
+.tile-signal.good { background: #f0fdf4; border-color: #86efac; color: #15803d; }
+.tile-signal.neutral { background: #f8fafc; border-color: #cbd5e1; color: #475569; }
+.tile-signal.low { background: #fff7ed; border-color: #fdba74; color: #9a3412; }
+.tile-signal.unknown { background: #fff; border-style: dashed; border-color: #94a3b8; color: #475569; }
+.tile-details-btn {
+  font: inherit; font-size: 12px; font-weight: 700; line-height: 1;
+  padding: 3px 8px; border-radius: 999px; cursor: pointer;
+  border: 1px solid #cbd5e1; background: #fff; color: #334155;
+}
+.tile-details-btn:focus-visible { outline: 2px solid #c2410c; outline-offset: 1px; }

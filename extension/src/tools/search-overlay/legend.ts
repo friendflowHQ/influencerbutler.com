@@ -27,6 +27,7 @@ const EN: LegendDict = {
   scanFailed: (n) => `${n} video scan${n === 1 ? "" : "s"} failed. Click Scan again to retry.`,
   title: "What the chips mean",
   rows: [
+    { chip: "Simple view signals", text: "Pays, Sells and Campaign compare each product with the others on this page (top third is well). The Simple view button in the toolbar switches back to every chip; Details opens one product." },
     { chip: "Score (orange, amber, gray)", text: "Butler score for how promising the product is for you. Orange is hot, amber is warm, gray is cool." },
     { chip: "Green chips", text: "Good news: Butler Approved, already owned, or a Creator Connections / SPCC campaign you can join." },
     { chip: "Amber chips", text: "Heads up, such as a product you already posted." },
@@ -59,6 +60,7 @@ const ES: LegendDict = {
   scanFailed: (n) => `Fallaron ${n} escaneo${n === 1 ? "" : "s"} de video. Haz clic en Escanear de nuevo.`,
   title: "Que significan los chips",
   rows: [
+    { chip: "Senales de vista simple", text: "Paga, Se vende y Campana comparan cada producto con los demas de esta pagina (el tercio superior es bien). El boton Vista simple de la barra vuelve a todos los chips; Detalles abre un producto." },
     { chip: "Puntuacion (naranja, ambar, gris)", text: "Puntuacion Butler de lo prometedor que es el producto para ti. Naranja es caliente, ambar tibio, gris frio." },
     { chip: "Chips verdes", text: "Buenas noticias: Butler Approved, ya lo tienes, o una campana de Creator Connections / SPCC a la que puedes unirte." },
     { chip: "Chips ambar", text: "Aviso, por ejemplo un producto que ya publicaste." },
@@ -91,6 +93,7 @@ const FR: LegendDict = {
   scanFailed: (n) => `${n} analyse${n === 1 ? "" : "s"} video en echec. Cliquez de nouveau sur Analyser.`,
   title: "Signification des pastilles",
   rows: [
+    { chip: "Signaux de la vue simple", text: "Paye, Se vend et Campagne comparent chaque produit aux autres de cette page (le tiers superieur est bien). Le bouton Vue simple de la barre revient a toutes les pastilles ; Details ouvre un produit." },
     { chip: "Score (orange, ambre, gris)", text: "Score Butler du potentiel du produit pour vous. Orange chaud, ambre tiede, gris froid." },
     { chip: "Pastilles vertes", text: "Bonne nouvelle : Butler Approved, deja possede, ou une campagne Creator Connections / SPCC a rejoindre." },
     { chip: "Pastilles ambre", text: "Attention, par exemple un produit deja publie." },

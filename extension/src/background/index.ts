@@ -242,6 +242,8 @@ chrome.runtime.onInstalled.addListener((details) => {
   // old external welcome tab as the first-run destination. Best-effort: a blocked
   // tab create just means no walkthrough (it stays replayable from the popup).
   if (details.reason === "install") {
+    // New creators start on the Simple chip view (existing installs keep Pro).
+    void patchSettings({ chipDetail: "simple" }).catch(() => undefined);
     try {
       void chrome.tabs.create({ url: chrome.runtime.getURL("onboarding.html") });
     } catch {

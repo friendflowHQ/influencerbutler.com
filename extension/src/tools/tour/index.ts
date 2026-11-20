@@ -35,7 +35,7 @@ const EN: TourDict = {
       { title: "Turn tools on or off", body: "Open the toolbar popup and scroll to the tool list to switch individual tools. The popup's 'This page' card tells you what is active here." },
     ],
     search: [
-      { title: "Money signals on every result", body: "Each product gets a row of chips: Butler score, estimated commission, sales rank, and whether you already own or posted it. Hover a chip for what it means." },
+      { title: "Money signals on every result", body: "Each product gets a row of chips: Butler score, estimated commission, sales rank, and whether you already own or posted it. Hover a chip for what it means. Prefer less? Use the Simple view button in the toolbar for three plain signals: pays, sells and campaign." },
       { title: "Filter and sort by money", body: "Use the Influencer Butler toolbar above the results to sort by commission or hide products that do not fit. Use the ? button there for a color legend." },
       { title: "Nothing showing?", body: "Make sure Search overlay is on in the toolbar popup. If the desktop app is closed, some chips (like earnings) stay hidden until you open it." },
     ],
@@ -63,7 +63,7 @@ const ES: TourDict = {
       { title: "Activa o desactiva herramientas", body: "Abre el popup de la barra y baja hasta la lista de herramientas. La tarjeta 'Esta pagina' te dice que esta activo aqui." },
     ],
     search: [
-      { title: "Senales de dinero en cada resultado", body: "Cada producto muestra chips: puntuacion Butler, comision estimada, ranking de ventas y si ya lo tienes o lo publicaste. Pasa el cursor por un chip para ver que significa." },
+      { title: "Senales de dinero en cada resultado", body: "Cada producto muestra chips: puntuacion Butler, comision estimada, ranking de ventas y si ya lo tienes o lo publicaste. Pasa el cursor por un chip para ver que significa. Prefieres menos? Usa el boton Vista simple de la barra para ver tres senales claras: paga, se vende y campana." },
       { title: "Filtra y ordena por dinero", body: "Usa la barra de Influencer Butler sobre los resultados para ordenar por comision u ocultar productos. El boton ? muestra la leyenda de colores." },
       { title: "No se ve nada?", body: "Verifica que Search overlay este activado en el popup. Si la app de escritorio esta cerrada, algunos chips (como ganancias) no aparecen hasta abrirla." },
     ],
@@ -91,7 +91,7 @@ const FR: TourDict = {
       { title: "Activer ou desactiver des outils", body: "Ouvrez le popup de la barre et descendez jusqu'a la liste des outils. La carte 'Cette page' indique ce qui est actif ici." },
     ],
     search: [
-      { title: "Signaux d'argent sur chaque resultat", body: "Chaque produit affiche des pastilles : score Butler, commission estimee, rang des ventes et si vous le possedez ou l'avez publie. Survolez une pastille pour sa signification." },
+      { title: "Signaux d'argent sur chaque resultat", body: "Chaque produit affiche des pastilles : score Butler, commission estimee, rang des ventes et si vous le possedez ou l'avez publie. Survolez une pastille pour sa signification. Moins de details ? Utilisez le bouton Vue simple de la barre pour trois signaux clairs : gain, ventes et campagne." },
       { title: "Filtrer et trier par argent", body: "Utilisez la barre Influencer Butler au-dessus des resultats pour trier par commission ou masquer des produits. Le bouton ? affiche la legende des couleurs." },
       { title: "Rien ne s'affiche ?", body: "Verifiez que Search overlay est active dans le popup. Si l'application de bureau est fermee, certaines pastilles (comme les gains) restent masquees jusqu'a son ouverture." },
     ],
