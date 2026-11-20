@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { LINK_BUILDER_CHANNELS, type ChannelSlug } from "@/lib/affiliate-clicks";
+import { copyToClipboard } from "./copy";
 
 type Props = {
   /** The affiliate's branded code (e.g. "LIZ"). */
@@ -21,14 +22,11 @@ export default function LinkBuilder({ code }: Props) {
   const [copiedSlug, setCopiedSlug] = useState<ChannelSlug | null>(null);
 
   const copy = async (slug: ChannelSlug) => {
-    try {
-      await navigator.clipboard.writeText(buildLink(code, slug));
+    if (await copyToClipboard(buildLink(code, slug))) {
       setCopiedSlug(slug);
       window.setTimeout(() => {
         setCopiedSlug((current) => (current === slug ? null : current));
       }, 1500);
-    } catch (err) {
-      console.error("LinkBuilder copy failed", err);
     }
   };
 

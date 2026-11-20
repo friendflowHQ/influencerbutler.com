@@ -26,6 +26,7 @@ import { extractSignals, marketplaceFromUrl, type ProductSignals } from "../amaz
 import { query, applySelectorOverrides } from "../amazon/selectors";
 import { getFlags } from "../flags/cache";
 import { isHostPaused } from "../shared/paused-hosts";
+import { installShortcuts } from "./shortcuts";
 import { renderVideoCounts } from "../tools/video-counts/product-panel";
 import { initOrderHistory } from "../tools/video-counts/order-history";
 import { initOrdersButler } from "../tools/orders-butler/harvester";
@@ -179,6 +180,14 @@ async function main(): Promise<void> {
   const settings = await getSettings();
   setDebug(settings.debug);
   watchSpaNavigation();
+  // Single-key shortcuts (j / k / s / ?) on search results; the overlay answers.
+  let shortcutsOn = settings.singleKeyShortcuts !== false;
+  installShortcuts(() => shortcutsOn);
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== "local" || !changes.ib) return;
+    const next = changes.ib.newValue as { settings?: { singleKeyShortcuts?: boolean } } | undefined;
+    shortcutsOn = next?.settings?.singleKeyShortcuts !== false;
+  });
   chrome.runtime.onMessage.addListener((message: RuntimeMessage, _sender, sendResponse) => {
     if (message.kind === "GET_PAGE_STATUS") {
       sendResponse(lastStatus);
@@ -188,6 +197,11 @@ async function main(): Promise<void> {
     // background has identified as HUD-capable, so there is no page-type check
     // to make here; the reply says whether a panel was there to toggle (search
     // and home pages have none), so the background can open the settings popup.
+    if (message.kind === "TOGGLE_BADGES") {
+      window.dispatchEvent(new CustomEvent("ib-toggle-badges"));
+      sendResponse({ handled: true });
+      return true;
+    }
     if (message.kind === "START_TOUR") {
       removeTourOffer();
       sendResponse({ handled: runTourForPage(lastStatus.pageType as PageType) });

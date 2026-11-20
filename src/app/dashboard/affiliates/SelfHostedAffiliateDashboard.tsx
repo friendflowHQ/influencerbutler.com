@@ -9,6 +9,10 @@ import ReferredSignupsFunnel from "./ReferredSignupsFunnel";
 import TaxFormCard from "./TaxFormCard";
 import PayoutMethodCard from "./PayoutMethodCard";
 import CompProspectCard from "./CompProspectCard";
+import ConversionGoal from "./ConversionGoal";
+import MediaKit from "./MediaKit";
+import AffiliateHelp from "./AffiliateHelp";
+import { copyToClipboard } from "./copy";
 import {
   EarningsHero,
   GetPaidChecklist,
@@ -136,6 +140,28 @@ export default function SelfHostedAffiliateDashboard({
       /* non-critical */
     }
   };
+  // Sidebar links like #guest-passes or #leaderboard: open the right tab, then
+  // scroll to the section once it is on screen.
+  const goToHash = () => {
+    const h = window.location.hash.replace("#", "");
+    if (h === "guest-passes") setTabState("promote");
+    else if (TABS.some((t) => t.id === h)) setTabState(h as TabId);
+    else if (h !== "leaderboard") return;
+    window.setTimeout(() => {
+      document.getElementById(h)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 80);
+  };
+  useEffect(() => {
+    window.addEventListener("hashchange", goToHash);
+    return () => window.removeEventListener("hashchange", goToHash);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const hasData = data !== null;
+  useEffect(() => {
+    if (hasData) goToHash();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasData]);
+
   // "Add now" in the checklist lives on the Get paid tab: switch, then scroll.
   const jumpToCard = (id: string) => {
     setTab("paid");
@@ -166,8 +192,21 @@ export default function SelfHostedAffiliateDashboard({
 
   if (loadError) {
     return (
-      <div className="rounded-xl border border-amber-300 bg-amber-50 p-5 text-sm text-amber-800">
-        {loadError}
+      <div
+        role="alert"
+        className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 p-5 text-sm text-amber-800"
+      >
+        <span>{loadError}</span>
+        <button
+          type="button"
+          onClick={() => {
+            setLoadError(null);
+            reload();
+          }}
+          className="rounded-lg bg-orange-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-800"
+        >
+          Try again
+        </button>
       </div>
     );
   }
@@ -220,6 +259,7 @@ export default function SelfHostedAffiliateDashboard({
         payoutReady={payoutReady}
         readOnly={readOnly}
         onJump={jumpToCard}
+        unpaidCents={data.owedCents + (data.adjustmentCents ?? 0)}
       />
 
       <TabBar tab={tab} onChange={setTab} showPerformance={showPerformance} />
@@ -269,13 +309,13 @@ export default function SelfHostedAffiliateDashboard({
             label="Payout schedule"
             value="Monthly"
             hint="On or around the 1st, via PayPal"
-            tooltip="We pay monthly via PayPal, on or around the 1st. Each order's commission is held for 14 days first (a short buffer so refunds and disputes settle), then paid in the next run once your balance is at least $10. Example: an order on Jul 10 clears Jul 24 and is paid Aug 1; an order on Jul 25 clears Aug 8 and is paid Sep 1."
+            detail="We pay monthly via PayPal, on or around the 1st. Each order's commission is held for 14 days first (a short buffer so refunds and disputes settle), then paid in the next run once your balance is at least $10. Example: an order on Jul 10 clears Jul 24 and is paid Aug 1; an order on Jul 25 clears Aug 8 and is paid Sep 1."
           />
           <InfoRow
             label="Minimum payout"
             value="$10"
             hint="Balances under $10 roll over to the next month"
-            tooltip="You need at least $10 in unpaid earnings to be paid out. Anything under $10 stays on your balance and rolls into the next monthly run."
+            detail="You need at least $10 in unpaid earnings to be paid out. Anything under $10 stays on your balance and rolls into the next monthly run."
           />
           <InfoRow
             label="Payout method"
@@ -297,7 +337,7 @@ export default function SelfHostedAffiliateDashboard({
             Your branded code appears here once it is generated.
           </p>
         )}
-        {code ? <QrCard link={brandedShareLink(code)} /> : null}
+        {code ? <QrCard link={brandedShareLink(code)} code={code} /> : null}
         {code ? <LinkBuilder code={code} /> : null}
         {code ? (
           <SocialShareButtons
@@ -306,7 +346,12 @@ export default function SelfHostedAffiliateDashboard({
             label="Share in one click"
           />
         ) : null}
-        {data.comp?.enabled && !readOnly ? <CompProspectCard /> : null}
+        {!readOnly ? (
+          <div id="guest-passes" className="scroll-mt-24">
+            {data.comp?.enabled ? <CompProspectCard /> : <GuestPassTeaser />}
+          </div>
+        ) : null}
+        {!readOnly ? <MediaKit /> : null}
         {!readOnly ? (
           <section className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-slate-200 bg-white p-5 text-sm shadow-sm">
             <span className="font-semibold text-slate-900">Need ideas?</span>
@@ -322,6 +367,10 @@ export default function SelfHostedAffiliateDashboard({
 
       {showPerformance ? (
         <TabPanel id="performance" tab={tab}>
+          <ConversionGoal
+            clicksEndpoint={clicksUrl}
+            referredSignupsEndpoint={referredSignupsUrl ?? "/api/affiliates/referred-signups"}
+          />
           <AffiliateClickAnalytics endpoint={clicksUrl} />
           {/* The affiliate's own dashboard uses the default endpoint; the admin
               "view as" page passes an affiliate-scoped admin endpoint so the
@@ -377,13 +426,9 @@ export default function SelfHostedAffiliateDashboard({
         )}
       </TabPanel>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
-        Questions about a payout?{" "}
-        <Link href="/contact" className="font-medium text-orange-700 hover:text-orange-800">
-          Contact our affiliate team
-        </Link>
-        .
-      </div>
+      {!readOnly ? (
+        <AffiliateHelp />
+      ) : null}
     </div>
   );
 }
@@ -485,17 +530,13 @@ function BrandedCodeCard({
   const [copiedLink, setCopiedLink] = useState(false);
 
   const copy = async (text: string, which: "code" | "link") => {
-    try {
-      await navigator.clipboard.writeText(text);
-      if (which === "code") {
-        setCopiedCode(true);
-        window.setTimeout(() => setCopiedCode(false), 2000);
-      } else {
-        setCopiedLink(true);
-        window.setTimeout(() => setCopiedLink(false), 2000);
-      }
-    } catch (error) {
-      console.error("Clipboard copy failed", error);
+    if (!(await copyToClipboard(text))) return;
+    if (which === "code") {
+      setCopiedCode(true);
+      window.setTimeout(() => setCopiedCode(false), 2000);
+    } else {
+      setCopiedLink(true);
+      window.setTimeout(() => setCopiedLink(false), 2000);
     }
   };
 
@@ -552,16 +593,28 @@ function BrandedCodeCard({
   );
 }
 
-/** Small hoverable info marker; uses the native title tooltip pattern. */
-function InfoTip({ text }: { text: string }) {
+/** Shown when an affiliate has no guest passes yet, so they learn it exists. */
+function GuestPassTeaser() {
   return (
-    <span
-      title={text}
-      aria-label={text}
-      className="ml-1 cursor-help align-middle text-slate-400"
-    >
-      &#9432;
-    </span>
+    <section className="rounded-2xl border border-dashed border-slate-300 bg-white p-5 shadow-sm">
+      <div className="flex items-center gap-2">
+        <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-orange-800">
+          VIP
+        </span>
+        <h2 className="text-lg font-semibold text-slate-900">VIP Guest Passes</h2>
+      </div>
+      <p className="mt-1 text-sm text-slate-600">
+        Hand a warm prospect a free single-seat Pro workspace for a few weeks. It carries your
+        referral link, so you earn commission if they upgrade. Passes are switched on per affiliate
+        once you have a few referrals, and they are not on for your account yet.
+      </p>
+      <Link
+        href="/contact?subject=Guest%20passes%20request"
+        className="mt-3 inline-block text-sm font-semibold text-orange-700 hover:text-orange-800"
+      >
+        Ask the team to turn them on
+      </Link>
+    </section>
   );
 }
 
@@ -569,18 +622,15 @@ function StatCard({
   label,
   value,
   hint,
-  tooltip,
 }: {
   label: string;
   value: string;
   hint?: string;
-  tooltip?: string;
 }) {
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
         {label}
-        {tooltip ? <InfoTip text={tooltip} /> : null}
       </p>
       <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{value}</p>
       {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
@@ -592,21 +642,22 @@ function InfoRow({
   label,
   value,
   hint,
-  tooltip,
+  detail,
 }: {
   label: string;
   value: string;
   hint?: string;
-  tooltip?: string;
+  /** Longer explanation, always visible (tooltips do not work on touch or keyboard). */
+  detail?: string;
 }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
         {label}
-        {tooltip ? <InfoTip text={tooltip} /> : null}
       </p>
       <p className="mt-1 text-base font-semibold text-slate-900">{value}</p>
-      {hint ? <p className="text-xs text-slate-500">{hint}</p> : null}
+      {hint ? <p className="text-xs text-slate-600">{hint}</p> : null}
+      {detail ? <p className="mt-2 text-xs text-slate-500">{detail}</p> : null}
     </div>
   );
 }

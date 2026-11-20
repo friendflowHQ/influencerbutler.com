@@ -1327,6 +1327,11 @@ async function setupPauseRow(tabId: number, url: string, statusText: HTMLElement
   };
 }
 
+const SHORTCUT_LABEL: Record<string, string> = {
+  es: "Atajos de una tecla en los resultados de busqueda (j, k, s, ?)",
+  fr: "Raccourcis a une touche dans les resultats de recherche (j, k, s, ?)",
+};
+
 // Header pill: one summary of sign-in, desktop pairing and sync. Click jumps to
 // the card that fixes it.
 async function renderConnectionPill(): Promise<void> {
@@ -1667,6 +1672,13 @@ async function renderSettings(): Promise<void> {
     event.preventDefault();
     void chrome.tabs.create({ url: chrome.runtime.getURL("options.html#sec-auto-accept") });
   };
+
+  // Single-key shortcuts (j / k / s / ?) on search results.
+  const shortcuts = byId<HTMLInputElement>("set-shortcuts");
+  const shortcutsLabel = SHORTCUT_LABEL[String(getLocale()).slice(0, 2)];
+  if (shortcutsLabel) byId("set-shortcuts-label").textContent = shortcutsLabel;
+  shortcuts.checked = settings.singleKeyShortcuts !== false;
+  shortcuts.onchange = () => void patchSettings({ singleKeyShortcuts: shortcuts.checked });
 
   const storefront = byId<HTMLInputElement>("set-storefront");
   storefront.value = settings.storefrontHandle ?? "";

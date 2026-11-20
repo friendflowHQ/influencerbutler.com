@@ -10,7 +10,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+import { copyToClipboard } from "../copy";
 
 import { BUTLERS, BUTLER_CATEGORIES, CATEGORIES, type Category } from "./engagementPosts";
 
@@ -304,31 +306,112 @@ const ASSETS: { label: string; path: string; note: string }[] = [
   },
 ];
 
+const POSTED_KEY = "ib-planner-posted";
+
+function PostedButton({ on, onClick }: { on: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={onClick}
+      className={`rounded-md border px-3 py-1 text-xs font-semibold transition ${
+        on
+          ? "border-emerald-700 bg-emerald-50 text-emerald-800"
+          : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+      }`}
+    >
+      {on ? "Posted" : "Mark as posted"}
+    </button>
+  );
+}
+
 export default function AffiliatePlannerPage() {
   const [active, setActive] = useState<Category | "All">("All");
   const [activeButler, setActiveButler] = useState<string>("All");
   const [copied, setCopied] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [hidePosted, setHidePosted] = useState(false);
+  const [posted, setPosted] = useState<Record<string, boolean>>({});
+  const [code, setCode] = useState<string | null>(null);
+
+  // "Posted" marks live in this browser only (no account data involved).
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(POSTED_KEY);
+      if (raw) setPosted(JSON.parse(raw) as Record<string, boolean>);
+    } catch {
+      /* private mode: marks just won't persist */
+    }
+  }, []);
+  const togglePosted = (key: string) => {
+    setPosted((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      if (!next[key]) delete next[key];
+      try {
+        window.localStorage.setItem(POSTED_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  };
+
+  // Approved affiliates get their tracked link appended to every copied caption.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/affiliates/me-selfhosted", { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { brandedCode?: string | null } | null) => {
+        if (!cancelled && d?.brandedCode) setCode(d.brandedCode);
+      })
+      .catch(() => {
+        /* pending applicants have no code yet: captions copy without a link */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const copy = async (key: string, text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
+    const link = code ? `\n\nhttps://www.influencerbutler.com/?code=${encodeURIComponent(code)}` : "";
+    if (await copyToClipboard(text + link)) {
       setCopied(key);
       window.setTimeout(() => setCopied(null), 2000);
-    } catch (error) {
-      console.error("Clipboard copy failed", error);
     }
   };
 
+  const q = query.trim().toLowerCase();
+  const matches = (...parts: string[]) => !q || parts.some((t) => t.toLowerCase().includes(q));
+  const visible = (key: string) => !(hidePosted && posted[key]);
+
   const shown = useMemo(
-    () => (active === "All" ? IDEAS : IDEAS.filter((i) => i.cat === active)),
-    [active],
+    () =>
+      (active === "All" ? IDEAS : IDEAS.filter((i) => i.cat === active)).filter(
+        (i) => matches(i.feature, i.hook, i.caption) && visible(i.feature),
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [active, q, hidePosted, posted],
+  );
+  const shownValuePosts = VALUE_POSTS.filter(
+    (v) => matches(v.title, v.keyword, v.caption) && visible(`value-${v.keyword}`),
   );
 
   const shownButlers = useMemo(
-    () => (activeButler === "All" ? BUTLERS : BUTLERS.filter((b) => b.slug === activeButler)),
-    [activeButler],
+    () =>
+      (activeButler === "All" ? BUTLERS : BUTLERS.filter((b) => b.slug === activeButler))
+        .map((b) => ({
+          ...b,
+          posts: b.posts.filter(
+            (post) =>
+              matches(b.name, post.title, post.caption) && visible(`${b.slug}-${post.title}`),
+          ),
+        }))
+        .filter((b) => b.posts.length > 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeButler, q, hidePosted, posted],
   );
   const shownPostCount = shownButlers.reduce((sum, b) => sum + b.posts.length, 0);
+  const nextCalendarDay = CALENDAR.find((row) => !posted[`cal-${row.day}`]) ?? null;
 
   return (
     <div className="space-y-8">
@@ -362,6 +445,48 @@ export default function AffiliatePlannerPage() {
             </a>
           ))}
         </nav>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <div className="min-w-0 flex-1 sm:max-w-sm">
+            <label htmlFor="planner-search" className="sr-only">
+              Search captions and ideas
+            </label>
+            <input
+              id="planner-search"
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search ideas, captions, butlers"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-orange-700 focus:ring-2 focus:ring-orange-700/20"
+            />
+          </div>
+          <label className="flex items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={hidePosted}
+              onChange={(e) => setHidePosted(e.target.checked)}
+              className="h-4 w-4"
+            />
+            Hide posts I have marked as posted
+          </label>
+          <span className="text-xs text-slate-600">
+            {code
+              ? "Your tracked link is added when you copy a caption."
+              : "Once you are approved, your tracked link is added when you copy a caption."}
+          </span>
+        </div>
+        {nextCalendarDay ? (
+          <p className="mt-3 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-sm text-slate-800">
+            <span className="font-semibold text-orange-800">Up next on your calendar:</span>{" "}
+            {nextCalendarDay.day}, {nextCalendarDay.focus} ({nextCalendarDay.platform}).{" "}
+            <a href="#calendar" className="font-medium text-orange-700 underline">
+              Open the calendar
+            </a>
+          </p>
+        ) : (
+          <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+            You have checked off the whole 14-day calendar. Nice work.
+          </p>
+        )}
       </header>
 
       <section className="rounded-2xl border border-[#f97316]/30 bg-gradient-to-br from-orange-50 via-white to-white p-5 shadow-sm">
@@ -434,13 +559,16 @@ export default function AffiliatePlannerPage() {
                   ) : (
                     <span className="text-[11px] text-slate-400">Pair with a screen recording</span>
                   )}
-                  <button
-                    type="button"
-                    onClick={() => copy(idea.feature, idea.caption)}
-                    className="rounded-md bg-[#f97316] px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
-                  >
-                    {copied === idea.feature ? "Copied!" : "Copy caption"}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <PostedButton on={Boolean(posted[idea.feature])} onClick={() => togglePosted(idea.feature)} />
+                    <button
+                      type="button"
+                      onClick={() => copy(idea.feature, idea.caption)}
+                      className="rounded-md bg-orange-700 px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-orange-800"
+                    >
+                      {copied === idea.feature ? "Copied!" : "Copy caption"}
+                    </button>
+                  </div>
                 </div>
               </div>
             </article>
@@ -451,7 +579,7 @@ export default function AffiliatePlannerPage() {
       <section id="value-posts" className="scroll-mt-24">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-slate-900">Value posts (comment-to-DM)</h2>
-          <span className="text-xs text-slate-500">{VALUE_POSTS.length} posts</span>
+          <span className="text-xs text-slate-500">{shownValuePosts.length} posts</span>
         </div>
         <p className="mt-1 text-sm text-slate-600">
           The highest-reach format on Facebook and Instagram: teach a real framework, then bait a
@@ -467,7 +595,7 @@ export default function AffiliatePlannerPage() {
         </div>
 
         <div className="mt-5 grid gap-4 md:grid-cols-2">
-          {VALUE_POSTS.map((post) => (
+          {shownValuePosts.map((post) => (
             <article
               key={post.title}
               className="flex flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
@@ -485,11 +613,15 @@ export default function AffiliatePlannerPage() {
               <p className="mt-3 rounded-lg bg-slate-50 p-2 text-xs text-slate-500">
                 📩 On comment: {post.deliver}
               </p>
-              <div className="mt-3 flex justify-end">
+              <div className="mt-3 flex items-center justify-end gap-2">
+                <PostedButton
+                  on={Boolean(posted[`value-${post.keyword}`])}
+                  onClick={() => togglePosted(`value-${post.keyword}`)}
+                />
                 <button
                   type="button"
                   onClick={() => copy(`value-${post.keyword}`, post.caption)}
-                  className="rounded-md bg-[#f97316] px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
+                  className="rounded-md bg-orange-700 px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-orange-800"
                 >
                   {copied === `value-${post.keyword}` ? "Copied!" : "Copy caption"}
                 </button>
@@ -564,11 +696,15 @@ export default function AffiliatePlannerPage() {
                       📸 Screenshot: {post.screenshot}
                     </p>
                     <p className="mt-2 flex-1 whitespace-pre-line text-sm text-slate-600">{post.caption}</p>
-                    <div className="mt-3 flex justify-end">
+                    <div className="mt-3 flex items-center justify-end gap-2">
+                      <PostedButton
+                        on={Boolean(posted[`${butler.slug}-${post.title}`])}
+                        onClick={() => togglePosted(`${butler.slug}-${post.title}`)}
+                      />
                       <button
                         type="button"
                         onClick={() => copy(`${butler.slug}-${post.title}`, post.caption)}
-                        className="rounded-md bg-[#f97316] px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
+                        className="rounded-md bg-orange-700 px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:bg-orange-800"
                       >
                         {copied === `${butler.slug}-${post.title}` ? "Copied!" : "Copy caption"}
                       </button>
@@ -615,10 +751,30 @@ export default function AffiliatePlannerPage() {
           A starter cadence mixing short video, Stories, carousels, and email. Shift it to fit your
           posting schedule.
         </p>
-        <div className="mt-4 overflow-x-auto">
+        <ul className="mt-4 space-y-2 sm:hidden">
+          {CALENDAR.map((row) => (
+            <li key={row.day} className="rounded-xl border border-slate-200 p-3">
+              <label className="flex items-start gap-3 text-sm">
+                <input
+                  type="checkbox"
+                  checked={Boolean(posted[`cal-${row.day}`])}
+                  onChange={() => togglePosted(`cal-${row.day}`)}
+                  className="mt-1 h-4 w-4"
+                />
+                <span>
+                  <span className="block font-semibold text-slate-900">{row.day}</span>
+                  <span className="block text-slate-700">{row.focus}</span>
+                  <span className="block text-xs text-slate-600">{row.platform}</span>
+                </span>
+              </label>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-4 hidden overflow-x-auto sm:block">
           <table className="w-full min-w-[560px] border-collapse text-sm">
             <thead>
               <tr>
+                <th className="border border-slate-200 bg-slate-800 p-2 text-left font-semibold text-white">Done</th>
                 <th className="border border-slate-200 bg-slate-800 p-2 text-left font-semibold text-white">Day</th>
                 <th className="border border-slate-200 bg-slate-800 p-2 text-left font-semibold text-white">Focus</th>
                 <th className="border border-slate-200 bg-slate-800 p-2 text-left font-semibold text-white">Format</th>
@@ -627,6 +783,15 @@ export default function AffiliatePlannerPage() {
             <tbody>
               {CALENDAR.map((row) => (
                 <tr key={row.day}>
+                  <td className="border border-slate-200 p-2">
+                    <input
+                      type="checkbox"
+                      aria-label={`${row.day} done`}
+                      checked={Boolean(posted[`cal-${row.day}`])}
+                      onChange={() => togglePosted(`cal-${row.day}`)}
+                      className="h-4 w-4"
+                    />
+                  </td>
                   <td className="border border-slate-200 p-2 font-medium text-slate-700">{row.day}</td>
                   <td className="border border-slate-200 p-2 text-slate-700">{row.focus}</td>
                   <td className="border border-slate-200 p-2 text-slate-500">{row.platform}</td>

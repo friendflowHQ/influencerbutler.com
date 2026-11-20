@@ -285,6 +285,7 @@ export function NextBestAction({
 }) {
   const [clicks, setClicks] = useState<ClickStats | null>(null);
   const [funnel, setFunnel] = useState<FunnelStats | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -304,14 +305,45 @@ export function NextBestAction({
         if (cancelled) return;
         if (c.ok) setClicks((await c.json()) as ClickStats);
         if (f.ok) setFunnel(((await f.json()) as { funnel: FunnelStats }).funnel);
+        if (!c.ok || !f.ok) setFailed(true);
       } catch (err) {
         console.warn("next-best-action fetch skipped", err);
+        if (!cancelled) setFailed(true);
       }
     })();
     return () => {
       cancelled = true;
     };
   }, [clicksEndpoint]);
+
+  if (failed && (!clicks || !funnel)) {
+    // Stats did not load, so fall back to a tip that is true for everyone.
+    return (
+      <section
+        aria-labelledby="aff-next-title"
+        className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5"
+      >
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-orange-800">
+            Suggested next step
+          </p>
+          <h2 id="aff-next-title" className="mt-0.5 text-sm font-semibold text-slate-900">
+            Post your link somewhere new this week
+          </h2>
+          <p className="mt-0.5 text-sm text-slate-600">
+            We could not load your stats just now, but fresh exposure always helps. Grab post
+            ideas in the planner.
+          </p>
+        </div>
+        <Link
+          href="/dashboard/affiliates/planner"
+          className="inline-flex flex-none items-center rounded-lg bg-orange-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-orange-700"
+        >
+          See post ideas
+        </Link>
+      </section>
+    );
+  }
 
   if (!clicks || !funnel) return null;
 
@@ -387,8 +419,59 @@ export function NextBestAction({
 
 /* ---------------------------------- QR code -------------------------------- */
 
-export function QrCard({ link }: { link: string }) {
+function escapeHtml(v: string): string {
+  return v.replace(/[&<>"']/g, (c) =>
+    c === "&" ? "&amp;" : c === "<" ? "&lt;" : c === ">" ? "&gt;" : c === '"' ? "&quot;" : "&#39;",
+  );
+}
+
+export function QrCard({ link, code }: { link: string; code?: string | null }) {
   const [src, setSrc] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  // 1200px PNG for print, generated on demand so the page stays light.
+  const downloadPrintSize = async () => {
+    setBusy(true);
+    try {
+      const big = await QRCode.toDataURL(link, { margin: 2, width: 1200, errorCorrectionLevel: "M" });
+      const a = document.createElement("a");
+      a.href = big;
+      a.download = "influencer-butler-qr-print.png";
+      a.click();
+    } catch (err) {
+      console.warn("qr print export failed", err);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // A one-page printable card (QR, code, short URL). Opens the browser print
+  // dialog, which also offers "Save as PDF".
+  const openPrintableCard = async () => {
+    setBusy(true);
+    try {
+      const big = await QRCode.toDataURL(link, { margin: 2, width: 900, errorCorrectionLevel: "M" });
+      const w = window.open("", "_blank", "width=800,height=1000");
+      if (!w) return;
+      w.document.write(
+        `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Influencer Butler card</title>` +
+          `<style>body{font-family:Arial,sans-serif;text-align:center;margin:0;padding:48px;color:#0f172a}` +
+          `h1{font-size:32px;margin:0 0 8px}p{font-size:20px;margin:8px 0}img{width:420px;height:420px;margin:24px 0}` +
+          `.code{display:inline-block;border:3px dashed #c2410c;border-radius:12px;padding:10px 24px;` +
+          `font:700 36px monospace;letter-spacing:4px}</style></head><body>` +
+          `<h1>Automation for creators</h1><p>Scan to try Influencer Butler</p>` +
+          `<img src="${big}" alt="QR code for Influencer Butler">` +
+          (code ? `<p>Or use my code for 15% off</p><div class="code">${escapeHtml(code)}</div>` : "") +
+          `<p style="font-size:16px;color:#475569">influencerbutler.com</p>` +
+          `<script>window.onload=function(){window.print()}<\/script></body></html>`,
+      );
+      w.document.close();
+    } catch (err) {
+      console.warn("qr card failed", err);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -423,13 +506,31 @@ export function QrCard({ link }: { link: string }) {
           automatically.
         </p>
         {src ? (
-          <a
-            href={src}
-            download="influencer-butler-qr.png"
-            className="mt-2 inline-block text-sm font-medium text-orange-700 hover:text-orange-800"
-          >
-            Download PNG
-          </a>
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm font-medium">
+            <a
+              href={src}
+              download="influencer-butler-qr.png"
+              className="text-orange-700 hover:text-orange-800"
+            >
+              Download PNG
+            </a>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={downloadPrintSize}
+              className="text-orange-700 hover:text-orange-800 disabled:opacity-60"
+            >
+              Download print size (1200 px)
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={openPrintableCard}
+              className="text-orange-700 hover:text-orange-800 disabled:opacity-60"
+            >
+              Printable card / PDF
+            </button>
+          </div>
         ) : null}
       </div>
     </section>

@@ -469,6 +469,12 @@
       "run_at": "document_idle"
     }
   ],
+  "commands": {
+    "toggle-badges": {
+      "suggested_key": { "default": "Alt+Shift+B" },
+      "description": "Show or hide Influencer Butler badges on the page"
+    }
+  },
   "action": {
     "default_popup": "popup.html",
     "default_icon": {

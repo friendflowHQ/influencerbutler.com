@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { formatUsdFromCents } from "@/lib/affiliates";
 import { EarningsTrend, type DailyEarning } from "./AffiliateExtras";
+import { copyToClipboard } from "./copy";
 
 /**
  * Top-of-dashboard pieces for the self-hosted affiliate dashboard:
@@ -64,12 +65,9 @@ export function EarningsHero({
   const heldForReview = overCap || autopayArmed === false;
 
   const copy = async (text: string, which: "link" | "code") => {
-    try {
-      await navigator.clipboard.writeText(text);
+    if (await copyToClipboard(text)) {
       setCopied(which);
       window.setTimeout(() => setCopied(null), 2000);
-    } catch (error) {
-      console.error("Clipboard copy failed", error);
     }
   };
 
@@ -98,6 +96,19 @@ export function EarningsHero({
               ? `Next payout: ${next.label} (in ${next.days} ${next.days === 1 ? "day" : "days"})`
               : `${formatUsdFromCents(payableAtNextRunCents)} of ${formatUsdFromCents(MIN_PAYOUT_CENTS)} will be payable by the ${next.label} run. It rolls to the next one.`}
           </p>
+          {meetsMinimum && heldForReview ? (
+            <details className="mt-2 text-xs text-slate-600">
+              <summary className="cursor-pointer font-medium text-orange-700 hover:text-orange-800">
+                Why is this on hold?
+              </summary>
+              <p className="mt-1 max-w-md">
+                To protect against mistakes and fraud, larger payouts (and every payout while we
+                are still reviewing them by hand) get a quick check from our team before they are
+                released. Nothing is wrong with your account. It usually adds a few days, and your
+                earnings stay on your balance in the meantime.
+              </p>
+            </details>
+          ) : null}
         {shareLink || code ? (
           <div className="mt-4 flex flex-wrap gap-2" aria-live="polite">
             {shareLink ? (
@@ -131,11 +142,14 @@ function PipelineStep({
   label,
   value,
   hint,
+  meaning,
   highlight,
 }: {
   label: string;
   value: string;
   hint: string;
+  /** Plain-English definition of the stage, always visible. */
+  meaning: string;
   highlight?: boolean;
 }) {
   return (
@@ -152,7 +166,8 @@ function PipelineStep({
       >
         {value}
       </p>
-      <p className={`text-xs ${highlight ? "text-orange-800" : "text-slate-500"}`}>{hint}</p>
+      <p className={`text-xs ${highlight ? "text-orange-800" : "text-slate-600"}`}>{hint}</p>
+      <p className={`mt-1 text-xs ${highlight ? "text-orange-900/80" : "text-slate-500"}`}>{meaning}</p>
     </li>
   );
 }
@@ -206,16 +221,37 @@ export function PayoutPipeline({
         </details>
       </div>
 
+      <p className="mt-2 text-sm text-slate-600">
+        We pay monthly via PayPal, on or around the 1st, once your payable balance reaches $10.
+        Each order is held for 14 days first.
+      </p>
+
       <ol className="mt-3 grid gap-3 sm:grid-cols-4">
-        <PipelineStep label="Upcoming" value={formatUsdFromCents(upcomingCents)} hint="Annual plan months" />
-        <PipelineStep label="Clearing" value={formatUsdFromCents(clearingCents)} hint="~14-day hold" />
+        <PipelineStep
+          label="Upcoming"
+          value={formatUsdFromCents(upcomingCents)}
+          hint="Annual plan months"
+          meaning="Future months of annual plans you referred. They are paid as each month comes due."
+        />
+        <PipelineStep
+          label="Clearing"
+          value={formatUsdFromCents(clearingCents)}
+          hint="~14-day hold"
+          meaning="Earned, but in a 14-day safety hold so refunds and disputes can settle."
+        />
         <PipelineStep
           label="Payable"
           value={formatUsdFromCents(payableCents)}
           hint={runMeetsMinimum ? (runHeld ? `${next.label}, after review` : `Pays ${next.label}`) : "Below $10 minimum"}
+          meaning="Cleared and ready. This is what the next monthly run sends you."
           highlight
         />
-        <PipelineStep label="Paid" value={formatUsdFromCents(paidCents)} hint="To date" />
+        <PipelineStep
+          label="Paid"
+          value={formatUsdFromCents(paidCents)}
+          hint="To date"
+          meaning="Already sent to your PayPal."
+        />
       </ol>
 
       <div className="mt-4">
@@ -305,7 +341,10 @@ export function GetPaidChecklist({
   payoutReady,
   readOnly,
   onJump = jumpTo,
+  unpaidCents = 0,
 }: {
+  /** Earnings waiting on this setup; when above zero the heading says so. */
+  unpaidCents?: number;
   taxStatus: TaxStatus;
   payoutReady: boolean;
   readOnly: boolean;
@@ -345,9 +384,15 @@ export function GetPaidChecklist({
     >
       <div className="flex items-baseline justify-between gap-2">
         <h2 id="aff-checklist-title" className="text-sm font-semibold text-slate-900">
-          Get paid: {done} of 2 done
+          {unpaidCents > 0 && !readOnly
+            ? `${formatUsdFromCents(unpaidCents)} is waiting. Finish payout setup (${done} of 2 done) so we can send it.`
+            : `Get paid: ${done} of 2 done`}
         </h2>
-        <p className="text-xs text-slate-600">You can share and earn before finishing these.</p>
+        <p className="text-xs text-slate-600">
+          {unpaidCents > 0 && !readOnly
+            ? "Your earnings are safe and keep building while you finish."
+            : "You can share and earn before finishing these."}
+        </p>
       </div>
       <div
         className="mt-2 h-1.5 overflow-hidden rounded-full bg-white"

@@ -2,7 +2,10 @@ import { enableChipTips } from "../../ui/chip-tips";
 import { formatAge, isStale } from "../../shared/format-age";
 import { explainCopy, explainScore } from "../score/explain";
 import { openAcceptSheet } from "./accept-sheet";
-import { initShortlist, shortlistButton, teardownShortlist } from "./shortlist";
+import { initShortlist, shortlistButton, teardownShortlist, toggleShortlist } from "./shortlist";
+import type { ShortlistItem } from "./shortlist-model";
+import type { ShortcutAction } from "../../content/shortcuts";
+import { showShortcutsHelp } from "../../content/shortcuts-help";
 import { orderItems } from "./accept-sheet-model";
 import { defaultPrefs, loadViewPrefs, priceForCurrency, saveViewPrefs } from "../../shared/view-prefs";
 import { createInlineShadow } from "../../ui/host";
@@ -851,6 +854,52 @@ export async function initSearchOverlay(
       return { ok };
     },
   });
+  // Keyboard shortcuts: content/shortcuts.ts dispatches "ib-shortcut" for j / k /
+  // s / ?, and the extension command dispatches "ib-toggle-badges". Listeners die
+  // with this run (the next init aborts the signal).
+  let focusedRow: Row | null = null;
+  const highlight = (row: Row | null): void => {
+    if (focusedRow) {
+      focusedRow.tile.el.style.outline = "";
+      focusedRow.tile.el.style.outlineOffset = "";
+    }
+    focusedRow = row;
+    if (row) {
+      row.tile.el.style.outline = "3px solid #c2410c";
+      row.tile.el.style.outlineOffset = "2px";
+      const calm = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      row.tile.el.scrollIntoView({ block: "center", behavior: calm ? "auto" : "smooth" });
+    }
+  };
+  const navRows = (): Row[] =>
+    rows
+      .filter((r) => r.tile.el.isConnected && r.tile.el.style.display !== "none")
+      .sort((a, b) => (a.tile.el.compareDocumentPosition(b.tile.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+  window.addEventListener(
+    "ib-shortcut",
+    (event) => {
+      const detail = (event as CustomEvent<{ action: ShortcutAction; handled: boolean }>).detail;
+      const list = navRows();
+      if (!detail || list.length === 0) return;
+      if (detail.action === "next" || detail.action === "prev") {
+        const at = focusedRow ? list.indexOf(focusedRow) : -1;
+        const next = detail.action === "next" ? Math.min(list.length - 1, at + 1) : Math.max(0, at - 1);
+        highlight(list[next] ?? null);
+        detail.handled = true;
+      } else if (detail.action === "shortlist") {
+        if (!focusedRow) return;
+        toggleShortlist(shortlistItemFor(focusedRow));
+        detail.handled = true;
+      } else if (detail.action === "help") {
+        showShortcutsHelp(String(getLocale()));
+        detail.handled = true;
+      }
+    },
+    { signal: run.signal },
+  );
+  window.addEventListener("ib-toggle-badges", () => toolbar.toggleBadges(), { signal: run.signal });
+  run.signal.addEventListener("abort", () => highlight(null), { once: true });
+
   mountToolbar(module.toolbarSlot(first.tile.el), toolbar.host);
   // Lead with the best opportunities. Not on Walmart or Target: reordering a
   // React-managed grid at load fights its re-renders; the toolbar sort still works.
@@ -1211,6 +1260,19 @@ function resolveConvo(row: Row): void {
   row.convo = chip;
 }
 
+function shortlistItemFor(row: Row): ShortlistItem {
+  return {
+    asin: row.tile.asin,
+    marketplace: row.marketplace,
+    title: row.tile.title,
+    imageUrl: row.tile.imageUrl,
+    priceCents: row.tile.priceCents ?? row.market?.priceCents ?? null,
+    currency: row.tile.currency ?? null,
+    href: row.tile.href,
+    retailer: row.retailer,
+  };
+}
+
 function renderBadge(row: Row, settings: Settings): void {
   const body = row.badgeBody;
   body.replaceChildren();
@@ -1317,18 +1379,7 @@ function renderBadge(row: Row, settings: Settings): void {
   // The "..." action menu: Add to list / Copy link / Open page always, plus the
   // desktop-bridge actions when the app is paired (else an upsell). Mounted last
   // so it sits at the end of the chip row.
-  body.append(
-    shortlistButton({
-      asin: row.tile.asin,
-      marketplace: row.marketplace,
-      title: row.tile.title,
-      imageUrl: row.tile.imageUrl,
-      priceCents: row.tile.priceCents ?? row.market?.priceCents ?? null,
-      currency: row.tile.currency ?? null,
-      href: row.tile.href,
-      retailer: row.retailer,
-    }),
-  );
+  body.append(shortlistButton(shortlistItemFor(row)));
   mountTileMenuButton(
     body,
     {

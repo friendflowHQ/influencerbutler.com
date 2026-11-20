@@ -1670,6 +1670,18 @@
         "fr-FR"
       ],
       "audience": "power"
+    },
+    {
+      "id": "affiliate-program-dashboard",
+      "title": "Affiliate dashboard: your link, your earnings, and how you get paid",
+      "category": "Partnerships",
+      "summary": "Find your branded code and link, read the payout stages (Upcoming, Clearing, Payable, Paid), set up your tax form and PayPal email, hand out VIP Guest Passes, and join the public leaderboard.",
+      "order": 1003,
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
     }
   ]
 }

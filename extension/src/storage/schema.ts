@@ -160,6 +160,9 @@ export type Settings = {
   // Hostnames (no www) where the user paused every overlay from the popup's
   // "Pause on this site" row. Checked once per page run in the content script.
   pausedHosts: string[];
+  // Single-key shortcuts on search results (j/k/s/?). On by default; the popup
+  // Settings card and the cheat sheet can turn them off.
+  singleKeyShortcuts: boolean;
   // Cross-device relay: the default desktop app on ANOTHER computer to send
   // commands to when no local app is running here (e.g. queue a harvested deal
   // to post from the other machine). Chosen in the popup's Remote devices
@@ -1079,6 +1082,7 @@ export const DEFAULTS: StorageShape = {
     creatorMode: "both",
     dealSources: [],
     pausedHosts: [],
+    singleKeyShortcuts: true,
     relayDefaultTarget: null,
     locale: "auto",
     tools: {

@@ -100,8 +100,21 @@ export default function AffiliatesPage() {
     return (
       <div className="space-y-4">
         <h1 className="text-2xl font-semibold text-slate-900">Affiliates</h1>
-        <div className="rounded-xl border border-amber-300 bg-amber-50 p-5 text-sm text-amber-800 shadow-sm">
-          {loadError ?? "We couldn't load your affiliate data."}
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 p-5 text-sm text-amber-800 shadow-sm"
+        >
+          <span>{loadError ?? "We couldn't load your affiliate data."}</span>
+          <button
+            type="button"
+            onClick={() => {
+              setLoadError(null);
+              void load();
+            }}
+            className="rounded-lg bg-orange-700 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-800"
+          >
+            Try again
+          </button>
         </div>
       </div>
     );
@@ -109,6 +122,10 @@ export default function AffiliatesPage() {
 
   if (data.state === "none") {
     return <AffiliateApplyInline onSubmitted={() => load({ silent: true })} />;
+  }
+
+  if (data.state === "pending" && isDeclined(data.application?.status)) {
+    return <DeclinedState displayName={data.application?.full_name ?? null} />;
   }
 
   if (data.state === "pending") {
@@ -124,6 +141,54 @@ export default function AffiliatesPage() {
     <div className="space-y-6">
       <SelfHostedAffiliateDashboard displayName={data.displayName} />
       <LeaderboardOptInCard />
+    </div>
+  );
+}
+
+function isDeclined(status?: string): boolean {
+  const s = (status ?? "").toLowerCase();
+  return s === "rejected" || s === "declined" || s === "denied";
+}
+
+function DeclinedState({ displayName }: { displayName: string | null }) {
+  return (
+    <div className="space-y-6">
+      <header>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-700">
+          Affiliate program
+        </p>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+          {displayName ? `Thanks for applying, ${displayName}.` : "Thanks for applying."}
+        </h1>
+      </header>
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
+        <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-slate-700">
+          Not approved this time
+        </div>
+        <h2 className="mt-4 text-xl font-semibold text-slate-900">
+          We could not approve your application right now
+        </h2>
+        <p className="mt-2 text-sm text-slate-600">
+          That is usually about audience fit or a thin promotion plan, and it is not permanent. You
+          are welcome to reply with more detail (your channels, audience size, and how you would
+          share Influencer Butler) and we will take another look. In the meantime the Content
+          Planner is open to you.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-3 text-sm font-semibold">
+          <Link
+            href="/contact?subject=Affiliate%20application%20follow-up"
+            className="rounded-lg bg-orange-700 px-4 py-2 text-white hover:bg-orange-800"
+          >
+            Send more details
+          </Link>
+          <Link
+            href="/dashboard/affiliates/planner"
+            className="rounded-lg border border-slate-300 px-4 py-2 text-slate-800 hover:bg-slate-50"
+          >
+            Open the Content Planner
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }

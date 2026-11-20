@@ -11,6 +11,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { copyToClipboard } from "./copy";
 
 // Every competitor claim in this file is "as of" this date. Update it every
 // time the rows/copy are re-verified against the competitors' live sites.
@@ -511,12 +512,9 @@ export default function CompetitorPlaybook({ code }: { code?: string }) {
   const trackedExtLink = extensionLink(code);
 
   const copy = async (key: string, text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
+    if (await copyToClipboard(text)) {
       setCopied(key);
       window.setTimeout(() => setCopied(null), 2000);
-    } catch (error) {
-      console.error("Clipboard copy failed", error);
     }
   };
 
@@ -596,7 +594,41 @@ export default function CompetitorPlaybook({ code }: { code?: string }) {
         {"   "}
         <span className="font-bold text-slate-400">{"✗"} Not offered (as of last review)</span>
       </p>
-      <div className="mt-3 overflow-x-auto">
+      {/* Phones: one stacked card per capability instead of a 1280px table. */}
+      <div className="mt-3 space-y-3 md:hidden">
+        {ROWS.map((r) => (
+          <article key={r.cap} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+            <h4 className="text-sm font-semibold text-slate-900">{r.cap}</h4>
+            <dl className="mt-2 space-y-1.5 text-sm">
+              {(
+                [
+                  ["Influencer Butler", r.ib],
+                  ["Oink", r.oink],
+                  ["Viral Vue", r.vue],
+                  ["Cha-Ching", r.cha],
+                  ["Logie", r.logie],
+                  ["JoyLink", r.joy],
+                  ["ManyChat", r.many],
+                  ["Deeplink tools", r.deep],
+                ] as const
+              ).map(([name, cell]) => (
+                <div
+                  key={name}
+                  className={`flex items-start justify-between gap-3 rounded-md px-2 py-1 ${
+                    name === "Influencer Butler" ? "bg-orange-50 font-medium" : ""
+                  }`}
+                >
+                  <dt className="text-slate-600">{name}</dt>
+                  <dd className="text-right">
+                    <Cell v={cell.v} t={cell.t} />
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </article>
+        ))}
+      </div>
+      <div className="mt-3 hidden overflow-x-auto md:block">
         <table className="w-full min-w-[1280px] border-collapse text-sm">
           <thead>
             <tr>

@@ -2291,3 +2291,9 @@ button.tile-chip.more:focus-visible { outline: 3px solid #1d4ed8; outline-offset
 .shortlist-count { font-weight: 800; }
 .shortlist-select, .shortlist-input { font: inherit; font-size: 12px; padding: 4px 6px; border: 1px solid #cbd5e1; border-radius: 8px; max-width: 160px; }
 .shortlist-status { font-weight: 600; color: #475569; min-height: 1.2em; }
+
+/* Keyboard shortcut cheat sheet (content/shortcuts-help.ts). */
+.shortcuts-table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+.shortcuts-table th { text-align: left; padding: 4px 12px 4px 0; white-space: nowrap; font-weight: 400; }
+.shortcuts-table td { padding: 4px 0; color: #0f172a; }
+.shortcuts-key { font-family: inherit; font-size: 12px; font-weight: 700; padding: 1px 7px; border: 1px solid #cbd5e1; border-bottom-width: 2px; border-radius: 6px; background: #f8fafc; color: #0f172a; }

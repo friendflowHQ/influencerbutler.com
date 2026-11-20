@@ -90,7 +90,7 @@ export default function CompProspectCard() {
     try {
       const res = await fetch("/api/affiliates/comps", { cache: "no-store" });
       if (!res.ok) {
-        setLoadError(`Could not load your comps (${res.status}).`);
+        setLoadError(`Could not load your guest passes (${res.status}).`);
         return;
       }
       const json = (await res.json()) as CompsData;
@@ -118,7 +118,7 @@ export default function CompProspectCard() {
       });
       const json = (await res.json().catch(() => ({}))) as { error?: string; recipientEmail?: string };
       if (!res.ok) {
-        setError(json.error ?? "Could not send the comp. Please try again.");
+        setError(json.error ?? "Could not send the guest pass. Please try again.");
         return;
       }
       setSuccess(`Sent. ${json.recipientEmail ?? email.trim()} now has free Pro.`);
@@ -258,7 +258,7 @@ export default function CompProspectCard() {
         </button>
         {outOfComps ? (
           <span className="text-xs text-slate-500">
-            You have used this month&apos;s comps. Your allowance resets on the 1st.
+            You have used this month&apos;s guest passes. Your allowance resets on the 1st.
           </span>
         ) : null}
       </div>

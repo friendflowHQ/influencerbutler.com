@@ -60,6 +60,9 @@ export type SearchToolbar = {
   // Update the accept-all button: hidden at 0, otherwise "Accept campaigns on
   // this page (N)".
   setAcceptCount: (count: number) => void;
+  // Flip "Hide badges" exactly as a click on its button would (used by the
+  // keyboard shortcut); no-op when the toolbar has no such button.
+  toggleBadges: () => void;
   // Put the controls back to a view (used by "Reset view").
   setView: (view: ViewPrefs) => void;
   // "Why is this first?" line under the bar; null hides it.
@@ -285,6 +288,7 @@ export function renderToolbar(cb: ToolbarCallbacks): SearchToolbar {
   });
   bar.append(keyBtn);
   let paintHideBtn: (hidden: boolean) => void = () => undefined;
+  let toggleBadgesFn: () => void = () => undefined;
   if (cb.onToggleBadges) {
     const hideBtn = el("button", "btn secondary small") as HTMLButtonElement;
     hideBtn.type = "button";
@@ -293,12 +297,13 @@ export function renderToolbar(cb: ToolbarCallbacks): SearchToolbar {
       hideBtn.setAttribute("aria-pressed", String(hidden));
     };
     paintHideBtn(view.badgesHidden);
-    hideBtn.addEventListener("click", () => {
+    toggleBadgesFn = () => {
       view.badgesHidden = !view.badgesHidden;
       cb.onToggleBadges?.(view.badgesHidden);
       paintHideBtn(view.badgesHidden);
       viewChanged();
-    });
+    };
+    hideBtn.addEventListener("click", () => toggleBadgesFn());
     bar.append(hideBtn);
   }
 
@@ -353,6 +358,7 @@ Tiles found: ${tiles}`,
   return {
     host,
     setView: applyView,
+    toggleBadges: () => toggleBadgesFn(),
     setTopPickReason: (text: string | null) => {
       topLine.hidden = !text;
       topLine.textContent = text ?? "";

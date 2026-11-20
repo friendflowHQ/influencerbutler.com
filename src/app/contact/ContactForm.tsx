@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Script from "next/script";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 type Topic = "question" | "bug" | "feature";
 
@@ -20,6 +20,16 @@ export default function ContactForm() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [email, setEmail] = useState("");
+
+  // Links can pre-fill the subject, e.g. /contact?subject=Affiliate%20question.
+  useEffect(() => {
+    try {
+      const subject = new URLSearchParams(window.location.search).get("subject");
+      if (subject) setTitle(subject.slice(0, 200));
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const reset = () => {
     setTopic("question");

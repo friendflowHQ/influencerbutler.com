@@ -220,6 +220,16 @@ try {
   warn("context-menu", "unavailable", error);
 }
 
+// Keyboard command (manifest "commands"): tell the active tab to show or hide
+// the search-tile badges. Rebindable at chrome://extensions/shortcuts.
+chrome.commands?.onCommand.addListener((command) => {
+  if (command !== "toggle-badges") return;
+  void chrome.tabs
+    .query({ active: true, currentWindow: true })
+    .then(([tab]) => (tab?.id ? chrome.tabs.sendMessage(tab.id, { kind: "TOGGLE_BADGES" }) : undefined))
+    .catch(() => undefined);
+});
+
 chrome.runtime.onInstalled.addListener((details) => {
   // Record the install/update so the post-update "What's New" notice knows
   // whether (and what) to announce. A fresh install announces nothing.

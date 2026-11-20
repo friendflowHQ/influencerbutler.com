@@ -3,9 +3,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useKeyboardShortcutsContext } from "@/contexts/KeyboardShortcutsContext";
+import { ADMIN_NAV_GROUPS, visibleAdminNav } from "@/lib/admin-nav";
+import { useAdminAttention } from "@/components/admin/useAdminAttention";
 
 // Sidebar is cramped, so the single button points at the /download chooser page
 // where the user picks Windows or Mac, rather than stacking platform buttons.
@@ -17,33 +19,61 @@ type SidebarProps = {
   websiteHref?: string;
 };
 
-type NavChild = { href: string; label: string };
+type NavChild = {
+  href: string;
+  label: string;
+  /** Same-page hash links use a plain anchor so the browser fires hashchange. */
+  hash?: boolean;
+};
 type NavItem = { href: string; label: string; children?: NavChild[] };
+type NavGroup = { title: string | null; items: NavItem[] };
 
-const navItems: NavItem[] = [
-  { href: "/dashboard", label: "Overview" },
-  { href: "/dashboard/earnings", label: "Earnings" },
-  { href: "/dashboard/profile", label: "Profile" },
-  { href: "/dashboard/subscription", label: "Subscription" },
-  { href: "/dashboard/billing", label: "Billing" },
+const navGroups: NavGroup[] = [
   {
-    href: "/dashboard/affiliates",
-    label: "Affiliates",
-    children: [
-      { href: "/dashboard/affiliates/planner", label: "Content Planner" },
-      { href: "/dashboard/affiliates/playbook", label: "Competitor Playbook" },
+    title: null,
+    items: [
+      { href: "/dashboard", label: "Overview" },
+      { href: "/dashboard/profile", label: "Profile" },
     ],
   },
-  { href: "/dashboard/foyer", label: "Foyer Subscribers" },
-  { href: "/dashboard/foyer/sales", label: "Foyer Sales" },
-  { href: "/dashboard/events", label: "Upcoming Events" },
-  { href: "/dashboard/extension", label: "Extension" },
-  { href: "/dashboard/api-keys", label: "API Keys" },
-  { href: "/dashboard/ai-concierge", label: "AI Assistant" },
-  { href: "/dashboard/book", label: "Book a Call" },
-  { href: "/dashboard/feedback", label: "Leave a Review" },
-  { href: "/help", label: "Help & Tutorials" },
-  { href: "/help/community", label: "Community Q&A" },
+  {
+    title: "Money",
+    items: [
+      { href: "/dashboard/earnings", label: "Amazon earnings" },
+      { href: "/dashboard/subscription", label: "Subscription" },
+      { href: "/dashboard/billing", label: "Billing" },
+    ],
+  },
+  {
+    title: "Grow",
+    items: [
+      {
+        href: "/dashboard/affiliates",
+        label: "Affiliates",
+        children: [
+          { href: "/dashboard/affiliates#guest-passes", label: "Guest Passes", hash: true },
+          { href: "/dashboard/affiliates#leaderboard", label: "Leaderboard", hash: true },
+          { href: "/dashboard/affiliates/planner", label: "Content Planner" },
+          { href: "/dashboard/affiliates/playbook", label: "Competitor Playbook" },
+        ],
+      },
+      { href: "/dashboard/foyer", label: "Foyer Subscribers" },
+      { href: "/dashboard/foyer/sales", label: "Foyer Sales" },
+      { href: "/dashboard/events", label: "Upcoming Events" },
+      { href: "/dashboard/extension", label: "Extension" },
+      { href: "/dashboard/api-keys", label: "API Keys" },
+    ],
+  },
+  {
+    title: "Help",
+    items: [
+      { href: "/dashboard/ai-concierge", label: "AI Assistant" },
+      { href: "/dashboard/book", label: "Book a Call" },
+      { href: "/dashboard/feedback", label: "Leave a Review" },
+      { href: "/help", label: "Help & Tutorials" },
+      { href: "/help/community", label: "Community Q&A" },
+    ],
+  },
 ];
 
 export default function Sidebar({ email, profileName, websiteHref = "/" }: SidebarProps) {
@@ -58,6 +88,44 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
   const [adminPerms, setAdminPerms] = useState<string[]>([]);
   const [pendingTestimonials, setPendingTestimonials] = useState(0);
   const { setHelpOpen } = useKeyboardShortcutsContext();
+  const asideRef = useRef<HTMLElement | null>(null);
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  // Mobile drawer: Escape closes it, Tab stays inside it, and focus returns to
+  // the hamburger button when it closes.
+  useEffect(() => {
+    if (!isMobileOpen) return;
+    const aside = asideRef.current;
+    const focusables = () =>
+      Array.from(
+        aside?.querySelectorAll<HTMLElement>("a[href], button:not([disabled])") ?? [],
+      ).filter((el) => el.offsetParent !== null);
+    focusables()[0]?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsMobileOpen(false);
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const list = focusables();
+      if (list.length === 0) return;
+      const first = list[0];
+      const last = list[list.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    const button = menuButtonRef.current;
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      button?.focus();
+    };
+  }, [isMobileOpen]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -150,39 +218,8 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
     };
   }, []);
 
-  const adminNavItems = useMemo(() => {
-    if (!adminRole) return [];
-    const perms = new Set(adminPerms);
-    const isAdmin = adminRole === "admin";
-    // `built` gates links to pages that exist; flip on as pages ship.
-    const items = [
-      { href: "/dashboard/admin", label: "Overview", perm: "reports.view", built: true },
-      { href: "/dashboard/admin/growth", label: "Growth", perm: "reports.view", built: true },
-      { href: "/dashboard/admin/finance", label: "Finance", perm: "finance.view", built: true },
-      { href: "/dashboard/admin/stores", label: "Creator stores", perm: "finance.view", built: true },
-      { href: "/dashboard/admin/emails", label: "Emails", perm: "reports.view", built: true },
-      { href: "/dashboard/admin/bundle", label: "Bundle", perm: "marketing.send", built: true },
-      { href: "/dashboard/admin/blog", label: "Blog", perm: "blog.manage", built: true },
-      { href: "/dashboard/admin/affiliates", label: "Affiliates", perm: "affiliates.view", built: true },
-      { href: "/dashboard/admin/community", label: "Community", perm: "community.view", built: true },
-      { href: "/dashboard/admin/support", label: "Support", perm: "support.view", built: true },
-      { href: "/dashboard/admin/extension-feedback", label: "Extension feedback", perm: "support.view", built: true },
-      { href: "/dashboard/admin/scheduling", label: "Scheduling", perm: "scheduling.view", built: true },
-      { href: "/dashboard/admin/events", label: "Events", perm: "events.manage", built: true },
-      { href: "/dashboard/admin/catalogue-harvest", label: "Catalogue", perm: "catalogue.view", built: true },
-      { href: "/dashboard/admin/activity", label: "Activity widget", perm: "activity.manage", built: true },
-      { href: "/dashboard/admin/testimonials", label: "Testimonials", perm: "testimonials.moderate", built: true },
-      { href: "/dashboard/admin/cancellations", label: "Cancellations", perm: "reports.view", built: true },
-      { href: "/dashboard/admin/users", label: "Users", perm: "users.view", built: true },
-      { href: "/dashboard/admin/comps", label: "Comps", perm: "licenses.view", built: true },
-      { href: "/dashboard/admin/invites", label: "Invites", perm: "licenses.view", built: true },
-      { href: "/dashboard/admin/webhooks", label: "Webhooks", perm: "webhooks.view", built: true },
-      { href: "/dashboard/admin/audit", label: "Audit log", perm: "audit.view", built: true },
-      { href: "/dashboard/admin/staff", label: "Assistants", perm: "staff.manage", built: true },
-      { href: "/dashboard/admin/ai-sessions", label: "AI Concierge sessions", perm: "ai_sessions.view", built: true },
-    ];
-    return items.filter((i) => i.built && (isAdmin || perms.has(i.perm)));
-  }, [adminRole, adminPerms]);
+  const adminNavItems = useMemo(() => visibleAdminNav(adminRole, adminPerms), [adminRole, adminPerms]);
+  const attention = useAdminAttention(adminRole !== null);
 
   const userDisplay = useMemo(() => {
     if (profileDisplayName && profileDisplayName.trim().length > 0) return profileDisplayName;
@@ -203,8 +240,10 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
   return (
     <>
       <button
+        ref={menuButtonRef}
         type="button"
         aria-label="Open menu"
+        aria-expanded={isMobileOpen}
         onClick={() => setIsMobileOpen(true)}
         className="lg:hidden fixed top-4 left-4 z-40 inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-2 text-slate-700 shadow-sm"
       >
@@ -224,6 +263,8 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
       ) : null}
 
       <aside
+        ref={asideRef}
+        aria-label="Dashboard menu"
         className={[
           "fixed inset-y-0 left-0 z-40 flex w-72 flex-col overflow-y-auto border-r border-slate-200 bg-white p-6 shadow-sm transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 lg:shadow-none",
           isMobileOpen ? "translate-x-0" : "-translate-x-full",
@@ -267,51 +308,77 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
           </button>
         </div>
 
-        <nav className="mt-8 flex flex-1 flex-col gap-2" aria-label="Dashboard navigation">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
-            // Show a parent's children only while inside that section, so the
-            // cramped sidebar stays clean elsewhere.
-            const showChildren = Boolean(item.children) && pathname.startsWith(item.href);
-            return (
-              <div key={item.href} className="flex flex-col gap-1">
-                <Link
-                  href={item.href}
-                  onClick={() => setIsMobileOpen(false)}
-                  className={[
-                    "rounded-lg px-3 py-2.5 text-sm font-medium transition",
-                    isActive
-                      ? "bg-[#f97316] text-white shadow-sm"
-                      : "text-slate-700 hover:bg-slate-100 hover:text-slate-900",
-                  ].join(" ")}
-                >
-                  {item.label}
-                </Link>
-                {showChildren ? (
-                  <div className="ml-3 flex flex-col gap-1 border-l border-slate-200 pl-3">
-                    {item.children!.map((child) => {
-                      const isChildActive = pathname === child.href;
-                      return (
-                        <Link
-                          key={child.href}
-                          href={child.href}
-                          onClick={() => setIsMobileOpen(false)}
-                          className={[
+        <nav className="mt-8 flex flex-1 flex-col gap-4" aria-label="Dashboard navigation">
+          {navGroups.map((group) => (
+            <div
+              key={group.title ?? "top"}
+              role="group"
+              aria-label={group.title ?? "Main"}
+              className="flex flex-col gap-1"
+            >
+              {group.title ? (
+                <p className="px-3 pt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                  {group.title}
+                </p>
+              ) : null}
+              {group.items.map((item) => {
+                const isActive = pathname === item.href;
+                // Show a parent's children only while inside that section, so the
+                // cramped sidebar stays clean elsewhere.
+                const showChildren = Boolean(item.children) && pathname.startsWith(item.href);
+                return (
+                  <div key={item.href} className="flex flex-col gap-1">
+                    <Link
+                      href={item.href}
+                      onClick={() => setIsMobileOpen(false)}
+                      aria-current={isActive ? "page" : undefined}
+                      className={[
+                        "rounded-lg px-3 py-2.5 text-sm font-medium transition",
+                        isActive
+                          ? "bg-orange-700 text-white shadow-sm"
+                          : "text-slate-700 hover:bg-slate-100 hover:text-slate-900",
+                      ].join(" ")}
+                    >
+                      {item.label}
+                    </Link>
+                    {showChildren ? (
+                      <div className="ml-3 flex flex-col gap-1 border-l border-slate-200 pl-3">
+                        {item.children!.map((child) => {
+                          const isChildActive = !child.hash && pathname === child.href;
+                          const cls = [
                             "rounded-lg px-3 py-2 text-sm font-medium transition",
                             isChildActive
-                              ? "bg-[#f97316] text-white shadow-sm"
+                              ? "bg-orange-700 text-white shadow-sm"
                               : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
-                          ].join(" ")}
-                        >
-                          {child.label}
-                        </Link>
-                      );
-                    })}
+                          ].join(" ");
+                          return child.hash ? (
+                            <a
+                              key={child.href}
+                              href={child.href}
+                              onClick={() => setIsMobileOpen(false)}
+                              className={cls}
+                            >
+                              {child.label}
+                            </a>
+                          ) : (
+                            <Link
+                              key={child.href}
+                              href={child.href}
+                              onClick={() => setIsMobileOpen(false)}
+                              aria-current={isChildActive ? "page" : undefined}
+                              className={cls}
+                            >
+                              {child.label}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    ) : null}
                   </div>
-                ) : null}
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          ))}
         </nav>
 
         {adminNavItems.length > 0 ? (
@@ -319,38 +386,58 @@ export default function Sidebar({ email, profileName, websiteHref = "/" }: Sideb
             <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
               {adminRole === "admin" ? "Admin" : "Assistant"}
             </p>
-            <nav className="mt-2 flex flex-col gap-1" aria-label="Admin navigation">
-              {adminNavItems.map((item) => {
-                const isActive = pathname === item.href;
-                const badge =
-                  item.href === "/dashboard/admin/testimonials" && pendingTestimonials > 0
-                    ? pendingTestimonials
-                    : null;
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", ctrlKey: true }))}
+              className="mt-2 flex min-h-11 w-full items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50"
+            >
+              <span>Jump to...</span>
+              <kbd className="rounded border border-slate-300 bg-slate-100 px-1.5 py-0.5 font-mono text-[10px] text-slate-600">Ctrl K</kbd>
+            </button>
+            <nav className="mt-2 flex flex-col gap-3" aria-label="Admin navigation">
+              {ADMIN_NAV_GROUPS.map((group) => {
+                const items = adminNavItems.filter((i) => i.group === group);
+                if (items.length === 0) return null;
                 return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setIsMobileOpen(false)}
-                    className={[
-                      "flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm font-medium transition",
-                      isActive
-                        ? "bg-indigo-600 text-white shadow-sm"
-                        : "text-slate-700 hover:bg-indigo-50 hover:text-indigo-700",
-                    ].join(" ")}
-                  >
-                    <span>{item.label}</span>
-                    {badge !== null ? (
-                      <span
-                        className={[
-                          "inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold",
-                          isActive ? "bg-white text-indigo-700" : "bg-rose-500 text-white",
-                        ].join(" ")}
-                        aria-label={`${badge} awaiting review`}
-                      >
-                        {badge}
-                      </span>
-                    ) : null}
-                  </Link>
+                  <div key={group} role="group" aria-label={group} className="flex flex-col gap-1">
+                    <p className="px-3 pt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                      {group}
+                    </p>
+                    {items.map((item) => {
+                      const isActive = pathname === item.href;
+                      const count =
+                        attention[item.href] ??
+                        (item.href === "/dashboard/admin/testimonials" ? pendingTestimonials : 0);
+                      const badge = count > 0 ? count : null;
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setIsMobileOpen(false)}
+                          aria-current={isActive ? "page" : undefined}
+                          className={[
+                            "flex min-h-11 items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm font-medium transition",
+                            isActive
+                              ? "bg-indigo-600 text-white shadow-sm"
+                              : "text-slate-700 hover:bg-indigo-50 hover:text-indigo-700",
+                          ].join(" ")}
+                        >
+                          <span>{item.label}</span>
+                          {badge !== null ? (
+                            <span
+                              className={[
+                                "inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold",
+                                isActive ? "bg-white text-indigo-700" : "bg-rose-700 text-white",
+                              ].join(" ")}
+                              aria-label={`${badge} waiting`}
+                            >
+                              {badge}
+                            </span>
+                          ) : null}
+                        </Link>
+                      );
+                    })}
+                  </div>
                 );
               })}
             </nav>

@@ -11,21 +11,26 @@ export default function LeaderboardOptInCard() {
   const [optIn, setOptIn] = useState<boolean | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
+    setLoadFailed(false);
     fetch("/api/affiliates/leaderboard-optin")
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error("load failed"))))
       .then((d) => {
         if (!cancelled) setOptIn(d.optIn === true);
       })
       .catch(() => {
-        if (!cancelled) setOptIn(false);
+        // Do not guess "off": the real setting may be on. Leave the switch
+        // disabled and offer a retry instead.
+        if (!cancelled) setLoadFailed(true);
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reloadKey]);
 
   const toggle = async (next: boolean) => {
     setSaving(true);
@@ -53,7 +58,7 @@ export default function LeaderboardOptInCard() {
   };
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+    <section id="leaderboard" className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="max-w-xl">
           <h2 className="text-lg font-semibold text-slate-900">Public leaderboard</h2>
@@ -71,7 +76,19 @@ export default function LeaderboardOptInCard() {
             shown by your handle when you make the top ranks. Your referral count
             is the only number shown, never earnings or contact details.
           </p>
-          {error ? <p className="mt-2 text-sm text-rose-600">{error}</p> : null}
+          {error ? <p className="mt-2 text-sm text-rose-700">{error}</p> : null}
+          {loadFailed ? (
+            <p className="mt-2 text-sm text-amber-800">
+              We could not load your current setting.{" "}
+              <button
+                type="button"
+                onClick={() => setReloadKey((k) => k + 1)}
+                className="font-semibold underline underline-offset-2"
+              >
+                Retry
+              </button>
+            </p>
+          ) : null}
         </div>
 
         <button
@@ -79,10 +96,10 @@ export default function LeaderboardOptInCard() {
           role="switch"
           aria-checked={optIn === true}
           aria-label="Show my handle on the public leaderboard"
-          disabled={optIn === null || saving}
+          disabled={optIn === null || saving || loadFailed}
           onClick={() => toggle(!optIn)}
           className={`relative inline-flex h-7 w-12 flex-none items-center rounded-full transition disabled:opacity-50 ${
-            optIn ? "bg-[#f97316]" : "bg-slate-300"
+            optIn ? "bg-orange-700" : "bg-slate-500"
           }`}
         >
           <span

@@ -121,6 +121,8 @@ export type RuntimeMessage =
   // Popup "Take a tour of this page": the content script runs the guided tour
   // for its current page type; the reply says whether this page has one.
   | { kind: "START_TOUR" }
+  // Extension command (Alt+Shift+B): show or hide the search-tile badges.
+  | { kind: "TOGGLE_BADGES" }
   | { kind: "GET_HUD_STATUS"; force?: boolean }
   | { kind: "SEND_HUD_COMMAND"; command: HudCommand }
   // Ask the running desktop app what the creator earned on a batch of ASINs, so
