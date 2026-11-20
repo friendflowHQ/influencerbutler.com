@@ -1372,25 +1372,30 @@ function resolveConvo(row: Row): void {
 // Reduced-price pill (Prime Day / Lightning / Rollback / "-N%"). Shared by the Pro
 // chip row and the Simple view, where it stays because it changes what the
 // creator does next. Gated by the dealSignals tool flag (remote kill switch).
+// The pill's text ("Deal -12%", "Rollback", ...), or null when the tile shows no
+// reduced-price signal (or the dealSignals tool is off).
+function dealPillLabel(row: Row, settings: Settings): string | null {
+  if (!settings.tools.dealSignals) return null;
+  const { dealBadge, dealKind, wasPriceCents, priceCents } = row.tile;
+  const pct = dealDiscountPct(priceCents, wasPriceCents);
+  const discounted = pct != null;
+  // A coupon-only dealKind is left to the coupon chip, so it does not trigger a
+  // second (unpriced) deal chip here.
+  const amazonDeal = dealKind === "primeday" || dealKind === "lightning" || dealKind === "reduced";
+  if (!(dealBadge || amazonDeal || discounted)) return null;
+  const label =
+    dealBadge === "clearance" ? "Clearance" :
+    dealBadge === "reduced" ? "Reduced" :
+    dealBadge === "rollback" ? "Rollback" :
+    dealKind === "primeday" ? t().tileDealPrimeDay :
+    dealKind === "lightning" ? t().tileDealLightning :
+    t().tileDeal;
+  return pct != null ? `${label} -${pct}%` : label;
+}
+
 function appendDealPill(body: HTMLElement, row: Row, settings: Settings): void {
-  if (settings.tools.dealSignals) {
-    const { dealBadge, dealKind, wasPriceCents, priceCents } = row.tile;
-    const pct = dealDiscountPct(priceCents, wasPriceCents);
-    const discounted = pct != null;
-    // A coupon-only dealKind is left to the coupon chip above, so it does not
-    // trigger a second (unpriced) deal chip here.
-    const amazonDeal = dealKind === "primeday" || dealKind === "lightning" || dealKind === "reduced";
-    if (dealBadge || amazonDeal || discounted) {
-      const label =
-        dealBadge === "clearance" ? "Clearance" :
-        dealBadge === "reduced" ? "Reduced" :
-        dealBadge === "rollback" ? "Rollback" :
-        dealKind === "primeday" ? t().tileDealPrimeDay :
-        dealKind === "lightning" ? t().tileDealLightning :
-        t().tileDeal;
-      body.append(el("span", "tile-chip good", pct != null ? `${label} -${pct}%` : label));
-    }
-  }
+  const label = dealPillLabel(row, settings);
+  if (label) body.append(el("span", "tile-chip good", label));
 }
 
 // ---- Simple view ------------------------------------------------------------
@@ -1539,7 +1544,9 @@ function renderBadge(row: Row, settings: Settings): void {
   // Best-seller rank + its category, from the pooled snapshot or the per-tile
   // /dp/ enrichment.
   const bsrRank = row.market?.bsrRank ?? row.dp?.bestsellerRank?.rank ?? null;
-  const bsrCategory = row.market?.bsrCategory ?? row.dp?.bestsellerRank?.category ?? null;
+  // Some category strings arrive with the page's trailing "ASIN B0XXXXXXXX" text
+  // glued on; it is noise on a chip.
+  const bsrCategory = (row.market?.bsrCategory ?? row.dp?.bestsellerRank?.category ?? null)?.replace(/\s*ASIN\s*[A-Z0-9]{10}\s*$/i, "") ?? null;
   if (bsrRank != null) {
     body.append(tipped(el("span", "tile-chip", t().tileBsr(bsrRank.toLocaleString(), bsrCategory)), withSource(legend().tips.bsr, row)));
   }
@@ -1557,7 +1564,7 @@ function renderBadge(row: Row, settings: Settings): void {
     body.append(chip);
     const accept = acceptChip(row, settings);
     if (accept) body.append(accept);
-  } else if (row.flags.deals) {
+  } else if (row.flags.deals && !dealPillLabel(row, settings)) {
     // Only when no campaign chip is up: two green chips in a row read as noise.
     body.append(tipped(el("span", "tile-chip good", t().tileDeal), legend().tips.deal));
   }
