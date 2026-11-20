@@ -1,6 +1,8 @@
 import { enableChipTips } from "../../ui/chip-tips";
 import { formatAge, isStale } from "../../shared/format-age";
 import { explainCopy, explainScore } from "../score/explain";
+import { openAcceptSheet } from "./accept-sheet";
+import { orderItems } from "./accept-sheet-model";
 import { defaultPrefs, loadViewPrefs, priceForCurrency, saveViewPrefs } from "../../shared/view-prefs";
 import { createInlineShadow } from "../../ui/host";
 import { el } from "../../ui/components";
@@ -757,17 +759,37 @@ export async function initSearchOverlay(
   // at a time, robot-check cooldown honored), after a single confirm. Capped so
   // one click never queues dozens of tabs; click again for the next batch.
   async function acceptAllOnPage(setStatus: (text: string) => void): Promise<void> {
-    const batch = acceptableRows(rows, settings).slice(0, ACCEPT_ALL_CAP);
-    if (batch.length === 0) return;
-    if (!window.confirm(t().acceptAllConfirm(batch.length))) return;
-    let done = 0;
-    for (const row of batch) {
-      const result = await acceptRow(row, settings);
-      if (result.ok) done += 1;
-      setStatus(t().acceptAllDone(done, batch.length));
-      // A robot check / local gate ends the whole batch; the rest would only fail.
-      if (!result.ok && ["blocked", "cooldown", "disabled"].includes(result.reason ?? "")) break;
-    }
+    const candidates = acceptableRows(rows, settings);
+    if (candidates.length === 0) return;
+    // Best campaigns first, capped. The sheet lists them so the user can untick
+    // any before the one confirm; each row then reports its own result.
+    const items = orderItems(
+      candidates.map((row) => ({
+        id: row.tile.asin,
+        title: row.tile.title ?? row.tile.asin,
+        brand: row.ccRate?.brand ?? null,
+        ratePct: row.ccRate?.ratePct ?? null,
+        endsAt: row.ccRate?.endsAt ?? null,
+        score: row.score.score,
+      })),
+      ACCEPT_ALL_CAP,
+    );
+    await new Promise<void>((resolve) => {
+      openAcceptSheet({
+        items,
+        locale: String(getLocale()),
+        accept: async (id) => {
+          const row = rows.find((r) => r.tile.asin === id);
+          if (!row) return { ok: false, reason: "gone" };
+          const result = await acceptRow(row, settings);
+          return { ok: result.ok, reason: result.reason, note: row.acceptNote };
+        },
+        onClose: ({ accepted, attempted }) => {
+          if (attempted > 0) setStatus(t().acceptAllDone(accepted, attempted));
+          resolve();
+        },
+      });
+    });
   }
 
   // Remembered view for this retailer and page kind (sort, filters, hidden badges).

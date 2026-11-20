@@ -2256,3 +2256,19 @@ button.tile-chip.more:focus-visible { outline: 3px solid #1d4ed8; outline-offset
 
 /* "Why is this first?" line under the search toolbar (tools/score/explain.ts). */
 .search-top-reason { font-size: 12px; line-height: 1.4; color: #475569; padding: 4px 2px 0; }
+
+/* Accept campaigns review sheet (tools/search-overlay/accept-sheet.ts). */
+.accept-sheet .sheet-warning { margin: 0 0 8px; font-weight: 700; color: #9a3412; font-size: 12.5px; }
+.accept-sheet .sheet-all { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; margin: 0 0 6px; cursor: pointer; }
+.accept-sheet .sheet-list { list-style: none; margin: 0; padding: 0; max-height: 46vh; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 10px; }
+.accept-sheet .sheet-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1px solid #f1f5f9; }
+.accept-sheet .sheet-row:last-child { border-bottom: 0; }
+.accept-sheet .sheet-main { display: flex; align-items: flex-start; gap: 8px; flex: 1; min-width: 0; cursor: pointer; }
+.accept-sheet .sheet-text { display: flex; flex-direction: column; min-width: 0; }
+.accept-sheet .sheet-title { font-size: 12.5px; font-weight: 700; color: #0f172a; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.accept-sheet .sheet-meta { font-size: 12px; color: #475569; }
+.accept-sheet .sheet-note { font-size: 12px; color: #b91c1c; }
+.accept-sheet .sheet-status { font-size: 12px; font-weight: 700; color: #475569; white-space: nowrap; }
+.accept-sheet .sheet-status[data-state="done"] { color: #15803d; }
+.accept-sheet .sheet-status[data-state="failed"] { color: #b91c1c; }
+.accept-sheet .sheet-live { min-height: 1.2em; margin: 8px 0 0; font-size: 12.5px; font-weight: 600; color: #0f172a; }
