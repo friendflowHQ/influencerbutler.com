@@ -13,6 +13,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/admin";
+import { askAllowed, hasOpenSupportTicket, readAskState, recordAsk } from "@/lib/testimonial-ask";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -43,17 +44,18 @@ type AskAdmin = {
   };
 };
 
-async function currentUserId(): Promise<string | null> {
+async function currentUser(): Promise<{ id: string; email: string | null } | null> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  return user?.id ?? null;
+  return user ? { id: user.id, email: user.email ?? null } : null;
 }
 
 export async function GET() {
-  const userId = await currentUserId();
-  if (!userId) return NextResponse.json({ show: false });
+  const user = await currentUser();
+  if (!user) return NextResponse.json({ show: false });
+  const userId = user.id;
 
   const admin = createAdminClient() as unknown as AskAdmin | null;
   if (!admin) return NextResponse.json({ show: false });
@@ -99,10 +101,15 @@ export async function GET() {
       }
     }
 
-    return NextResponse.json({
-      show: active && oldEnough && notDone && dismissalOk && !coolingDown,
-      canSnooze,
-    });
+    let show = active && oldEnough && notDone && dismissalOk && !coolingDown;
+    if (show) {
+      // Lifetime cap + 14-day cooldown (needs the ask-state migration; tolerant
+      // of it being missing), then hold off while a support ticket is open.
+      const state = await readAskState(admin, userId);
+      show = askAllowed(state) && !(await hasOpenSupportTicket(user.email));
+    }
+
+    return NextResponse.json({ show, canSnooze });
   } catch (err) {
     console.error("testimonial-ask GET failed", err);
     return NextResponse.json({ show: false });
@@ -110,8 +117,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const userId = await currentUserId();
-  if (!userId) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  const user = await currentUser();
+  if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  const userId = user.id;
 
   let action = "";
   try {
@@ -137,6 +145,8 @@ export async function POST(request: Request) {
   }
 
   try {
+    // A snooze means the user saw the ask and deferred it: count it toward the cap.
+    if (action === "snooze") await recordAsk(admin, userId, await readAskState(admin, userId));
     await admin
       .from("subscriptions")
       .update({ testimonial_banner_dismissed_at: stamp.toISOString() })

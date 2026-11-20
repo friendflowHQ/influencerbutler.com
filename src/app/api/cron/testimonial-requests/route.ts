@@ -13,6 +13,7 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { sendTestimonialEmail } from "@/lib/testimonial-email";
 import { verifyBearer } from "@/lib/auth-secret";
+import { askAllowed, hasOpenSupportTicket, readAskState, recordAsk } from "@/lib/testimonial-ask";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -107,11 +108,19 @@ export async function GET(request: Request) {
   const rows = ((data ?? []) as SubRow[]).filter((r) => r.status === "active");
   let sent = 0;
   let skipped = 0;
+  let held = 0;
 
   for (const row of rows) {
     const contact = await fetchContact(supabase, row.user_id);
     if (!contact) {
       skipped += 1;
+      continue;
+    }
+    // Lifetime cap / cooldown / open support ticket: skip without stamping, so a
+    // user with an open ticket is reconsidered on a later run once it is resolved.
+    const askState = await readAskState(supabase, row.user_id);
+    if (!askAllowed(askState) || (await hasOpenSupportTicket(contact.email))) {
+      held += 1;
       continue;
     }
     const ok = await sendTestimonialEmail({
@@ -131,8 +140,9 @@ export async function GET(request: Request) {
       console.error("cron testimonial-requests: stamp failed", { userId: row.user_id, stampErr });
       continue;
     }
+    await recordAsk(supabase, row.user_id, askState);
     sent += 1;
   }
 
-  return NextResponse.json({ ok: true, sent, skipped, considered: rows.length });
+  return NextResponse.json({ ok: true, sent, skipped, held, considered: rows.length });
 }
