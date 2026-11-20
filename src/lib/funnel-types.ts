@@ -89,7 +89,7 @@ export const ONBOARDING_VOCAB = {
   experience: ["brand-new", "existing"],
   aipPath: ["associates-first", "influencer-first", "both"],
   creatorMode: ["onsite", "offsite", "both"],
-  goal: ["video-marketplaces", "photo-marketplaces", "cc-auto-accept", "beginner-start", "everything"],
+  goal: ["video-marketplaces", "photo-marketplaces", "cc-auto-accept", "beginner-start", "everything", "deals-quickstart", "launch-business"],
   platforms: ["amazon", "walmart", "instagram", "youtube", "deals-influencer", "facebook", "benable"],
   mode: ["automation", "manual"],
   dealsPostingMode: ["manual", "auto"],

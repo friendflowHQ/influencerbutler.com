@@ -17,6 +17,7 @@ import { scheduleBot, isRecallConfigured, shouldScheduleRecordingBot } from "@/l
 import { sendBookingConfirmation, sendOwnerNotification, type BookingEmailData } from "@/lib/call-emails";
 import { sanitizeTopics, isMissingTopicsColumn } from "@/lib/call-topics";
 import { setupWalkthroughSkipped, SETUP_REQUIRED_CODE, SETUP_REQUIRED_MESSAGE } from "@/lib/setup-gate";
+import { callPrepRequired, checkCallPrep } from "@/lib/call-prep";
 import { findProgram, PARTNER_CALL_TYPE } from "@/lib/partner-call-slots";
 import {
   isPartnerAudience,
@@ -27,7 +28,7 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type Body = { type?: string; startMs?: number; timezone?: string; topic?: string; topics?: unknown; name?: string; partner?: string };
+type Body = { type?: string; startMs?: number; timezone?: string; topic?: string; topics?: unknown; name?: string; partner?: string; prep?: unknown };
 
 export async function POST(request: Request) {
   // Dual-mode auth so the in-chat booking card books from the website cookie AND
@@ -56,6 +57,17 @@ export async function POST(request: Request) {
   // before booking any 1:1 call (src/lib/setup-gate.ts). Fails open.
   if (await setupWalkthroughSkipped(admin, userEmail)) {
     return NextResponse.json({ error: SETUP_REQUIRED_MESSAGE, code: SETUP_REQUIRED_CODE }, { status: 403 });
+  }
+
+  // Gate: app/extension/phone bookings carry the tap-only pre-call questionnaire
+  // and setup progress (src/lib/call-prep.ts). Off unless CALL_PREP_REQUIRED=1.
+  const prepVerdict = checkCallPrep({
+    viaLicenseKey: /^bearer\s/i.test(request.headers.get("authorization") || ""),
+    required: callPrepRequired(),
+    prep: body.prep,
+  });
+  if (!prepVerdict.ok) {
+    return NextResponse.json({ error: prepVerdict.error, code: prepVerdict.code }, { status: prepVerdict.status });
   }
 
   // Gate: support calls require an active/trial subscription.
