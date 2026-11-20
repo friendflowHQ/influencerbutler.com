@@ -402,6 +402,17 @@
         <p class="muted small" data-i18n="toolBenableBadgeHint">On benable.com, badges each Amazon item with its Creator Connections / SPCC status and commission. Click a badge for enrollment, earnings, and ownership.</p>
       </section>
 
+      <section id="activity-card" class="card">
+        <h2 id="activity-heading">Activity</h2>
+        <div class="row" role="group" aria-label="Time range">
+          <button id="activity-day" class="secondary small" type="button" aria-pressed="true">24 hours</button>
+          <button id="activity-week" class="secondary small" type="button" aria-pressed="false">7 days</button>
+        </div>
+        <p id="activity-counts" class="muted small"></p>
+        <ul id="activity-list" class="stats"></ul>
+        <p id="activity-empty" class="muted small" hidden></p>
+      </section>
+
       <section id="watchlist-card" class="card">
         <h2 data-i18n="popupWatchlistHeading">Watchlist</h2>
         <p id="watchlist-mobile-note" class="muted small" hidden data-i18n="popupWatchlistMobileNote">On Android, Watchlist alerts are paused: the automatic background checks run on a Windows or Mac computer. Your watched products stay saved.</p>

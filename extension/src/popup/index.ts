@@ -26,6 +26,7 @@ import { getSettings, patchSettings } from "../storage/store";
 import { isHostPaused, withHostPaused } from "../shared/paused-hosts";
 import { pauseStrings } from "./pause-strings";
 import { deriveConnection, pillCopy } from "./connection-status";
+import { renderActivityCard } from "./activity";
 import { getFlags, type EventBanner } from "../flags/cache";
 import type { Settings, WatchCondition } from "../storage/schema";
 import {
@@ -92,6 +93,7 @@ async function init(): Promise<void> {
   ]);
   wirePopupZoom();
   void renderConnectionPill();
+  void renderActivityCard();
   // The Feedback Butler card was replaced by the same chat bubble the product pages
   // show: bug report + screenshots (picker / paste) + reply email + diagnostics.
   initChatBubble({ popup: true });
@@ -148,7 +150,7 @@ const GROUPS: Array<{ id: string; label: Record<string, string>; cards: string[]
   {
     id: "group-tools",
     label: { en: "Tools", es: "Herramientas", fr: "Outils" },
-    cards: ["ai-assistant-card", "social-schedule-card", "deal-harvester", "link-butler", "clean-link-card", "watchlist-card", "lists-card"],
+    cards: ["ai-assistant-card", "social-schedule-card", "deal-harvester", "link-butler", "clean-link-card", "activity-card", "watchlist-card", "lists-card"],
     defaultOpen: () => false,
   },
 ];
