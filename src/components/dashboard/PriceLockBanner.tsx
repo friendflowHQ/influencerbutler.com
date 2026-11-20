@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { LEVEL_PRICE_CENTS, PRICE_CHANGE } from "@/lib/pricing-constants";
 
 /**
@@ -57,6 +58,7 @@ function Tile({ value, label }: { value: string; label: string }) {
 }
 
 export default function PriceLockBanner() {
+  const pathname = usePathname();
   const [status, setStatus] = useState<Status | null>(null);
   const [now, setNow] = useState<number>(() => Date.now());
   const injected = useRef(false);
@@ -85,6 +87,8 @@ export default function PriceLockBanner() {
     };
   }, []);
 
+  // Admin pages are an operations workspace, not a sales surface: skip the customer promo there.
+  if (pathname?.startsWith("/dashboard/admin")) return null;
   if (!status || status.state === "none") return null;
   const end = Date.parse(status.endsAt);
   if (!Number.isFinite(end) || now >= end) return null;
