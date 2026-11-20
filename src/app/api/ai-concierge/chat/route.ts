@@ -70,6 +70,8 @@ function sanitizeClient(raw: unknown): ClientMeta | undefined {
     ...(persona && (persona.butlerName || persona.firstName) ? { persona } : {}),
     ...(normalizeChatLocale(c.locale) ? { locale: normalizeChatLocale(c.locale) } : {}),
     ...(pick(c.page, 200) ? { page: pick(c.page, 200) } : {}),
+    // Recent extension activity, sent only when the user reports a problem. Capped.
+    ...(pick(c.diagnostics, 1500) ? { diagnostics: pick(c.diagnostics, 1500) } : {}),
     // Live status block from the desktop (which butlers are paused + restart
     // times). Capped so a client can never bloat the prompt.
     ...(pick(c.butlerStatus, 2000) ? { butlerStatus: pick(c.butlerStatus, 2000) } : {}),
@@ -138,6 +140,12 @@ export async function POST(request: Request) {
   if (client?.page) contextLines.push(`- Current page: ${client.page}`);
   if (client?.locale) contextLines.push(`- UI language: ${client.locale}`);
   if (client?.appVersion) contextLines.push(`- App version: ${client.appVersion}`);
+  if (client?.diagnostics) {
+    contextLines.push(
+      "- Recent extension activity (what the extension sent to and received from the desktop app). If it shows a failure that matches the user's problem, open by naming it plainly and give the fix; if nothing matches, ignore it:\n" +
+        client.diagnostics,
+    );
+  }
   try {
     const sub = (await getSubscription(principal)) as { tier?: string; status?: string | null; planName?: string | null };
     if (sub && sub.tier) {

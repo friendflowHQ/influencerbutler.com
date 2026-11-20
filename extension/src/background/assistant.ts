@@ -1,5 +1,7 @@
 import { ENDPOINTS } from "../shared/constants";
 import { getState } from "../storage/store";
+import { getActivity } from "./desktop-activity";
+import { formatActivityLog } from "../shared/desktop-activity";
 import type {
   AiChatResult,
   AiChatTurn,
@@ -157,16 +159,36 @@ function clientMeta(page?: string, locale?: string): Record<string, string> {
   return meta;
 }
 
+// Only when the user's newest message sounds like a problem do we attach the
+// extension's recent send/receive activity (the same kind of data a bug report
+// carries), so the assistant can name what failed instead of asking. Never on
+// ordinary how-to questions.
+const TROUBLE_RE = /\b(error|errors|fail|fails|failed|failing|not working|doesn'?t work|isn'?t working|won'?t|can'?t|cannot|stuck|nothing happen|nothing happened|broken|problem|issue|wrong|disconnected|not responding)\b/i;
+const MAX_DIAGNOSTICS = 1500;
+
+async function diagnosticsFor(messages: AiChatTurn[]): Promise<string> {
+  const last = [...(Array.isArray(messages) ? messages : [])].reverse().find((m) => m.role === "user");
+  if (!last || !TROUBLE_RE.test(String(last.content || ""))) return "";
+  try {
+    return formatActivityLog(await getActivity(), 6).slice(0, MAX_DIAGNOSTICS);
+  } catch {
+    return "";
+  }
+}
+
 export async function assistantChat(messages: AiChatTurn[], page?: string, locale?: string): Promise<AiChatResult> {
   const state = await getState();
   const key = state.auth.licenseKey;
   if (!key) return { ok: false, error: "Sign in from the popup to use the assistant." };
 
   try {
+    const meta: Record<string, string> = clientMeta(page, locale);
+    const diagnostics = await diagnosticsFor(messages);
+    if (diagnostics) meta.diagnostics = diagnostics;
     const res = await fetch(ENDPOINTS.aiChat, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({ messages: safeTurns(messages), client: clientMeta(page, locale) }),
+      body: JSON.stringify({ messages: safeTurns(messages), client: meta }),
     });
     const data = (await res.json().catch(() => null)) as { reply?: string; images?: unknown; video?: unknown; booking?: unknown; sources?: unknown; template?: unknown; error?: string } | null;
     if (!res.ok || !data || typeof data.reply !== "string") {

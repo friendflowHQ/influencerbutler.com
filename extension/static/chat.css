@@ -33,6 +33,11 @@
 .chat-voice.active { background: #f97316; color: #fff; }
 .chat-footer { margin-top: 8px; color: #94a3b8; font-size: 12px; }
 .chat-footer a { color: #f97316; }
+.chat-memory { margin-bottom: 12px; padding: 10px 12px; border: 1px solid #fed7aa; border-radius: 12px; background: #fff7ed; }
+.chat-memory-text { margin: 0 0 8px; color: #1f2937; font-size: 13px; }
+.chat-memory-actions { display: flex; gap: 8px; align-items: center; }
+.chat-memory-dismiss { border: 0; background: transparent; color: #475569; text-decoration: underline; cursor: pointer; font-size: 12px; }
+.chat-memory[hidden] { display: none; }
 .chat-msg a { color: #c2410c; text-decoration: underline; }
 .chat-msg a.chip {
   display: block; margin-top: 6px; padding: 6px 10px; border: 1px solid #fed7aa;

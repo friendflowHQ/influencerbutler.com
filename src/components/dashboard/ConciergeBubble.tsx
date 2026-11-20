@@ -150,6 +150,44 @@ function safeImages(raw: unknown): ReplyImage[] {
     .map((i) => ({ url: i.url, alt: typeof i.alt === "string" ? i.alt : "" }));
 }
 
+// A one-line memory of the last thing the user asked, kept in this browser only
+// (never sent anywhere) so a later visit can offer to pick up where they left off.
+const MEMORY_KEY = "ib_concierge_memory_v1";
+const MEMORY_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+type Memory = { question: string; at: number };
+
+function readMemory(): Memory | null {
+  try {
+    const raw = localStorage.getItem(MEMORY_KEY);
+    if (!raw) return null;
+    const m = JSON.parse(raw) as Memory;
+    if (typeof m.question !== "string" || !m.question || typeof m.at !== "number") return null;
+    if (Date.now() - m.at > MEMORY_MAX_AGE_MS) {
+      localStorage.removeItem(MEMORY_KEY);
+      return null;
+    }
+    return m;
+  } catch {
+    return null;
+  }
+}
+
+function writeMemory(question: string): void {
+  try {
+    localStorage.setItem(MEMORY_KEY, JSON.stringify({ question: question.slice(0, 200), at: Date.now() }));
+  } catch {
+    // storage blocked: the feature just stays off
+  }
+}
+
+function clearMemory(): void {
+  try {
+    localStorage.removeItem(MEMORY_KEY);
+  } catch {
+    // ignore
+  }
+}
+
 function readPersisted(): Persisted | null {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
@@ -209,6 +247,8 @@ export default function ConciergeBubble() {
   const [starters, setStarters] = useState<string[]>([]);
   // Id of the answer whose thumbs-down is waiting for an optional reason.
   const [reasonFor, setReasonFor] = useState<number | null>(null);
+  // What they asked last time (a previous visit), offered once on a fresh chat.
+  const [memory, setMemory] = useState<Memory | null>(null);
 
   const entriesRef = useRef<Entry[]>([]);
   const idRef = useRef(0);
@@ -261,6 +301,8 @@ export default function ConciergeBubble() {
       sessionIdRef.current = saved.sessionId;
       savedCountRef.current = saved.savedCount;
       setEntries(saved.entries);
+    } else {
+      setMemory(readMemory());
     }
     let alive = true;
     (async () => {
@@ -368,6 +410,8 @@ export default function ConciergeBubble() {
       }
       setInput("");
       addEntry("you", q);
+      writeMemory(q);
+      setMemory(null);
       setBusy(true);
       try {
         const history = entriesRef.current
@@ -455,8 +499,15 @@ export default function ConciergeBubble() {
     savedCountRef.current = 0;
     setEntries([]);
     setError("");
+    setMemory(null);
     persist();
   }, [saveTranscript, persist]);
+
+  // Wipes this browser's chat: the conversation and the "last time" memory.
+  const clearHistory = useCallback(() => {
+    startOver();
+    clearMemory();
+  }, [startOver]);
 
   // The full page is the chat already, so the bubble would be redundant there.
   if (pathname?.startsWith(FULL_PAGE)) return null;
@@ -504,6 +555,15 @@ export default function ConciergeBubble() {
                 New chat
               </button>
             )}
+            {(entries.length > 0 || memory) && (
+              <button
+                type="button"
+                onClick={clearHistory}
+                className="rounded-md px-2 py-1 text-xs text-slate-600 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"
+              >
+                Clear history
+              </button>
+            )}
             <button
               type="button"
               onClick={closePanel}
@@ -523,6 +583,33 @@ export default function ConciergeBubble() {
                 assistant, not a person.
               </span>
             </div>
+            {entries.length === 0 && memory && (
+              <div className="rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-sm text-slate-800">
+                <p>
+                  Last time you asked: <span className="font-medium">&ldquo;{memory.question}&rdquo;</span>
+                </p>
+                <div className="mt-2 flex gap-2">
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void send(`Let's pick up where we left off. I asked: ${memory.question}`)}
+                    className="rounded-full bg-orange-700 px-3 py-1 text-xs font-medium text-white hover:bg-orange-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2 disabled:opacity-50"
+                  >
+                    Pick up where we left off
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearMemory();
+                      setMemory(null);
+                    }}
+                    className="rounded-full px-3 py-1 text-xs text-slate-700 underline focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"
+                  >
+                    Not now
+                  </button>
+                </div>
+              </div>
+            )}
             {entries.length === 0 && starters.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {starters.map((s) => (

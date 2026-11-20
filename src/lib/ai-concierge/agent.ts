@@ -19,6 +19,8 @@ import { readFileSync } from "node:fs";
 import { LOOK_TEMPLATE_TOOL } from "./look-templates";
 import { join } from "node:path";
 import { callTool } from "@/lib/mcp/tools";
+import { expandTerms, vocabularyOf } from "./search-expand";
+import { getStatus as getCreatorCredsStatus } from "@/lib/creator-api-creds";
 import type { Principal } from "@/lib/mcp/auth";
 import { loadSearchIndex, loadManifest } from "@/lib/tutorials";
 import { getAdmin } from "@/lib/scheduling-server";
@@ -310,9 +312,14 @@ function walkthroughListLine(extra: TourCatalogEntry[]): string {
  */
 export function platformLine(platform?: string): string {
   const p = typeof platform === "string" ? platform.trim().toLowerCase() : "";
-  if (p === "darwin") return "The user's computer is a Mac. When steps differ between Mac and Windows, give the Mac steps.";
-  if (p === "win32") return "The user's computer is a Windows PC. When steps differ between Mac and Windows, give the Windows steps.";
-  return "";
+  if (p === "darwin") {
+    return "The user's computer is a Mac. When steps differ between Mac and Windows, give only the Mac steps (menu bar, Dock, /Applications, Terminal). Give Windows steps only if they say they use Windows.";
+  }
+  if (p === "win32") {
+    return "The user's computer is a Windows PC. When steps differ between Mac and Windows, give only the Windows steps (system tray, Program Files, PowerShell). Give Mac steps only if they say they use a Mac.";
+  }
+  // Unknown (phone, Linux, voice, or a client that did not say): ask once, never dump both.
+  return "The user's computer type is unknown. When the steps differ between Mac and Windows, first ask in one short question which one they use, then give only that one. If the question is not OS-specific, do not ask. Remember their answer for the rest of the conversation.";
 }
 
 export function buildInstructions(
@@ -359,6 +366,11 @@ export function buildInstructions(
     "- For why a butler paused or stopped, or when it will post again after a platform rate limit or",
     "  block, answer from the \"When a butler pauses\" facts below. Do not guess a resume time and do",
     "  not send the user to a platform status page.",
+    "",
+    "Guided setup:",
+    "- When the user is new, asks to be set up, asks where to start or what to do next, call",
+    "  get_setup_checklist and guide them one step at a time (\"Step 2 of 7\"). Never dump all steps",
+    "  at once. Do not claim a step is done unless the checklist says done or the user confirms it.",
     "",
     "Answering setup questions (be the fix, not a redirect):",
     "- Your first job is to actually solve the user's problem in the chat. For a setup, how-to, or",
@@ -722,6 +734,12 @@ export const AGENT_TOOLS: AgentTool[] = [
     parameters: NO_ARGS,
   },
   {
+    name: "get_setup_checklist",
+    description:
+      "Return the ordered first-time setup steps for Influencer Butler with what we can verify about this user's account (sign-in, Creator API credentials, plan). Call it when the user asks to be set up, where to start, what to do next, or says they are new. Then walk them through ONE step at a time as \"Step N of M\", using search_help for the details of the current step. Steps with status \"unknown\" cannot be verified from here: ask the user to confirm before moving on.",
+    parameters: NO_ARGS,
+  },
+  {
     name: "offer_human_call",
     description: "Signal that the user should book a human demo or support call. Returns the booking link to share.",
     parameters: {
@@ -910,6 +928,18 @@ const SEARCH_STOPWORDS = new Set([
   "which", "while", "because", "now", "out", "off", "one", "two", "set",
 ]);
 
+// Typo vocabulary per loaded index. The index array is cached by tutorials.ts,
+// so keying on it rebuilds the vocabulary only when the index itself refreshes.
+const vocabCache = new WeakMap<object, Set<string>>();
+function vocabFor(index: Awaited<ReturnType<typeof loadSearchIndex>>): Set<string> {
+  let v = vocabCache.get(index);
+  if (!v) {
+    v = vocabularyOf(index.map((e) => `${e.title} ${e.summary} ${e.text}`));
+    vocabCache.set(index, v);
+  }
+  return v;
+}
+
 /**
  * Rank tutorials against a query with term-frequency over
  * title + summary + category + body, and return the top matches with a short
@@ -919,26 +949,23 @@ const SEARCH_STOPWORDS = new Set([
  * longest one, and "app" no longer matches inside "applying".
  */
 export async function searchHelp(query: string, locale?: string): Promise<HelpHit[]> {
-  const terms = [...new Set(
-    (query || "")
-      .toLowerCase()
-      .split(/[^a-z0-9]+/)
-      .filter((t) => t.length > 2 && !SEARCH_STOPWORDS.has(t)),
-  )];
-  if (terms.length === 0) return [];
-
-  const matchers = terms.map((t) => new RegExp(`\\b${t}\\b`, "g"));
-
+  // Tokens of 2+ letters: the short ones only matter as shorthand (ig, fb, pc).
+  const tokens = [...new Set((query || "").toLowerCase().split(/[^a-z0-9]+/).filter((t) => t.length >= 2))];
   const index = await loadSearchIndex(locale);
+  const weighted = expandTerms(tokens, vocabFor(index), (t) => SEARCH_STOPWORDS.has(t));
+  if (weighted.length === 0) return [];
+  const terms = weighted.map((w) => w.term);
+  const matchers = weighted.map((w) => ({ re: new RegExp(`\\b${w.term}\\b`, "g"), weight: w.weight }));
+
   const scored = index
     .map((e) => {
       const hay = `${e.title} ${e.summary} ${e.category} ${e.text}`.toLowerCase();
       const titleHay = `${e.title} ${e.summary}`.toLowerCase();
       let score = 0;
-      for (const re of matchers) {
+      for (const { re, weight } of matchers) {
         const inBody = (hay.match(re) || []).length;
         const inTitle = (titleHay.match(re) || []).length;
-        score += inBody + inTitle * 5; // weight title/summary hits
+        score += (inBody + inTitle * 5) * weight; // weight title/summary hits
       }
       return { e, score };
     })
@@ -981,6 +1008,66 @@ function snippetFor(text: string, terms: string[]): string {
   }
   const start = Math.max(0, (at < 0 ? 0 : at) - 120);
   return text.slice(start, start + 320).trim();
+}
+
+export type SetupStep = {
+  n: number;
+  id: string;
+  title: string;
+  status: "done" | "todo" | "unknown";
+  optional?: boolean;
+  tutorialId: string;
+  hint: string;
+};
+
+/**
+ * The first-time setup path (mirrors the Getting Started tutorial) with whatever
+ * we can verify server-side: sign-in (they are talking to us signed in) and
+ * Creator API credentials. Everything else is "unknown": the model must ask the
+ * user to confirm it, never assume. Exported for tests.
+ */
+export function buildSetupChecklist(opts: { creatorApiConfigured: boolean | null; surface?: string }): {
+  steps: SetupStep[];
+  current: number;
+  guidance: string;
+} {
+  const T = "getting-started-influencer-butler";
+  const creator: SetupStep["status"] = opts.creatorApiConfigured === null ? "unknown" : opts.creatorApiConfigured ? "done" : "todo";
+  const steps: Omit<SetupStep, "n">[] = [
+    { id: "sign-in", title: "Sign in with your purchase email", status: "done", tutorialId: T, hint: "They are already signed in here." },
+    { id: "goal", title: "Pick your first goal in the setup walkthrough", status: "unknown", tutorialId: T, hint: "Decides which Butler is set up first." },
+    { id: "amazon-login", title: "Log in to Amazon inside the app", status: "unknown", tutorialId: T, hint: "A browser window opens the first time a Butler needs Amazon. Finish every prompt." },
+    { id: "creator-api", title: "Add Creator Connections API credentials", status: creator, optional: true, tutorialId: "api-integrations", hint: "Only for brand campaigns. Skip if campaigns are not their focus yet." },
+    { id: "setup-checklist", title: "Clear the in-app Setup Checklist", status: "unknown", tutorialId: T, hint: "Click Fix next to anything marked To do, or Set it up for me." },
+    { id: "warm-up", title: "Let your Butlers warm up", status: "unknown", tutorialId: T, hint: "The first run can take a while. They can step away and will be emailed." },
+    { id: "first-run", title: "Run your first Butler start to finish", status: "unknown", tutorialId: T, hint: "Pick one that shows Ready to run." },
+  ];
+  const numbered: SetupStep[] = steps.map((s, i) => ({ n: i + 1, ...s }));
+  const next = numbered.find((s) => s.status !== "done" && !(s.optional && s.status === "unknown"));
+  return {
+    steps: numbered,
+    current: next ? next.n : numbered.length,
+    guidance:
+      "Present this as 'Step N of " + numbered.length + "' and cover ONE step at a time, starting at `current`. " +
+      "For the current step call search_help (and show_video when it has one) for exact clicks. " +
+      "Steps marked unknown are unverified: ask them to confirm before you move on. Optional steps can be skipped. " +
+      (opts.surface === "desktop"
+        ? "They are in the desktop app, so point them to Setup Checklist in the left menu and offer start_walkthrough. "
+        : "They are not in the desktop app, so remind them that most steps happen inside it. ") +
+      "Finish with a one-line recap of what is done and what is left.",
+  };
+}
+
+async function getSetupChecklist(principal: Principal | null, client?: ClientMeta): Promise<unknown> {
+  if (!principal) return { error: "The user is not signed in." };
+  let creatorApiConfigured: boolean | null = null;
+  try {
+    const res = await getCreatorCredsStatus(principal.userId);
+    if (!res.migrationPending && !res.error) creatorApiConfigured = res.status.configured;
+  } catch {
+    // leave unknown
+  }
+  return buildSetupChecklist({ creatorApiConfigured, surface: client?.surface });
 }
 
 // Best-effort log of a search that found nothing (or only a weak match), so the
@@ -1046,6 +1133,9 @@ export type ClientMeta = {
   // Where the user is right now (a site path like /dashboard/deals, or the
   // extension page's host + path). Lets the answer be about "this page".
   page?: string;
+  // Recent extension activity attached only when the user reports a problem
+  // (capped, treated as data). Lets the answer name the actual failure.
+  diagnostics?: string;
 };
 
 /** Map any BCP-47-ish language tag onto a tutorial locale (en-US, es-ES, fr-FR). */
@@ -1369,6 +1459,8 @@ export async function executeAgentTool(
         note: "The walkthrough opens in the desktop app. Tell the user it is starting and what it will do.",
       };
     }
+    case "get_setup_checklist":
+      return getSetupChecklist(principal, client);
     case "get_subscription":
       if (!principal) return { error: "The user is not signed in." };
       return getSubscription(principal);

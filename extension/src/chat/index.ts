@@ -49,6 +49,10 @@ const COPY = {
     helpedYes: "This answer helped",
     helpedNo: "This answer did not help",
     thanksFeedback: "Thanks for the feedback.",
+    lastTime: "Last time you asked:",
+    pickUp: "Pick up where we left off",
+    notNow: "Not now",
+    pickUpMsg: "Let's pick up where we left off. I asked:",
   },
   es: {
     suggestions: [
@@ -64,6 +68,10 @@ const COPY = {
     helpedYes: "Esta respuesta me ayudó",
     helpedNo: "Esta respuesta no me ayudó",
     thanksFeedback: "Gracias por tu opinión.",
+    lastTime: "La última vez preguntaste:",
+    pickUp: "Continuar donde lo dejamos",
+    notNow: "Ahora no",
+    pickUpMsg: "Continuemos donde lo dejamos. Pregunté:",
   },
   fr: {
     suggestions: [
@@ -79,10 +87,43 @@ const COPY = {
     helpedYes: "Cette réponse m'a aidé",
     helpedNo: "Cette réponse ne m'a pas aidé",
     thanksFeedback: "Merci pour votre avis.",
+    lastTime: "La dernière fois, vous avez demandé :",
+    pickUp: "Reprendre où nous en étions",
+    notNow: "Pas maintenant",
+    pickUpMsg: "Reprenons où nous en étions. J'avais demandé :",
   },
 } as const;
 const COPY_FOR = COPY[getLocale() as keyof typeof COPY] || COPY.en;
 const SUGGESTIONS = COPY_FOR.suggestions;
+
+// The last question asked, kept in this browser only (never sent anywhere), so a
+// later visit can offer to pick up where the user left off. Expires after 30 days.
+const MEMORY_KEY = "ib_assistant_memory_v1";
+const MEMORY_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+
+function readMemory(): string {
+  try {
+    const m = JSON.parse(localStorage.getItem(MEMORY_KEY) || "null") as { question?: unknown; at?: unknown } | null;
+    if (!m || typeof m.question !== "string" || !m.question || typeof m.at !== "number") return "";
+    if (Date.now() - m.at > MEMORY_MAX_AGE_MS) {
+      localStorage.removeItem(MEMORY_KEY);
+      return "";
+    }
+    return m.question;
+  } catch {
+    return "";
+  }
+}
+
+function writeMemory(question: string): void {
+  try {
+    localStorage.setItem(MEMORY_KEY, JSON.stringify({ question: question.slice(0, 200), at: Date.now() }));
+  } catch { /* storage blocked: the feature stays off */ }
+}
+
+function clearMemory(): void {
+  try { localStorage.removeItem(MEMORY_KEY); } catch { /* ignore */ }
+}
 
 function main(): void {
   const root = document.getElementById("root");
@@ -115,6 +156,26 @@ function main(): void {
       if (res && res.ok && res.starters.length && messages.length === 0) renderChips(res.starters);
     })
     .catch(() => undefined);
+
+  // "Last time you asked ..." card: a one-line memory kept in this browser only.
+  const memoryCard = el("div", "chat-memory");
+  memoryCard.hidden = true;
+  const savedMemory = readMemory();
+  if (savedMemory) {
+    const pickUp = el("button", "chat-chip", COPY_FOR.pickUp);
+    pickUp.type = "button";
+    pickUp.onclick = () => void send(`${COPY_FOR.pickUpMsg} ${savedMemory}`);
+    const notNow = el("button", "chat-memory-dismiss", COPY_FOR.notNow);
+    notNow.type = "button";
+    notNow.onclick = () => {
+      clearMemory();
+      memoryCard.hidden = true;
+    };
+    const actions = el("div", "chat-memory-actions");
+    actions.append(pickUp, notNow);
+    memoryCard.append(el("p", "chat-memory-text", `${COPY_FOR.lastTime} “${savedMemory}”`), actions);
+    memoryCard.hidden = false;
+  }
 
   const input = el("input", "chat-input");
   input.type = "text";
@@ -155,7 +216,7 @@ function main(): void {
 
   const voiceAudio = document.createElement("audio");
   voiceAudio.autoplay = true;
-  root.append(intro, suggestWrap, log, attached, inputRow, footer, voiceAudio);
+  root.append(intro, memoryCard, suggestWrap, log, attached, inputRow, footer, voiceAudio);
 
   // Downscale to a JPEG of at most 1600 px and about 1 MB; "" when it cannot fit.
   async function shrinkImage(file: File): Promise<string> {
@@ -434,6 +495,8 @@ function main(): void {
     sendBtn.disabled = true;
     input.value = "";
     suggestWrap.style.display = "none";
+    memoryCard.hidden = true;
+    writeMemory(content);
     // "Talk to a human" carries the question so the call note is pre-filled.
     human.href = `https://www.influencerbutler.com/dashboard/book?topic=${encodeURIComponent(content.slice(0, 300))}`;
 
