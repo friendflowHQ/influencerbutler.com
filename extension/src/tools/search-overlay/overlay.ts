@@ -392,6 +392,10 @@ export async function initSearchOverlay(
   // Page-level lookups that can fail (worker asleep, network miss). A failure is
   // reported once in the toolbar with a Retry, instead of the chips silently
   // vanishing. Signed-out users and an unapplied migration are not failures.
+  // Sort key last applied, and a hook the lookups call after they recompute scores
+  // so the Top pick chip and reason never describe stale scores.
+  let activeSort: SortKey = "relevance";
+  let refreshTopPick: () => void = () => undefined;
   const failedLookups = new Set<"market" | "ccRates">();
   const retryers: Record<"market" | "ccRates", () => void> = { market: () => undefined, ccRates: () => undefined };
   let toolbarApi: SearchToolbar | null = null;
@@ -439,6 +443,7 @@ export async function initSearchOverlay(
             renderBadge(row, settings);
           }
         }
+        refreshTopPick();
       })
       .catch(() => noteLookup("market", false));
   };
@@ -494,6 +499,7 @@ export async function initSearchOverlay(
           }
         }
         refreshAcceptAll();
+        refreshTopPick();
       },
     )
       .catch(() => noteLookup("ccRates", false));
@@ -522,6 +528,7 @@ export async function initSearchOverlay(
             renderBadge(row, settings);
           }
         }
+        refreshTopPick();
       },
     );
   }
@@ -614,7 +621,12 @@ export async function initSearchOverlay(
     toolbarApi?.setTopPickReason(reason ? explainCopy(locale).why(reason) : null);
   };
 
+  refreshTopPick = () => {
+    if (activeSort === "score") markTopPick("score");
+  };
+
   const applySort = (key: SortKey): void => {
+    activeSort = key;
     applySortRows(key);
     markTopPick(key);
   };
@@ -813,7 +825,18 @@ export async function initSearchOverlay(
     count: rows.length,
     defaultSort,
     initial: initialView,
-    onViewChange: (view) => void saveViewPrefs(prefsKey, { ...view, currency: pageCurrency }, defaultSort),
+    onViewChange: (view) => {
+      // On a page in another currency the saved price was not shown; keep it (and its
+      // currency) unless the user typed a new one here.
+      const keepSaved = savedView.minPriceCents !== null && initialView.minPriceCents === null && view.minPriceCents === null;
+      void saveViewPrefs(
+        prefsKey,
+        keepSaved
+          ? { ...view, minPriceCents: savedView.minPriceCents, currency: savedView.currency }
+          : { ...view, currency: pageCurrency },
+        defaultSort,
+      );
+    },
     onReset: () => {
       applySort(defaultSort);
       applyFilter({ campaignOnly: false, minPriceCents: null });
@@ -911,7 +934,8 @@ export async function initSearchOverlay(
   if (initialView.campaignOnly || initialView.minPriceCents !== null) {
     applyFilter({ campaignOnly: initialView.campaignOnly, minPriceCents: initialView.minPriceCents });
   }
-  if (initialView.badgesHidden) setBadgesHidden(true);
+  // Always follow the restored view: the module flag may be stale from an earlier run.
+  setBadgesHidden(initialView.badgesHidden);
 
   // Automatic tier-1 enrichment: shared 24h cache first, then viewport-first
   // static /dp/ fetches through the serialized chain. Each arrival upgrades

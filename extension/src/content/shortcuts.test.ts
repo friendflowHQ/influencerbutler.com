@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isTypingTarget, shortcutFor } from "./shortcuts";
+import { isOwnUiHost, isTypingTarget, shortcutFor } from "./shortcuts";
 
 const div = { tagName: "DIV" };
 
@@ -31,5 +31,17 @@ describe("shortcutFor", () => {
   it("treats a missing target as not typing", () => {
     expect(isTypingTarget(null)).toBe(false);
     expect(shortcutFor({ key: "k" }, null)).toBe("prev");
+  });
+});
+
+describe("isOwnUiHost", () => {
+  it("recognizes our shadow hosts but not the badge host or page elements", () => {
+    expect(isOwnUiHost({ className: "ib-ext-chat-bubble-host" })).toBe(true);
+    expect(isOwnUiHost({ className: "ib-ext-inline search-toolbar-host" })).toBe(true);
+    expect(isOwnUiHost({ id: "ib-ext-host" })).toBe(true);
+    expect(isOwnUiHost({ className: "ib-ext-inline tile-badge-host" })).toBe(false);
+    expect(isOwnUiHost({ className: "a-section" })).toBe(false);
+    expect(isOwnUiHost({})).toBe(false);
+    expect(isOwnUiHost(null)).toBe(false);
   });
 });

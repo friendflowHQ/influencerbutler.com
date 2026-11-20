@@ -194,7 +194,10 @@ async function groupPopupCards(): Promise<void> {
     details.append(summary);
     first.before(details);
     for (const card of cards) details.append(card);
-    details.addEventListener("toggle", () => saveGroupState(group.id, details.open));
+    // Remember only what the user chose by clicking the heading. The toggle event
+    // also fires for the initial open state and for nav-driven opens, which must
+    // not count as a choice.
+    summary.addEventListener("click", () => window.setTimeout(() => saveGroupState(group.id, details.open), 0));
   }
 }
 
@@ -1296,7 +1299,7 @@ function renderEventBanner(banner: EventBanner | null): void {
 
 // "Pause on this site": a persisted per-host switch that turns every overlay
 // off there. The page is reloaded so existing overlays go away immediately.
-async function setupPauseRow(tabId: number, url: string, statusText: HTMLElement): Promise<void> {
+async function setupPauseRow(tabId: number, url: string, statusText: HTMLElement): Promise<boolean> {
   const row = byId("pause-row");
   const toggle = byId<HTMLInputElement>("pause-toggle");
   const hint = byId("pause-hint");
@@ -1305,7 +1308,7 @@ async function setupPauseRow(tabId: number, url: string, statusText: HTMLElement
   try {
     hostname = new URL(url).hostname;
   } catch {
-    return;
+    return false;
   }
   const settings = await getSettings();
   const paused = isHostPaused(settings.pausedHosts, hostname);
@@ -1325,6 +1328,7 @@ async function setupPauseRow(tabId: number, url: string, statusText: HTMLElement
       // tab gone: nothing to reload
     }
   };
+  return paused;
 }
 
 const SHORTCUT_LABEL: Record<string, string> = {
@@ -1404,13 +1408,15 @@ async function renderPageStatus(): Promise<void> {
     // GET_PAGE_STATUS on either. Any other host has no tools to report.
     // detectRetailerForUrl covers every Amazon marketplace (amazon.ca, .co.uk, ...).
     const onSupportedSite = Boolean(tab?.url && detectRetailerForUrl(tab.url));
-    if (tab?.id && tab.url && onSupportedSite) await setupPauseRow(tab.id, tab.url, text);
+    const paused = tab?.id && tab.url && onSupportedSite ? await setupPauseRow(tab.id, tab.url, text) : false;
     const tourBtn = byId<HTMLButtonElement>("take-tour");
     tourBtn.hidden = true;
     if (!tab?.id || !onSupportedSite) {
       text.textContent = t().openAmazonToStart;
       return;
     }
+    // Paused on this host: the pause row already said so; do not report tools as active.
+    if (paused) return;
     const status = await chrome.tabs.sendMessage<unknown, PageStatus>(tab.id, { kind: "GET_PAGE_STATUS" });
     if (!status || status.pageType === "other") {
       text.textContent = t().noToolsOnPage;

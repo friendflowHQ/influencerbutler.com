@@ -152,17 +152,21 @@ export function openAcceptSheet(opts: AcceptSheetOptions): void {
       const n = selectedIds(opts.items, checked).length;
       primary.textContent = c.accept(n);
       primary.disabled = n === 0;
+      primary.removeAttribute("aria-disabled");
       secondary.textContent = c.cancel;
       secondary.disabled = false;
       live.textContent = n === 0 ? c.none : "";
       allBox.checked = n === opts.items.length;
     } else if (phase === "running") {
       primary.textContent = c.stop;
-      primary.disabled = stopRequested;
+      // aria-disabled, not disabled: a disabled button drops focus out of the dialog.
+      primary.disabled = false;
+      primary.setAttribute("aria-disabled", String(stopRequested));
       secondary.hidden = true;
     } else {
       primary.textContent = c.close;
       primary.disabled = false;
+      primary.removeAttribute("aria-disabled");
       secondary.hidden = true;
     }
   };

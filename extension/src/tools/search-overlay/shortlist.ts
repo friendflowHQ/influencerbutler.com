@@ -41,6 +41,7 @@ type Copy = {
   working: string;
   addedTo: (n: number, list: string) => string;
   listFailed: string;
+  skipped: (n: number) => string;
   copied: (n: number) => string;
   copyFailed: string;
   sent: (n: number) => string;
@@ -65,6 +66,7 @@ const EN: Copy = {
   working: "Working...",
   addedTo: (n, list) => `Added ${n} to ${list}`,
   listFailed: "Could not add to the list.",
+  skipped: (n) => `${n} could not be added`,
   copied: (n) => `Copied ${n} link${n === 1 ? "" : "s"}`,
   copyFailed: "Could not copy the links.",
   sent: (n) => `Sent ${n} to the app`,
@@ -88,6 +90,7 @@ const ES: Copy = {
   working: "Trabajando...",
   addedTo: (n, list) => `Se agregaron ${n} a ${list}`,
   listFailed: "No se pudo agregar a la lista.",
+  skipped: (n) => `${n} no se pudieron agregar`,
   copied: (n) => `Se copiaron ${n} enlace${n === 1 ? "" : "s"}`,
   copyFailed: "No se pudieron copiar los enlaces.",
   sent: (n) => `Se enviaron ${n} a la app`,
@@ -111,6 +114,7 @@ const FR: Copy = {
   working: "En cours...",
   addedTo: (n, list) => `${n} ajoute${n === 1 ? "" : "s"} a ${list}`,
   listFailed: "Impossible d'ajouter a la liste.",
+  skipped: (n) => `${n} n'ont pas pu etre ajoutes`,
   copied: (n) => `${n} lien${n === 1 ? "" : "s"} copie${n === 1 ? "" : "s"}`,
   copyFailed: "Impossible de copier les liens.",
   sent: (n) => `${n} envoye${n === 1 ? "" : "s"} a l'appli`,
@@ -284,11 +288,12 @@ function mountTray(): void {
 
   const NEW = "__new__";
   let listsLoaded = false;
-  const loadLists = async (): Promise<void> => {
+  const loadLists = async (preferId?: string): Promise<void> => {
     if (listsLoaded) return;
     listsLoaded = true;
     try {
       const res = await sendToBackground<ProductListsResult>({ kind: "GET_PRODUCT_LISTS" });
+      const previous = listSelect.value;
       listSelect.replaceChildren();
       for (const l of res.lists) {
         const opt = el("option") as HTMLOptionElement;
@@ -300,6 +305,9 @@ function mountTray(): void {
       opt.value = NEW;
       opt.textContent = c().newList;
       listSelect.append(opt);
+      // Keep the user's choice (or move to the list just created).
+      const want = preferId ?? previous;
+      if (want && Array.from(listSelect.options).some((o) => o.value === want)) listSelect.value = want;
       newName.hidden = listSelect.value !== NEW;
     } catch {
       listsLoaded = false;
@@ -330,6 +338,7 @@ function mountTray(): void {
         return;
       }
       let added = 0;
+      let skipped = 0;
       let listName = "";
       for (const item of items) {
         const r = await sendToBackground<ProductListsResult>({
@@ -339,15 +348,24 @@ function mountTray(): void {
           item: { asin: item.asin, marketplace: item.marketplace, title: item.title, imageUrl: item.imageUrl },
         });
         if (r.atCap || r.atItemCap) break;
+        // The background skips ids it cannot store (no listId back); only count a
+        // product that is really in the list now.
+        const target = r.listId ? r.lists.find((l) => l.id === r.listId) : undefined;
+        const landed = !!target && target.items.some((i) => i.asin.toUpperCase() === item.asin.toUpperCase() && i.marketplace === item.marketplace);
+        if (!landed) {
+          skipped += 1;
+          continue;
+        }
         added += 1;
         // After the first call created a new list, the rest go into it.
         listId = r.listId ?? listId;
         newListName = undefined;
-        listName = r.lists.find((l) => l.id === r.listId)?.name ?? listName;
+        listName = target?.name ?? listName;
       }
       listsLoaded = false;
-      status.textContent = added > 0 ? c().addedTo(added, listName || listSelect.selectedOptions[0]?.textContent || "") : c().listFailed;
-      if (added > 0) void loadLists();
+      const base = added > 0 ? c().addedTo(added, listName || listSelect.selectedOptions[0]?.textContent || "") : c().listFailed;
+      status.textContent = skipped > 0 && added > 0 ? `${base}. ${c().skipped(skipped)}` : base;
+      if (added > 0) void loadLists(listId);
     } catch {
       status.textContent = c().listFailed;
     } finally {

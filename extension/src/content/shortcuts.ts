@@ -32,6 +32,16 @@ export function isTypingTarget(target: TargetLike): boolean {
   return !!role && TYPING_ROLES.has(role);
 }
 
+// Our shadow-DOM hosts carry an "ib-ext" id or class. The per-tile badge host is
+// excluded: it only holds buttons, and j / k / s should still work after a click
+// on a star.
+export function isOwnUiHost(target: { className?: unknown; id?: string } | null): boolean {
+  if (!target) return false;
+  const cls = typeof target.className === "string" ? target.className : "";
+  if (/tile-badge-host/.test(cls)) return false;
+  return /ib-ext/.test(cls) || (typeof target.id === "string" && target.id.startsWith("ib-ext"));
+}
+
 export function shortcutFor(event: KeyLike, target: TargetLike): ShortcutAction | null {
   if (event.defaultPrevented || event.isComposing) return null;
   if (event.ctrlKey || event.metaKey || event.altKey) return null;
@@ -58,7 +68,12 @@ export function shortcutFor(event: KeyLike, target: TargetLike): ShortcutAction 
 export function installShortcuts(isEnabled: () => boolean): () => void {
   const onKeydown = (event: KeyboardEvent): void => {
     if (!isEnabled()) return;
-    const action = shortcutFor(event, event.target as TargetLike);
+    // Keys typed inside our own closed shadow UIs (chat bubble, report form, toolbar
+    // inputs, tray) reach window with the shadow HOST as the target, and a closed
+    // root hides the real input from composedPath, so recognize our hosts instead.
+    const target = event.target as TargetLike & { className?: unknown; id?: string };
+    if (isOwnUiHost(target)) return;
+    const action = shortcutFor(event, target);
     if (!action) return;
     const detail = { action, handled: false };
     window.dispatchEvent(new CustomEvent("ib-shortcut", { detail }));

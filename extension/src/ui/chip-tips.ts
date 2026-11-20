@@ -10,6 +10,7 @@ const TIP_ATTR = "data-ib-tip";
 export function enableChipTips(wrap: HTMLElement): void {
   let pop: HTMLElement | null = null;
   let owner: HTMLElement | null = null;
+  let shownAt = 0;
 
   const hide = () => {
     pop?.remove();
@@ -30,6 +31,7 @@ export function enableChipTips(wrap: HTMLElement): void {
     pop.textContent = text;
     wrap.append(pop);
     owner = chip;
+    shownAt = Date.now();
     chip.setAttribute("aria-describedby", pop.id);
     const wrapBox = wrap.getBoundingClientRect();
     const chipBox = chip.getBoundingClientRect();
@@ -73,6 +75,9 @@ export function enableChipTips(wrap: HTMLElement): void {
   wrap.addEventListener("click", (e) => {
     const chip = chipFrom(e.target);
     if (!chip) return;
+    // A tap fires mouseover, focus and click together: the click must not close
+    // the tip that the same gesture just opened.
+    if (owner === chip && pop && Date.now() - shownAt < 400) return;
     if (owner === chip && pop) hide();
     else show(chip);
   });
