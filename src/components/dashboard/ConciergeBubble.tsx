@@ -17,7 +17,121 @@ import { SUPPORT_HOURS } from "@/lib/support-hours";
 
 type Role = "you" | "butler";
 type ReplyImage = { url: string; alt: string };
-type Entry = { id: number; role: Role; text: string; images?: ReplyImage[] };
+type ReplyVideo = { title: string; url: string };
+type ReplyCallType = { key: string; label: string; userMinutes: number; requiresSubscription: boolean; description: string };
+type ReplySource = { title: string; url: string };
+type Rating = "up" | "down";
+type Entry = {
+  id: number;
+  role: Role;
+  text: string;
+  images?: ReplyImage[];
+  video?: ReplyVideo;
+  callTypes?: ReplyCallType[];
+  sources?: ReplySource[];
+  rating?: Rating;
+};
+type Extras = Pick<Entry, "images" | "video" | "callTypes" | "sources">;
+
+// Links the assistant writes (markdown or bare) only become clickable when they
+// point at our own site or YouTube; anything else stays plain text.
+const LINK_HOSTS = new Set([
+  "influencerbutler.com",
+  "www.influencerbutler.com",
+  "youtube.com",
+  "www.youtube.com",
+  "youtu.be",
+]);
+const LINK_RE = /\[([^\]]+)\]\(([^\s)]+)\)|(https?:\/\/[^\s)<>]+)/g;
+const FEEDBACK_REASONS = ["Wrong answer", "Didn't answer my question", "Out of date"];
+
+function safeHref(raw: string): string | null {
+  if (raw.startsWith("/") && !raw.startsWith("//")) return raw;
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== "https:" || !LINK_HOSTS.has(u.hostname)) return null;
+    return u.toString();
+  } catch {
+    return null;
+  }
+}
+
+function renderRichText(text: string): React.ReactNode[] {
+  const out: React.ReactNode[] = [];
+  let last = 0;
+  let key = 0;
+  for (const m of text.matchAll(LINK_RE)) {
+    const at = m.index ?? 0;
+    const label = m[1] ?? m[3];
+    const href = safeHref(m[2] ?? m[3]);
+    if (at > last) out.push(text.slice(last, at));
+    if (href) {
+      out.push(
+        <a
+          key={key++}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-orange-700 underline hover:text-orange-800"
+        >
+          {label}
+        </a>,
+      );
+    } else {
+      out.push(m[0]);
+    }
+    last = at + m[0].length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
+
+function safeVideo(raw: unknown): ReplyVideo | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const v = raw as Record<string, unknown>;
+  if (typeof v.url !== "string" || !v.url.startsWith("https://www.youtube.com/")) return undefined;
+  return { url: v.url, title: typeof v.title === "string" ? v.title.slice(0, 120) : "Watch the tutorial" };
+}
+
+function safeCallTypes(raw: unknown): ReplyCallType[] | undefined {
+  const list = (raw as { callTypes?: unknown } | null)?.callTypes;
+  if (!Array.isArray(list)) return undefined;
+  const out: ReplyCallType[] = [];
+  for (const c of list.slice(0, 3)) {
+    if (!c || typeof c !== "object" || typeof c.key !== "string" || typeof c.label !== "string") continue;
+    out.push({
+      key: c.key.slice(0, 20),
+      label: c.label.slice(0, 80),
+      userMinutes: typeof c.userMinutes === "number" ? c.userMinutes : 0,
+      requiresSubscription: !!c.requiresSubscription,
+      description: typeof c.description === "string" ? c.description.slice(0, 200) : "",
+    });
+  }
+  return out.length ? out : undefined;
+}
+
+function safeSources(raw: unknown): ReplySource[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const out = raw
+    .filter(
+      (s): s is ReplySource =>
+        !!s && typeof s.title === "string" && typeof s.url === "string" && s.url.startsWith("https://www.influencerbutler.com/help/"),
+    )
+    .slice(0, 2)
+    .map((s) => ({ title: s.title.slice(0, 120), url: s.url }));
+  return out.length ? out : undefined;
+}
+
+function uiLocale(): string {
+  return typeof navigator !== "undefined" && navigator.language ? navigator.language : "en-US";
+}
+
+function uiPlatform(): string | undefined {
+  if (typeof navigator === "undefined") return undefined;
+  if (/Mac/i.test(navigator.userAgent)) return "darwin";
+  if (/Win/i.test(navigator.userAgent)) return "win32";
+  return undefined;
+}
 
 const FULL_PAGE = "/dashboard/ai-concierge";
 const BOOK_URL = "/dashboard/book";
@@ -93,6 +207,8 @@ export default function ConciergeBubble() {
   const [error, setError] = useState("");
   const [firstName, setFirstName] = useState("");
   const [starters, setStarters] = useState<string[]>([]);
+  // Id of the answer whose thumbs-down is waiting for an optional reason.
+  const [reasonFor, setReasonFor] = useState<number | null>(null);
 
   const entriesRef = useRef<Entry[]>([]);
   const idRef = useRef(0);
@@ -208,11 +324,15 @@ export default function ConciergeBubble() {
   }, [saveTranscript]);
 
   const addEntry = useCallback(
-    (role: Role, text: string, images?: ReplyImage[]) => {
+    (role: Role, text: string, extras?: Extras) => {
       const clean = text.trim();
-      if (!clean && !(images && images.length)) return;
+      const hasExtras = !!extras && !!(extras.images?.length || extras.video || extras.callTypes || extras.sources);
+      if (!clean && !hasExtras) return;
       const entry: Entry = { id: ++idRef.current, role, text: clean };
-      if (images && images.length) entry.images = images;
+      if (extras?.images?.length) entry.images = extras.images;
+      if (extras?.video) entry.video = extras.video;
+      if (extras?.callTypes) entry.callTypes = extras.callTypes;
+      if (extras?.sources) entry.sources = extras.sources;
       entriesRef.current = [...entriesRef.current, entry];
       setEntries(entriesRef.current);
       persist();
@@ -242,10 +362,23 @@ export default function ConciergeBubble() {
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
             messages: history,
-            client: { surface: "website", ...(firstName ? { persona: { firstName } } : {}) },
+            client: {
+              surface: "website",
+              locale: uiLocale(),
+              page: pathname || undefined,
+              platform: uiPlatform(),
+              ...(firstName ? { persona: { firstName } } : {}),
+            },
           }),
         });
-        const json = (await res.json().catch(() => ({}))) as { reply?: string; images?: unknown; error?: string };
+        const json = (await res.json().catch(() => ({}))) as {
+          reply?: string;
+          images?: unknown;
+          video?: unknown;
+          booking?: unknown;
+          sources?: unknown;
+          error?: string;
+        };
         if (!res.ok) {
           setError(
             res.status === 401
@@ -256,7 +389,12 @@ export default function ConciergeBubble() {
           );
           return;
         }
-        addEntry("butler", json.reply || "", safeImages(json.images));
+        addEntry("butler", json.reply || "", {
+          images: safeImages(json.images),
+          video: safeVideo(json.video),
+          callTypes: safeCallTypes(json.booking),
+          sources: safeSources(json.sources),
+        });
       } catch {
         setError("The assistant is unavailable right now. Check your connection and try again.");
       } finally {
@@ -264,7 +402,34 @@ export default function ConciergeBubble() {
         inputRef.current?.focus();
       }
     },
-    [busy, addEntry, firstName],
+    [busy, addEntry, firstName, pathname],
+  );
+
+  // Thumbs up/down on an answer. Best-effort: a failed save never shows an error.
+  const rate = useCallback(
+    (id: number, rating: Rating, reason?: string) => {
+      const idx = entriesRef.current.findIndex((e) => e.id === id);
+      if (idx < 0) return;
+      const answer = entriesRef.current[idx];
+      const question = [...entriesRef.current.slice(0, idx)].reverse().find((e) => e.role === "you")?.text ?? "";
+      entriesRef.current = entriesRef.current.map((e) => (e.id === id ? { ...e, rating } : e));
+      setEntries(entriesRef.current);
+      persist();
+      void fetch("/api/ai-concierge/feedback", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          rating,
+          reason,
+          question,
+          answer: answer.text,
+          surface: "website",
+          page: pathname || undefined,
+          locale: uiLocale(),
+        }),
+      }).catch(() => undefined);
+    },
+    [persist, pathname],
   );
 
   const startOver = useCallback(() => {
@@ -359,7 +524,7 @@ export default function ConciergeBubble() {
                     e.role === "you" ? "bg-orange-50 text-[#9a3412]" : "bg-slate-100 text-slate-800"
                   }`}
                 >
-                  {e.text}
+                  {e.role === "butler" ? renderRichText(e.text) : e.text}
                   {e.images?.map((img) => (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -370,7 +535,115 @@ export default function ConciergeBubble() {
                       className="mt-2 block max-w-full rounded-lg border border-slate-200"
                     />
                   ))}
+                  {e.video && (
+                    <a
+                      href={e.video.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 flex items-center gap-2 rounded-xl border border-orange-200 bg-white px-3 py-2 text-slate-900 no-underline hover:bg-orange-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"
+                    >
+                      <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-700 text-xs text-white">
+                        &#9654;
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold">{e.video.title}</span>
+                        <span className="block text-xs text-slate-600">Watch the video (opens YouTube)</span>
+                      </span>
+                    </a>
+                  )}
+                  {e.callTypes && (
+                    <span className="mt-2 block rounded-xl border border-orange-200 bg-white p-3 text-slate-900">
+                      <span className="block text-sm font-semibold">Book a call</span>
+                      {e.callTypes.map((ct) => (
+                        <a
+                          key={ct.key}
+                          href={BOOK_URL}
+                          className="mt-2 block rounded-lg border border-slate-200 px-3 py-2 no-underline hover:border-orange-400 hover:bg-orange-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"
+                        >
+                          <span className="block text-sm font-medium text-slate-900">
+                            {ct.label}
+                            {ct.userMinutes ? ` (${ct.userMinutes} min)` : ""}
+                          </span>
+                          {ct.description && <span className="block text-xs text-slate-600">{ct.description}</span>}
+                          <span className="mt-1 block text-xs font-medium text-orange-700">Pick a time</span>
+                        </a>
+                      ))}
+                    </span>
+                  )}
+                  {e.sources && (
+                    <span className="mt-2 flex flex-wrap gap-2">
+                      {e.sources.map((s) => (
+                        <a
+                          key={s.url}
+                          href={s.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="rounded-full border border-orange-200 bg-white px-3 py-1 text-xs font-medium text-orange-700 no-underline hover:bg-orange-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"
+                        >
+                          Read the full guide: {s.title}
+                        </a>
+                      ))}
+                    </span>
+                  )}
                 </span>
+                {e.role === "butler" && e.text && (
+                  <div className="mt-1 flex flex-wrap items-center gap-1 pl-1 text-xs text-slate-600">
+                    {e.rating ? (
+                      <span role="status">Thanks for the feedback.</span>
+                    ) : reasonFor === e.id ? (
+                      <>
+                        <span>What went wrong?</span>
+                        {FEEDBACK_REASONS.map((r) => (
+                          <button
+                            key={r}
+                            type="button"
+                            onClick={() => {
+                              setReasonFor(null);
+                              rate(e.id, "down", r);
+                            }}
+                            className="rounded-full border border-slate-300 bg-white px-2 py-0.5 hover:border-orange-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"
+                          >
+                            {r}
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setReasonFor(null);
+                            rate(e.id, "down");
+                          }}
+                          className="rounded-full px-2 py-0.5 underline focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"
+                        >
+                          Skip
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <span className="sr-only">Was this answer helpful?</span>
+                        <button
+                          type="button"
+                          onClick={() => rate(e.id, "up")}
+                          aria-label="This answer helped"
+                          className="rounded-md px-1.5 py-0.5 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M7 10v11H3V10h4zm0 0l4-8a2 2 0 0 1 2 2v4h6a2 2 0 0 1 2 2.3l-1.4 7A2 2 0 0 1 17.6 21H7" />
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setReasonFor(e.id)}
+                          aria-label="This answer did not help"
+                          className="rounded-md px-1.5 py-0.5 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <path d="M17 14V3h4v11h-4zm0 0l-4 8a2 2 0 0 1-2-2v-4H5a2 2 0 0 1-2-2.3l1.4-7A2 2 0 0 1 6.4 3H17" />
+                          </svg>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
             {busy && (

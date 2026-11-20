@@ -966,7 +966,7 @@ function snippetFor(text: string, terms: string[]): string {
   return text.slice(start, start + 320).trim();
 }
 
-async function getSubscription(principal: Principal): Promise<unknown> {
+export async function getSubscription(principal: Principal): Promise<unknown> {
   const admin = getAdmin();
   if (!admin) return { error: "subscription lookup unavailable" };
   const { data } = await admin
@@ -1004,7 +1004,23 @@ export type ClientMeta = {
   // the assistant answers "why did it stop / when will it post again" with the
   // real restart time instead of the general guidance. Treated as data.
   butlerStatus?: string;
+  // UI language the client is showing (es-ES, fr-FR, en-US). Picks which
+  // tutorial locale search_help reads. Unsupported values fall back to English.
+  locale?: string;
+  // Where the user is right now (a site path like /dashboard/deals, or the
+  // extension page's host + path). Lets the answer be about "this page".
+  page?: string;
 };
+
+/** Map any BCP-47-ish language tag onto a tutorial locale (en-US, es-ES, fr-FR). */
+export function normalizeChatLocale(raw: unknown): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  const lang = raw.trim().toLowerCase().slice(0, 2);
+  if (lang === "es") return "es-ES";
+  if (lang === "fr") return "fr-FR";
+  if (lang === "en") return "en-US";
+  return undefined;
+}
 
 /**
  * Validated start_walkthrough payload. The desktop resolves tourId against its
@@ -1246,7 +1262,7 @@ export async function executeAgentTool(
   switch (name) {
     case "search_help": {
       const q = typeof args.query === "string" ? args.query : "";
-      return { results: await searchHelp(q) };
+      return { results: await searchHelp(q, client?.locale) };
     }
     case "start_walkthrough": {
       if (client?.surface !== "desktop") {

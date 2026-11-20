@@ -6,6 +6,8 @@
  */
 import { el } from "../ui/components";
 import { sendToBackground } from "../shared/messages";
+import { getLocale } from "../i18n";
+import { appendRichText, appendAnswerChips, buildFeedbackRow } from "../shared/chat-rich";
 import type {
   AiChatResult,
   AiChatTurn,
@@ -30,12 +32,57 @@ type RealtimeEvent = {
   arguments?: string;
 };
 
-const SUGGESTIONS = [
-  "How do I set up the Chrome extension?",
-  "How do I connect my Amazon Creator API?",
-  "How does Deals posting work?",
-  "Can someone help me set this up on a call?",
-];
+// Starter chips, UI labels and the intro line, localized inline (en/es/fr) like
+// the in-page bubble. Answers themselves follow the language the user writes in.
+const COPY = {
+  en: {
+    suggestions: [
+      "How do I set up the Chrome extension?",
+      "How do I connect my Amazon Creator API?",
+      "How does Deals posting work?",
+      "Can someone help me set this up on a call?",
+    ],
+    intro: "Ask anything about setting up and using Influencer Butler. Answers come from our help guides.",
+    watchVideo: "Watch the video",
+    readGuide: "Read the full guide",
+    bookCall: "Book a call",
+    helpedYes: "This answer helped",
+    helpedNo: "This answer did not help",
+    thanksFeedback: "Thanks for the feedback.",
+  },
+  es: {
+    suggestions: [
+      "¿Cómo configuro la extensión de Chrome?",
+      "¿Cómo conecto mi API de Creadores de Amazon?",
+      "¿Cómo funciona la publicación de Ofertas?",
+      "¿Alguien puede ayudarme a configurarlo en una llamada?",
+    ],
+    intro: "Pregunta lo que quieras sobre cómo configurar y usar Influencer Butler. Las respuestas salen de nuestras guías de ayuda.",
+    watchVideo: "Ver el video",
+    readGuide: "Leer la guía completa",
+    bookCall: "Reservar una llamada",
+    helpedYes: "Esta respuesta me ayudó",
+    helpedNo: "Esta respuesta no me ayudó",
+    thanksFeedback: "Gracias por tu opinión.",
+  },
+  fr: {
+    suggestions: [
+      "Comment configurer l'extension Chrome ?",
+      "Comment connecter mon API Créateurs Amazon ?",
+      "Comment fonctionne la publication des Offres ?",
+      "Quelqu'un peut-il m'aider à le configurer lors d'un appel ?",
+    ],
+    intro: "Posez toutes vos questions sur la configuration et l'utilisation d'Influencer Butler. Les réponses viennent de nos guides d'aide.",
+    watchVideo: "Regarder la vidéo",
+    readGuide: "Lire le guide complet",
+    bookCall: "Réserver un appel",
+    helpedYes: "Cette réponse m'a aidé",
+    helpedNo: "Cette réponse ne m'a pas aidé",
+    thanksFeedback: "Merci pour votre avis.",
+  },
+} as const;
+const COPY_FOR = COPY[getLocale() as keyof typeof COPY] || COPY.en;
+const SUGGESTIONS = COPY_FOR.suggestions;
 
 function main(): void {
   const root = document.getElementById("root");
@@ -47,7 +94,7 @@ function main(): void {
   const intro = el(
     "p",
     "chat-intro",
-    "Ask anything about setting up and using Influencer Butler. Answers come from our help guides.",
+    COPY_FOR.intro,
   );
   const log = el("div", "chat-log");
 
@@ -182,7 +229,8 @@ function main(): void {
     text: string,
     images?: Array<{ url: string; alt: string }>,
   ): HTMLDivElement {
-    const bubble = el("div", `chat-msg ${role}`, text);
+    const bubble = el("div", `chat-msg ${role}`, role === "assistant" ? "" : text);
+    if (role === "assistant") appendRichText(bubble, text);
     // Tutorial screenshots the assistant referenced. The background worker
     // whitelists urls to https://www.influencerbutler.com/assets/ only.
     for (const img of images || []) {
@@ -392,14 +440,24 @@ function main(): void {
     thinking.classList.add("thinking");
 
     try {
-      const res = await sendToBackground<AiChatResult>({ kind: "AI_CHAT", messages });
+      const locale = getLocale();
+      const res = await sendToBackground<AiChatResult>({ kind: "AI_CHAT", messages, locale });
       thinking.remove();
       if (res.ok && res.reply) {
         messages.push({ role: "assistant", content: res.reply });
-        addBubble("assistant", res.reply, res.images);
+        const answerBubble = addBubble("assistant", res.reply, res.images);
+        // The video and booking get full cards below, so the bubble only carries guide chips.
+        appendAnswerChips(answerBubble, { sources: res.sources }, COPY_FOR);
         if (res.video) addVideoCard(res.video);
         if (res.booking) addBookingCard(res.booking);
         if (res.template) addTemplateCard(res.template);
+        const answer = res.reply;
+        log.appendChild(
+          buildFeedbackRow(COPY_FOR, (rating) => {
+            void sendToBackground({ kind: "AI_FEEDBACK", rating, question: content, answer, locale }).catch(() => undefined);
+          }),
+        );
+        log.scrollTop = log.scrollHeight;
       } else {
         addBubble("error", res.error || "The assistant is unavailable right now.");
       }

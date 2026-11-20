@@ -33,6 +33,16 @@
 .chat-voice.active { background: #f97316; color: #fff; }
 .chat-footer { margin-top: 8px; color: #94a3b8; font-size: 12px; }
 .chat-footer a { color: #f97316; }
+.chat-msg a { color: #c2410c; text-decoration: underline; }
+.chat-msg a.chip {
+  display: block; margin-top: 6px; padding: 6px 10px; border: 1px solid #fed7aa;
+  border-radius: 10px; background: #fff; font-weight: 600; text-decoration: none;
+}
+.chat-msg a.chip:hover { background: #fff7ed; }
+.fb { align-self: flex-start; display: flex; align-items: center; gap: 4px; margin: -4px 0 0 4px; font-size: 12px; color: #475569; }
+.fb button { border: 0; background: transparent; cursor: pointer; padding: 2px 6px; border-radius: 6px; font-size: 14px; line-height: 1; }
+.fb button:hover { background: #f1f5f9; }
+.fb button:focus-visible { outline: 2px solid #c2410c; }
 .chat-msg-img { display: block; max-width: 100%; height: auto; border-radius: 8px; margin-top: 6px; border: 1px solid #e2e8f0; }
 
 /* Tutorial-video card. */

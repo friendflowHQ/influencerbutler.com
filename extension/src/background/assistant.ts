@@ -4,6 +4,7 @@ import type {
   AiChatResult,
   AiChatTurn,
   AiChatVideo,
+  AiChatSource,
   AiChatBooking,
   AiChatBookingCallType,
   BookingDay,
@@ -128,7 +129,35 @@ function safeTemplate(raw: unknown): AiChatResult["template"] {
   return { id, butler, name: typeof t.name === "string" ? t.name.slice(0, 60) : "" };
 }
 
-export async function assistantChat(messages: AiChatTurn[]): Promise<AiChatResult> {
+// "Read the full guide" links: same-site help guides only.
+const GUIDE_URL_PREFIX = "https://www.influencerbutler.com/help/";
+function safeSources(raw: unknown): AiChatSource[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const out: AiChatSource[] = [];
+  for (const s of raw as Array<{ title?: unknown; url?: unknown }>) {
+    if (!s || typeof s.title !== "string" || typeof s.url !== "string" || !s.url.startsWith(GUIDE_URL_PREFIX)) continue;
+    out.push({ title: s.title.slice(0, 120), url: s.url });
+    if (out.length >= 2) break;
+  }
+  return out.length ? out : undefined;
+}
+
+// Where the chat is open: host + path only (never the query string, which can
+// carry tokens or search terms). `locale` is the extension UI language.
+function clientMeta(page?: string, locale?: string): Record<string, string> {
+  const meta: Record<string, string> = { surface: "extension" };
+  if (typeof page === "string" && page.trim()) meta.page = page.trim().slice(0, 200);
+  if (typeof locale === "string" && locale.trim()) meta.locale = locale.trim().slice(0, 12);
+  try {
+    meta.appVersion = chrome.runtime.getManifest().version;
+  } catch { /* not available in tests */ }
+  const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+  if (/Mac/i.test(ua)) meta.platform = "darwin";
+  else if (/Win/i.test(ua)) meta.platform = "win32";
+  return meta;
+}
+
+export async function assistantChat(messages: AiChatTurn[], page?: string, locale?: string): Promise<AiChatResult> {
   const state = await getState();
   const key = state.auth.licenseKey;
   if (!key) return { ok: false, error: "Sign in from the popup to use the assistant." };
@@ -137,15 +166,46 @@ export async function assistantChat(messages: AiChatTurn[]): Promise<AiChatResul
     const res = await fetch(ENDPOINTS.aiChat, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({ messages: safeTurns(messages), client: { surface: "extension" } }),
+      body: JSON.stringify({ messages: safeTurns(messages), client: clientMeta(page, locale) }),
     });
-    const data = (await res.json().catch(() => null)) as { reply?: string; images?: unknown; video?: unknown; booking?: unknown; template?: unknown; error?: string } | null;
+    const data = (await res.json().catch(() => null)) as { reply?: string; images?: unknown; video?: unknown; booking?: unknown; sources?: unknown; template?: unknown; error?: string } | null;
     if (!res.ok || !data || typeof data.reply !== "string") {
       return { ok: false, error: data?.error || `The assistant is unavailable (HTTP ${res.status}).` };
     }
-    return { ok: true, reply: data.reply, images: safeImages(data.images), video: safeVideo(data.video), booking: safeBooking(data.booking), template: safeTemplate(data.template) };
+    return { ok: true, reply: data.reply, images: safeImages(data.images), sources: safeSources(data.sources), video: safeVideo(data.video), booking: safeBooking(data.booking), template: safeTemplate(data.template) };
   } catch {
     return { ok: false, error: "Network error reaching the assistant." };
+  }
+}
+
+// Thumbs up/down on an answer. Best-effort; the result is never shown as an error.
+export async function assistantFeedback(msg: {
+  rating: "up" | "down";
+  reason?: string;
+  question?: string;
+  answer?: string;
+  page?: string;
+  locale?: string;
+}): Promise<{ ok: boolean }> {
+  const key = await licenseKey();
+  if (!key || (msg.rating !== "up" && msg.rating !== "down")) return { ok: false };
+  try {
+    const res = await fetch(ENDPOINTS.aiFeedback, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+      body: JSON.stringify({
+        rating: msg.rating,
+        reason: msg.reason,
+        question: msg.question,
+        answer: msg.answer,
+        page: msg.page,
+        locale: msg.locale,
+        surface: "extension",
+      }),
+    });
+    return { ok: res.ok };
+  } catch {
+    return { ok: false };
   }
 }
 

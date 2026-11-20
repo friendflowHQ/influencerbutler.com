@@ -14,9 +14,13 @@ import { UI_PREFIX } from "../../shared/constants";
 import { getLocale } from "../../i18n";
 import type { Locale } from "../../i18n/catalog";
 import { sendToBackground } from "../../shared/messages";
+import { appendRichText, appendAnswerChips, buildFeedbackRow } from "../../shared/chat-rich";
 import type {
   AiChatResult,
   AiChatTurn,
+  AiChatSource,
+  AiChatVideo,
+  AiChatBooking,
   RichFeedbackResult,
   MyFeedbackListResult,
   MyFeedbackItem,
@@ -55,6 +59,12 @@ type Strings = {
   placeholder: string;
   send: string;
   thinking: string;
+  watchVideo: string;
+  readGuide: string;
+  bookCall: string;
+  helpedYes: string;
+  helpedNo: string;
+  thanksFeedback: string;
   intro: string;
   reportCta: string;
   hoursAriaLabel: string;
@@ -143,6 +153,12 @@ const STRINGS: Record<Locale, Strings> = {
     placeholder: "Type your question...",
     send: "Send",
     thinking: "Thinking...",
+    watchVideo: "Watch the video",
+    readGuide: "Read the full guide",
+    bookCall: "Book a call",
+    helpedYes: "This answer helped",
+    helpedNo: "This answer did not help",
+    thanksFeedback: "Thanks for the feedback.",
     intro: "Ask anything about setting up or using Influencer Butler.",
     reportCta: "🐛 Report a bug",
     hoursAriaLabel: "Support hours",
@@ -229,6 +245,12 @@ const STRINGS: Record<Locale, Strings> = {
     placeholder: "Escribe tu pregunta...",
     send: "Enviar",
     thinking: "Pensando...",
+    watchVideo: "Ver el video",
+    readGuide: "Leer la guía completa",
+    bookCall: "Reservar una llamada",
+    helpedYes: "Esta respuesta me ayudó",
+    helpedNo: "Esta respuesta no me ayudó",
+    thanksFeedback: "Gracias por tu opinión.",
     intro: "Pregunta lo que quieras sobre cómo configurar o usar Influencer Butler.",
     reportCta: "🐛 Informar de un error",
     hoursAriaLabel: "Horario de soporte",
@@ -315,6 +337,12 @@ const STRINGS: Record<Locale, Strings> = {
     placeholder: "Saisissez votre question...",
     send: "Envoyer",
     thinking: "Réflexion...",
+    watchVideo: "Regarder la vidéo",
+    readGuide: "Lire le guide complet",
+    bookCall: "Réserver un appel",
+    helpedYes: "Cette réponse m'a aidé",
+    helpedNo: "Cette réponse ne m'a pas aidé",
+    thanksFeedback: "Merci pour votre avis.",
     intro: "Posez une question sur la configuration ou l'utilisation d'Influencer Butler.",
     reportCta: "🐛 Signaler un bug",
     hoursAriaLabel: "Horaires d'assistance",
@@ -449,6 +477,16 @@ const CSS = `
   border: 1px solid rgba(220,38,38,.25); }
 .msg.thinking { opacity: .7; font-style: italic; }
 .msg img { max-width: 100%; border-radius: 8px; margin-top: 6px; display: block; }
+.msg a { color: #c2410c; text-decoration: underline; }
+.msg a.chip { display: block; margin-top: 6px; padding: 6px 10px; border: 1px solid #fed7aa;
+  border-radius: 10px; background: #fff; font-weight: 600; text-decoration: none; }
+.msg a.chip:hover { background: #fff7ed; }
+.fb { align-self: flex-start; display: flex; align-items: center; gap: 4px; margin: -4px 0 0 4px;
+  font-size: 12px; color: #4b5563; }
+.fb button { border: 0; background: transparent; cursor: pointer; padding: 2px 6px; border-radius: 6px;
+  font-size: 14px; line-height: 1; }
+.fb button:hover { background: #f3f4f6; }
+.fb button:focus-visible { outline: 2px solid #c2410c; }
 .reportcta { flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
   gap: 6px; padding: 0 12px 8px; background: #fafafa; }
 .reportcta button { border: 1px solid #e2e5ea; background: #fff; color: #6b7280;
@@ -1434,8 +1472,14 @@ class ChatBubble {
   }
 
   // ---- chat ----
-  private addBubble(role: "user" | "assistant" | "error", text: string, images?: Array<{ url: string; alt: string }>): HTMLElement {
-    const b = el("div", `msg ${role}`, text);
+  private addBubble(
+    role: "user" | "assistant" | "error",
+    text: string,
+    images?: Array<{ url: string; alt: string }>,
+    extras?: { sources?: AiChatSource[]; video?: AiChatVideo; booking?: AiChatBooking },
+  ): HTMLElement {
+    const b = el("div", `msg ${role}`, role === "assistant" ? "" : text);
+    if (role === "assistant") appendRichText(b, text);
     for (const img of images || []) {
       const node = document.createElement("img");
       node.src = img.url;
@@ -1443,9 +1487,15 @@ class ChatBubble {
       node.loading = "lazy";
       b.append(node);
     }
+    if (extras) appendAnswerChips(b, extras, this.s);
     this.transcript.append(b);
     this.transcript.scrollTop = this.transcript.scrollHeight;
     return b;
+  }
+
+  // Where the bubble is open, without the query string (it can carry tokens).
+  private pageLabel(): string {
+    return `${location.hostname}${location.pathname}`.slice(0, 200);
   }
 
   private async sendChat(raw: string): Promise<void> {
@@ -1459,11 +1509,19 @@ class ChatBubble {
     const thinking = this.addBubble("assistant", this.s.thinking);
     thinking.classList.add("thinking");
     try {
-      const res = await sendToBackground<AiChatResult>({ kind: "AI_CHAT", messages: this.history });
+      const locale = getLocale();
+      const res = await sendToBackground<AiChatResult>({ kind: "AI_CHAT", messages: this.history, page: this.pageLabel(), locale });
       thinking.remove();
       if (res && res.ok && res.reply) {
         this.history.push({ role: "assistant", content: res.reply });
-        this.addBubble("assistant", res.reply, res.images);
+        this.addBubble("assistant", res.reply, res.images, { sources: res.sources, video: res.video, booking: res.booking });
+        const answer = res.reply;
+        this.transcript.append(
+          buildFeedbackRow(this.s, (rating) => {
+            void sendToBackground({ kind: "AI_FEEDBACK", rating, question: content, answer, page: this.pageLabel(), locale }).catch(() => undefined);
+          }),
+        );
+        this.transcript.scrollTop = this.transcript.scrollHeight;
       } else {
         this.addBubble("error", (res && res.error) || "The assistant is unavailable right now.");
         if (this.history[this.history.length - 1]?.role === "user") this.history.pop();

@@ -61,6 +61,7 @@ import { generateAiPost } from "./ai-post";
 import { initSocialContextMenu, openComposeWindow } from "./social-compose-window";
 import {
   assistantChat,
+  assistantFeedback,
   assistantBookingSlots,
   assistantBookingCreate,
   assistantVoiceSession,
@@ -490,7 +491,10 @@ chrome.runtime.onMessage.addListener((message: RuntimeMessage, sender, sendRespo
       void lookupEarnings(message.asins).then(sendResponse);
       return true;
     case "AI_CHAT":
-      void assistantChat(message.messages).then(sendResponse);
+      void assistantChat(message.messages, message.page, message.locale).then(sendResponse);
+      return true;
+    case "AI_FEEDBACK":
+      void assistantFeedback(message).then(sendResponse);
       return true;
     case "BOOKING_SLOTS":
       void assistantBookingSlots(message.callType).then(sendResponse);

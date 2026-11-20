@@ -308,7 +308,9 @@ export type RuntimeMessage =
   // expanding a short link first, then re-tag with the user's own attribution.
   | { kind: "CLEAN_LINK"; url: string }
   | { kind: "OPENAI_COMPLETE"; prompt: string }
-  | { kind: "AI_CHAT"; messages: AiChatTurn[] }
+  // page: host + path of the tab the chat is on (no query string); locale: UI language.
+  | { kind: "AI_CHAT"; messages: AiChatTurn[]; page?: string; locale?: string }
+  | { kind: "AI_FEEDBACK"; rating: "up" | "down"; reason?: string; question?: string; answer?: string; page?: string; locale?: string }
   | { kind: "BOOKING_SLOTS"; callType: "demo" | "support" }
   | { kind: "BOOKING_CREATE"; callType: "demo" | "support"; startMs: number; name: string; timezone: string }
   // Social Posting scheduler ("click an image, schedule a post"). All Bearer-
@@ -1324,10 +1326,13 @@ export type AiChatBookingCallType = {
   description: string;
 };
 export type AiChatBooking = { callTypes: AiChatBookingCallType[] };
+// A help guide the answer was grounded on, shown as a "Read the full guide" link.
+export type AiChatSource = { title: string; url: string };
 export type AiChatResult = {
   ok: boolean;
   reply?: string;
   images?: AiChatImage[];
+  sources?: AiChatSource[];
   video?: AiChatVideo;
   booking?: AiChatBooking;
   template?: AiChatTemplate;
