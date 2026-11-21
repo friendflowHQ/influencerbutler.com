@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import NewsletterSignup from "@/components/NewsletterSignup";
 import FacebookGroupIconLink from "@/components/FacebookGroupIconLink";
 import SiteSearch from "@/components/SiteSearch";
@@ -15,7 +15,9 @@ import { SUPPORT_HOURS_LINE } from "@/lib/support-hours";
  * --border #e5e7eb is slate-200, and the footer background #fafafa.
  */
 
-const NAV_LINKS = [
+type NavItem = { href: string; label: string; current?: boolean };
+
+const NAV_LINKS: NavItem[] = [
   { href: "/#features", label: "Features" },
   { href: "/#how-it-works", label: "How It Works" },
   { href: "/#pricing", label: "Pricing" },
@@ -30,12 +32,82 @@ const NAV_LINKS = [
   { href: "/login", label: "Login" },
 ];
 
+// Desktop bar: seven entries instead of twelve. The reading and community
+// pages live under a "Resources" dropdown. The mobile menu keeps the full flat
+// list (NAV_LINKS), so nothing is lost on small screens.
+const RESOURCE_HREFS = ["/#faq", "/course/amazon-influencer", "/blog", "/events", "/tools", "/about"];
+const RESOURCE_LINKS = NAV_LINKS.filter((l) => RESOURCE_HREFS.includes(l.href));
+const BAR_LINKS = NAV_LINKS.filter((l) => !RESOURCE_HREFS.includes(l.href));
+
+function ResourcesMenu() {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLLIElement>(null);
+  const hasCurrent = RESOURCE_LINKS.some((l) => l.current);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDown(e: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <li ref={rootRef} className="relative">
+      <button
+        type="button"
+        aria-haspopup="true"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className={
+          hasCurrent
+            ? "inline-flex items-center gap-1 whitespace-nowrap text-[0.9rem] font-medium text-orange-700"
+            : "inline-flex items-center gap-1 whitespace-nowrap text-[0.9rem] font-medium text-slate-500 transition-colors hover:text-orange-700"
+        }
+      >
+        Resources
+        <svg aria-hidden="true" viewBox="0 0 20 20" className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} fill="none">
+          <path d="M5 8l5 5 5-5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      {open ? (
+        <ul className="absolute left-0 top-full z-50 mt-3 w-52 rounded-xl border border-slate-200 bg-white py-2 shadow-lg">
+          {RESOURCE_LINKS.map((item) => (
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                onClick={() => setOpen(false)}
+                aria-current={item.current ? "page" : undefined}
+                className={
+                  item.current
+                    ? "block px-4 py-2 text-[0.9rem] font-semibold text-orange-700"
+                    : "block px-4 py-2 text-[0.9rem] font-medium text-slate-600 hover:bg-orange-50 hover:text-orange-700"
+                }
+              >
+                {item.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </li>
+  );
+}
+
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur">
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3.5">
+      <nav className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-6 py-3.5">
         <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Influencer Butler home">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -56,21 +128,26 @@ export function SiteHeader() {
             Tailwind lg breakpoint (1024px) is too narrow for that and used to
             force this logo to wrap onto two lines; xl (1280px) gives the row
             enough room. */}
-        <ul className="hidden items-center gap-5 xl:flex">
-          {NAV_LINKS.map((item) => (
+        <ul className="ml-6 hidden items-center gap-5 xl:flex">
+          {BAR_LINKS.filter((l) => l.href !== "/login").map((item) => (
             <li key={item.href}>
               <Link
                 href={item.href}
-                className={
-                  item.current
-                    ? "whitespace-nowrap text-[0.9rem] font-medium text-orange-700"
-                    : "whitespace-nowrap text-[0.9rem] font-medium text-slate-500 transition-colors hover:text-orange-700"
-                }
+                className="whitespace-nowrap text-[0.9rem] font-medium text-slate-500 transition-colors hover:text-orange-700"
               >
                 {item.label}
               </Link>
             </li>
           ))}
+          <ResourcesMenu />
+          <li>
+            <Link
+              href="/login"
+              className="whitespace-nowrap text-[0.9rem] font-medium text-slate-500 transition-colors hover:text-orange-700"
+            >
+              Login
+            </Link>
+          </li>
         </ul>
 
         {/* The link row is tight, so search is a magnifier that expands into a
@@ -81,7 +158,7 @@ export function SiteHeader() {
 
         <a
           href="/go/trial?src=blog-nav"
-          className="ml-3 hidden whitespace-nowrap rounded-[14px] bg-orange-700 px-5 py-2.5 text-[0.9rem] font-semibold text-white shadow-[0_2px_8px_rgba(249,115,22,0.3)] transition hover:bg-orange-800 xl:inline-flex"
+          className="ml-3 hidden whitespace-nowrap rounded-[14px] border-2 border-orange-700 bg-orange-700 px-5 py-2 text-[0.9rem] font-semibold text-white shadow-[0_2px_8px_rgba(249,115,22,0.3)] transition hover:bg-orange-800 xl:inline-flex [body:has(#ib-price-lock-banner)_&]:bg-white [body:has(#ib-price-lock-banner)_&]:text-orange-700 [body:has(#ib-price-lock-banner)_&]:shadow-none [body:has(#ib-price-lock-banner)_&]:hover:bg-orange-50"
         >
           Start Free Trial
         </a>

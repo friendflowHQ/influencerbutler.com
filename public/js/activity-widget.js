@@ -16,6 +16,13 @@
   var FIRST_DELAY_MS = 2500; // let the page settle before the first card
   var CYCLE_MS = 6000; // time each event stays up
 
+  // Reading pages (/blog and posts): the card floats over the text, so hold it
+  // back until the reader is well into the page and stop after a couple of
+  // cards instead of cycling for as long as they read.
+  var ON_BLOG = /^\/blog(\/|$)/.test(window.location.pathname || "");
+  var BLOG_FIRST_DELAY_MS = 15000;
+  var BLOG_MAX_CARDS = 2;
+
   // Marketing social proof is for prospects, not people already signed in. Skip
   // the authenticated app area so the "someone is checking this out" card never
   // pops up inside a paying customer's dashboard. Private invite pages (/p/)
@@ -194,10 +201,19 @@
     injectStyles();
     var root = buildCard();
     var i = nextStartIndex(events.length);
+    var shown = 0;
     function step() {
       if (!document.body.contains(root)) return;
       render(root, events[i]);
       show(root);
+      shown++;
+      if (ON_BLOG && shown >= BLOG_MAX_CARDS) {
+        window.setTimeout(function () {
+          hide(root);
+          window.setTimeout(function () { root.remove(); }, 450);
+        }, CYCLE_MS);
+        return;
+      }
       if (events.length > 1) {
         window.setTimeout(function () {
           hide(root);
@@ -208,7 +224,7 @@
         }, CYCLE_MS);
       }
     }
-    window.setTimeout(step, FIRST_DELAY_MS);
+    window.setTimeout(step, ON_BLOG ? BLOG_FIRST_DELAY_MS : FIRST_DELAY_MS);
   }
 
   function init() {

@@ -14,7 +14,8 @@
 (function () {
   "use strict";
   var END = Date.parse("2026-12-01T08:00:00Z"); // = Nov 30 2026 11:59:59pm PST + 1s
-  var DISMISS_KEY = "ib_price_lock_dismissed_day";
+  var DISMISS_KEY = "ib_price_lock_dismissed_at";
+  var DISMISS_MS = 3 * 24 * 60 * 60 * 1000; // stay dismissed for 3 days
 
   // New prices for static copy, keyed by data-ib-price.
   var NEXT = {
@@ -108,7 +109,8 @@
 
   function dismissedToday() {
     try {
-      return window.localStorage.getItem(DISMISS_KEY) === pacificDay();
+      var at = Number(window.localStorage.getItem(DISMISS_KEY));
+      return at > 0 && now() - at < DISMISS_MS;
     } catch (e) {
       return false;
     }
@@ -116,7 +118,7 @@
 
   function remember() {
     try {
-      window.localStorage.setItem(DISMISS_KEY, pacificDay());
+      window.localStorage.setItem(DISMISS_KEY, String(now()));
     } catch (e) {
       /* private mode: dismiss for this page view only */
     }
@@ -143,30 +145,30 @@
     "radial-gradient(circle at 78% 70%,rgba(249,115,22,.22) 0 2px,transparent 3px)," +
     "radial-gradient(circle at 45% 15%,rgba(255,255,255,.12) 0 1.5px,transparent 2.5px)," +
     "linear-gradient(100deg,#111827 0%,#1c1336 45%,#3b1206 100%);background-size:140px 60px,180px 70px,90px 50px,100% 100%;" +
-    "border-bottom:2px solid #f59e0b;padding:10px 48px 10px 16px}" +
+    "border-bottom:2px solid #f59e0b;padding:6px 48px 6px 16px}" +
     "#ib-price-lock-banner .ibpl-shine{position:absolute;inset:0;pointer-events:none;" +
     "background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.10) 50%,transparent 60%);background-size:250% 100%;" +
     "animation:ibpl-shine 6s ease-in-out infinite}" +
     "#ib-price-lock-banner .ibpl-row{position:relative;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 22px;max-width:1120px;margin:0 auto}" +
     "#ib-price-lock-banner .ibpl-copy{display:flex;align-items:center;gap:10px;text-align:left}" +
-    "#ib-price-lock-banner .ibpl-hat{font-size:28px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4))}" +
+    "#ib-price-lock-banner .ibpl-hat{font-size:22px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4))}" +
     "#ib-price-lock-banner .ibpl-eyebrow{display:block;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#fbbf24}" +
     "#ib-price-lock-banner .ibpl-eyebrow.ibpl-urgent{color:#fca5a5;animation:ibpl-pulse 1.2s ease-in-out infinite}" +
-    "#ib-price-lock-banner .ibpl-head{display:block;font-size:17px;font-weight:800;letter-spacing:-.01em}" +
-    "#ib-price-lock-banner .ibpl-prices{display:block;margin-top:3px;font-size:12.5px;font-weight:600;color:#e5e7eb}" +
+    "#ib-price-lock-banner .ibpl-head{display:block;font-size:15px;font-weight:800;letter-spacing:-.01em}" +
+    "#ib-price-lock-banner .ibpl-prices{display:block;margin-top:1px;font-size:12px;font-weight:600;color:#e5e7eb}" +
     "#ib-price-lock-banner .ibpl-prices i{font-style:normal;color:#cbd5e1;font-weight:500}" +
     "#ib-price-lock-banner .ibpl-prices b{color:#fde68a;font-weight:800}" +
     "#ib-price-lock-banner .ibpl-clock{display:flex;align-items:center;gap:6px}" +
-    "#ib-price-lock-banner .ibpl-tile{min-width:54px;padding:5px 6px 4px;border-radius:9px;text-align:center;" +
+    "#ib-price-lock-banner .ibpl-tile{min-width:44px;padding:3px 5px 2px;border-radius:8px;text-align:center;" +
     "background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.04));border:1px solid rgba(251,191,36,.45);" +
     "box-shadow:inset 0 -2px 0 rgba(0,0,0,.25),0 2px 8px rgba(0,0,0,.25)}" +
-    "#ib-price-lock-banner .ibpl-num{display:block;font-size:24px;font-weight:800;line-height:1.05;color:#fbbf24;" +
+    "#ib-price-lock-banner .ibpl-num{display:block;font-size:19px;font-weight:800;line-height:1.05;color:#fbbf24;" +
     "font-variant-numeric:tabular-nums;text-shadow:0 0 12px rgba(251,191,36,.35)}" +
     "#ib-price-lock-banner .ibpl-num.ibpl-tick{animation:ibpl-tick .35s ease-out}" +
     "#ib-price-lock-banner .ibpl-lbl{display:block;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#e5e7eb}" +
     "#ib-price-lock-banner .ibpl-sep{font-size:20px;font-weight:800;color:rgba(251,191,36,.7);margin-top:-12px}" +
     "#ib-price-lock-banner .ibpl-cta{display:inline-flex;align-items:center;gap:6px;background:#facc15;color:#111827;" +
-    "border-radius:999px;padding:9px 18px;text-decoration:none;font-weight:800;white-space:nowrap;" +
+    "border-radius:999px;padding:7px 16px;text-decoration:none;font-weight:800;white-space:nowrap;" +
     "box-shadow:0 0 0 0 rgba(250,204,21,.6);animation:ibpl-glow 2.4s ease-in-out infinite;transition:transform .15s}" +
     "#ib-price-lock-banner .ibpl-cta:hover{transform:translateY(-1px) scale(1.03)}" +
     "#ib-price-lock-banner .ibpl-cta:focus-visible,#ib-price-lock-banner .ibpl-x:focus-visible{outline:3px solid #fff;outline-offset:2px}" +
@@ -200,6 +202,15 @@
     }
     // Private invite pages (/p/<code>) are one-to-one: no countdown pressure there.
     if (/^\/(dashboard|p)(\/|$)/.test(window.location.pathname)) return;
+    // Affiliate prospects are deciding whether to promote us, not whether to buy:
+    // a countdown and a trial button there compete with the Apply button.
+    if (/^\/affiliates(\/|$)/.test(window.location.pathname)) return;
+    if (
+      /^\/login\/?$/.test(window.location.pathname) &&
+      /[?&]next=(%2F|\/)dashboard(%2F|\/)affiliates/i.test(window.location.search)
+    ) {
+      return;
+    }
     if (document.getElementById("ib-price-lock-banner")) return;
     if (dismissedToday()) return;
 
