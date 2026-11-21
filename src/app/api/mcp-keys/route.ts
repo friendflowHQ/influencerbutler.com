@@ -9,9 +9,14 @@ import { randomBytes } from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/admin";
 import { hashApiKey } from "@/lib/mcp/auth";
+import { rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const KEY_TTL_MS = 365 * 24 * 60 * 60 * 1000;
+const CREATE_LIMIT = 5;
+const CREATE_WINDOW_SEC = 3600;
 
 type KeyRow = {
   id: string;
@@ -20,6 +25,7 @@ type KeyRow = {
   created_at: string;
   last_used_at: string | null;
   revoked_at: string | null;
+  expires_at: string | null;
 };
 
 async function getUserId(): Promise<string | null> {
@@ -56,7 +62,7 @@ export async function GET() {
       };
     })
       .from("mcp_api_keys")
-      .select("id, prefix, label, created_at, last_used_at, revoked_at")
+      .select("id, prefix, label, created_at, last_used_at, revoked_at, expires_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false });
     return NextResponse.json({ keys: result.data ?? [] });
@@ -69,6 +75,14 @@ export async function GET() {
 export async function POST(request: Request) {
   const userId = await getUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const limited = await rateLimit(`mcp-keys-create:user:${userId}`, CREATE_LIMIT, CREATE_WINDOW_SEC);
+  if (!limited.allowed) {
+    return NextResponse.json(
+      { error: "Too many keys created recently. Try again later." },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
 
   const admin = createAdminClient();
   if (!admin) return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
@@ -85,6 +99,7 @@ export async function POST(request: Request) {
   const plaintext = `ib_pat_${random}`;
   const prefix = plaintext.slice(0, 12);
   const keyHash = hashApiKey(plaintext);
+  const expiresAt = new Date(Date.now() + KEY_TTL_MS).toISOString();
 
   try {
     const result = await (admin as unknown as {
@@ -93,7 +108,7 @@ export async function POST(request: Request) {
       };
     })
       .from("mcp_api_keys")
-      .insert({ user_id: userId, key_hash: keyHash, prefix, label: label || null });
+      .insert({ user_id: userId, key_hash: keyHash, prefix, label: label || null, expires_at: expiresAt });
     if (result.error) {
       console.error("mcp-keys insert failed", result.error);
       return NextResponse.json({ error: "Insert failed" }, { status: 500 });
@@ -103,7 +118,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Insert failed" }, { status: 500 });
   }
 
-  return NextResponse.json({ token: plaintext, prefix, label });
+  return NextResponse.json({ token: plaintext, prefix, label, expiresAt });
 }
 
 export async function DELETE(request: Request) {
