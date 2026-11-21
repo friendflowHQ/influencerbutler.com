@@ -27,6 +27,17 @@ export const SEED_EXPENSES: SeedExpense[] = [
   { vendor: "Cloudflare Workers", category: "software_hosting", amountCents: 500, incurredOn: "2026-08-01" },
   { vendor: "Postal Box", category: "office_expense", amountCents: 2000, incurredOn: "2026-08-01" },
 
+  // Vercel invoice history (team Invoices page, totals incl. tax, invoiced on the
+  // 20th). The Pro plan is $20/mo + Utah tax = $21.49; usage is normally covered
+  // by the $20 included credit. July (2026-07-01 above) and the recurring
+  // template from September already cover those months, so only the gaps are
+  // listed here: May, June, August, plus the October overage on top of the
+  // recurring $21.49 (invoice was $52.48, driven by 19.9M Observability Events).
+  { vendor: "Vercel", category: "software_hosting", amountCents: 2149, incurredOn: "2026-05-20" },
+  { vendor: "Vercel", category: "software_hosting", amountCents: 2149, incurredOn: "2026-06-20" },
+  { vendor: "Vercel", category: "software_hosting", amountCents: 2149, incurredOn: "2026-08-20" },
+  { vendor: "Vercel (usage overage)", category: "software_hosting", amountCents: 3099, incurredOn: "2026-10-20" },
+
   // Tello phone plan renewals (from the Tello order history; the 2025-03-05
   // initial "Tello line + SIM card" order is omitted because its total was not
   // in the export - add it manually if wanted).
