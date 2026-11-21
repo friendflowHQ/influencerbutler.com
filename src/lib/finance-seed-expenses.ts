@@ -38,6 +38,29 @@ export const SEED_EXPENSES: SeedExpense[] = [
   { vendor: "Vercel", category: "software_hosting", amountCents: 2149, incurredOn: "2026-08-20" },
   { vendor: "Vercel (usage overage)", category: "software_hosting", amountCents: 3099, incurredOn: "2026-10-20" },
 
+  // OpenAI API billing history for 2026 (platform.openai.com Billing history,
+  // paid invoices from auto-recharges). Invoices on the same day are summed into
+  // one row because the seed ref is keyed by vendor + date. Invoice numbers per
+  // row: Jan 16 = 0049-0057, Jan 17 = 0058, Jan 21 = 0059-0060, Jun 16 =
+  // 0061-0066, Aug 6 = 0067, Sep 21 = 0069, Oct 29 = 0071-0072, Oct 30 = 0073,
+  // Oct 31 = 0074, Nov 6-20 = 0075-0083. Total for 2026: $342.91.
+  { vendor: "OpenAI", category: "software_hosting", amountCents: 5537, incurredOn: "2026-01-16" },
+  { vendor: "OpenAI", category: "software_hosting", amountCents: 557, incurredOn: "2026-01-17" },
+  { vendor: "OpenAI", category: "software_hosting", amountCents: 1161, incurredOn: "2026-01-21" },
+  { vendor: "OpenAI", category: "software_hosting", amountCents: 3870, incurredOn: "2026-06-16" },
+  { vendor: "OpenAI", category: "software_hosting", amountCents: 537, incurredOn: "2026-08-06" },
+  { vendor: "OpenAI", category: "software_hosting", amountCents: 1075, incurredOn: "2026-09-21" },
+  { vendor: "OpenAI", category: "software_hosting", amountCents: 7522, incurredOn: "2026-10-29" },
+  { vendor: "OpenAI", category: "software_hosting", amountCents: 2149, incurredOn: "2026-10-30" },
+  { vendor: "OpenAI", category: "software_hosting", amountCents: 2149, incurredOn: "2026-10-31" },
+  { vendor: "OpenAI", category: "software_hosting", amountCents: 1075, incurredOn: "2026-11-06" },
+  { vendor: "OpenAI", category: "software_hosting", amountCents: 1081, incurredOn: "2026-11-08" },
+  { vendor: "OpenAI", category: "software_hosting", amountCents: 1075, incurredOn: "2026-11-09" },
+  { vendor: "OpenAI", category: "software_hosting", amountCents: 1075, incurredOn: "2026-11-10" },
+  { vendor: "OpenAI", category: "software_hosting", amountCents: 1083, incurredOn: "2026-11-12" },
+  { vendor: "OpenAI", category: "software_hosting", amountCents: 1105, incurredOn: "2026-11-16" },
+  { vendor: "OpenAI", category: "software_hosting", amountCents: 3240, incurredOn: "2026-11-20" },
+
   // Tello phone plan renewals (from the Tello order history; the 2025-03-05
   // initial "Tello line + SIM card" order is omitted because its total was not
   // in the export - add it manually if wanted).
