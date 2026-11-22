@@ -1,6 +1,29 @@
 {
-  "lastUpdated": "2026-11-11",
+  "lastUpdated": "2026-11-22",
   "releases": [
+    {
+      "version": "0.1.37",
+      "date": "November 22, 2026",
+      "sections": [
+        {
+          "heading": "New Features",
+          "items": [
+            "A Getting started card in the popup walks new users through connecting, pairing, accepting a campaign, sending to the desktop app and saving a list",
+            "Your first accepted campaign, first send to the desktop app and first list save each show a short toast with the next step"
+          ]
+        },
+        {
+          "heading": "Bug Fixes",
+          "items": [
+            "Simple view no longer calls a strong seller slow or a weak product good",
+            "Product tiles with a deal no longer show the Deal chip twice, and stray ASIN text is gone from the best-seller category chip",
+            "The Hide badges and Simple view toolbar toggles now show when they are on",
+            "A sales-estimates key that is not enabled no longer shows a Retry notice",
+            "Restored accents in the Spanish and French text"
+          ]
+        }
+      ]
+    },
     {
       "version": "0.1.36",
       "date": "November 11, 2026",
