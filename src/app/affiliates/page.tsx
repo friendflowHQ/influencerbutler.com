@@ -3,6 +3,11 @@ import Image from "next/image";
 import EarningsCalculator from "./EarningsCalculator";
 import FaqAccordion from "./FaqAccordion";
 import FacebookGroupIconLink from "@/components/FacebookGroupIconLink";
+import { PRICE_CENTS, TIER_NAME } from "@/lib/pricing-constants";
+import { loadPublicLeaderboard, type LeaderboardEntry } from "@/lib/leaderboard";
+
+// The leaderboard teaser reads the DB; refresh hourly instead of per request.
+export const revalidate = 3600;
 
 export const metadata = {
   title: "Affiliate Program - Earn 30% Recurring for 12 Months | Influencer Butler",
@@ -10,7 +15,21 @@ export const metadata = {
     "Promote Influencer Butler and earn 30% recurring commission on every subscription for the first 12 months. 30-day cookie, last-click attribution, monthly payouts.",
 };
 
-export default function AffiliatesLandingPage() {
+const EXAMPLE_REFERRALS = 10;
+const SOLO_PRICE = PRICE_CENTS.solo.monthly / 100;
+const EXAMPLE_MONTHLY = Math.round(EXAMPLE_REFERRALS * SOLO_PRICE * 0.3);
+
+async function topAffiliateTeaser(): Promise<LeaderboardEntry[]> {
+  try {
+    const board = await loadPublicLeaderboard(3);
+    return board.entries.filter((e) => !e.placeholder && e.referrals > 0).slice(0, 3);
+  } catch {
+    return [];
+  }
+}
+
+export default async function AffiliatesLandingPage() {
+  const topAffiliates = await topAffiliateTeaser();
   return (
     <main id="main-content" className="min-h-screen bg-white text-slate-900">
       {/* Top nav */}
@@ -93,23 +112,54 @@ export default function AffiliatesLandingPage() {
             Every subscription you refer pays you <strong>30% every month for the first 12 months</strong>.
             No per-affiliate caps. Real creators making real recurring income.
           </p>
-          <div className="mt-8 flex flex-wrap items-center gap-3">
+          <p className="mt-6 inline-flex flex-wrap items-center gap-x-2 rounded-xl border border-[#f97316]/30 bg-white/80 px-4 py-3 text-base text-slate-800 shadow-sm">
+            <span aria-hidden="true">💸</span>
+            <span>
+              Refer <strong>{EXAMPLE_REFERRALS} people</strong> on {TIER_NAME.solo} (${SOLO_PRICE}/mo) and earn about{" "}
+              <strong className="text-[#c2410c]">${EXAMPLE_MONTHLY}/month</strong>, every month, for 12 months.
+            </span>
+            <a href="#earnings-calculator" className="font-semibold text-[#c2410c] underline underline-offset-2 hover:text-[#9a3412]">
+              Try your numbers
+            </a>
+          </p>
+
+          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
             <Link
               href="/affiliates/apply"
-              className="rounded-xl bg-[#f97316] px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
+              className="rounded-xl bg-[#c2410c] px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-[#9a3412]"
             >
               Apply in 2 minutes →
             </Link>
             <Link
               href="/login?next=/dashboard/affiliates"
-              className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-base font-semibold text-slate-800 transition hover:border-[#f97316] hover:text-[#f97316]"
+              className="text-sm font-medium text-slate-700 underline underline-offset-2 hover:text-[#c2410c]"
             >
-              Affiliate login
+              Already an affiliate? Log in
             </Link>
           </div>
 
-          <p className="mt-6 text-sm text-slate-600">
-            Running our end-of-month push?{" "}
+          <ul className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-700">
+            {["Free to apply", "No audience minimum", "Paid monthly via PayPal", "$10 minimum payout"].map((t) => (
+              <li key={t} className="flex items-center gap-1.5">
+                <span aria-hidden="true" className="font-bold text-emerald-700">✓</span>
+                {t}
+              </li>
+            ))}
+          </ul>
+
+          <p className="mt-5 text-sm text-slate-700">
+            {topAffiliates.length > 0 ? (
+              <>
+                On the board right now:{" "}
+                {topAffiliates.map((e, i) => (
+                  <span key={e.rank}>
+                    {i > 0 ? ", " : ""}
+                    <strong>{e.name}</strong> ({e.referrals} referrals)
+                  </span>
+                ))}
+                .{" "}
+              </>
+            ) : null}
             <Link
               href="/leaderboard"
               className="font-semibold text-[#c2410c] underline underline-offset-2 hover:text-[#9a3412]"
@@ -120,14 +170,15 @@ export default function AffiliatesLandingPage() {
 
           <dl className="mt-14 grid grid-cols-2 gap-6 sm:grid-cols-4">
             {[
-              { k: "30%", v: "Recurring commission" },
-              { k: "12 mo", v: "Per referred customer" },
-              { k: "30-day", v: "Referral cookie" },
-              { k: "Monthly", v: "Payouts" },
+              { k: "30%", v: "Recurring commission", sub: "Of every payment they make." },
+              { k: "12 mo", v: "Per referred customer", sub: "Then it stops for that customer." },
+              { k: "30-day", v: "Credit window", sub: "They click your link and subscribe within 30 days? You get paid." },
+              { k: "Monthly", v: "Payouts", sub: "Via PayPal, $10 minimum." },
             ].map((stat) => (
               <div key={stat.k} className="rounded-xl border border-slate-200 bg-white/80 p-4 shadow-sm">
                 <dt className="text-xs font-semibold uppercase tracking-wider text-slate-500">{stat.v}</dt>
                 <dd className="mt-1 text-2xl font-bold text-slate-900">{stat.k}</dd>
+                <dd className="mt-1 text-xs text-slate-600">{stat.sub}</dd>
               </div>
             ))}
           </dl>
@@ -135,7 +186,7 @@ export default function AffiliatesLandingPage() {
       </section>
 
       {/* Earnings calculator */}
-      <section className="mx-auto max-w-6xl px-6 py-20">
+      <section id="earnings-calculator" className="mx-auto max-w-6xl scroll-mt-6 px-6 py-20">
         <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#f97316]">Earnings calculator</p>
@@ -277,18 +328,18 @@ export default function AffiliatesLandingPage() {
           Turn your audience into <span className="text-[#f97316]">recurring income.</span>
         </h2>
         <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
-          Spots are reviewed weekly. Apply now - it takes about two minutes.
+          Most applications get a decision within a day. Apply now: it&apos;s free and takes about two minutes.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Link
             href="/affiliates/apply"
-            className="rounded-xl bg-[#f97316] px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-[#ea580c]"
+            className="rounded-xl bg-[#c2410c] px-6 py-3 text-base font-semibold text-white shadow-sm transition hover:bg-[#9a3412]"
           >
             Apply in 2 minutes →
           </Link>
           <Link
             href="/login?next=/dashboard/affiliates"
-            className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-base font-semibold text-slate-800 transition hover:border-[#f97316] hover:text-[#f97316]"
+            className="text-sm font-medium text-slate-700 underline underline-offset-2 hover:text-[#c2410c]"
           >
             Already approved? Log in
           </Link>

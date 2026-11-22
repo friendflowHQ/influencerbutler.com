@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 
   const apiKey = process.env.RESEND_API_KEY;
   const to = process.env.ADMIN_NOTIFICATION_EMAIL;
-  if (!apiKey || !to) {
+  if (!apiKey) {
     return NextResponse.json({ ok: true, sent: false, reason: "not_configured" });
   }
 
@@ -75,6 +75,43 @@ export async function POST(request: Request) {
   const row = app as { full_name?: string | null; email?: string | null };
   const email = clean(row.email ?? user.email);
   const name = clean(row.full_name ?? email);
+
+  // Applicant confirmation: the apply page promises an email either way, and
+  // an instant receipt tells people the application actually went through.
+  // Goes to the signed-in user's own address (never a caller-supplied one).
+  const applicantTo = user.email ?? (typeof row.email === "string" ? row.email : null);
+  const firstName = name === "-" ? "there" : name.split(" ")[0] || "there";
+  if (applicantTo && (app as { status?: string | null }).status === "pending") {
+    await sendEmail({
+      from: MAIN_FROM,
+      to: applicantTo,
+      subject: "We got your Influencer Butler affiliate application",
+      text: [
+        `Hi ${firstName},`,
+        ``,
+        `Thanks for applying to the Influencer Butler affiliate program. We have your application.`,
+        ``,
+        `What happens next:`,
+        `1. We review it, usually within a day.`,
+        `2. We email you a decision either way.`,
+        `3. Once approved, your branded code and tracked link are live in your dashboard right away.`,
+        ``,
+        `To log in after you are approved: https://www.influencerbutler.com/login?next=/dashboard/affiliates`,
+        `If you did not set a password, choose "Email me a sign-in link" on that page.`,
+        ``,
+        `While you wait, it helps to have your PayPal email and a W-9 (US) or W-8BEN (outside the US) handy. You add both in your dashboard so we can pay you.`,
+        ``,
+        `Just reply to this email if you have any questions.`,
+        ``,
+        `The Influencer Butler team`,
+      ].join("\n"),
+      category: "affiliate_application_received",
+    }).catch(() => undefined);
+  }
+
+  if (!to) {
+    return NextResponse.json({ ok: true, sent: false, reason: "no_admin_email" });
+  }
 
   const { ok: sent } = await sendEmail({
     from: MAIN_FROM,

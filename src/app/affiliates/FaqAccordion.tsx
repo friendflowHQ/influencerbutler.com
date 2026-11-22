@@ -32,6 +32,18 @@ const FAQS: { q: string; a: string }[] = [
     a: "No. A customer can use either your affiliate code OR a site-wide welcome discount at checkout - not both. If they arrive through your affiliate link, your code's discount applies and the welcome discount is suppressed so you still earn the commission. Your referral attribution is preserved either way.",
   },
   {
+    q: "Do I need an audience to apply?",
+    a: "No minimum. We look at whether your audience would genuinely benefit from Influencer Butler, not how big it is. A small, engaged community of Amazon influencers or creators beats a large unrelated one. Tell us where you post and who you talk to in your application.",
+  },
+  {
+    q: "Can I promote on Instagram, TikTok, YouTube or Facebook groups?",
+    a: "Yes. Any platform where your audience hangs out works: social posts, Reels, Stories, YouTube videos, newsletters, podcasts and groups where promotion is allowed. Disclose the affiliate relationship (e.g. \"#ad\" or \"affiliate link\"). The only things we do not allow are trademark bidding on paid search, fake coupon sites and incentivized traffic.",
+  },
+  {
+    q: "Can I refer myself or use my own link?",
+    a: "No. Self-referrals, meaning creating a referral on your own account to earn a commission, and coordinated referral exchanges with other affiliates are not allowed under the Affiliate Program Terms. You can absolutely recommend Influencer Butler to everyone else you know.",
+  },
+  {
     q: "Who reviews applications?",
     a: "Our team reviews new applicants promptly. We're looking for creators and operators whose audience actually benefits from the product. Most applications get a response within a day, and the moment you're approved your code and tracked link are live, with no second signup anywhere else.",
   },

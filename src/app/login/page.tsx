@@ -10,6 +10,47 @@ import TurnstileField, { TURNSTILE_SITE_KEY } from "@/components/TurnstileField"
 
 type LinkMode = "signin" | "reset";
 
+/** True when the visitor came from the affiliate pages (next=/dashboard/affiliates). */
+function useIsAffiliateLogin(): boolean {
+  const searchParams = useSearchParams();
+  return resolveNext(searchParams.get("next")).startsWith("/dashboard/affiliates");
+}
+
+function LoginIntro() {
+  const affiliate = useIsAffiliateLogin();
+  return (
+    <>
+      <h1 className="text-3xl font-semibold tracking-tight">
+        {affiliate ? "Affiliate portal login" : "Welcome back"}
+      </h1>
+      <p className="mt-2 text-sm text-slate-600">
+        {affiliate
+          ? "Log in to get your referral link and see your earnings. Use the same email you applied with."
+          : "Log in to manage your account."}
+      </p>
+    </>
+  );
+}
+
+function LoginFooter() {
+  const affiliate = useIsAffiliateLogin();
+  return affiliate ? (
+    <p className="mt-6 text-sm text-slate-600">
+      Not an affiliate yet?{" "}
+      <Link href="/affiliates/apply" className="font-medium text-[#c2410c] hover:text-[#9a3412]">
+        Apply to the affiliate program
+      </Link>
+    </p>
+  ) : (
+    <p className="mt-6 text-sm text-slate-600">
+      New to Influencer Butler?{" "}
+      <Link href="/signup" className="font-medium text-[#c2410c] hover:text-[#9a3412]">
+        Create an account
+      </Link>
+    </p>
+  );
+}
+
 function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -93,6 +134,7 @@ function LoginForm() {
         <input
           id="email"
           type="email"
+          autoComplete="username"
           required
           value={email}
           onChange={(event) => setEmail(event.target.value)}
@@ -107,6 +149,7 @@ function LoginForm() {
         <input
           id="password"
           type="password"
+          autoComplete="current-password"
           required
           value={password}
           onChange={(event) => setPassword(event.target.value)}
@@ -120,21 +163,31 @@ function LoginForm() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded-lg bg-[#f97316] px-4 py-2.5 text-white font-medium hover:bg-[#ea580c] transition disabled:opacity-60"
+        className="w-full rounded-lg bg-[#c2410c] px-4 py-2.5 text-white font-medium hover:bg-[#9a3412] transition disabled:opacity-60"
       >
         {loading ? "Logging in..." : "Log in"}
       </button>
 
-      {/* Both options carry equal weight on purpose. Plenty of accounts are
-          created by checkout with no password ever set, so "Forgot your
-          password?" reads as not-for-me to the people who most need it, and
-          they end up looping on sign-in links instead. */}
-      <div className="pt-2 text-sm text-slate-600">
-        <p className="font-medium text-slate-700">No password yet, or trouble signing in?</p>
-        <div className="mt-2">
-          <TurnstileField onToken={setTurnstileToken} resetSignal={turnstileReset} />
-        </div>
-        <div className="mt-2 grid gap-2 sm:grid-cols-2">
+      {/* Recovery options. The emailed sign-in link goes first and is the filled
+          button: it works for every case (no password yet, forgotten password,
+          account created by checkout or the desktop app), while "Set or reset my
+          password" is the quieter option for people who specifically want a
+          password. Both need the human check, so the check sits right above them
+          and says so. */}
+      <div className="border-t border-slate-200 pt-4 text-sm text-slate-600">
+        <p className="font-medium text-slate-800">No password yet, or trouble signing in?</p>
+        <p className="mt-1 text-xs text-slate-600">
+          Enter your email above, then we&apos;ll email you a link. No password needed.
+        </p>
+        <div className="mt-3 grid gap-2">
+          <button
+            type="button"
+            onClick={() => requestLink("signin")}
+            disabled={linkMode !== null}
+            className="rounded-lg bg-slate-900 px-3 py-2.5 font-semibold text-white transition hover:bg-slate-700 disabled:opacity-60"
+          >
+            {linkMode === "signin" ? "Sending..." : "Email me a sign-in link"}
+          </button>
           <button
             type="button"
             onClick={() => requestLink("reset")}
@@ -143,16 +196,16 @@ function LoginForm() {
           >
             {linkMode === "reset" ? "Sending..." : "Set or reset my password"}
           </button>
-          <button
-            type="button"
-            onClick={() => requestLink("signin")}
-            disabled={linkMode !== null}
-            className="rounded-lg border border-slate-300 px-3 py-2 font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 disabled:opacity-60"
-          >
-            {linkMode === "signin" ? "Sending..." : "Email me a sign-in link"}
-          </button>
         </div>
-        <p className="mt-3 text-xs text-slate-500">
+        <div className="mt-3">
+          <p id="human-check-label" className="text-xs text-slate-600">
+            Quick security check, needed for the two email options above (not for regular log in):
+          </p>
+          <div className="mt-1" aria-labelledby="human-check-label">
+            <TurnstileField onToken={setTurnstileToken} resetSignal={turnstileReset} />
+          </div>
+        </div>
+        <p className="mt-3 text-xs text-slate-600">
           Entered your email in the desktop app but never logged in on the website? You may not
           have an account here yet: use &quot;Email me a sign-in link&quot; and we&apos;ll set one
           up for you.
@@ -190,19 +243,24 @@ export default function LoginPage() {
             <p className="text-xs text-slate-500">Welcome back to your command center</p>
           </div>
         </div>
-        <h1 className="text-3xl font-semibold tracking-tight">Welcome back</h1>
-        <p className="mt-2 text-sm text-slate-600">Log in to manage your account.</p>
+        <Suspense
+          fallback={
+            <>
+              <h1 className="text-3xl font-semibold tracking-tight">Welcome back</h1>
+              <p className="mt-2 text-sm text-slate-600">Log in to manage your account.</p>
+            </>
+          }
+        >
+          <LoginIntro />
+        </Suspense>
 
         <Suspense fallback={<LoginFormFallback />}>
           <LoginForm />
         </Suspense>
 
-        <p className="mt-6 text-sm text-slate-600">
-          New to Influencer Butler?{" "}
-          <Link href="/signup" className="font-medium text-[#f97316] hover:text-[#ea580c]">
-            Create an account
-          </Link>
-        </p>
+        <Suspense fallback={null}>
+          <LoginFooter />
+        </Suspense>
       </section>
     </main>
   );

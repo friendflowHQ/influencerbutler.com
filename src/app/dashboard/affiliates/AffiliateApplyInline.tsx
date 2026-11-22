@@ -5,14 +5,15 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { COUNTRIES } from "@/lib/countries";
 import NegotiateTermsNote from "@/components/NegotiateTermsNote";
-
-type SocialHandles = {
-  instagram: string;
-  tiktok: string;
-  youtube: string;
-  x: string;
-  amazonStorefront: string;
-};
+import {
+  AudienceFields,
+  EMPTY_AUDIENCE,
+  isValidUrl,
+  normalizeUrl,
+  resolveNiche,
+  sanitizeSocials,
+  type AudienceValue,
+} from "@/app/affiliates/apply/ApplyFields";
 
 type SupabaseBrowserClient = {
   auth: {
@@ -35,15 +36,6 @@ type SupabaseBrowserClient = {
   };
 };
 
-function sanitizeSocials(input: SocialHandles): Record<string, string> {
-  const out: Record<string, string> = {};
-  for (const [key, value] of Object.entries(input)) {
-    const trimmed = value.trim();
-    if (trimmed.length > 0) out[key] = trimmed.slice(0, 200);
-  }
-  return out;
-}
-
 export default function AffiliateApplyInline({
   onSubmitted,
 }: {
@@ -52,19 +44,11 @@ export default function AffiliateApplyInline({
   const [userId, setUserId] = useState<string | null>(null);
   const [email, setEmail] = useState<string>("");
   const [fullName, setFullName] = useState<string>("");
-  const [website, setWebsite] = useState("");
-  const [audienceSize, setAudienceSize] = useState("");
-  const [niche, setNiche] = useState("");
+  const [audience, setAudience] = useState<AudienceValue>(EMPTY_AUDIENCE);
+  const [websiteError, setWebsiteError] = useState<string | null>(null);
   const [promotionStrategy, setPromotionStrategy] = useState("");
   const [country, setCountry] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [socials, setSocials] = useState<SocialHandles>({
-    instagram: "",
-    tiktok: "",
-    youtube: "",
-    x: "",
-    amazonStorefront: "",
-  });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -98,10 +82,6 @@ export default function AffiliateApplyInline({
     };
   }, []);
 
-  const handleSocialChange = (key: keyof SocialHandles, value: string) => {
-    setSocials((prev) => ({ ...prev, [key]: value }));
-  };
-
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
@@ -118,6 +98,11 @@ export default function AffiliateApplyInline({
       setError("Please agree to the Affiliate Program Terms.");
       return;
     }
+    if (!isValidUrl(audience.website)) {
+      setWebsiteError("That doesn't look like a link. Try yoursite.com.");
+      return;
+    }
+    setWebsiteError(null);
     if (!country) {
       setError("Please select your country so we can route the right tax form to you.");
       return;
@@ -140,10 +125,10 @@ export default function AffiliateApplyInline({
             user_id: userId,
             email: normalizedEmail,
             full_name: fullName.trim(),
-            website: website.trim() || null,
-            social_handles: sanitizeSocials(socials),
-            audience_size: audienceSize.trim() || null,
-            niche: niche.trim() || null,
+            website: normalizeUrl(audience.website) || null,
+            social_handles: sanitizeSocials(audience),
+            audience_size: audience.audienceSize || null,
+            niche: resolveNiche(audience) || null,
             promotion_strategy: promotionStrategy.trim(),
             country: country || null,
             agreed_to_terms: true,
@@ -186,8 +171,8 @@ export default function AffiliateApplyInline({
           Earn 30% recurring - 12 months per referral.
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-slate-600">
-          Tell us a bit about your audience and how you&apos;d promote Influencer Butler. Applications are
-          reviewed weekly, and you&apos;ll hear back via email either way.
+          Tell us a bit about your audience and how you&apos;d promote Influencer Butler. Most applications
+          get a decision within a day, and you&apos;ll hear back via email either way.
         </p>
       </header>
 
@@ -221,68 +206,7 @@ export default function AffiliateApplyInline({
             <legend className="text-sm font-semibold uppercase tracking-wider text-slate-500">
               About your audience
             </legend>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Website or main channel">
-                <input
-                  type="url"
-                  placeholder="https://"
-                  value={website}
-                  onChange={(e) => setWebsite(e.target.value)}
-                  className={inputClass}
-                />
-              </Field>
-              <Field label="Audience size" hint="e.g. 25k TikTok, 5k newsletter">
-                <input
-                  value={audienceSize}
-                  onChange={(e) => setAudienceSize(e.target.value)}
-                  className={inputClass}
-                />
-              </Field>
-            </div>
-            <Field label="Niche" hint="e.g. content creators, Amazon influencers, affiliate marketing">
-              <input value={niche} onChange={(e) => setNiche(e.target.value)} className={inputClass} />
-            </Field>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Instagram handle">
-                <input
-                  placeholder="@yourhandle"
-                  value={socials.instagram}
-                  onChange={(e) => handleSocialChange("instagram", e.target.value)}
-                  className={inputClass}
-                />
-              </Field>
-              <Field label="TikTok handle">
-                <input
-                  placeholder="@yourhandle"
-                  value={socials.tiktok}
-                  onChange={(e) => handleSocialChange("tiktok", e.target.value)}
-                  className={inputClass}
-                />
-              </Field>
-              <Field label="YouTube channel">
-                <input
-                  value={socials.youtube}
-                  onChange={(e) => handleSocialChange("youtube", e.target.value)}
-                  className={inputClass}
-                />
-              </Field>
-              <Field label="X / Twitter">
-                <input
-                  placeholder="@yourhandle"
-                  value={socials.x}
-                  onChange={(e) => handleSocialChange("x", e.target.value)}
-                  className={inputClass}
-                />
-              </Field>
-              <Field label="Amazon storefront">
-                <input
-                  value={socials.amazonStorefront}
-                  onChange={(e) => handleSocialChange("amazonStorefront", e.target.value)}
-                  className={inputClass}
-                />
-              </Field>
-            </div>
+            <AudienceFields value={audience} onChange={setAudience} errors={{ website: websiteError }} />
           </fieldset>
 
           <fieldset className="space-y-4">
