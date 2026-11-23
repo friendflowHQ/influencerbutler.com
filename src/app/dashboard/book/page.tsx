@@ -100,6 +100,11 @@ export default function BookCallPage() {
   // Set by /api/booking/slots when this customer skipped the in-app setup
   // walkthrough (src/lib/setup-gate.ts). The create route is the real gate.
   const [setupRequired, setSetupRequired] = useState<string | null>(null);
+  // Set by /api/booking/slots once the call policy is on (src/lib/call-policy.ts):
+  // policyActive switches the card copy, policyBlocked replaces the calendar with
+  // the reason this customer cannot book this call type. The create route is the real gate.
+  const [policyActive, setPolicyActive] = useState(false);
+  const [policyBlocked, setPolicyBlocked] = useState<string | null>(null);
 
   const loadPartners = useCallback(async () => {
     try {
@@ -150,6 +155,8 @@ export default function BookCallPage() {
       const j = await res.json();
       setDays(j.days ?? []);
       setSetupRequired(j.setupRequired ? (j.setupRequiredMessage || "") : null);
+      setPolicyActive(!!j.policyActive);
+      setPolicyBlocked(typeof j.policyBlocked === "string" ? j.policyBlocked : null);
     } catch { setMsg("Could not load times."); }
     finally { setLoadingSlots(false); }
   }, []);
@@ -167,6 +174,8 @@ export default function BookCallPage() {
       const nextDays: DaySlots[] = j.days ?? [];
       setDays(nextDays);
       setSetupRequired(j.setupRequired ? (j.setupRequiredMessage || "") : null);
+      setPolicyActive(!!j.policyActive);
+      setPolicyBlocked(typeof j.policyBlocked === "string" ? j.policyBlocked : null);
       setSelectedSlot((prev) => {
         if (!prev) return prev;
         const stillOffered = nextDays.some((d) => d.slots.some((s) => s.startMs === prev.startMs));
@@ -207,7 +216,8 @@ export default function BookCallPage() {
       day.slots.push(s);
       if (s.partner) day.partner = true;
     };
-    for (const d of days) for (const s of d.slots) add(s);
+    // A blocked call type shows no public times (reserved partner times below stay).
+    if (policyBlocked === null) for (const d of days) for (const s of d.slots) add(s);
     // Partner-reserved Setup times ride alongside the public ones.
     if (callType === "demo") {
       for (const p of partners) {
@@ -217,7 +227,7 @@ export default function BookCallPage() {
     }
     for (const day of map.values()) day.slots.sort((a, b) => a.startMs - b.startMs);
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
-  }, [days, partners, callType]);
+  }, [days, partners, callType, policyBlocked]);
 
   const partnerFor = useCallback((key: string | undefined) => partners.find((p) => p.key === key) ?? null, [partners]);
   const selectedPartner = partnerFor(selectedSlot?.partner);
@@ -295,14 +305,26 @@ export default function BookCallPage() {
         <button type="button" onClick={() => setCallType("demo")}
           className={`rounded-2xl border p-4 text-left ${callType === "demo" ? "border-[#f97316] ring-1 ring-[#f97316]" : "border-slate-200"} bg-white`}>
           <div className="font-semibold text-slate-900">{CALL_TYPES.demo.label}</div>
-          <div className="mt-1 text-sm text-slate-500">{CALL_TYPES.demo.description}</div>
+          <div className="mt-1 text-sm text-slate-500">
+            {policyActive
+              ? "Hands-on setup with us, 1:1. A paid one-time session. To set up on your own, use the Setup checklist in the app, the video guides, or a live group session."
+              : CALL_TYPES.demo.description}
+          </div>
         </button>
         <button type="button" disabled={isSubscriber === false || isBeginner === true} onClick={() => isSubscriber !== false && isBeginner !== true && setCallType("support")}
           className={`rounded-2xl border p-4 text-left ${callType === "support" ? "border-[#f97316] ring-1 ring-[#f97316]" : "border-slate-200"} bg-white ${isSubscriber === false || isBeginner === true ? "opacity-60" : ""}`}>
           <div className="font-semibold text-slate-900">{CALL_TYPES.support.label}</div>
-          <div className="mt-1 text-sm text-slate-500">{CALL_TYPES.support.description}</div>
-          {isSubscriber === false && <div className="mt-2 text-xs text-slate-500">New to Butler? Book the free <strong>{CALL_TYPES.demo.label}</strong> above (or Butler AI) for setup help at no cost, or <a href="/dashboard/subscription" className="underline">start a plan</a> (no credit card required).</div>}
-          {isSubscriber !== false && isBeginner === true && <div className="mt-2 text-xs text-slate-500">Priority 1:1 calls are part of the Power User plan. <a href="/dashboard/subscription" className="underline">Upgrade in one click</a> (same license key), or book the free <strong>{CALL_TYPES.demo.label}</strong> above.</div>}
+          <div className="mt-1 text-sm text-slate-500">
+            {policyActive
+              ? "A focused 45-minute 1:1 to troubleshoot a specific issue, fast. Included with Power User, Team and Agency plans, one call per month."
+              : CALL_TYPES.support.description}
+          </div>
+          {isSubscriber === false && (policyActive
+            ? <div className="mt-2 text-xs text-slate-500">Ask Butler AI above any time, or <a href="/dashboard/subscription" className="underline">start a plan</a> (no credit card required).</div>
+            : <div className="mt-2 text-xs text-slate-500">New to Butler? Book the free <strong>{CALL_TYPES.demo.label}</strong> above (or Butler AI) for setup help at no cost, or <a href="/dashboard/subscription" className="underline">start a plan</a> (no credit card required).</div>)}
+          {isSubscriber !== false && isBeginner === true && (policyActive
+            ? <div className="mt-2 text-xs text-slate-500">Priority 1:1 calls are part of the Power User plan. <a href="/dashboard/subscription" className="underline">Upgrade in one click</a> (same license key).</div>
+            : <div className="mt-2 text-xs text-slate-500">Priority 1:1 calls are part of the Power User plan. <a href="/dashboard/subscription" className="underline">Upgrade in one click</a> (same license key), or book the free <strong>{CALL_TYPES.demo.label}</strong> above.</div>)}
         </button>
       </div>
 
@@ -320,6 +342,17 @@ export default function BookCallPage() {
           <p className="mt-3 text-xs text-slate-500">
             We strongly recommend it: customers who finish setup get the most out of their call. It can take a minute for this page to notice you finished.
           </p>
+        </div>
+      ) : policyBlocked !== null && byDay.length === 0 ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-5" role="status">
+          <h2 className="font-semibold text-slate-900">
+            {callType === "demo" ? "The free Setup call has ended" : "1:1 calls are part of higher plans"}
+          </h2>
+          <p className="mt-2 text-sm text-slate-700">{policyBlocked}</p>
+          <div className="mt-3 flex flex-wrap gap-3 text-sm">
+            <a href="/help" className="rounded-lg border border-slate-300 px-3 py-2 text-slate-800">Open the Help center</a>
+            <a href="/events" className="rounded-lg border border-slate-300 px-3 py-2 text-slate-800">Live group sessions</a>
+          </div>
         </div>
       ) : (<>
       {/* Day selector */}

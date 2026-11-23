@@ -1,7 +1,8 @@
 /**
  * POST /api/booking/create
  * Body: { type:'support'|'demo', startMs:number, timezone?:string, topic?:string, topics?:string[], name?:string }
- * Gates support to subscribers, re-validates the slot, creates a Google Meet
+ * Gates support to subscribers (and, from the call-policy start date, to plans
+ * that include calls, one per month), re-validates the slot, creates a Google Meet
  * link (or falls back to the configured link), books atomically via the
  * book_call RPC, schedules a Recall.ai recording bot, and sends the
  * confirmation (+.ics) + owner notification emails.
@@ -11,7 +12,9 @@ import { resolveAuth } from "@/lib/license-auth";
 import { getAdmin, validateSlot, loadConfig } from "@/lib/scheduling-server";
 import { CALL_TYPES, type CallTypeKey } from "@/lib/scheduling";
 import { tierForSubscriptionStatus } from "@/lib/entitlements";
-import { planLevelForVariantId } from "@/lib/lemonsqueezy";
+import { planForVariantId, planLevelForVariantId } from "@/lib/lemonsqueezy";
+import { callPolicyActive, checkCallPolicy } from "@/lib/call-policy";
+import { supportBookingsInMonth } from "@/lib/call-policy-server";
 import { createMeetEvent, isGoogleConfigured } from "@/lib/google-meet";
 import { scheduleBot, isRecallConfigured, shouldScheduleRecordingBot } from "@/lib/recall";
 import { sendBookingConfirmation, sendOwnerNotification, type BookingEmailData } from "@/lib/call-emails";
@@ -76,6 +79,15 @@ export async function POST(request: Request) {
       .from("subscriptions").select("status,ls_variant_id").eq("user_id", userId)
       .order("created_at", { ascending: false }).limit(1).maybeSingle();
     const tier = tierForSubscriptionStatus((sub?.status as string) ?? null);
+    // From the policy start date (src/lib/call-policy.ts) only Power User plans
+    // and the legacy Team and Agency plans book Priority 1:1 calls, one per
+    // calendar month. Before that date the older rules below apply unchanged.
+    if (callPolicyActive(Date.now())) {
+      const plan = tier === "free" ? null : planForVariantId((sub?.ls_variant_id as string | number | null | undefined) ?? null);
+      const used = plan ? await supportBookingsInMonth(admin, userId, startMs) : 0;
+      const verdict = checkCallPolicy({ type, now: Date.now(), plan, supportBookingsInMonth: used });
+      if (!verdict.ok) return NextResponse.json({ error: verdict.error, code: verdict.code }, { status: verdict.status });
+    }
     // Beginner plans do not include 1:1 calls (Power User and every pre-split
     // plan do). The free Setup call stays open to everyone.
     if (tier !== "free" && planLevelForVariantId((sub?.ls_variant_id as string | number | null | undefined) ?? null) === "beginner") {
@@ -91,6 +103,14 @@ export async function POST(request: Request) {
   // These are held off the public calendar, so they skip validateSlot.
   const program = body.partner ? findProgram(body.partner) : null;
   if (body.partner && !program) return NextResponse.json({ error: "Unknown reserved call." }, { status: 400 });
+  // The free Setup call ends at the policy start date; reserved partner slots are exempt.
+  if (type === "demo") {
+    const verdict = checkCallPolicy({
+      type, now: Date.now(), plan: null, supportBookingsInMonth: 0,
+      partnerReserved: !!program, setupSessionUrl: process.env.SETUP_SESSION_CHECKOUT_URL || null,
+    });
+    if (!verdict.ok) return NextResponse.json({ error: verdict.error, code: verdict.code }, { status: verdict.status });
+  }
   let v: Awaited<ReturnType<typeof validateSlot>>;
   if (program) {
     if (type !== PARTNER_CALL_TYPE) return NextResponse.json({ error: "Reserved times are for the Setup call." }, { status: 400 });

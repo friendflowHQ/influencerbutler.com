@@ -8,6 +8,8 @@ import { resolveAuth } from "@/lib/license-auth";
 import { getAdmin, availabilityWithTypes } from "@/lib/scheduling-server";
 import { CALL_TYPES, type CallTypeKey } from "@/lib/scheduling";
 import { setupWalkthroughSkipped, SETUP_REQUIRED_MESSAGE } from "@/lib/setup-gate";
+import { callPolicyActive, checkCallPolicy } from "@/lib/call-policy";
+import { planForCalls } from "@/lib/call-policy-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,7 +33,24 @@ export async function GET(request: Request) {
     availabilityWithTypes(admin, type as CallTypeKey, Date.now()),
     setupWalkthroughSkipped(admin, authed.auth.email),
   ]);
+
+  // From the call-policy start date (src/lib/call-policy.ts) the free Setup call
+  // ends and Priority 1:1 calls need a plan that includes them. The page shows
+  // this message instead of the calendar; the create route is the real gate.
+  const now = Date.now();
+  const policyActive = callPolicyActive(now);
+  let policyBlocked: string | null = null;
+  if (policyActive) {
+    const plan = type === "support" ? await planForCalls(admin, authed.auth.userId) : null;
+    const verdict = checkCallPolicy({
+      type: type as CallTypeKey, now, plan, supportBookingsInMonth: 0,
+      setupSessionUrl: process.env.SETUP_SESSION_CHECKOUT_URL || null,
+    });
+    if (!verdict.ok) policyBlocked = verdict.error;
+  }
   return NextResponse.json({
+    policyActive,
+    policyBlocked,
     callType: type,
     userMinutes: CALL_TYPES[type as CallTypeKey].userMinutes,
     days,
