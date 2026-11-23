@@ -21,7 +21,9 @@ import { sendBookingConfirmation, sendOwnerNotification, type BookingEmailData }
 import { sanitizeTopics, isMissingTopicsColumn } from "@/lib/call-topics";
 import { setupWalkthroughSkipped, SETUP_REQUIRED_CODE, SETUP_REQUIRED_MESSAGE } from "@/lib/setup-gate";
 import { callPrepRequired, checkCallPrep } from "@/lib/call-prep";
-import { checkCallPrereqs, summarizeCallPrereqs } from "@/lib/call-prerequisites";
+import { callPrereqsRequired, checkCallPrereqs, summarizeCallPrereqs } from "@/lib/call-prerequisites";
+import { SETUP_NOT_DONE_CODE, setupNotDoneMessage, setupVerifyEnabled, verifiedPrereqIds, verifySetup } from "@/lib/setup-snapshot";
+import { readSetupSnapshot } from "@/lib/setup-snapshot-server";
 import { findProgram, PARTNER_CALL_TYPE } from "@/lib/partner-call-slots";
 import {
   isPartnerAudience,
@@ -77,11 +79,35 @@ export async function POST(request: Request) {
   // Gate: website bookings confirm the per-topic checklist (guided setup done,
   // material ready) and say what they already tried (src/lib/call-prerequisites.ts).
   // App, extension and phone bookings have their own pre-call flow (call-prep above).
+  const viaWebsite = !/^bearer\s/i.test(request.headers.get("authorization") || "");
+  // Verification: the desktop app reports which required setup steps are really done
+  // (src/lib/setup-snapshot.ts). A step the snapshot shows missing refuses the booking
+  // with the exact steps; one it proves done needs no tick. No snapshot (older install,
+  // table not applied, lookup error) falls back to the checkboxes below.
+  const topicKeys = sanitizeTopics(body.topics);
+  let setupLine = "";
+  let verifiedIds: string[] = [];
+  if (viaWebsite && callPrereqsRequired() && setupVerifyEnabled()) {
+    const stored = await readSetupSnapshot(admin, userId);
+    const verification = verifySetup({ topics: topicKeys, type, snapshot: stored?.snapshot ?? null, updatedAt: stored?.updatedAt ?? null });
+    if (verification.items.some((i) => i.state === "missing")) {
+      return NextResponse.json({
+        error: setupNotDoneMessage(verification),
+        code: SETUP_NOT_DONE_CODE,
+        missingSetup: verification.items.filter((i) => i.state === "missing"),
+      }, { status: 422 });
+    }
+    verifiedIds = verifiedPrereqIds(verification);
+    setupLine = verification.hasSnapshot
+      ? `App-verified setup: ${verifiedIds.length ? verifiedIds.join(", ") : "nothing checkable for these topics"} (snapshot ${verification.updatedAt}).`
+      : "App-verified setup: no recent snapshot from the app (older install or never synced), checkboxes only.";
+  }
   const prereq = checkCallPrereqs({
     type,
-    topics: sanitizeTopics(body.topics),
+    topics: topicKeys,
     raw: body.prereq,
-    viaWebsite: !/^bearer\s/i.test(request.headers.get("authorization") || ""),
+    viaWebsite,
+    verified: verifiedIds,
   });
   if (!prereq.ok) {
     return NextResponse.json({ error: prereq.error, code: prereq.code, missing: prereq.missing }, { status: prereq.status });
@@ -146,9 +172,9 @@ export async function POST(request: Request) {
   const name = (body.name || "").trim().slice(0, 200) || null;
   const timezone = (body.timezone || "").trim().slice(0, 64) || null;
   // The owner reads this on the prep sheet; the customer's own words stay as typed in their emails.
-  const prepSummary = prereq.ok && (prereq.ack.length > 0 || prereq.tried)
+  const prepSummary = (prereq.ok && (prereq.ack.length > 0 || prereq.tried)
     ? summarizeCallPrereqs({ type, topics, ack: prereq.ack, tried: prereq.tried })
-    : "";
+    : "") + (setupLine ? `\n${setupLine}` : "");
 
   // Video link: a Google Meet on the owner's calendar if connected, else the
   // fallback link the owner set in the admin.

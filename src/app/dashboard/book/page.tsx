@@ -12,6 +12,7 @@ import { CALL_TYPES, type CallTypeKey } from "@/lib/scheduling";
 import { getTopic } from "@/lib/call-topics";
 import { prereqsFor, triedQuestion, TRIED_MIN_CHARS } from "@/lib/call-prerequisites";
 import { TopicPicker } from "@/components/scheduling/TopicChips";
+import type { VerifiedItem } from "@/lib/setup-snapshot";
 
 type Slot = { startMs: number; endMs: number; userEndMs: number; types?: ("support" | "demo")[]; partner?: string };
 
@@ -235,8 +236,28 @@ export default function BookCallPage() {
   }, [days, partners, callType, policyBlocked]);
 
   const prereqs = useMemo(() => prereqsFor(topics, callType), [topics, callType]);
+  // What the desktop app reported about this customer's setup (src/lib/setup-snapshot.ts):
+  // per checklist item, verified done, verified missing (with the exact steps) or unknown
+  // (older install, never synced). The create route is the real gate.
+  const [setupItems, setSetupItems] = useState<Record<string, VerifiedItem>>({});
+  useEffect(() => {
+    if (prereqsFor(topics, callType).length === 0) { setSetupItems({}); return; }
+    let live = true;
+    fetch(`/api/me/setup-snapshot?type=${callType}&topics=${encodeURIComponent(topics.join(","))}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (!live) return;
+        const next: Record<string, VerifiedItem> = {};
+        for (const it of (j?.items ?? []) as VerifiedItem[]) next[it.prereqId] = it;
+        setSetupItems(next);
+      })
+      .catch(() => { if (live) setSetupItems({}); });
+    return () => { live = false; };
+  }, [topics, callType]);
+  const stateOf = (id: string) => setupItems[id]?.state ?? "unknown";
   const triedMin = TRIED_MIN_CHARS[callType === "support" ? "support" : "demo"];
-  const prereqsOk = prereqs.every((p) => ack.includes(p.id)) && (prereqs.length === 0 || tried.trim().length >= triedMin);
+  const setupBlocked = prereqs.some((p) => stateOf(p.id) === "missing");
+  const prereqsOk = !setupBlocked && prereqs.every((p) => stateOf(p.id) === "verified" || ack.includes(p.id)) && (prereqs.length === 0 || tried.trim().length >= triedMin);
 
   const partnerFor = useCallback((key: string | undefined) => partners.find((p) => p.key === key) ?? null, [partners]);
   const selectedPartner = partnerFor(selectedSlot?.partner);
@@ -461,22 +482,32 @@ export default function BookCallPage() {
                 We keep calls short by starting from a finished setup. If something below is not done yet, do it first, then come back. The guided setups are in the app under Setup Checklist (left menu) and Settings, First-run walkthrough.
               </p>
               <ul className="mt-2 space-y-2">
-                {prereqs.map((p) => (
-                  <li key={p.id}>
-                    <label className="flex items-start gap-2 text-sm text-slate-800">
-                      <input
-                        type="checkbox"
-                        className="mt-0.5"
-                        checked={ack.includes(p.id)}
-                        onChange={(e) => setAck((cur) => e.target.checked ? [...cur, p.id] : cur.filter((x) => x !== p.id))}
-                      />
-                      <span>
-                        {p.text}
-                        {p.helpSlug && <> <a href={`/help/tutorials/${p.helpSlug}`} target="_blank" rel="noreferrer" className="font-medium text-[#c2410c] underline">Open the guide</a></>}
-                      </span>
-                    </label>
-                  </li>
-                ))}
+                {prereqs.map((p) => {
+                  const state = stateOf(p.id);
+                  const missingSteps = setupItems[p.id]?.missing ?? [];
+                  return (
+                    <li key={p.id}>
+                      <label className="flex items-start gap-2 text-sm text-slate-800">
+                        <input
+                          type="checkbox"
+                          className="mt-0.5"
+                          checked={state === "verified" || ack.includes(p.id)}
+                          disabled={state !== "unknown"}
+                          onChange={(e) => setAck((cur) => e.target.checked ? [...cur, p.id] : cur.filter((x) => x !== p.id))}
+                        />
+                        <span>
+                          {p.text}
+                          {p.helpSlug && <> <a href={`/help/tutorials/${p.helpSlug}`} target="_blank" rel="noreferrer" className="font-medium text-[#c2410c] underline">Open the guide</a></>}
+                          {state === "verified" && <span className="ml-2 rounded bg-emerald-50 px-1.5 py-0.5 text-xs font-medium text-emerald-800 ring-1 ring-emerald-200">Verified in your app</span>}
+                          {state === "missing" && <span className="ml-2 rounded bg-rose-50 px-1.5 py-0.5 text-xs font-medium text-rose-800 ring-1 ring-rose-200">Not done yet in your app</span>}
+                          {state === "missing" && missingSteps.length > 0 && (
+                            <span className="mt-1 block text-xs text-rose-800">Still to do: {missingSteps.map((m) => m.label).join("; ")}. Finish it in the app (left menu, Setup Checklist), then reload this page.</span>
+                          )}
+                        </span>
+                      </label>
+                    </li>
+                  );
+                })}
               </ul>
               <label className="mt-3 block text-sm">
                 <span className="text-slate-800">{triedQuestion(callType)}</span>

@@ -10,8 +10,9 @@
 // This is an attestation, not a proof: the website cannot see whether a
 // guided walkthrough was really finished. The answers are saved on the booking
 // (see summarizeCallPrereqs) so the owner can read them before the call and
-// end a call that was not prepared for. Real verification needs the desktop
-// app to report per-butler setup status to the server.
+// end a call that was not prepared for. Where the desktop app has reported its
+// per-butler setup status, src/lib/setup-snapshot.ts verifies the mapped items
+// (refuses a booking with the exact missing steps, no tick needed for a done one).
 //
 // Pure module (shared by the booking page, the create route and the emails),
 // unit-tested in src/lib/__tests__/call-prerequisites.test.ts.
@@ -128,8 +129,11 @@ export function checkCallPrereqs(opts: {
   /** False for app, extension and phone bookings (they have their own pre-call flow). */
   viaWebsite: boolean;
   required?: boolean;
+  /** Checklist items the desktop app's setup snapshot already proves (src/lib/setup-snapshot.ts); no tick needed. */
+  verified?: string[];
 }): CallPrereqVerdict {
-  const { ack, tried } = cleanAnswers(opts.raw);
+  const { ack: ticked, tried } = cleanAnswers(opts.raw);
+  const ack = [...ticked, ...(opts.verified ?? []).filter((id) => !ticked.includes(id))];
   if (!(opts.required ?? callPrereqsRequired()) || !opts.viaWebsite) return { ok: true, ack, tried };
   const need = prereqsFor(opts.topics, opts.type);
   const missing = need.filter((p) => !ack.includes(p.id)).map((p) => p.id);
