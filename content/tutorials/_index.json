@@ -26,6 +26,18 @@
       ]
     },
     {
+      "id": "growth-roadmap",
+      "title": "Your next steps: what to set up or use next to earn more and grow",
+      "category": "Getting Started",
+      "summary": "The Your next steps card on your Dashboard picks the few butlers worth setting up next, in a sensible order for your goals. Open the full roadmap to see the whole earn, audience, own it and multiply path.",
+      "order": 3.5,
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
+    },
+    {
       "id": "ai-assistant-connection",
       "title": "Connect your own AI assistant to see what your butlers are doing",
       "category": "Getting Started",
