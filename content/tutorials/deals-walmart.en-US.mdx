@@ -1,0 +1,153 @@
+---
+title: "WAL Deals Finder: find Walmart deals and queue them to post"
+summary: Search Walmart for real markdowns by keyword and from Walmart's own Rollbacks and Clearance pages, check each one live, and queue the good ones with a commission link made at post time.
+category: Walmart
+---
+
+> **WAL Deals Finder finds and queues. It does not post by itself.** Posting runs on the one scheduler in the Deal Posting hub, shared with your Amazon deals. Nothing the Walmart deal pages find is posted without you: those deals are saved as drafts for you to review.
+
+## What WAL Deals Finder does
+
+WAL Deals Finder is your Walmart store for deals. It looks up Walmart products by your keywords and, separately, reads Walmart's own deal pages, then checks every product live and keeps only the ones Walmart is really marking down. Each deal waits in your queue until the Deal Posting hub's scheduler posts it, and its commission link is made at the moment it posts.
+
+It sits next to AMZ Deals Finder under **Walmart Butler**. The pipeline that posts the deals (Build Your Post, Social Destinations, the Scheduler) is the same one the [Deal Posting tutorial](/help/tutorials/deals) explains. This page covers only what is different for Walmart. Walmart's Black Friday and Cyber Monday list is a separate butler, covered in [Black Friday Event Finder](/help/tutorials/walmart-event-finder).
+
+## Setup from zero
+
+1. If you are on a Beginner plan, turn Walmart on first. Click **Turn on Walmart deals** on the dashboard banner (**Want Walmart deals too?**). On a Power User plan it is already on.
+2. Make sure you are signed in to Influencer Butler. Walmart product lookups run through your sign-in. If you are not signed in, a search stops with "Walmart is not connected yet".
+3. Open **Walmart Butler › Settings** and pick a **Walmart link provider**: **Walmart Creator (walmrt.us links)** or **Mavely (mave.ly links)**. Walmart deals stay paused until you choose, so you never post a link that earns nothing.
+4. If you picked Walmart Creator, click **Sign in to Walmart**, sign in to your Walmart Creator account in the window that opens, then click **I'm signed in**. If you picked Mavely, click **Connect Mavely** and sign in. Under **If Mavely is signed out**, choose **Fall back to a Walmart Creator link** or **Hold the post until Mavely is signed in**.
+5. Open **Walmart Butler › WAL Deals Finder › Keywords** and add the words you want Walmart searched for. Keywords are kept per store, so your Amazon keywords are not used here. To reuse them, use the copy buttons on that tab.
+6. Open **Walmart Butler › WAL Deals Finder › Build Your Post** and save your Walmart caption. Each store keeps its own caption. Without one, deals show **Needs a template** and are held.
+7. Open **Walmart Butler › WAL Deals Finder › Search Deals**, look over the **Filter Recipe**, and click **Search Deals**. Check that rows appear.
+8. To post, open **Deals Butler › Deal Posting › Scheduler**, add a place to post under Social Destinations, and turn on **Post deals for me**. Walmart and Amazon deals share that one schedule. The [Deal Posting tutorial](/help/tutorials/deals) walks through it.
+9. Optional: turn on **Search for new deals on a clock** on Search Deals so new deals arrive on their own.
+
+## Every setting
+
+### Search Deals (Walmart Butler › WAL Deals Finder › Search Deals)
+
+- **Search Deals button.** Runs your keywords against Walmart once and fills the table. A run that finds nothing explains why in a card at the top of the page. Change nothing here; click it whenever you want a fresh pull.
+- **Find new deals automatically.** Default: off. Turn on **Search for new deals on a clock** to search by itself. Picking a time does not turn it on, the switch does. Presets are 1, 3, 6, 12 and 24 hours, and 6 hours is pre-selected. **Custom...** lets you pick a time of day and weekdays. Change it to match how fresh you want your queue.
+- **Replace or add results.** Default: replace. Each search replaces what is in the results table (it does not touch deals already in your queue). Each store panel keeps its own search schedule.
+- **Send mode.** Default: **Auto**. Auto sends each search's results to the deals queue when the search ends, and the Deal Posting hub's scheduler decides when they post. **Manual** keeps results in the table until you press **Send to Deals**. Pick Manual if you want to read every deal before it can queue.
+- **Walmart's deal pages.** When Auto search is on, the app also reads Walmart's deal pages after a scheduled search (see Search Deal Pages below). Turning Auto search off is what stops that.
+
+### Filter Recipe (Search Deals)
+
+The Filter Recipe is the set of rules a deal must pass. For Walmart, these are the ones that matter:
+
+- **Min price** and **Max price.** Defaults: 5 and 9000. They drop deals priced outside the range. Change **Max price** if you only want smaller items.
+- **Minimum percent off.** Default: 35. A deal below it is dropped. Lower it if you see too few deals, raise it for deeper discounts. 0 keeps everything.
+- **Maximum percent off.** Default: blank (no cap). Set one to drop "too good to be true" discounts.
+- **Min review count** and **Min star rating.** Defaults: 100 and 4.0. Walmart's search returns these, so low-rated items are dropped. A product with no review data is kept unless **Verify every deal before auto-posting** is on.
+- **Real discounts only.** Default: on. A deal only counts when Walmart itself shows a markdown. A price that merely sits under the manufacturer's suggested price is not a sale.
+- **Keep items priced under list price during Walmart's Black Friday season.** Default: on. During Walmart's Black Friday run-up, items priced under list price are kept as price-only deals. It only applies when **Real discounts only** is off. Untick it if you only want real Walmart markdowns.
+- **Skip third-party sellers with a shipping fee.** Default: on. The app opens each kept product's Walmart page and drops items sold by another seller with a shipping charge. If the page cannot be read, the item is kept.
+- **Avoid 0-commission products and categories**, **Block adult content**, **Exclude coupon deals.** Defaults: on, on, off.
+- **Keyword include** and **Keyword exclude.** **Keyword exclude** starts with a long pre-filled list (refurbished items and similar). A title containing any excluded word is skipped.
+- **Exclude categories.** Default: none. Checked categories are skipped, and a checked department also skips that department's Walmart deal page.
+- **Skip recently posted (days)**, **Skip recently harvested (days)**, **Skip deals you deleted (days).** Defaults: 2, 0 (off), 7.
+- **Max deals per keyword** and **Total max keywords.** Defaults: 2 and 30. These set how wide the keyword search goes.
+- **Max deals harvested.** Default: blank. For the keyword search, blank keeps everything and a number keeps the best by your **Result priority**. For the Walmart deal pages, blank means 60.
+- **Remove repeat look-alike products.** Default: on, strength 55. It compares new deals with titles already in the Search Deals table. The deal-page search has its own fixed look-alike check that does not use this slider.
+- **If a deal changes before it posts.** Default: **Skip it quietly**. Right before posting, the deal is checked again. If it no longer clears your filters it is skipped. Choose **Hold it for review** to keep it in Upcoming posts so you can decide.
+
+### Keywords (Walmart Butler › WAL Deals Finder › Keywords)
+
+Each month has its own keyword box, plus a custom list. **Use this month's keywords** is on by default. Use **Suggest keywords by niche** and **Seasonal Keywords** for ready-made lists, or the AI keyword generator once an OpenAI key is connected. If a search has no keywords for the month it skips, and the Search Deals page says so.
+
+### Search Deal Pages (Walmart Butler › WAL Deals Finder › Tools › Search Deal Pages)
+
+There is nothing to paste. Click **Search pages** and the app opens Walmart's own deal pages in your Walmart browser: **Shop All**, **Rollbacks**, **Clearance**, **Flash Deals**, **Extra Savings**, **Household Essentials**, and a page for each department. It reads every product, checks each one live, and keeps the ones really on sale.
+
+- **It follows your Filter Recipe.** Deals must pass **Min price**, **Max price**, **Minimum percent off**, **Maximum percent off**, **Keyword exclude**, **Keyword include** and **Exclude categories**. It also skips look-alikes (a different color or size of a product already waiting, or already kept in the same pass) and stops at **Max deals harvested**, or 60 when that is blank. The Console Log says what it skipped and why.
+- **It does not use** Min review count, Min star rating, Avoid 0-commission, Block adult content, Exclude coupon deals, Real discounts only, or the look-alike slider. A product's page price drop is what counts as a sale.
+- **When.** Default: **Save as drafts to review**. The other choice is **Queue to post on the next round**. If you have no Walmart caption saved, everything lands as drafts either way.
+- **Only Walmart and Pro Sellers, free shipping.** Default: on. It skips items with a shipping charge. Products that show no shipping information are kept.
+- **Excluding departments.** Check a department under **Exclude categories** and its page is skipped. **Shop All**, **Rollbacks**, **Clearance**, **Flash Deals**, **Extra Savings** and **Household Essentials** always run.
+- **The automatic pass.** After a scheduled Walmart keyword search, the app runs this search too, at most once every 6 hours while the app is open. Quitting the app resets that timer. A manual **Search Deals** does not trigger it. The automatic pass always saves drafts, so nothing from it posts until you open the **Deals** table and click **Schedule all drafts** (or **Schedule** on single rows). To stop it, turn off **Search for new deals on a clock**; it has no switch of its own.
+- **Watch it run.** The top bar switch decides whether the Walmart window is visible. If Walmart shows a "press and hold" check and the window is hidden, the page is skipped. Turn on **Watch it run** and search again to clear it yourself.
+
+### Import Spreadsheet (Walmart Butler › WAL Deals Finder › Tools › Import Spreadsheet)
+
+Upload an Excel (.xlsx) or CSV file with Walmart product links (walmart.com/ip/...) in any column. It is a one-way upload into your queue. It is not the Google Sheet sync (see Sheetsyncer Butler for that).
+
+- The app looks each product up live. Prices typed in your file are not used, and only items on sale at Walmart right now are kept. Up to 300 products per file.
+- **When** and **Only Walmart and Pro Sellers, free shipping** work as above, and the defaults are the same (drafts, on).
+- Your Filter Recipe thresholds are not applied here. You chose the products yourself.
+
+### Promo Code Hub (Walmart Butler › WAL Deals Finder › Tools › Promo Code Hub)
+
+Keep the promo codes you attach to posts: **Add code**, paste a batch, or upload a CSV. Codes show up as a pick in Build Your Post. Only the codes manager shows here; the Amazon extras do not.
+
+### Add a Deal (Walmart Butler › WAL Deals Finder › Tools › Add a Deal)
+
+Add one deal by hand: paste a walmart.com product link, fill in a title and price, and choose **Save as a draft to review** (default) or **Queue to post now**. A Walmart deal with no markdown is refused unless you tick **No deal, post anyway (full price)**. A Mavely link with no title is followed to the Walmart product to fill it in.
+
+### Always-Post (Walmart Butler › WAL Deals Finder › Tools › Always-Post)
+
+Always-Post reads Amazon products only. Pasting a Walmart link here shows "That does not look like an Amazon product URL or ASIN." To queue a Walmart product by hand, use **Add a Deal** instead.
+
+### Walmart link provider (Walmart Butler › Settings)
+
+Your link provider and its sign-in live here, not in WAL Deals Finder. Switching providers updates your queued deals on its own.
+
+## Common gotchas
+
+- **Posting is not here.** WAL Deals Finder has no Scheduler or Social Destinations. Open **Deals Butler › Deal Posting › Scheduler**. One cadence covers Amazon and Walmart, one deal per slot, taking turns.
+- **A queued deal with no Walmart link yet is normal.** The link is made when the deal posts, not when it is found.
+- **The date with a "~" is an estimate.** It is your queue position times your cadence, not a booked time or a holiday hold.
+- **A deal "Held: full price" though Walmart shows it on sale.** Right before posting, the app re-checks the price and the deal must still show a markdown. Walmart may have ended it. A price under the manufacturer's suggested price does not count. To choose what happens, change **If a deal changes before it posts**.
+- **Percent off seems ignored.** Keyword search and Search Deal Pages are different code. Deals from **Search Deal Pages** take a different path from keyword results, and Console Log lines starting "Deal page search" or "Automatic deal page search" belong to it. If the Console Log shows "skipped N item(s) that your Filter Recipe rules out", the Recipe was applied.
+- **Duplicates of one product.** Different colors or sizes have their own Walmart ids. The look-alike check collapses most of them.
+- **Always-Post, Roundup Campaigns and AI Content Butler** are shared panels. See the [Deal Posting tutorial](/help/tutorials/deals).
+- **Beginner plan, no Walmart.** Turn it on from the dashboard banner (**Turn on Walmart deals**) before you set up links.
+
+## If you see this message
+
+- **"Walmart is not connected yet".** Walmart lookups need your Influencer Butler sign-in. Sign in, then search again. The toast says "Sign in to Influencer Butler first so Walmart lookups can run, then try again."
+- **"Walmart paused your searches for a moment".** Walmart's shared lookup service is busy. Wait a few minutes and run again, or lower **Total max keywords**.
+- **"Walmart had matches, but none on sale".** Walmart found products, but none are marked down. Try different keywords, or turn on **Mix in full-price finds** in the Filter Recipe and set a **Max price**.
+- **"Walmart is holding prices for its sale event".** The items carry a sale-event price that is not live yet. They are skipped until shoppers can really get that price.
+- **"Nothing survived your filters".** The card names the setting that dropped the most. Loosen it in the Filter Recipe.
+- **"No keywords to search".** Add keywords for the current month on the Keywords tab.
+- **"Walmart deals need a link provider" / "No link provider".** Open **Walmart Butler › Settings** and pick a provider.
+- **"No commission link - sign in to Walmart Creator".** Your Walmart Creator session ended. Sign in again under **Walmart Butler › Settings**. The held posts go out by themselves after you sign in.
+- **"No commission link - sign in to Mavely".** Click **Connect Mavely** under **Walmart Butler › Settings**. With **Fall back to a Walmart Creator link** chosen, you see "Using Creator link" instead.
+- **"Walmart's robot check blocked the automated link step..."** Walmart showed a press-and-hold check. A sign-in window opens: finish the press-and-hold there. If it keeps happening, click **Reset Walmart sign-in** under **Walmart Butler › Settings**, or switch to Mavely. After a failure, link making pauses for 4 minutes.
+- **"Walmart showed a "press and hold" check. Clear it once in the window that opened, then search again."** Every deal page was blocked. Turn on **Watch it run**, finish the check in the Walmart window, then search again.
+- **Console Log: Walmart is showing a "press and hold" check. Finish it in the Walmart window and the search continues on its own.** Do the check in the visible Walmart window. It waits up to 3 minutes.
+- **Console Log: That Walmart page hit a bot check. Turn on Watch it run, finish the press-and-hold in the Walmart window, then search again.** A hidden or unattended run could not wait. Turn on **Watch it run**.
+- **"Every built-in Walmart deal category is excluded. Clear some boxes in Exclude categories (Search Deals > Filter Recipe)."** Uncheck some departments under **Exclude categories**.
+- **"Could not open the Walmart browser. Close other Walmart windows and try again."** Close other Walmart windows, then try again.
+- **"No deals added. None of the products on those pages are on sale right now."** The pages loaded but nothing is on sale at Walmart at this moment. Try again later.
+- **"Could not search those pages."** The page search failed. Check the Console Log for the line that begins "Deal page search".
+- **Console Log: Deal page search: skipped N item(s) that your Filter Recipe rules out: ...** Normal. It lists how many deals each rule dropped. Loosen the rule named if too few come through.
+- **Console Log: Deal page did not load: ...** Walmart's page timed out. Run again later.
+- **"They are saved as drafts for review, so they will not post on their own."** Open the **Deals** table and click **Schedule all drafts**.
+- **"No Walmart product links found in that file. Each row needs a walmart.com/ip link."** Put full product links in one column.
+- **"That file is too large. Trim it to your deal list and try again."** Keep the file small (about 8 MB and 300 products).
+- **"No deals added. None of those items are on sale at Walmart right now."** Your list has no current markdowns.
+- **"This item is full price. Add a discount, coupon, or promo code, or check "No deal, post anyway" below."** Add a sale price and was-price, or tick the full-price box.
+- **"That does not look like an Amazon product URL or ASIN."** You pasted a Walmart link into Always-Post, which reads Amazon only. Use **Add a Deal**.
+- **"Held: link not attributed".** The app will not post a link that would earn nothing. Review it in Upcoming posts.
+- **"Walmart deals turned off" / "Paused: Walmart deals off".** The Walmart switch at the top of Deal Posting is off. Searching keeps working, but nothing posts. Turn the switch on.
+- **"This workspace's add-on has expired. Re-activate it to post."** Your add-on workspace needs renewing.
+
+## Short FAQ
+
+**Why did Walmart deals land as drafts, not posts?** The Search Deal Pages tool saves drafts by default, and its automatic pass always does. Open the **Deals** table and click **Schedule all drafts**.
+
+**How often does the automatic deal-page search run?** After a scheduled Walmart search, at most once every 6 hours while the app is open.
+
+**Can I turn the automatic deal-page search off by itself?** No. Turn off **Search for new deals on a clock** to stop all automatic Walmart searching. Anything it saves is a draft, so you can ignore or delete it.
+
+**Where do I set how often Walmart deals post?** In **Deals Butler › Deal Posting › Scheduler**, one cadence for Amazon and Walmart.
+
+**Which link will my Walmart posts use?** A Walmart Creator (walmrt.us) link or a Mavely (mave.ly) link, made when the post goes out, depending on your provider.
+
+**Is Black Friday here?** No. Walmart's Black Friday and Cyber Monday list is its own butler, **Black Friday Event Finder**, under Walmart Butler.
+
+**Can I import my Google Sheet?** Import Spreadsheet takes a .xlsx or .csv file with Walmart links. Google Sheet sending is the other direction and lives in **Sheetsyncer Butler**.

@@ -1,0 +1,141 @@
+---
+title: AMZ Deals Finder : cherchez des offres sur Amazon et réglez ce qu'il trouve
+summary: Connectez Amazon, définissez vos mots-clés et votre Recette de filtres, et utilisez les outils réservés à Amazon (pages d'offres, import de liste, Listes d'idées, Promo Code Hub) qui alimentent votre file Deal Posting.
+category: Amazon
+---
+
+## Ce que fait AMZ Deals Finder
+
+AMZ Deals Finder est la boutique Amazon de Deal Posting. Il cherche sur Amazon les offres qui correspondent à vos mots-clés et à votre Recette de filtres, et il ajoute des outils réservés à Amazon pour importer des offres depuis des pages d'offres, des tableurs, des coupons et vos propres Listes d'idées. Les textes, les destinations et le calendrier de publication sont communs à toutes les boutiques, ils sont donc décrits dans le [tutoriel Deal Posting](/help/tutorials/deals).
+
+## Configuration depuis zéro
+
+1. **Connectez Amazon.** Ouvrez **Amazon Butler › Paramètres**, remplissez les champs de l'API Creators d'Amazon et appuyez sur **Tester la connexion**. Le **Partner Tag** doit être votre ID de suivi Amazon Associates (il ressemble à votretag-20), pas un ID de vitrine. C'est tout ce dont la recherche par mots-clés a besoin. Elle n'utilise pas votre connexion Amazon. Si Amazon n'a pas encore approuvé votre compte pour l'API Creators, la même page de paramètres propose un bouton d'identifiants de secours sous le résultat du test de connexion. Le reste de cette page est décrit dans le [tutoriel Amazon Butler](/help/tutorials/amazonbutler).
+2. **Vérifiez les balises de vos liens.** Dans **Amazon Butler › Paramètres**, renseignez votre ID de vitrine et votre ID de suivi, et dans **Deeplink Butler › Paramètres**, choisissez votre DeepLink Routing. Une offre dont le lien ne vous rapporterait rien est retenue, pas publiée.
+3. **Connectez-vous à Amazon dans le navigateur de l'app (seulement pour les outils avec navigateur).** Les promotions, les coupons, Rechercher des pages d'offres, Listes d'idées automatiques, Rotation des listes d'idées et l'analyse de Promo Code Hub ouvrent des pages Amazon. Lancez la vérification de l'ID de vitrine dans **Amazon Butler › Paramètres** pour vous connecter. Si la fenêtre de connexion ne s'affiche pas, activez **Voir l'exécution** dans la barre du haut, connectez-vous une fois, puis relancez.
+4. **Ajoutez des mots-clés.** Ouvrez **Amazon Butler › AMZ Deals Finder › Mots-clés**. Appuyez sur **Suggérer des mots-clés par niche** pour remplir des mois avec 17 niches de départ (environ 20 par niche et par mois), ou saisissez les vôtres. Chaque boutique garde ses propres listes de mots-clés.
+5. **Lancez une première recherche.** Ouvrez **Amazon Butler › AMZ Deals Finder › Rechercher des offres**, gardez les valeurs par défaut de la Recette de filtres et appuyez sur le bouton de lancement en haut.
+6. **Envoyez et publiez.** Envoyez dans la file les offres qui vous plaisent (ou laissez le mode d'envoi sur Auto). Activez **Publier des offres pour moi** dans **Deals Butler › Deal Posting › Planificateur**. Nouveau ? La [Configuration guidée](/help/tutorials/deals-guided-setup) fait ces étapes pour vous.
+
+Facultatif : la génération de mots-clés par IA et les textes par IA utilisent votre propre clé OpenAI. [Comment l'obtenir](/help/tutorials/openai-api-setup).
+
+## Tous les réglages
+
+Les valeurs ci-dessous sont celles d'un panneau neuf. Une valeur que vous avez enregistrée avant, ou choisie par la Configuration guidée, est prioritaire. Certains libellés du panneau restent en anglais dans toutes les langues, et ils sont cités tels quels.
+
+### Rechercher des offres : le lancement
+
+- **Source** commence sur Amazon. Les autres choix mélangent Walmart ou TikTok Shop. Dans cet espace, laissez Amazon.
+- **Send mode** commence sur Auto : les offres trouvées passent dans l'espace Deals à la collecte et sont publiées selon les réglages de votre Planificateur. Choisissez Manual si vous préférez les relire et les envoyer vous-même.
+- **Compléter** remplit la liste jusqu'à votre objectif de Max deals harvested. Il n'ajoute jamais une offre sous votre Minimum percent off.
+- **Search for new deals on a clock** (recherche automatique) est désactivée au départ. Activez-la puis choisissez la fréquence (1, 3, 6, 12 ou 24 heures, ou une heure et des jours de votre choix). Choisir seulement une heure ne la démarre pas. Chaque boutique a son propre calendrier, et un mois sans mots-clés fait ignorer chaque lancement programmé.
+- **Rechercher dans les marketplaces** permet de chercher aussi dans d'autres pays Amazon. Un pays ne se débloque que lorsque ses propres identifiants de l'API Creators sont connectés. La répartition par pays décide comment les résultats sont partagés.
+- **Include Amazon promotion deals** (désactivé) lit des pages de promotions Amazon, trouvées avec vos mots-clés ou avec les liens que vous collez. **Include Amazon coupon deals** (désactivé) lit la page de coupons d'Amazon. Les deux demandent d'être connecté à Amazon, et aucun coupon n'est jamais activé à votre place.
+
+### Recette de filtres
+
+- **Optimizing for** (Clics, Commissions ou Les deux) règle plusieurs filtres en un clic.
+- **Min price** 5 et **Max price** 9000 : les prix soldés hors de cette plage sont ignorés. Ces deux libellés s'affichent en anglais dans toutes les langues.
+- **Minimum percent off** commence à 35. C'est un plancher strict, revérifié juste avant la publication. Mettez 0 pour garder toutes les offres.
+- **Maximum percent off** est vide au départ (pas de plafond). Utilisez-le pour écarter les réductions trop belles pour être vraies.
+- **Si une offre change avant sa publication** commence sur L'ignorer discrètement. La retenir pour vérification la garde dans votre liste des prochaines publications.
+- **Min review count** 100 et **Min star rating** 4.0. Les avis et les étoiles arrivent dans une seconde requête, donc une offre peut les afficher vides un instant.
+- **Ignorer le stock faible**, **Vérifier chaque offre avant la publication automatique** (désactivé) et **Retenir les offres à venir jusqu'à leur mise en ligne** (activé, pour que les offres qu'Amazon n'a pas encore activées attendent).
+- **Vraies remises uniquement** (activé) écarte les produits sans vraie remise. **Éviter les produits et catégories à 0 commission** (activé). **Bloquer le contenu pour adultes** (activé).
+- **Uniquement les offres CreatorConnections et SPCC** (désactivé) et **Commission minimale ($)** (vide). Les offres Creator Connections et SPCC sont toujours gardées quand vous fixez une commission minimale.
+- **Exclure les vendeurs tiers** (activé) garde les articles vendus par Amazon. Si Amazon n'indique pas le vendeur, l'offre est gardée.
+- **Inclure des trouvailles au prix normal** (désactivé, sous Trouvailles au prix normal) laisse entrer des produits sans réduction jusqu'à votre Max price. Cela ne fait rien tant qu'un Max price n'est pas fixé.
+- **Keyword include** et **Keyword exclude** : include ne garde que les titres contenant l'un de vos mots, exclude écarte les titres contenant l'un d'eux. Exclude commence avec une longue liste (termes d'occasion et de reconditionné, et quelques marques à risque). **Ignorer les livres numériques (Kindle et autres livres numériques)** et **Ajouter un pack de marques à risque** modifient cette liste pour vous.
+- **Ignorer les ASIN récemment publiés (jours)** commence à 2, **Ignorer les ASIN récemment collectés (jours)** à 0 et **Ignorer les offres que vous avez supprimées (jours)** à 7. Augmentez le premier si la même offre revient.
+- **Nombre maximal d'offres par mot-clé** commence à 2. **Total max keywords** suit la taille de votre plus grande liste de mots-clés jusqu'à ce que vous saisissiez un nombre. **Nombre max d'offres récoltées** ne fait que couper une recherche, il n'en ajoute jamais.
+- **Compléter jusqu'à votre objectif** (désactivé) complète une collecte trop courte avec les meilleures offres qui ont presque convenu. **Retirer les produits similaires en double** (activé, 55 pour cent) écarte les titres similaires.
+- **Priorité des résultats** classe SPCC, Creator Connections, commission la plus élevée et meilleure offre. Faites glisser une pastille sous le séparateur Not prioritized pour ne plus l'utiliser.
+- **Subscribe & Save check** (désactivé) ouvre des pages produit dans le navigateur pour chercher des remises en plus, jusqu'à 25 pages par recherche.
+
+### Mots-clés
+
+- Douze cases, une par mois, avec une expression par ligne ou séparées par des virgules. Chaque recherche utilise le mois en cours, ou la liste du jour quand ce jour a la sienne.
+- **Use this month's keywords** (activé) et **Use custom keywords** (désactivé) choisissent les sources.
+- **Suggérer des mots-clés par niche** remplit les mois choisis avec les 17 niches. **Mots-clés saisonniers** ajoute des packs de saisons, de fêtes américaines et britanniques et de Prime Day, à un mois ou à une liste personnalisée.
+- La génération de mots-clés par IA demande une clé OpenAI. L'export et l'import de mots-clés servent à passer des listes à un autre ordinateur (.json garde tout, .csv garde mois, jour et mot-clé).
+- Les mots-clés appartiennent à un espace de travail. AMZ Deals Finder, WAL Deals Finder et chaque clone gardent des listes séparées. Le bouton de copie des mots-clés les passe de l'un à l'autre, et **Restaurer ma configuration enregistrée** n'apparaît que lorsqu'un ancien hub Deal Posting contient encore les vôtres.
+
+### Rechercher des pages d'offres
+
+Ouvrez **Amazon Butler › AMZ Deals Finder › Tools › Rechercher des pages d'offres**. Collez jusqu'à 20 liens de pages d'offres Amazon (ou des liens de produit, utilisés directement) et appuyez sur le bouton de recherche des pages. Il faut être connecté à Amazon et avoir connecté l'API Creators. Seuls les produits en promotion sont ajoutés. **When** commence sur Save as drafts to review, donc rien n'est publié tant que vous n'avez pas appuyé sur Programmer tous les brouillons dans le tableau des offres. Choisissez Queue to post on the next round pour sauter cette étape.
+
+### Importer une liste
+
+Ouvrez **Amazon Butler › AMZ Deals Finder › Tools › Importer une liste**. Il lit les fichiers .csv, .xlsx et .xlsm avec une colonne asin ou un lien /dp/ par ligne (jusqu'à 10 000 lignes et environ 8 Mo). Vos prix sont pris tels quels, il n'y a donc pas de contrôle du prix en direct. Les colonnes en trop sont ignorées et les colonnes de code promo sont lues.
+
+- **Import a new list on a clock** (désactivé) surveille un dossier que vous choisissez et importe le fichier .csv ou .xlsx le plus récent selon un calendrier (7 h chaque jour au départ). Un fichier déjà importé est ignoré, et **Import now** le force. Les offres arrivent en brouillons sauf si vous changez **When imported**.
+
+### Listes d'idées automatiques et Rotation des listes d'idées
+
+- **Listes d'idées automatiques** crée des Listes d'idées Amazon à partir de vos offres collectées. **Build Idea Lists after each search** est désactivé au départ. Choisissez une liste par mot-clé, une liste des meilleures offres, ou laissez l'IA les regrouper (10 produits par liste au départ). Il faut être connecté à Amazon sur le site du pays choisi et avoir Creator Connections.
+- **Rotation des listes d'idées** publie vos Listes d'idées existantes selon un calendrier (désactivé au départ). **Don't repeat a list for at least** commence à 20 heures. L'ordre commence sur In order, et le texte commence par le vôtre avec le nom et le lien de la liste.
+- **Seasonal list refresh** est en bêta et n'est pas encore disponible pour vous.
+
+### Promo Code Hub
+
+Ouvrez **Amazon Butler › AMZ Deals Finder › Tools › Promo Code Hub**. Ajoutez des codes promo un par un, collez-en ou importez-en beaucoup, ou analysez les campagnes Creator Connections que vous avez acceptées. La liste Deals Hub en dessous est une copie que notre équipe publie avant et pendant chaque événement d'offres. Reload récupère la dernière copie, et **Add to post** ou **Copy my link** utilisent votre propre balise.
+
+### Toujours publier et Ajouter une offre
+
+Toujours publier garde des produits choisis sur un calendrier qui se répète, et **Ajouter une offre** ajoute un produit par un lien ou un ASIN. Les deux fonctionnent comme dans les autres boutiques, voir le [tutoriel Deal Posting](/help/tutorials/deals).
+
+## Problèmes fréquents
+
+- **Des offres sous mon Minimum percent off apparaissent encore, ou de bonnes offres disparaissent.** Le plancher est exact. Une offre en dessous est écartée à la recherche et retenue à la publication sous Held: below your min discount. Compléter n'en ajoute jamais une en dessous. Baissez le curseur, ou mettez 0, pour en voir davantage.
+- **Une offre est retenue comme prix plein alors qu'elle est en promotion.** La retenue se base sur ce qui a été enregistré quand l'offre a été trouvée. Juste avant la publication, Butler demande à Amazon l'offre en direct et publie avec les chiffres du jour si elle est en promotion maintenant et respecte votre Minimum percent off et votre Min price. Si elle est en promotion mais sous votre plancher, elle reste retenue. **Publier au prix normal** la libère telle quelle.
+- **Peu de résultats, la plupart venant d'Amazon.** Exclure les vendeurs tiers est activé par défaut. La carte de recherche indique quand ce filtre a écarté la plupart des résultats.
+- **La même offre est sortie deux fois.** Un produit qui attend déjà dans votre file (brouillon, programmé ou retenu) n'est pas ajouté de nouveau quand vous l'envoyez depuis l'extension. Une fois publié, **Ignorer les ASIN récemment publiés (jours)** (2 jours) décide quand il peut revenir. Augmentez-le s'il revient trop tôt.
+- **Une offre de l'extension Chrome reste un brouillon.** Les offres de l'extension et du téléphone commencent en brouillons, sauf si les réglages de l'extension demandent un autre emplacement. Changez la valeur par défaut dans **Deals Butler › Deal Posting › Planificateur**, sous **Offres depuis l'extension Chrome** et **Offres depuis l'application mobile**. Rien ne remet de lui-même une offre programmée en brouillon.
+- **Une date avec ~ dans le tableau des offres.** C'est une heure d'envoi estimée d'après la place de l'offre dans la file et votre calendrier, pas une heure fixe.
+- **Mes mots-clés ont disparu après une mise à jour.** Les listes de mots-clés appartiennent à un espace de travail. Vérifiez que vous êtes dans AMZ Deals Finder et non dans le hub Deal Posting ni dans WAL Deals Finder, puis utilisez **Restaurer ma configuration enregistrée** s'il apparaît.
+- **La recherche automatique se lance mais ne trouve rien.** Le mois n'a probablement pas de mots-clés. Une notification et une note sous la carte de recherche automatique l'indiquent.
+- **Les pages Amazon ne se chargent plus.** Si Amazon demande de confirmer qu'une personne est présente, les butlers Amazon se mettent en pause (listes d'idées, pages d'offres, Creator Connections). Les publications d'offres et sur les réseaux continuent. Cliquez sur **Ouvrir Amazon** dans la bannière du haut et cochez la case.
+- **Les offres d'une liste ou d'une page d'offres ne sont pas publiées.** Elles sont enregistrées en brouillons par défaut. Utilisez Programmer tous les brouillons.
+
+## Si vous voyez ce message
+
+- **"Amazon n'est pas encore connecté"** : les champs de l'API Creators sont vides. Remplissez-les dans Amazon Butler › Paramètres et appuyez sur Tester la connexion.
+- **"Amazon a bloqué toutes les recherches (erreur 403)"** : Amazon a refusé toutes les requêtes. Vérifiez que le Partner Tag est votre ID de suivi (votretag-20), pas un ID de vitrine. S'il est correct, Amazon n'a peut-être pas encore approuvé votre compte, essayez alors le bouton d'identifiants de secours.
+- **"Votre texte de recherche est trop long pour Amazon"** : raccourcissez le texte de la case Keyword include (le message l'appelle Le titre doit contenir) ou videz-la.
+- **"Amazon a mis vos recherches en pause un instant"** : Amazon limite les recherches sur une courte période. Attendez quelques minutes ou baissez Total max keywords. Une note plus petite indique qu'Amazon a mis certains de vos mots-clés en pause.
+- **"Impossible de joindre Amazon"** : appuyez sur Tester la connexion pour voir l'erreur exacte.
+- **"Aucun mot clé à rechercher"** et l'état Needs keywords : ajoutez des mots-clés pour ce mois dans l'onglet Mots-clés.
+- **"Rien n'a survécu à vos filtres"** : assouplissez le prix, le pourcentage de réduction, les avis ou les étoiles. Le bouton du détail complet montre quel filtre en a écarté le plus.
+- **"La plupart des résultats venaient de vendeurs tiers"** : désactivez Exclure les vendeurs tiers pour les voir.
+- **"Une page de connexion a bloqué cette recherche"** et **"Une vérification "anti-robot" a bloqué cette recherche"** : activez Voir l'exécution, connectez-vous ou cochez la case une fois dans la fenêtre qui s'ouvre, puis relancez la recherche.
+- **La recherche automatique est activée, mais cette boutique n'a aucun mot-clé pour ce mois-ci, donc chaque recherche programmée sera ignorée. Ajoutez-en dans l'onglet Mots-clés de cette boutique.**
+- **Marché non connecté** : un pays que vous avez coché n'a pas d'identifiants de l'API Creators. Connectez-les ou décochez-le.
+- **Retenue : prix plein** : pas de vraie réduction. Appuyez sur Publier au prix normal si vous la voulez quand même.
+- **Retenue : sous votre remise minimale** et **Retenue : au-dessus de votre remise maximale** : sa réduction est hors de votre Minimum ou Maximum percent off. Changez le filtre ou appuyez sur Publier quand même.
+- **Retenue : l'offre a changé** : le prix, le stock ou la réduction ont changé depuis qu'elle a été trouvée. Relisez-la ou appuyez sur Publier quand même.
+- **Retenue : hors thème** : son mot-clé n'est pas dans la liste de cet espace. Ajoutez le mot-clé ou appuyez sur Publier quand même.
+- **En attente : lien non attribué** : corrigez votre ID de vitrine ou votre ID de suivi. "Une offre n'a pas été publiée : son lien ouvrait Amazon sans votre tag d'affiliation, il ne vous aurait donc rien rapporté. Configurez votre ID de boutique ou votre ID de suivi." et "Une offre n'a pas été publiée : son lien ouvrait la page d'accueil d'Amazon, pas le produit. Vérifiez votre tag d'affiliation." relèvent de la même famille de problèmes.
+- **Enregistrée pour relecture** : vous l'avez ajoutée en brouillon. Elle attend que vous la programmiez.
+- **"Amazon vous a demandé de vous connecter ou a affiché une vérification de robot. Effectuez-la une fois dans la fenêtre qui s'est ouverte, puis relancez la recherche."** : passez la vérification une fois dans la fenêtre qui s'est ouverte.
+- **"Aucune offre ajoutée. Aucun des produits de ces pages n'est en promotion en ce moment."** : rien sur ces pages n'est en promotion aujourd'hui.
+- **"Aucune offre ajoutée. Vérifiez que chaque ligne a un ASIN Amazon (une colonne asin ou un lien /dp/)."** : le fichier doit avoir une colonne asin ou des liens /dp/.
+- **"Ce fichier a déjà été importé. Déposez une nouvelle liste et réessayez."** : ce même fichier a déjà été importé. Utilisez Import now pour le forcer.
+- **"Toutes les listes sont encore en délai d'attente. Rien à publier pour le moment."** : toutes les listes sont dans leur délai d'attente (20 heures au départ). Réduisez ce délai.
+- **"Amazon n'est pas connecté dans le navigateur du Butler, votre vitrine n'a donc pas pu être lue. Ouvrez Amazon Butler, allez dans Paramètres et lancez la vérification de l'ID de vitrine pour vous connecter. Réessayez ensuite Actualiser mes listes d'idées."**
+- **"Heure d'envoi estimée, d'après votre planification."** est l'info-bulle d'une date avec ~.
+
+Dans le Console Log (toujours en anglais), les lignes utiles à connaître sont `Creators API credentials not configured`, `skipped, Amazon returned an eligibility block (HTTP 403)`, `skipped, Amazon is rate limiting product searches (HTTP 429)`, `Search complete. Found N unique deal(s)`, `Filter breakdown: skipped N candidate(s)` et `Top up skipped N near-miss deal(s) below your Min % off`.
+
+## Questions fréquentes
+
+- **Dois-je être connecté à Amazon pour chercher par mots-clés ?** Non. La recherche par mots-clés utilise seulement vos identifiants de l'API Creators. La connexion compte pour les outils avec navigateur de l'étape 3.
+- **Puis-je chercher dans d'autres pays ?** Oui. Cochez-les dans Rechercher dans les marketplaces une fois leurs identifiants connectés.
+- **Une pause d'Amazon arrête-t-elle mes publications ?** Non. Elle met seulement en pause les tâches sur les pages Amazon.
+- **Où activer la publication ?** Dans le hub Deal Posting, pas ici : **Deals Butler › Deal Posting › Planificateur**.
+- **Pourquoi Seasonal list refresh ne fonctionne-t-il pas chez moi ?** Il est en bêta et verrouillé pour l'instant.
+
+## À voir aussi
+
+- [Deal Posting](/help/tutorials/deals)
+- [Amazon Butler](/help/tutorials/amazonbutler)
+- [Configuration guidée](/help/tutorials/deals-guided-setup)

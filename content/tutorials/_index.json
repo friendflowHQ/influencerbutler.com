@@ -517,6 +517,30 @@
       ]
     },
     {
+      "id": "deals-amazon",
+      "title": "AMZ Deals Finder: find Amazon deals that fit your filters",
+      "category": "Amazon",
+      "summary": "Search Amazon for deals by keyword, deal page, coupon, promotion or imported list, tune the Filter Recipe, and know what each message means.",
+      "order": 70.1,
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
+    },
+    {
+      "id": "deals-walmart",
+      "title": "WAL Deals Finder: find Walmart deals that fit your filters",
+      "category": "Walmart",
+      "summary": "Search Walmart deals by keyword and deal page, import a spreadsheet of Walmart links, tune the Filter Recipe, and know what each message means.",
+      "order": 70.2,
+      "locales": [
+        "en-US",
+        "es-ES",
+        "fr-FR"
+      ]
+    },
+    {
       "id": "deals-guided-setup",
       "title": "Set up deal posting: the 3-step Quickstart",
       "category": "Amazon",

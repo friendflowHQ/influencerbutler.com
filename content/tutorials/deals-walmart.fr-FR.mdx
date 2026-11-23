@@ -1,0 +1,153 @@
+---
+title: "WAL Deals Finder : trouvez des offres Walmart et mettez-les en file pour publication"
+summary: Recherchez chez Walmart de vraies remises par mot-clé et dans les pages Rollbacks et Clearance de Walmart, vérifiez chacune en direct et mettez les bonnes en file, avec un lien de commission créé au moment de publier.
+category: Walmart
+---
+
+> **WAL Deals Finder trouve et met en file. Il ne publie pas tout seul.** La publication passe par le seul planificateur du hub Deal Posting, partagé avec vos offres Amazon. Rien de ce que trouvent les pages d'offres Walmart n'est publié sans vous : ces offres sont enregistrées comme brouillons à relire.
+
+## Ce que fait WAL Deals Finder
+
+WAL Deals Finder est votre boutique Walmart pour les offres. Il cherche des produits Walmart avec vos mots-clés et, séparément, lit les pages d'offres propres à Walmart, puis vérifie chaque produit en direct et ne garde que ceux que Walmart remise vraiment. Chaque offre attend dans votre file jusqu'à ce que le planificateur du hub Deal Posting la publie, et son lien de commission est créé au moment de la publication.
+
+Il se trouve à côté d'AMZ Deals Finder, dans **Walmart Butler**. Le circuit qui publie les offres (Composez votre publication, Destinations sociales, le Planificateur) est le même que celui expliqué dans le [tutoriel Deal Posting](/help/tutorials/deals). Cette page ne couvre que ce qui change pour Walmart. La liste Black Friday et Cyber Monday de Walmart est un autre butler, expliqué dans [Black Friday Event Finder](/help/tutorials/walmart-event-finder).
+
+## Mise en place depuis zéro
+
+1. Si vous avez un plan Beginner, activez d'abord Walmart. Cliquez sur **Turn on Walmart deals** dans la bannière du tableau de bord (**Want Walmart deals too?**). Sur un plan Power User, c'est déjà activé.
+2. Vérifiez que vous êtes connecté à Influencer Butler. Les recherches de produits Walmart passent par votre connexion. Sans connexion, la recherche s'arrête avec « Walmart n'est pas encore connecté ».
+3. Ouvrez **Walmart Butler › Settings** et choisissez un **Fournisseur de liens Walmart** : **Walmart Creator (liens walmrt.us)** ou **Mavely (liens mave.ly)**. Les offres Walmart restent en pause tant que vous n'avez pas choisi, pour ne jamais publier un lien qui ne rapporte rien.
+4. Si vous avez choisi Walmart Creator, cliquez sur **Se connecter à Walmart**, connectez-vous à votre compte Walmart Creator dans la fenêtre qui s'ouvre, puis cliquez sur **Je suis connecté**. Si vous avez choisi Mavely, cliquez sur **Connecter Mavely** et connectez-vous. Sous **Si Mavely est déconnecté**, choisissez **Utiliser un lien Walmart Creator en secours** ou **Retenir la publication jusqu'à la connexion à Mavely**.
+5. Ouvrez **Walmart Butler › WAL Deals Finder › Mots-clés** et ajoutez les mots que Walmart doit chercher. Les mots-clés sont propres à chaque boutique, donc vos mots-clés Amazon ne servent pas ici. Pour les réutiliser, utilisez les boutons de copie de cet onglet.
+6. Ouvrez **Walmart Butler › WAL Deals Finder › Composez votre publication** et enregistrez votre texte Walmart. Chaque boutique a le sien. Sans texte enregistré, les offres affichent **Needs a template** et sont retenues.
+7. Ouvrez **Walmart Butler › WAL Deals Finder › Rechercher des offres**, parcourez la **Recette de filtres** et cliquez sur **Rechercher des offres**. Vérifiez que des lignes apparaissent.
+8. Pour publier, ouvrez **Deals Butler › Deal Posting › Planificateur**, ajoutez un endroit où publier dans Destinations sociales et activez **Post deals for me**. Les offres Walmart et Amazon partagent ce même calendrier. Le [tutoriel Deal Posting](/help/tutorials/deals) l'explique pas à pas.
+9. Facultatif : activez **Search for new deals on a clock** dans Rechercher des offres pour que de nouvelles offres arrivent toutes seules.
+
+## Chaque réglage
+
+### Rechercher des offres (Walmart Butler › WAL Deals Finder › Rechercher des offres)
+
+- **Bouton Rechercher des offres.** Lance une fois vos mots-clés chez Walmart et remplit le tableau. Quand une recherche ne trouve rien, une carte en haut de la page explique pourquoi. Rien à changer : cliquez dessus quand vous voulez un nouveau tirage.
+- **Find new deals automatically.** Par défaut : désactivé. Activez **Search for new deals on a clock** pour chercher tout seul. Choisir une heure ne l'active pas, c'est l'interrupteur qui le fait. Les choix sont 1, 3, 6, 12 et 24 heures, avec 6 heures présélectionnées. **Custom...** permet de choisir une heure et des jours de la semaine. Changez-le selon la fraîcheur voulue pour votre file.
+- **Remplacer ou ajouter les résultats.** Par défaut : remplacer. Chaque recherche remplace le contenu du tableau de résultats (elle ne touche pas aux offres déjà dans votre file). Chaque panneau de boutique a son propre calendrier de recherche.
+- **Mode d'envoi.** Par défaut : **Auto**. Auto envoie les résultats de chaque recherche vers la file des offres à la fin de la recherche, et le planificateur du hub Deal Posting décide quand les publier. **Manuel** garde les résultats dans le tableau jusqu'à ce que vous cliquiez sur **Envoyer vers les offres**. Choisissez Manuel pour lire chaque offre avant qu'elle puisse entrer dans la file.
+- **Pages d'offres de Walmart.** Quand la recherche automatique est activée, l'app lit aussi les pages d'offres de Walmart après une recherche programmée (voir Rechercher des pages d'offres plus bas). Désactiver la recherche automatique est ce qui l'arrête.
+
+### Recette de filtres (Rechercher des offres)
+
+La Recette de filtres est l'ensemble des règles qu'une offre doit passer. Pour Walmart, voici celles qui comptent :
+
+- **Prix minimum** et **Prix maximum.** Par défaut : 5 et 9000. Elles écartent les offres hors fourchette. Changez **Prix maximum** si vous ne voulez que des articles moins chers.
+- **Pourcentage minimum de remise.** Par défaut : 35. Une offre en dessous est écartée. Baissez-le si vous voyez trop peu d'offres, montez-le pour des remises plus fortes. 0 garde tout.
+- **Pourcentage maximum de remise.** Par défaut : vide (aucun plafond). Fixez-en un pour écarter les remises « trop belles pour être vraies ».
+- **Nombre minimal d'avis** et **Note minimale.** Par défaut : 100 et 4,0. La recherche Walmart renvoie ces données, donc les articles mal notés sont écartés. Un produit sans données d'avis est gardé, sauf si **Vérifier chaque offre avant la publication automatique** est activé.
+- **Vraies remises uniquement.** Par défaut : activé. Une offre ne compte que si Walmart lui-même affiche une remise. Un prix simplement inférieur au prix conseillé du fabricant n'est pas une offre.
+- **Garder les articles vendus sous le prix catalogue pendant la saison Black Friday de Walmart.** Par défaut : activé. Pendant la préparation du Black Friday de Walmart, les articles vendus sous le prix catalogue sont gardés comme offres de prix seul. Cela ne s'applique que lorsque **Vraies remises uniquement** est désactivé. Décochez-le si vous ne voulez que de vraies remises Walmart.
+- **Ignorer les vendeurs tiers avec des frais de port.** Par défaut : activé. L'app ouvre la page Walmart de chaque produit gardé et écarte ceux vendus par un autre vendeur avec des frais de port. Si la page ne peut pas être lue, l'article est gardé.
+- **Éviter les produits à 0 commission**, **Bloquer le contenu pour adultes**, **Exclure les offres avec coupon.** Par défaut : activé, activé, désactivé.
+- **Mots-clés à inclure** et **Mots-clés à exclure.** **Mots-clés à exclure** commence avec une longue liste préremplie (articles reconditionnés et similaires). Un titre contenant l'un de ces mots est ignoré.
+- **Exclure des catégories.** Par défaut : aucune. Les catégories cochées sont ignorées, et un rayon coché ignore aussi la page d'offres Walmart de ce rayon.
+- **Ignorer les ASIN récemment publiés (jours)**, **Ignorer les offres récemment récoltées (jours)**, **Ignorer les offres que vous avez supprimées (jours).** Par défaut : 2, 0 (désactivé), 7.
+- **Nombre maximal d'offres par mot-clé** et **Nombre total maximal de mots-clés.** Par défaut : 2 et 30. Ils fixent l'ampleur de la recherche par mots-clés.
+- **Nombre max d'offres récoltées.** Par défaut : vide. Pour la recherche par mots-clés, vide garde tout et un nombre garde les meilleures selon votre **Priorité des résultats**. Pour les pages d'offres Walmart, vide veut dire 60.
+- **Retirer les produits similaires en double.** Par défaut : activé, force 55. Il compare les nouvelles offres aux titres déjà dans le tableau de Rechercher des offres. La recherche dans les pages d'offres a sa propre vérification fixe des produits similaires, qui n'utilise pas ce curseur.
+- **Si une offre change avant sa publication.** Par défaut : **L'ignorer discrètement**. Juste avant la publication, l'offre est revérifiée. Si elle ne respecte plus vos filtres, elle est ignorée. Choisissez **La retenir pour vérification** pour la garder dans Publications à venir et décider vous-même.
+
+### Mots-clés (Walmart Butler › WAL Deals Finder › Mots-clés)
+
+Chaque mois a sa propre zone de mots-clés, plus une liste personnalisée. **Use this month's keywords** est activé par défaut. Utilisez **Suggérer des mots-clés par niche** et **Mots-clés saisonniers** pour des listes toutes faites, ou le générateur de mots-clés par IA une fois une clé OpenAI connectée. Si une recherche n'a pas de mots-clés pour le mois, elle est ignorée, et la page Rechercher des offres le dit.
+
+### Rechercher des pages d'offres (Walmart Butler › WAL Deals Finder › Outils › Rechercher des pages d'offres)
+
+Il n'y a rien à coller. Cliquez sur **Rechercher les pages** et l'app ouvre les pages d'offres propres à Walmart dans votre navigateur Walmart : **Shop All**, **Rollbacks**, **Clearance**, **Flash Deals**, **Extra Savings**, **Household Essentials** et une page par rayon. Elle lit chaque produit, le vérifie en direct et garde ceux qui sont vraiment en promotion.
+
+- **Elle suit votre Recette de filtres.** Les offres doivent passer **Prix minimum**, **Prix maximum**, **Pourcentage minimum de remise**, **Pourcentage maximum de remise**, **Mots-clés à exclure**, **Mots-clés à inclure** et **Exclure des catégories**. Elle ignore aussi les produits similaires (une autre couleur ou taille d'un produit déjà en attente, ou déjà gardé dans le même passage) et s'arrête à **Nombre max d'offres récoltées**, ou à 60 quand c'est vide. Le Journal de console dit ce qui a été ignoré et pourquoi.
+- **Elle n'utilise pas** Nombre minimal d'avis, Note minimale, Éviter 0 commission, Bloquer le contenu pour adultes, Exclure les offres avec coupon, Vraies remises uniquement, ni le curseur des produits similaires. Ce qui compte comme une offre, c'est la baisse de prix affichée sur la page du produit.
+- **Quand.** Par défaut : **Enregistrer comme brouillons à revoir**. L'autre choix est **Mettre en file pour la prochaine ronde**. Si vous n'avez aucun texte Walmart enregistré, tout arrive en brouillons de toute façon.
+- **Seulement Walmart et Pro Sellers, livraison gratuite.** Par défaut : activé. Elle écarte les articles avec des frais de port. Les produits qui n'affichent aucune information de livraison sont gardés.
+- **Exclure des rayons.** Cochez un rayon sous **Exclure des catégories** et sa page est ignorée. **Shop All**, **Rollbacks**, **Clearance**, **Flash Deals**, **Extra Savings** et **Household Essentials** s'exécutent toujours.
+- **Le passage automatique.** Après une recherche programmée par mots-clés chez Walmart, l'app lance aussi cette recherche, au plus une fois toutes les 6 heures tant que l'app est ouverte. Quitter l'app remet ce minuteur à zéro. Une recherche manuelle avec **Rechercher des offres** ne la déclenche pas. Le passage automatique enregistre toujours des brouillons, donc rien de ce qu'il trouve n'est publié tant que vous n'ouvrez pas le tableau **Offres** pour cliquer sur **Programmer tous les brouillons** (ou sur **Programmer** sur des lignes isolées). Pour l'arrêter, désactivez **Search for new deals on a clock** ; il n'a pas d'interrupteur à lui.
+- **Watch it run.** L'interrupteur de la barre du haut décide si la fenêtre Walmart est visible. Si Walmart affiche une vérification « appuyez et maintenez » et que la fenêtre est cachée, la page est ignorée. Activez **Watch it run** et relancez pour la passer vous-même.
+
+### Importer une feuille de calcul (Walmart Butler › WAL Deals Finder › Outils › Importer une feuille de calcul)
+
+Téléversez un fichier Excel (.xlsx) ou CSV contenant des liens de produits Walmart (walmart.com/ip/...) dans n'importe quelle colonne. C'est un envoi à sens unique vers votre file. Ce n'est pas la synchronisation Google Sheets (pour cela, voir Sheetsyncer Butler).
+
+- L'app consulte chaque produit en direct. Les prix saisis dans votre fichier ne sont pas utilisés, et seuls les articles en promotion chez Walmart à l'instant sont gardés. Jusqu'à 300 produits par fichier.
+- **Quand** et **Seulement Walmart et Pro Sellers, livraison gratuite** fonctionnent comme ci-dessus, avec les mêmes valeurs par défaut (brouillons, activé).
+- Les seuils de votre Recette de filtres ne sont pas appliqués ici. C'est vous qui avez choisi les produits.
+
+### Centre de codes promo (Walmart Butler › WAL Deals Finder › Outils › Promo Code Hub)
+
+Gardez les codes promo que vous joignez à vos publications : **Add code**, collez un lot ou téléversez un CSV. Les codes apparaissent comme choix dans Composez votre publication. Seul le gestionnaire de codes s'affiche ici ; les extras Amazon non.
+
+### Ajouter une offre (Walmart Butler › WAL Deals Finder › Outils › Add a Deal)
+
+Ajoutez une offre à la main : collez un lien de produit walmart.com, saisissez un titre et un prix, puis choisissez **Save as a draft to review** (par défaut) ou **Queue to post now**. Une offre Walmart sans remise est refusée, sauf si vous cochez **No deal, post anyway (full price)**. Un lien Mavely sans titre est suivi jusqu'au produit Walmart pour le remplir.
+
+### Produits à toujours publier (Walmart Butler › WAL Deals Finder › Outils › Always-Post)
+
+Always-Post ne lit que les produits Amazon. Coller ici un lien Walmart affiche « Cela ne ressemble pas à une URL de produit Amazon ni à un ASIN. » Pour mettre un produit Walmart en file à la main, utilisez **Add a Deal**.
+
+### Fournisseur de liens Walmart (Walmart Butler › Settings)
+
+Votre fournisseur de liens et sa connexion se trouvent ici, pas dans WAL Deals Finder. Changer de fournisseur met à jour vos offres en file toute seule.
+
+## Pièges courants
+
+- **La publication n'est pas ici.** WAL Deals Finder n'a ni Planificateur ni Destinations sociales. Ouvrez **Deals Butler › Deal Posting › Planificateur**. Un seul rythme sert Amazon et Walmart, une offre par créneau, en alternance.
+- **Une offre en file sans lien Walmart pour l'instant est normale.** Le lien est créé au moment de la publication, pas quand l'offre est trouvée.
+- **La date avec un « ~ » est une estimation.** C'est la position dans votre file multipliée par votre rythme, pas une heure réservée ni une retenue liée à un événement.
+- **Une offre « Held: full price » alors que Walmart l'affiche en promotion.** Juste avant la publication, l'app revérifie le prix et l'offre doit toujours afficher une remise. Walmart a peut-être mis fin à la promotion. Un prix sous le prix conseillé du fabricant ne compte pas. Pour choisir ce qui se passe, changez **Si une offre change avant sa publication**.
+- **Le pourcentage de remise semble ignoré.** Les offres de **Rechercher des pages d'offres** suivent un autre chemin que les résultats par mots-clés, et les lignes du Journal de console qui commencent par « Deal page search » ou « Automatic deal page search » sont de ce chemin. Si le Journal de console affiche « skipped N item(s) that your Filter Recipe rules out », la Recette a bien été appliquée.
+- **Doublons d'un même produit.** Les couleurs ou tailles différentes ont chacune leur identifiant Walmart. La vérification des produits similaires en regroupe la plupart.
+- **Always-Post, Roundup Campaigns et AI Content Butler** sont des panneaux partagés. Voir le [tutoriel Deal Posting](/help/tutorials/deals).
+- **Plan Beginner, pas de Walmart.** Activez-le depuis la bannière du tableau de bord (**Turn on Walmart deals**) avant de configurer les liens.
+
+## Si vous voyez ce message
+
+- **« Walmart n'est pas encore connecté ».** Les recherches Walmart ont besoin de votre connexion Influencer Butler. Connectez-vous puis relancez. L'avis dit « Connectez-vous d'abord à Influencer Butler pour que les recherches Walmart puissent s'exécuter, puis réessayez. »
+- **« Walmart a mis vos recherches en pause un instant ».** Le service partagé de recherche Walmart est occupé. Attendez quelques minutes et relancez, ou baissez **Nombre total maximal de mots-clés**.
+- **« Walmart a trouvé des produits, mais aucun en promotion ».** Walmart a trouvé des produits, mais aucun n'est remisé. Essayez d'autres mots-clés, ou activez **Mix in full-price finds** dans la Recette de filtres et fixez un **Prix maximum**.
+- **« Walmart réserve ses prix pour son événement promotionnel ».** Les articles portent un prix d'événement qui n'est pas encore actif. Ils sont ignorés jusqu'à ce que les acheteurs puissent vraiment obtenir ce prix.
+- **« Rien n'a survécu à vos filtres ».** La carte nomme le réglage qui a écarté le plus d'offres. Assouplissez-le dans la Recette de filtres.
+- **« Aucun mot clé à rechercher ».** Ajoutez des mots-clés pour le mois en cours dans l'onglet Mots-clés.
+- **« Les offres Walmart ont besoin d'un fournisseur de liens » / « Aucun fournisseur de liens ».** Ouvrez **Walmart Butler › Settings** et choisissez un fournisseur.
+- **« Pas de lien de commission - connectez-vous à Walmart Creator ».** Votre session Walmart Creator a pris fin. Reconnectez-vous dans **Walmart Butler › Settings**. Les publications retenues partent toutes seules après la connexion.
+- **« Pas de lien de commission - connectez-vous à Mavely ».** Cliquez sur **Connecter Mavely** dans **Walmart Butler › Settings**. Avec **Utiliser un lien Walmart Creator en secours** choisi, vous verrez « Lien Creator utilisé ».
+- **« Walmart's robot check blocked the automated link step... »** Walmart a affiché une vérification « appuyez et maintenez ». Une fenêtre de connexion s'ouvre : terminez-y la vérification. Si cela se répète, cliquez sur **Réinitialiser la connexion Walmart** dans **Walmart Butler › Settings**, ou passez à Mavely. Après un échec, la création de liens est en pause pendant 4 minutes.
+- **« Walmart a affiché une vérification « appuyez et maintenez ». Effectuez-la une fois dans la fenêtre qui s'est ouverte, puis relancez la recherche. »** Toutes les pages d'offres ont été bloquées. Activez **Watch it run**, faites la vérification dans la fenêtre Walmart, puis relancez.
+- **Journal de console : Walmart is showing a "press and hold" check. Finish it in the Walmart window and the search continues on its own.** Faites la vérification dans la fenêtre Walmart visible. Elle attend jusqu'à 3 minutes.
+- **Journal de console : That Walmart page hit a bot check. Turn on Watch it run, finish the press-and-hold in the Walmart window, then search again.** Une exécution cachée ou sans surveillance n'a pas pu attendre. Activez **Watch it run**.
+- **« Toutes les catégories d'offres intégrées de Walmart sont exclues. Décochez quelques cases dans Exclure des catégories (Rechercher des offres > Recette de filtres). »** Décochez quelques rayons sous **Exclure des catégories**.
+- **« Impossible d'ouvrir le navigateur Walmart. Fermez les autres fenêtres Walmart et réessayez. »** Fermez les autres fenêtres Walmart, puis réessayez.
+- **« Aucune offre ajoutée. Aucun des produits de ces pages n'est en promotion en ce moment. »** Les pages se sont chargées mais rien n'est en promotion chez Walmart à cet instant. Réessayez plus tard.
+- **« Impossible de rechercher ces pages. »** La recherche dans les pages a échoué. Cherchez dans le Journal de console la ligne qui commence par « Deal page search ».
+- **Journal de console : Deal page search: skipped N item(s) that your Filter Recipe rules out: ...** C'est normal. La ligne indique combien d'offres chaque règle a écartées. Assouplissez la règle citée si trop peu passent.
+- **Journal de console : Deal page did not load: ...** La page Walmart a expiré. Relancez plus tard.
+- **« Elles sont enregistrées comme brouillons à relire, donc elles ne se publient pas toutes seules. »** Ouvrez le tableau **Offres** et cliquez sur **Programmer tous les brouillons**.
+- **« Aucun lien de produit Walmart trouvé dans ce fichier. Chaque ligne a besoin d'un lien walmart.com/ip. »** Mettez des liens complets de produits dans une colonne.
+- **« Ce fichier est trop volumineux. Réduisez-le à votre liste d'offres et réessayez. »** Gardez un petit fichier (environ 8 Mo et 300 produits).
+- **« Aucune offre ajoutée. Aucun de ces articles n'est en promotion chez Walmart en ce moment. »** Votre liste n'a pas de remise actuelle.
+- **« Cet article est à prix plein. Ajoutez une remise, un coupon ou un code promo, ou cochez "Aucune offre, publier quand même" ci-dessous. »** Ajoutez un prix soldé et l'ancien prix, ou cochez la case prix plein.
+- **« Cela ne ressemble pas à une URL de produit Amazon ni à un ASIN. »** Vous avez collé un lien Walmart dans Always-Post, qui ne lit qu'Amazon. Utilisez **Add a Deal**.
+- **« Held: link not attributed ».** L'app ne publie pas un lien qui ne vous rapporterait rien. Relisez-la dans Publications à venir.
+- **« Offres Walmart désactivées » / « Paused: Walmart deals off ».** L'interrupteur Walmart en haut de Deal Posting est éteint. Les recherches continuent, mais rien n'est publié. Rallumez l'interrupteur.
+- **« This workspace's add-on has expired. Re-activate it to post. »** Votre espace complémentaire doit être renouvelé.
+
+## Questions rapides
+
+**Pourquoi les offres Walmart sont-elles arrivées en brouillons et pas publiées ?** L'outil Rechercher des pages d'offres enregistre des brouillons par défaut, et son passage automatique le fait toujours. Ouvrez le tableau **Offres** et cliquez sur **Programmer tous les brouillons**.
+
+**À quelle fréquence la recherche automatique dans les pages d'offres s'exécute-t-elle ?** Après une recherche Walmart programmée, au plus une fois toutes les 6 heures tant que l'app est ouverte.
+
+**Puis-je désactiver seule la recherche automatique dans les pages d'offres ?** Non. Désactivez **Search for new deals on a clock** pour arrêter toute recherche Walmart automatique. Tout ce qu'elle enregistre est un brouillon, vous pouvez donc l'ignorer ou le supprimer.
+
+**Où règle-t-on la fréquence de publication des offres Walmart ?** Dans **Deals Butler › Deal Posting › Planificateur**, un seul rythme pour Amazon et Walmart.
+
+**Quel lien mes publications Walmart utiliseront-elles ?** Un lien Walmart Creator (walmrt.us) ou Mavely (mave.ly), créé au moment où la publication part, selon votre fournisseur.
+
+**Le Black Friday est-il ici ?** Non. La liste Black Friday et Cyber Monday de Walmart est son propre butler, **Black Friday Event Finder**, dans Walmart Butler.
+
+**Puis-je importer mon Google Sheet ?** Importer une feuille de calcul accepte un fichier .xlsx ou .csv avec des liens Walmart. L'envoi vers Google Sheets va dans l'autre sens et se trouve dans **Sheetsyncer Butler**.
