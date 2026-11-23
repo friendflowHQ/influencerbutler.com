@@ -21,6 +21,7 @@ import { sendBookingConfirmation, sendOwnerNotification, type BookingEmailData }
 import { sanitizeTopics, isMissingTopicsColumn } from "@/lib/call-topics";
 import { setupWalkthroughSkipped, SETUP_REQUIRED_CODE, SETUP_REQUIRED_MESSAGE } from "@/lib/setup-gate";
 import { callPrepRequired, checkCallPrep } from "@/lib/call-prep";
+import { checkCallPrereqs, summarizeCallPrereqs } from "@/lib/call-prerequisites";
 import { findProgram, PARTNER_CALL_TYPE } from "@/lib/partner-call-slots";
 import {
   isPartnerAudience,
@@ -31,7 +32,7 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type Body = { type?: string; startMs?: number; timezone?: string; topic?: string; topics?: unknown; name?: string; partner?: string; prep?: unknown };
+type Body = { type?: string; startMs?: number; timezone?: string; topic?: string; topics?: unknown; name?: string; partner?: string; prep?: unknown; prereq?: unknown };
 
 export async function POST(request: Request) {
   // Dual-mode auth so the in-chat booking card books from the website cookie AND
@@ -71,6 +72,19 @@ export async function POST(request: Request) {
   });
   if (!prepVerdict.ok) {
     return NextResponse.json({ error: prepVerdict.error, code: prepVerdict.code }, { status: prepVerdict.status });
+  }
+
+  // Gate: website bookings confirm the per-topic checklist (guided setup done,
+  // material ready) and say what they already tried (src/lib/call-prerequisites.ts).
+  // App, extension and phone bookings have their own pre-call flow (call-prep above).
+  const prereq = checkCallPrereqs({
+    type,
+    topics: sanitizeTopics(body.topics),
+    raw: body.prereq,
+    viaWebsite: !/^bearer\s/i.test(request.headers.get("authorization") || ""),
+  });
+  if (!prereq.ok) {
+    return NextResponse.json({ error: prereq.error, code: prereq.code, missing: prereq.missing }, { status: prereq.status });
   }
 
   // Gate: support calls require an active/trial subscription.
@@ -131,6 +145,10 @@ export async function POST(request: Request) {
   const topics = sanitizeTopics(body.topics);
   const name = (body.name || "").trim().slice(0, 200) || null;
   const timezone = (body.timezone || "").trim().slice(0, 64) || null;
+  // The owner reads this on the prep sheet; the customer's own words stay as typed in their emails.
+  const prepSummary = prereq.ok && (prereq.ack.length > 0 || prereq.tried)
+    ? summarizeCallPrereqs({ type, topics, ack: prereq.ack, tried: prereq.tried })
+    : "";
 
   // Video link: a Google Meet on the owner's calendar if connected, else the
   // fallback link the owner set in the admin.
@@ -172,7 +190,7 @@ export async function POST(request: Request) {
     p_ends_at: new Date(v.endMs).toISOString(),
     p_user_ends_at: new Date(v.userEndMs).toISOString(),
     p_user_timezone: timezone,
-    p_topic: topic || null,
+    p_topic: (topic + prepSummary) || null,
     p_join_url: joinUrl,
     p_meeting_provider: provider,
     p_meeting_id: meetingId,
@@ -257,7 +275,7 @@ export async function POST(request: Request) {
     const { data: sub } = await admin.from("subscriptions").select("status,plan_name").eq("user_id", userId).order("created_at", { ascending: false }).limit(1).maybeSingle();
     const tier = tierForSubscriptionStatus((sub?.status as string) ?? null);
     const partnerLine = program ? ` Reserved ${program.label} slot (${program.partnerName} student).` : "";
-    await sendOwnerNotification(emailData, `Subscription: ${tier}${sub?.plan_name ? ` (${sub.plan_name})` : ""}.${partnerLine}`);
+    await sendOwnerNotification(emailData, `Subscription: ${tier}${sub?.plan_name ? ` (${sub.plan_name})` : ""}.${partnerLine}${prepSummary}`);
   } catch (e) { console.error("[booking] owner email", e); }
 
   return NextResponse.json({ ok: true, id: bookingId, joinUrl });

@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CALL_TYPES, type CallTypeKey } from "@/lib/scheduling";
 import { getTopic } from "@/lib/call-topics";
+import { prereqsFor, triedQuestion, TRIED_MIN_CHARS } from "@/lib/call-prerequisites";
 import { TopicPicker } from "@/components/scheduling/TopicChips";
 
 type Slot = { startMs: number; endMs: number; userEndMs: number; types?: ("support" | "demo")[]; partner?: string };
@@ -90,6 +91,10 @@ export default function BookCallPage() {
     if (prefill) setTopic(prefill);
   }, []);
   const [topics, setTopics] = useState<string[]>([]);
+  // Before-you-book checklist for the picked topics (src/lib/call-prerequisites.ts).
+  // The create route is the real gate; these answers are saved for the owner to read.
+  const [ack, setAck] = useState<string[]>([]);
+  const [tried, setTried] = useState("");
   const [name, setName] = useState("");
   const [consent, setConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -229,6 +234,10 @@ export default function BookCallPage() {
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]));
   }, [days, partners, callType, policyBlocked]);
 
+  const prereqs = useMemo(() => prereqsFor(topics, callType), [topics, callType]);
+  const triedMin = TRIED_MIN_CHARS[callType === "support" ? "support" : "demo"];
+  const prereqsOk = prereqs.every((p) => ack.includes(p.id)) && (prereqs.length === 0 || tried.trim().length >= triedMin);
+
   const partnerFor = useCallback((key: string | undefined) => partners.find((p) => p.key === key) ?? null, [partners]);
   const selectedPartner = partnerFor(selectedSlot?.partner);
 
@@ -246,7 +255,7 @@ export default function BookCallPage() {
     try {
       const res = await fetch("/api/booking/create", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ type: callType, startMs: selectedSlot.startMs, timezone: USER_TZ, topic, topics, name, ...(selectedSlot.partner ? { partner: selectedSlot.partner } : {}) }),
+        body: JSON.stringify({ type: callType, startMs: selectedSlot.startMs, timezone: USER_TZ, topic, topics, name, prereq: { ack: ack.filter((id) => prereqs.some((p) => p.id === id)), tried }, ...(selectedSlot.partner ? { partner: selectedSlot.partner } : {}) }),
       });
       const j = await res.json();
       if (!res.ok || !j.ok) { setMsg(j.error || "Could not book that time."); return; }
@@ -254,7 +263,7 @@ export default function BookCallPage() {
       await Promise.all([loadSlots(callType), loadMine(), loadPartners()]);
     } catch (e) { setMsg(e instanceof Error ? e.message : "Could not book."); }
     finally { setSubmitting(false); }
-  }, [selectedSlot, callType, topic, topics, name, loadSlots, loadMine, loadPartners]);
+  }, [selectedSlot, callType, topic, topics, name, ack, tried, prereqs, loadSlots, loadMine, loadPartners]);
 
   const cancel = useCallback(async (id: string) => {
     if (!confirm("Cancel this call?")) return;
@@ -445,6 +454,40 @@ export default function BookCallPage() {
               </p>
             )}
           </div>
+          {prereqs.length > 0 && (
+            <fieldset className="mt-3 rounded-xl border border-orange-200 bg-orange-50 p-4">
+              <legend className="px-1 text-sm font-semibold text-slate-900">Before you book: please confirm these</legend>
+              <p className="text-xs text-slate-600">
+                We keep calls short by starting from a finished setup. If something below is not done yet, do it first, then come back. The guided setups are in the app under Setup Checklist (left menu) and Settings, First-run walkthrough.
+              </p>
+              <ul className="mt-2 space-y-2">
+                {prereqs.map((p) => (
+                  <li key={p.id}>
+                    <label className="flex items-start gap-2 text-sm text-slate-800">
+                      <input
+                        type="checkbox"
+                        className="mt-0.5"
+                        checked={ack.includes(p.id)}
+                        onChange={(e) => setAck((cur) => e.target.checked ? [...cur, p.id] : cur.filter((x) => x !== p.id))}
+                      />
+                      <span>
+                        {p.text}
+                        {p.helpSlug && <> <a href={`/help/tutorials/${p.helpSlug}`} target="_blank" rel="noreferrer" className="font-medium text-[#c2410c] underline">Open the guide</a></>}
+                      </span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+              <label className="mt-3 block text-sm">
+                <span className="text-slate-800">{triedQuestion(callType)}</span>
+                <textarea value={tried} onChange={(e) => setTried(e.target.value)} rows={3} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm" />
+                <span className="mt-0.5 block text-xs text-slate-500">
+                  {tried.trim().length >= triedMin ? "Thank you." : `A sentence or two please (${Math.max(0, triedMin - tried.trim().length)} more characters).`}
+                </span>
+              </label>
+              <p className="mt-2 text-xs text-slate-600">If the setup is not done when we meet, we will ask to reschedule so your call is useful.</p>
+            </fieldset>
+          )}
           <label className="mt-3 block text-sm">
             <span className="text-slate-700">Anything else we should know? <span className="text-xs text-slate-500">(optional)</span></span>
             <textarea value={topic} onChange={(e) => setTopic(e.target.value)} rows={3} className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm" placeholder="A sentence or two so we can prepare." />
@@ -454,7 +497,7 @@ export default function BookCallPage() {
             <span>This call is recorded, transcribed, and summarized by AI so we can prepare notes to review afterward. Any product issues or feature requests raised may be logged to our support queue so we can follow up. Check the box to confirm you understand.</span>
           </label>
           {msg && <div className="mt-2 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{msg}</div>}
-          <button type="button" disabled={submitting || !consent || topics.length === 0 || selectedPartner?.preview === true} onClick={book} className="mt-3 rounded-lg bg-[#f97316] px-4 py-2 text-sm font-medium text-white hover:bg-[#ea580c] disabled:opacity-50">
+          <button type="button" disabled={submitting || !consent || topics.length === 0 || !prereqsOk || selectedPartner?.preview === true} onClick={book} className="mt-3 rounded-lg bg-[#f97316] px-4 py-2 text-sm font-medium text-white hover:bg-[#ea580c] disabled:opacity-50">
             {submitting ? "Booking…" : "Confirm booking"}
           </button>
         </div>

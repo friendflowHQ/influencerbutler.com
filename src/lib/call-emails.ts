@@ -12,6 +12,7 @@ import { sendEmail } from "@/lib/email-send";
 import { transactionalFrom } from "@/lib/email-senders";
 import { topicLabelsText } from "@/lib/call-topics";
 import { manageUrl } from "@/lib/call-manage";
+import { callPrepEmailLines } from "@/lib/call-prerequisites";
 
 const FROM = transactionalFrom();
 const ORGANIZER_EMAIL = "hello@influencerbutler.com";
@@ -126,6 +127,7 @@ export async function sendBookingConfirmation(b: BookingEmailData): Promise<bool
     b.joinUrl ? `Join link: ${b.joinUrl}` : `Your join link will be emailed to you shortly.`,
     topicLabelsText(b.topics) ? `\nTopics: ${topicLabelsText(b.topics)}` : "",
     b.topic ? `\nWhat you asked about: ${b.topic}` : "",
+    ...callPrepEmailLines({ type: b.callType, topics: b.topics, topicText: b.topic }),
     ``,
     `A calendar invite is attached, so it will drop straight onto your calendar.`,
     manage.line,
@@ -314,6 +316,7 @@ export async function sendReminder(b: BookingEmailData, which: "24h" | "1h"): Pr
     whenLine(b.startMs, b.userEndMs, tz),
     b.joinUrl ? `Join link: ${b.joinUrl}` : `Your join link will be emailed shortly.`,
     manage.line,
+    ...(which === "24h" ? callPrepEmailLines({ type: b.callType, topics: b.topics, topicText: b.topic }) : []),
     ...(which === "1h" ? [
       `If we are not there within 10 minutes of the start time, go ahead and rebook a new time from your dashboard under Book a Call.`,
       `Having technical trouble joining? Email us at hello@influencerbutler.com and we will help.`,
@@ -330,6 +333,37 @@ export async function sendReminder(b: BookingEmailData, which: "24h" | "1h"): Pr
     ...(b.joinUrl ? [{ phrase: b.joinUrl, href: b.joinUrl }] : []),
   ]);
   return sendResend(b.userEmail, `Reminder: your ${ct.label.toLowerCase()} is ${lead}`, body, "call_reminder", undefined, html);
+}
+
+/**
+ * One-off notice for calls that were booked before the before-you-book checklist
+ * existed: what to finish first and where the guided setups live. Sent by
+ * /api/cron/call-prep-notice, which the owner runs by hand after the release
+ * that carries the guided walkthroughs. Always includes the checklist (force).
+ */
+export async function sendPrepNotice(b: BookingEmailData): Promise<boolean> {
+  const ct = CALL_TYPES[b.callType];
+  const tz = b.userTimezone || "UTC";
+  const manage = manageLine(b.id, "Need to change it?");
+  const body = [
+    `Hi ${firstName(b.userName, b.userEmail)},`,
+    ``,
+    `Your ${ct.label.toLowerCase()} is coming up:`,
+    ``,
+    whenLine(b.startMs, b.userEndMs, tz),
+    b.joinUrl ? `Join link: ${b.joinUrl}` : "",
+    ...callPrepEmailLines({ type: b.callType, topics: b.topics, topicText: b.topic, force: true }),
+    ``,
+    manage.line,
+    ``,
+    `Warmly,`,
+    `Your Influencer Butler Team`,
+  ].filter((l, i, a) => !(l === "" && a[i - 1] === "")).join("\n");
+  const html = htmlFrom(body, [
+    ...manage.links,
+    ...(b.joinUrl ? [{ phrase: b.joinUrl, href: b.joinUrl }] : []),
+  ]);
+  return sendResend(b.userEmail, `Please prepare for your ${ct.label.toLowerCase()}`, body, "call_prep_notice", undefined, html);
 }
 
 export async function sendMissedYou(b: BookingEmailData): Promise<boolean> {

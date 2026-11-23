@@ -29,6 +29,7 @@ export const CALL_TOPICS: readonly CallTopic[] = [
   { key: "amazon", label: "Amazon storefront", chipClass: "bg-orange-50 text-orange-700 ring-orange-200", helpSlug: "amazonbutler", match: /amazon|storefront|creator connections|\bspcc\b|\bcc\b|influencer program/ },
   { key: "mavely-walmart", label: "Walmart or Mavely", chipClass: "bg-teal-50 text-teal-700 ring-teal-200", helpSlug: "walmart-research", match: /mavely|walmart/ },
   { key: "youtube", label: "YouTube", chipClass: "bg-cyan-50 text-cyan-800 ring-cyan-200", helpSlug: "youtube-butler", match: /youtube/ },
+  { key: "ai-influencer", label: "AI Influencer or AI clone", chipClass: "bg-lime-50 text-lime-800 ring-lime-200", helpSlug: "ai-influencer-setup", match: /ai influencer|ai clone|ai twin/ },
   { key: "extension", label: "Chrome extension", chipClass: "bg-indigo-50 text-indigo-700 ring-indigo-200", helpSlug: "extension", match: /extension|chrome/ },
   { key: "billing", label: "Billing or plan", chipClass: "bg-emerald-50 text-emerald-700 ring-emerald-200", helpSlug: "manage-subscription", match: /billing|subscription|\bplan\b|refund|invoice|charge|payment/ },
   { key: "affiliate", label: "Affiliate program", chipClass: "bg-fuchsia-50 text-fuchsia-700 ring-fuchsia-200", match: /affiliate|referral|payout/ },
