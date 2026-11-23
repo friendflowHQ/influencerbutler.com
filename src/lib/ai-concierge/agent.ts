@@ -27,9 +27,67 @@ import { loadSearchIndex, loadManifest } from "@/lib/tutorials";
 import { getAdmin } from "@/lib/scheduling-server";
 import { CALL_TYPES, type CallTypeKey } from "@/lib/scheduling";
 import { tierForSubscriptionStatus } from "@/lib/entitlements";
+import { callPolicyActive } from "@/lib/call-policy";
 import { isPlaceholderCompEmail } from "@/lib/comp-codes";
 
 export const BOOK_CALL_PATH = "/dashboard/book";
+
+/**
+ * Prompt lines for the call-booking rules. Before the call-policy start date
+ * (src/lib/call-policy.ts) the free Setup call is still offered; from it, only
+ * the Priority 1:1 exists, for plans that include it, and everyone else is
+ * pointed at self-serve help and the live group sessions.
+ */
+export function bookingPromptLines(now: number = Date.now()): string[] {
+  if (callPolicyActive(now)) {
+    return [
+      "Booking a call in chat:",
+      "- 1:1 calls are a perk of Power User plans (any seat count) and the Team and Agency plans, limited to one",
+      "  per calendar month. The free Setup call has ended; hands-on setup is now a paid one-time session. Beginner",
+      "  plans, the older Solo and Duo plans and the free tier do not include calls.",
+      "- Before offering a call, call get_subscription. Only a user on a plan that includes calls may be offered one:",
+      "  call offer_booking with callType 'support' and an in-app booking card appears. Everyone else gets the answer,",
+      "  then the video guides, the Setup checklist in the app, and the live group sessions (/events). If they ask for",
+      "  a person, say plainly that 1:1 calls come with Power User, Team and Agency, and offer the upgrade page.",
+      "  Never promise a call to a user whose plan does not include one, and never offer the Setup call.",
+      "- Always answer the actual question first, and try the self-serve fix (and ask them to use Ask support so the",
+      "  team receives their setup details) before any call. offer_booking is for when self-serve is not enough, not",
+      "  a reflex. The user picks the time and confirms in the card; you never book it for them.",
+    ];
+  }
+  return [
+    "Booking a call in chat:",
+    "- The user can book a 1:1 call with the team without leaving the chat: call offer_booking and an",
+    "  in-app booking card with live times appears. There are two call types. The free Setup call",
+    "  (callType 'demo') is a relaxed session where we set the app up with them, and it is open to",
+    "  everyone, signed in or not. The Priority 1:1 (callType 'support') is a focused troubleshooting",
+    "  call that is part of a paid plan.",
+    "- Decide which to offer. For general confusion, onboarding, or \"can someone just set this up with",
+    "  me\", offer the free Setup call ('demo'). Only offer the Priority 1:1 ('support') to a user you",
+    "  have confirmed is on a paid plan (call get_subscription first); if they are on the free tier,",
+    "  offer 'demo' and mention the Priority call comes with a plan. Use 'both' only when a paid user",
+    "  would genuinely choose between them.",
+    "- Always answer the actual question first. offer_booking is for when self-serve is not enough, not",
+    "  a reflex. The user picks the time and confirms the booking themselves in the card; you never",
+    "  book it for them. offer_human_call (a plain link to the booking page) stays the fallback for a",
+    "  surface that cannot show the card.",
+  ];
+}
+
+/** Closing prompt lines: what to say when the user wants a person. */
+export function humanFallbackLines(now: number = Date.now()): string[] {
+  if (callPolicyActive(now)) {
+    return [
+      "- When you cannot help, or the user wants a person: if their plan includes calls, call offer_human_call and",
+      `  say they can book one at ${SITE}${BOOK_CALL_PATH}. Otherwise point them to the Help center, the live group`,
+      `  sessions at ${SITE}/events, and Ask support in the app, and say the team reads every report.`,
+    ];
+  }
+  return [
+    "- When you cannot help, or the user wants a person, call offer_human_call and let them know they",
+    `  can book a human demo or support call at ${SITE}${BOOK_CALL_PATH}.`,
+  ];
+}
 const SITE = "https://www.influencerbutler.com";
 const SEARCH_RESULT_LIMIT = 4;
 const MAX_HIT_IMAGES = 3;
@@ -669,21 +727,7 @@ export function buildInstructions(
     "  they give you an address call submit_feedback again with the same title and contact_email set.",
     "  Never tell the user to expect a reply when needsContactEmail came back true.",
     "",
-    "Booking a call in chat:",
-    "- The user can book a 1:1 call with the team without leaving the chat: call offer_booking and an",
-    "  in-app booking card with live times appears. There are two call types. The free Setup call",
-    "  (callType 'demo') is a relaxed session where we set the app up with them, and it is open to",
-    "  everyone, signed in or not. The Priority 1:1 (callType 'support') is a focused troubleshooting",
-    "  call that is part of a paid plan.",
-    "- Decide which to offer. For general confusion, onboarding, or \"can someone just set this up with",
-    "  me\", offer the free Setup call ('demo'). Only offer the Priority 1:1 ('support') to a user you",
-    "  have confirmed is on a paid plan (call get_subscription first); if they are on the free tier,",
-    "  offer 'demo' and mention the Priority call comes with a plan. Use 'both' only when a paid user",
-    "  would genuinely choose between them.",
-    "- Always answer the actual question first. offer_booking is for when self-serve is not enough, not",
-    "  a reflex. The user picks the time and confirms the booking themselves in the card; you never",
-    "  book it for them. offer_human_call (a plain link to the booking page) stays the fallback for a",
-    "  surface that cannot show the card.",
+    ...bookingPromptLines(),
     "",
     "Boundaries:",
     "- You cannot access the user's Amazon or Instagram accounts and cannot click inside their",
@@ -695,8 +739,7 @@ export function buildInstructions(
     "  template, call build_look_template (ask 'Collage Butler or Fashion Looks?' first if unclear). It goes live for",
     "  every creator at once, no review. Then say where to find it, from the tool's message. Never promise exact copies",
     "  of someone else's words or logos: templates copy the layout, colors and style only.",
-    "- When you cannot help, or the user wants a person, call offer_human_call and let them know they",
-    `  can book a human demo or support call at ${SITE}${BOOK_CALL_PATH}.`,
+    ...humanFallbackLines(),
   ].join("\n");
 }
 
@@ -1249,7 +1292,11 @@ export function resolveBooking(raw: unknown): BookingPayload {
     raw && typeof raw === "object" && typeof (raw as Record<string, unknown>).callType === "string"
       ? String((raw as Record<string, unknown>).callType)
       : "demo";
-  const keys: CallTypeKey[] = which === "support" ? ["support"] : which === "both" ? ["demo", "support"] : ["demo"];
+  // From the call-policy start date the free Setup call no longer exists, so the
+  // card only ever offers the Priority 1:1 whatever the model asked for.
+  const keys: CallTypeKey[] = callPolicyActive(Date.now())
+    ? ["support"]
+    : which === "support" ? ["support"] : which === "both" ? ["demo", "support"] : ["demo"];
   const seen = new Set<string>();
   const callTypes: BookingCallType[] = [];
   for (const k of keys) {

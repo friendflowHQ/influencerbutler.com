@@ -21,6 +21,7 @@
 
 import crypto from "node:crypto";
 import { FACEBOOK_GROUP_URL } from "@/lib/social";
+import { callPolicyActive } from "@/lib/call-policy";
 import { sendMarketingEmail } from "@/lib/marketing-email";
 import { withFunnelExperiment } from "@/lib/funnel-experiment-send";
 import { getFunnelOverrides, resolveFunnelCopyForKey } from "@/lib/funnel-copy";
@@ -135,6 +136,14 @@ export type TierCopy = {
 
 function setupCallLines(v: WinbackVars, lead: string): string[] {
   if (!v.isTechnical) return [];
+  // The free Setup call ends at the call-policy start date (src/lib/call-policy.ts).
+  // Evaluated when the email is built, so a drip step sent after it never links a call that is gone.
+  if (callPolicyActive(Date.now())) {
+    return [
+      ``,
+      `${lead} Setup is the part most people get stuck on, so it is now step by step in our Help center, with videos: ${HELP_URL}. And we run live group sessions where you can bring your own questions: ${EVENTS_URL}`,
+    ];
+  }
   return [
     ``,
     `${lead} Book a free 1-hour-15-minute setup call and we'll set it up with you, any butler you want. Sign in with the email you used before, then pick a time: ${setupCallUrl()}`,
