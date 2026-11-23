@@ -8,6 +8,7 @@ import { requirePermission } from "@/lib/admin";
 import { getAdmin } from "@/lib/scheduling-server";
 import { callSupportWorker } from "@/lib/support-worker";
 import { getStatusBadge } from "@/lib/subscription-status";
+import { loadCompForCustomer, type CompSummary } from "@/lib/comps-data";
 import { isMissingTopicsColumn } from "@/lib/call-topics";
 
 export const runtime = "nodejs";
@@ -42,6 +43,9 @@ export async function GET(request: Request) {
   // Subscription + profile (best-effort).
   let subscription: { status: string | null; plan_name: string | null; renews_at: string | null; ends_at: string | null; badge: ReturnType<typeof getStatusBadge> } | null = null;
   let displayName: string | null = null;
+  // Comp (free plan) status + how long it lasts, so the host knows before the call.
+  let comp: CompSummary | null = null;
+  try { comp = await loadCompForCustomer({ userId: booking.user_id as string | null, email }); } catch { comp = null; }
   if (booking.user_id) {
     const { data: sub } = await admin.from("subscriptions").select("status,plan_name,renews_at,ends_at").eq("user_id", booking.user_id).order("created_at", { ascending: false }).limit(1).maybeSingle();
     if (sub) subscription = { status: sub.status ?? null, plan_name: sub.plan_name ?? null, renews_at: sub.renews_at ?? null, ends_at: sub.ends_at ?? null, badge: getStatusBadge(sub.status ?? null) };
@@ -65,6 +69,7 @@ export async function GET(request: Request) {
     booking,
     displayName,
     subscription,
+    comp,
     priorCalls: priorCalls ?? [],
     support: {
       total: tickets.length,

@@ -24,6 +24,7 @@ type Prep = {
   booking: Booking & { user_id: string | null };
   displayName: string | null;
   subscription: { status: string | null; plan_name: string | null; renews_at: string | null; ends_at: string | null; badge: { label: string; className: string } } | null;
+  comp: { state: string; label: string; discountCode: string | null; kind: string | null; source: string } | null;
   priorCalls: { id: string; call_type: string; starts_at: string; status: string; topic: string | null }[];
   support: {
     total: number; open: number;
@@ -34,6 +35,25 @@ type Prep = {
 type Rule = { id: string; weekday: number; start_min: number; end_min: number; timezone: string; effective_from: string | null; effective_to: string | null; fixed_slots?: { start_min: number; types?: string[] | null }[] | null };
 
 const FIXED_TYPE_LABEL: Record<string, string> = { demo: "Setup", support: "Priority" };
+
+// Comp pill shared shape with the support drawer: live comps in violet,
+// ending-soon in amber, ended/cancelled in grey.
+function compTone(state: string): string {
+  if (state === "expiring-7") return "bg-amber-100 text-amber-800";
+  if (state === "expiring-30") return "bg-amber-50 text-amber-700";
+  if (state === "expired" || state === "cancelled") return "bg-slate-200 text-slate-700";
+  if (state === "unknown-months") return "bg-rose-50 text-rose-700";
+  return "bg-violet-100 text-violet-800";
+}
+function CompPill({ comp }: { comp: { state: string; label: string; discountCode: string | null; kind: string | null; source: string } }) {
+  const extra = [comp.kind, comp.discountCode, comp.source === "in_house" ? "in-house" : "Lemon Squeezy"].filter(Boolean).join(" · ");
+  return (
+    <span className="inline-flex flex-wrap items-center gap-1">
+      <span className={`rounded px-1.5 py-0.5 text-xs ${compTone(comp.state)}`} title={extra}>{comp.label}</span>
+      <a href="/dashboard/admin/comps" className="text-xs text-[#f97316] hover:underline">Comps ↗</a>
+    </span>
+  );
+}
 function fixedSlotsText(r: Rule): string {
   if (!r.fixed_slots?.length) return "";
   const parts = r.fixed_slots.map((f) => `${hhmm(f.start_min)}${f.types?.length ? ` (${f.types.map((t) => FIXED_TYPE_LABEL[t] ?? t).join("/")} only)` : ""}`);
@@ -522,6 +542,9 @@ export default function SchedulingAdminPage() {
             <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
               <div><dt className="text-slate-400">Customer</dt><dd className="text-slate-700">{prep.displayName || prep.booking.user_name || "-"} &lt;{prep.booking.user_email}&gt;</dd></div>
               <div><dt className="text-slate-400">Subscription</dt><dd>{prep.subscription ? <span className={`rounded px-1.5 py-0.5 text-xs ${prep.subscription.badge.className}`}>{prep.subscription.badge.label}</span> : <span className="text-slate-400">none</span>}{prep.subscription?.plan_name ? ` · ${prep.subscription.plan_name}` : ""}</dd></div>
+              {prep.comp && (
+                <div className="col-span-2"><dt className="text-slate-400">Comped plan</dt><dd><CompPill comp={prep.comp} /></dd></div>
+              )}
               <div><dt className="text-slate-400">Status</dt><dd className="text-slate-700">{prep.booking.status}</dd></div>
               <div><dt className="text-slate-400">Join</dt><dd>{prep.booking.join_url ? <a className="text-[#f97316] hover:underline" href={prep.booking.join_url} target="_blank" rel="noreferrer">link ↗</a> : <span className="text-slate-400">none</span>}{prep.booking.join_url && prep.booking.meeting_provider === "google_meet" && settings?.googleEmail ? <span className="ml-1 text-xs text-slate-400">({settings.googleEmail})</span> : null}</dd></div>
             </dl>

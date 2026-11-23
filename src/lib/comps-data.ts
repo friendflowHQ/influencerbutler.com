@@ -463,3 +463,102 @@ export async function loadCompSubscriptionIds(): Promise<Set<string> | null> {
     return null;
   }
 }
+
+/* ------------------------------------------------------------------------- */
+/* Per-customer comp lookup (support drawer, call prep sheet)                 */
+/* ------------------------------------------------------------------------- */
+
+/** Compact comp summary for customer-context panels (support ticket drawer,
+ *  scheduling prep sheet). Null when the customer has no comp on record. */
+export type CompSummary = {
+  state: CompState;
+  planLabel: string | null;
+  discountCode: string | null;
+  kind: string | null;
+  source: "in_house" | "lemonsqueezy";
+  issuedAt: string | null;
+  expiresAt: string | null;
+  daysRemaining: number | null;
+  months: number | null;
+  /** One-line human label, e.g. "Comp: Pro Solo, 42 days left (ends Jan 4, 2027)". */
+  label: string;
+};
+
+const CACHE_TTL_MS = 60 * 1000;
+let compsCache: { at: number; promise: Promise<CompsResult | null> } | null = null;
+
+/** loadComps() runs several wide queries, so panels that only need one
+ *  customer share a 60-second cache instead of re-scanning every open. */
+function cachedComps(now: number): Promise<CompsResult | null> {
+  if (compsCache && now - compsCache.at < CACHE_TTL_MS) return compsCache.promise;
+  const promise = loadComps(now, { includeTestEmails: true }).catch(() => null);
+  compsCache = { at: now, promise };
+  return promise;
+}
+
+function fmtCompDay(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+}
+
+export function compSummaryLabel(row: Pick<CompRow, "state" | "planLabel" | "expiresAt" | "daysRemaining" | "months" | "cancelledAt">): string {
+  const plan = row.planLabel ? `Comp: ${row.planLabel}` : "Comp";
+  switch (row.state) {
+    case "forever":
+      return `${plan}, free forever`;
+    case "cancelled":
+      return `${plan}, cancelled${row.cancelledAt ? ` ${fmtCompDay(row.cancelledAt)}` : ""}`;
+    case "expired":
+      return `${plan}, ended${row.expiresAt ? ` ${fmtCompDay(row.expiresAt)}` : ""}`;
+    case "unknown-months":
+      return `${plan}, length not set (see Comps)`;
+    default: {
+      const days = row.daysRemaining ?? 0;
+      const left = days === 1 ? "1 day left" : `${days} days left`;
+      const total = row.months != null ? ` of ${row.months} mo` : "";
+      return `${plan}, ${left}${total}${row.expiresAt ? ` (ends ${fmtCompDay(row.expiresAt)})` : ""}`;
+    }
+  }
+}
+
+/**
+ * The most relevant comp for one customer, matched by user id first and then
+ * by email (case-insensitive). Live comps win over ended ones; among several,
+ * the one ending soonest. Returns null when the customer has no comp, or when
+ * the service client is unavailable.
+ */
+export async function loadCompForCustomer(
+  who: { userId?: string | null; email?: string | null },
+  now: number = Date.now(),
+): Promise<CompSummary | null> {
+  const email = (who.email ?? "").trim().toLowerCase();
+  const userId = who.userId ?? null;
+  if (!email && !userId) return null;
+  const result = await cachedComps(now);
+  if (!result) return null;
+  const mine = result.rows.filter(
+    (r) => (userId && r.userId === userId) || (email && (r.email ?? "").toLowerCase() === email),
+  );
+  if (mine.length === 0) return null;
+  // loadComps already orders needs-attention -> active -> forever -> cancelled;
+  // for a single customer we want the live comp first, so re-rank locally.
+  const live: Record<CompState, number> = {
+    "expiring-7": 0, "expiring-30": 0, active: 0, forever: 0, "unknown-months": 1, expired: 2, cancelled: 3,
+  };
+  mine.sort((a, b) => {
+    if (live[a.state] !== live[b.state]) return live[a.state] - live[b.state];
+    return (a.daysRemaining ?? Number.POSITIVE_INFINITY) - (b.daysRemaining ?? Number.POSITIVE_INFINITY);
+  });
+  const r = mine[0];
+  return {
+    state: r.state,
+    planLabel: r.planLabel,
+    discountCode: r.discountCode,
+    kind: r.kind,
+    source: r.source,
+    issuedAt: r.issuedAt,
+    expiresAt: r.expiresAt,
+    daysRemaining: r.daysRemaining,
+    months: r.months,
+    label: compSummaryLabel(r),
+  };
+}

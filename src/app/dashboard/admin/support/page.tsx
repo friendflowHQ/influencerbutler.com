@@ -133,6 +133,22 @@ const TIME_RANGES = [
 
 const KNOWN_TIERS = ["solo", "growth", "pro", "team", "agency", "free", "trial"];
 
+type CustomerCtx = {
+  email: string;
+  subscription: { status: string | null; plan_name: string | null; badge: { label: string; className: string } } | null;
+  comp: { state: string; label: string; discountCode: string | null; kind: string | null; source: string } | null;
+};
+
+// Comp pill: live comps in violet, ending-soon in amber, ended/cancelled grey,
+// unknown length rose (the owner still has to set it on the Comps page).
+function compTone(state: string): string {
+  if (state === "expiring-7") return "bg-amber-100 text-amber-800";
+  if (state === "expiring-30") return "bg-amber-50 text-amber-700";
+  if (state === "expired" || state === "cancelled") return "bg-slate-200 text-slate-700";
+  if (state === "unknown-months") return "bg-rose-50 text-rose-700";
+  return "bg-violet-100 text-violet-800";
+}
+
 const VIEWS_KEY = "ib-support-saved-views";
 
 type SavedView = {
@@ -460,6 +476,9 @@ export default function SupportAdminPage() {
   const listSeq = useRef(0);
 
   const [selected, setSelected] = useState<Ticket | null>(null);
+  // Billing context for the ticket's customer: subscription + comp (free plan)
+  // and how long the comp lasts. Loaded separately so the ticket opens at once.
+  const [customerCtx, setCustomerCtx] = useState<CustomerCtx | null>(null);
   const [detailBusy, setDetailBusy] = useState(false);
   // Per-user history drawer: every ticket this email has ever submitted.
   const [userView, setUserView] = useState<{ email: string; tickets: Ticket[]; loading: boolean; error: string | null } | null>(null);
@@ -597,6 +616,18 @@ export default function SupportAdminPage() {
     } catch { /* extras are optional; the ticket itself already loaded */ }
   }, []);
 
+  const loadCustomerCtx = useCallback(async (email: string) => {
+    setCustomerCtx(null);
+    const e = email.trim().toLowerCase();
+    if (!e || !e.includes("@")) return;
+    try {
+      const res = await fetch(`/api/admin/support/customer?email=${encodeURIComponent(e)}`, { cache: "no-store" });
+      if (!res.ok) return;
+      const json = (await res.json()) as Omit<CustomerCtx, "email">;
+      setCustomerCtx({ email: e, subscription: json.subscription ?? null, comp: json.comp ?? null });
+    } catch { /* billing context is optional */ }
+  }, []);
+
   const openTicket = useCallback(async (id: string) => {
     setActionMsg("");
     setDetailBusy(true);
@@ -622,10 +653,11 @@ export default function SupportAdminPage() {
       setNoteText("");
       setAssignee(t.assignee || "");
       void loadTicketExtras(t.id);
+      void loadCustomerCtx(t.requesterEmail || t.userEmail || "");
     } finally {
       setDetailBusy(false);
     }
-  }, [loadTicketExtras]);
+  }, [loadTicketExtras, loadCustomerCtx]);
 
   // Load every ticket a user has submitted. The Worker's /agent/inbox `q` is a
   // fuzzy match over title/text/email, so exact-filter on userEmail afterwards
@@ -1601,6 +1633,35 @@ export default function SupportAdminPage() {
             <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
               <div><dt className="text-slate-400">Type</dt><dd className="text-slate-700">{selected.classification || selected.type}</dd></div>
               <div><dt className="text-slate-400">Tier</dt><dd className="text-slate-700">{selected.licenseTier || "—"}</dd></div>
+              <div className="col-span-2">
+                <dt className="text-slate-400">Plan</dt>
+                <dd className="flex flex-wrap items-center gap-1.5 text-slate-700">
+                  {customerCtx && customerCtx.email === (selected.requesterEmail || selected.userEmail || "").toLowerCase() ? (
+                    <>
+                      {customerCtx.subscription ? (
+                        <span className={`rounded px-1.5 py-0.5 text-xs ${customerCtx.subscription.badge.className}`}>{customerCtx.subscription.badge.label}</span>
+                      ) : null}
+                      {customerCtx.subscription?.plan_name ? <span className="text-sm">{customerCtx.subscription.plan_name}</span> : null}
+                      {customerCtx.comp ? (
+                        <>
+                          <span
+                            className={`rounded px-1.5 py-0.5 text-xs ${compTone(customerCtx.comp.state)}`}
+                            title={[customerCtx.comp.kind, customerCtx.comp.discountCode, customerCtx.comp.source === "in_house" ? "in-house" : "Lemon Squeezy"].filter(Boolean).join(" · ")}
+                          >
+                            {customerCtx.comp.label}
+                          </span>
+                          <a href={`/dashboard/admin/comps?q=${encodeURIComponent(customerCtx.email)}`} className="text-xs text-[#f97316] hover:underline">Comps ↗</a>
+                        </>
+                      ) : null}
+                      {!customerCtx.subscription && !customerCtx.comp ? <span className="text-slate-400">no subscription on record</span> : null}
+                    </>
+                  ) : (selected.requesterEmail || selected.userEmail) ? (
+                    <span className="text-xs text-slate-400">loading…</span>
+                  ) : (
+                    <span className="text-slate-400">-</span>
+                  )}
+                </dd>
+              </div>
               <div>
                 <dt className="text-slate-400">User</dt>
                 <dd className="text-slate-700">
