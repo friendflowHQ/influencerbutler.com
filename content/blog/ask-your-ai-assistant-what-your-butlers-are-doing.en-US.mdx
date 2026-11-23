@@ -1,0 +1,94 @@
+---
+title: Just Ask: Check on Every Butler in Plain English With Your Own AI Assistant
+summary: A new, optional, read-only connection lets Claude, Cursor or any MCP-compatible AI assistant look at what your butlers are doing and earning. Ask "what needs me today?" instead of clicking through panels. Here is what you can ask, how to set it up, and exactly what stays private.
+category: Growth
+tags: Desktop App, AI, Settings
+date: 2026-11-23
+author: The Influencer Butler Team
+readingTime: 7 min read
+keywords: ai assistant connection, influencer butler mcp, connect claude to influencer butler, claude desktop influencer butler, cursor mcp server, ask ai about my butlers, read-only ai connection, what needs me today, why did my butler do nothing, mcp server desktop app
+image: /assets/blog/ask-your-ai-assistant-what-your-butlers-are-doing.png
+imageAlt: Illustration of a laptop with a chat bubble asking what needs attention today, connected by a short local cable to a row of butler panels
+---
+
+If you run a handful of butlers, you know the routine. Open one panel to see if Message Brands ran. Open another to check whether you are still signed in to a site. Open a third for yesterday's earnings. Each answer is a few clicks away, but there are a lot of answers, and the one you actually want ("does anything need me today?") is spread across all of them.
+
+So we added a way to just ask. The new **AI assistant connection** lets an AI assistant you already use, such as Claude Desktop, Claude Code or Cursor, look at what your butlers are doing and earning, and answer in plain English.
+
+## What is MCP, in one sentence
+
+MCP (Model Context Protocol) is a standard way for an AI app to connect to another app and ask it questions. You do not need to know anything about it to use this feature; the app shows you exactly what to paste.
+
+## What you can ask
+
+Every question below maps to something the connection can really look up today.
+
+**Your morning check-in**
+
+- "What needs me today?" You get a briefing: which butlers are running or stuck, any errors, which sites you are signed out of, your earnings, and what runs next.
+- "Which sites am I signed out of?" A signed-out site is the most common reason a butler does nothing.
+- "Is Amazon pausing my butlers right now?"
+
+**When something looks wrong**
+
+- "Why did Message Brands do nothing this morning?" The assistant combines the last error, recent runs, your signed-out sites and any Amazon pause into one explanation.
+- "Give me a summary I can paste into a support request." This builds a diagnostics bundle: app version, free disk space, big-file sizes, errors and signed-out sites. It contains no earnings and no customer data.
+
+**Earnings and links**
+
+- "How much did I earn yesterday, and what are my top products this month?"
+- "Which of my Butler Links get the most clicks?"
+
+**What is coming up**
+
+- "What's scheduled to run in the next 24 hours?"
+- "Did anything change for the brands I follow?"
+
+## How to set it up
+
+It takes about two minutes, and it lives in the desktop app, not in the web dashboard.
+
+1. Open **Settings > AI assistant connection** in the Influencer Butler desktop app.
+1. Turn on **Allow an AI assistant on this computer to connect**.
+1. Click **Create key**, then copy the setup into your AI app:
+   - **Claude Desktop and Cursor:** paste it into the app's MCP settings file and restart it. It runs with the Influencer Butler app, so there is nothing else to install.
+   - **Claude Code:** paste the setup line into a terminal.
+   - **Any other assistant:** add an MCP server using the address shown in the card, and send the key as a Bearer token in the Authorization header.
+
+Keep the Influencer Butler app running. The connection only works while the app is open. For screenshots and per-assistant detail, see the [AI assistant connection tutorial](/help/tutorials/ai-assistant-connection).
+
+## What it can and can't do
+
+**It can see:** butler status and progress, which butlers errored and why, which sites are signed in or out, schedules, run history and results, earnings totals (yesterday, month to date, forecast, streak, a 14-day trend and top products), link click counts, campaign alerts, your plan level, and app health (version, free disk space and data file sizes).
+
+**It cannot:** start or stop a butler, post anything, send messages or change any setting. It is strictly read-only. It never returns passwords, tokens, message text, customer details, link destinations or affiliate tags.
+
+## Your privacy and control
+
+We built this to be off until you say otherwise, and to stay on your own computer.
+
+- **Off by default.** Nothing listens until you turn it on.
+- **Local only.** It runs on your own computer on a loopback address. It is not exposed to the internet or to web pages.
+- **A key that you control.** The key is random, shown only once, and not saved in readable form on your computer. **Replace key** cuts off any assistant using the old key immediately. Wrong-key attempts are throttled and counted.
+- **Three sharing switches.** You choose whether to share earnings and top products, what is scheduled to run, and links and campaign alerts. Switch off whatever you do not want an assistant to see.
+- **Connection activity.** A view in the card shows whether an assistant is connected and the names of the last tools it called. It never shows your questions, and it is kept in memory only.
+
+**One honest caveat.** The connection itself stays on your computer, but whatever your AI assistant reads is sent to the company that runs it, for example Anthropic or Cursor. Only connect assistants you trust, and switch off anything you do not want shared. For how we handle data in general, see our [privacy policy](https://www.influencerbutler.com/legal/privacy.html).
+
+## FAQ
+
+**Is it safe?**
+It is off by default, read-only, local to your computer and protected by a key you can replace at any time. The one thing to keep in mind is that your AI assistant's company receives whatever the assistant reads, so use the three sharing switches to limit that.
+
+**Can it change my butlers?**
+No. It cannot start or stop butlers, post, send messages or change settings.
+
+**Which AI apps work?**
+Claude Desktop, Claude Code, Cursor, and any other app that supports MCP.
+
+**What if I lose my key?**
+The key is shown only once. Open Settings > AI assistant connection, click **Replace key**, and copy the new setup into your AI app. The old key stops working immediately.
+
+## Try it today
+
+Open **Settings > AI assistant connection** in the desktop app, turn it on, and ask your assistant "What needs me today?" Make sure your desktop app is up to date to see the card. Setup details are in the [tutorial](/help/tutorials/ai-assistant-connection).

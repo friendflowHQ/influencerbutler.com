@@ -1,0 +1,93 @@
+---
+title: Solo pregunta: revisa todos tus butlers en lenguaje normal con tu propio asistente de IA
+summary: Una nueva conexión opcional y de solo lectura permite que Claude, Cursor o cualquier asistente de IA compatible con MCP vea qué hacen y qué ganan tus butlers. Pregunta "¿qué necesita mi atención hoy?" en lugar de recorrer paneles. Qué puedes preguntar, cómo configurarlo y qué se mantiene privado.
+category: Growth
+date: 2026-11-23
+author: The Influencer Butler Team
+readingTime: 7 min de lectura
+keywords: conexión de asistente de IA, influencer butler mcp, conectar claude a influencer butler, claude desktop influencer butler, servidor mcp cursor, preguntar a la IA por mis butlers, conexión de solo lectura, qué necesita mi atención hoy, por qué mi butler no hizo nada
+image: /assets/blog/ask-your-ai-assistant-what-your-butlers-are-doing.png
+imageAlt: Ilustración de una laptop con un globo de chat que pregunta qué necesita atención hoy, conectada por un cable corto y local a una fila de paneles de butlers
+---
+
+Si manejas varios butlers, conoces la rutina. Abres un panel para ver si Message Brands se ejecutó. Abres otro para comprobar si sigues con la sesión iniciada en un sitio. Abres un tercero para ver las ganancias de ayer. Cada respuesta está a unos clics, pero hay muchas, y la que de verdad quieres ("¿necesita algo de mí hoy?") está repartida entre todas.
+
+Por eso añadimos una forma de simplemente preguntar. La nueva **conexión de asistente de IA** permite que un asistente que ya usas, como Claude Desktop, Claude Code o Cursor, vea qué hacen y qué ganan tus butlers, y te responda en lenguaje normal.
+
+## Qué es MCP, en una frase
+
+MCP (Model Context Protocol) es una forma estándar de que una app de IA se conecte a otra app y le haga preguntas. No necesitas saber nada más para usar esta función; la app te muestra exactamente qué pegar.
+
+## Qué puedes preguntar
+
+Cada pregunta de abajo corresponde a algo que la conexión puede consultar hoy.
+
+**Tu revisión de la mañana**
+
+- "¿Qué necesita mi atención hoy?" Recibes un resumen: qué butlers están en marcha o atascados, errores, en qué sitios tienes la sesión cerrada, tus ganancias y qué se ejecuta después.
+- "¿En qué sitios tengo la sesión cerrada?" Un sitio con la sesión cerrada es el motivo más común por el que un butler no hace nada.
+- "¿Amazon está pausando mis butlers ahora mismo?"
+
+**Cuando algo parece ir mal**
+
+- "¿Por qué Message Brands no hizo nada esta mañana?" El asistente combina el último error, las ejecuciones recientes, tus sitios con la sesión cerrada y cualquier pausa de Amazon en una sola explicación.
+- "Dame un resumen que pueda pegar en una solicitud de soporte." Esto genera un paquete de diagnóstico: versión de la app, espacio libre en disco, tamaños de archivos grandes, errores y sitios con la sesión cerrada. No contiene ganancias ni datos de clientes.
+
+**Ganancias y enlaces**
+
+- "¿Cuánto gané ayer y cuáles son mis mejores productos este mes?"
+- "¿Cuáles de mis Butler Links reciben más clics?"
+
+**Lo que viene**
+
+- "¿Qué está programado para las próximas 24 horas?"
+- "¿Cambió algo en las marcas que sigo?"
+
+## Cómo configurarlo
+
+Toma unos dos minutos y está en la app de escritorio, no en el panel web.
+
+1. Abre **Ajustes > Conexión de asistente de IA** en la app de escritorio de Influencer Butler.
+1. Activa **Permitir que un asistente de IA en este equipo se conecte**.
+1. Haz clic en **Crear clave** y copia la configuración en tu app de IA:
+   - **Claude Desktop y Cursor:** pégala en el archivo de ajustes MCP de la app y reiníciala. Funciona junto con la app de Influencer Butler, así que no hay nada más que instalar.
+   - **Claude Code:** pega la línea de configuración en una terminal.
+   - **Cualquier otro asistente:** añade un servidor MCP con la dirección que muestra la tarjeta y envía la clave como token Bearer en el encabezado Authorization.
+
+Deja la app de Influencer Butler abierta. La conexión solo funciona mientras la app está abierta. Para capturas y detalles por asistente, consulta el [tutorial de la conexión de asistente de IA](/help/tutorials/ai-assistant-connection).
+
+## Qué puede y qué no puede hacer
+
+**Puede ver:** el estado y el progreso de los butlers, qué butlers fallaron y por qué, en qué sitios tienes la sesión iniciada o cerrada, programaciones, historial y resultados de ejecuciones, totales de ganancias (ayer, el mes hasta hoy, previsión, racha, tendencia de 14 días y mejores productos), recuentos de clics de enlaces, alertas de campañas, tu nivel de plan y el estado de la app (versión, espacio libre en disco y tamaños de archivos de datos).
+
+**No puede:** iniciar ni detener un butler, publicar, enviar mensajes ni cambiar ningún ajuste. Es estrictamente de solo lectura. Nunca devuelve contraseñas, tokens, texto de mensajes, datos de clientes, destinos de enlaces ni etiquetas de afiliado.
+
+## Tu privacidad y tu control
+
+La diseñamos para que esté desactivada hasta que tú decidas lo contrario y para que se quede en tu propio equipo.
+
+- **Desactivada por defecto.** Nada escucha hasta que la activas.
+- **Solo local.** Funciona en tu propio equipo, en una dirección de loopback. No está expuesta a internet ni a páginas web.
+- **Una clave que tú controlas.** La clave es aleatoria, se muestra una sola vez y no se guarda en formato legible en tu equipo. **Reemplazar clave** corta de inmediato a cualquier asistente que use la clave anterior. Los intentos con una clave incorrecta se limitan y se cuentan.
+- **Tres interruptores para compartir.** Tú eliges si compartes las ganancias y los mejores productos, lo que está programado para ejecutarse, y los enlaces y las alertas de campañas. Desactiva lo que no quieras que vea un asistente.
+- **Actividad de la conexión.** Una vista en la tarjeta muestra si hay un asistente conectado y los nombres de las últimas herramientas que usó. Nunca muestra tus preguntas y se guarda solo en memoria.
+
+**Una advertencia honesta.** La conexión en sí se queda en tu equipo, pero todo lo que lee tu asistente de IA se envía a la empresa que lo opera, por ejemplo Anthropic o Cursor. Conecta solo asistentes en los que confíes y desactiva lo que no quieras compartir. Para saber cómo tratamos los datos en general, consulta nuestra [política de privacidad](https://www.influencerbutler.com/legal/privacy.html).
+
+## Preguntas frecuentes
+
+**¿Es segura?**
+Está desactivada por defecto, es de solo lectura, local en tu equipo y está protegida por una clave que puedes reemplazar en cualquier momento. Lo único que debes tener presente es que la empresa de tu asistente de IA recibe lo que el asistente lee, así que usa los tres interruptores para limitarlo.
+
+**¿Puede cambiar mis butlers?**
+No. No puede iniciar ni detener butlers, publicar, enviar mensajes ni cambiar ajustes.
+
+**¿Qué apps de IA funcionan?**
+Claude Desktop, Claude Code, Cursor y cualquier otra app compatible con MCP.
+
+**¿Y si pierdo mi clave?**
+La clave se muestra una sola vez. Abre Ajustes > Conexión de asistente de IA, haz clic en **Reemplazar clave** y copia la nueva configuración en tu app de IA. La clave anterior deja de funcionar de inmediato.
+
+## Pruébala hoy
+
+Abre **Ajustes > Conexión de asistente de IA** en la app de escritorio, actívala y pregunta a tu asistente "¿Qué necesita mi atención hoy?" Asegúrate de tener la app de escritorio actualizada para ver la tarjeta. Los detalles de configuración están en el [tutorial](/help/tutorials/ai-assistant-connection).

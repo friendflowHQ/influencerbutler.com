@@ -1,0 +1,93 @@
+---
+title: Demandez simplement : vérifiez tous vos butlers en langage courant avec votre propre assistant IA
+summary: Une nouvelle connexion optionnelle, en lecture seule, permet à Claude, Cursor ou tout assistant IA compatible MCP de voir ce que font et gagnent vos butlers. Demandez "qu'est-ce qui a besoin de moi aujourd'hui ?" au lieu de parcourir des panneaux. Ce que vous pouvez demander, comment la configurer et ce qui reste privé.
+category: Growth
+date: 2026-11-23
+author: The Influencer Butler Team
+readingTime: 7 min de lecture
+keywords: connexion assistant IA, influencer butler mcp, connecter claude à influencer butler, claude desktop influencer butler, serveur mcp cursor, demander à l'IA mes butlers, connexion en lecture seule, qu'est-ce qui a besoin de moi aujourd'hui, pourquoi mon butler n'a rien fait
+image: /assets/blog/ask-your-ai-assistant-what-your-butlers-are-doing.png
+imageAlt: Illustration d'un ordinateur portable avec une bulle de discussion demandant ce qui nécessite de l'attention aujourd'hui, relié par un court câble local à une rangée de panneaux de butlers
+---
+
+Si vous faites tourner plusieurs butlers, vous connaissez la routine. Ouvrir un panneau pour voir si Message Brands s'est exécuté. En ouvrir un autre pour vérifier que vous êtes toujours connecté à un site. Un troisième pour les gains d'hier. Chaque réponse est à quelques clics, mais il y en a beaucoup, et celle que vous voulez vraiment ("est-ce que quelque chose a besoin de moi aujourd'hui ?") est dispersée entre toutes.
+
+Nous avons donc ajouté un moyen de simplement demander. La nouvelle **connexion d'assistant IA** permet à un assistant que vous utilisez déjà, comme Claude Desktop, Claude Code ou Cursor, de voir ce que font et gagnent vos butlers, et de vous répondre en langage courant.
+
+## Qu'est-ce que MCP, en une phrase
+
+MCP (Model Context Protocol) est une façon standard pour une application d'IA de se connecter à une autre application et de lui poser des questions. Vous n'avez rien d'autre à savoir pour utiliser cette fonction ; l'application vous montre exactement quoi coller.
+
+## Ce que vous pouvez demander
+
+Chaque question ci-dessous correspond à quelque chose que la connexion peut réellement consulter aujourd'hui.
+
+**Votre point du matin**
+
+- "Qu'est-ce qui a besoin de moi aujourd'hui ?" Vous obtenez un récapitulatif : quels butlers tournent ou sont bloqués, les erreurs, les sites où vous êtes déconnecté, vos gains et ce qui s'exécute ensuite.
+- "Sur quels sites suis-je déconnecté ?" Un site déconnecté est la raison la plus courante pour laquelle un butler ne fait rien.
+- "Amazon met-il mes butlers en pause en ce moment ?"
+
+**Quand quelque chose semble anormal**
+
+- "Pourquoi Message Brands n'a-t-il rien fait ce matin ?" L'assistant combine la dernière erreur, les exécutions récentes, vos sites déconnectés et toute pause d'Amazon en une seule explication.
+- "Donne-moi un résumé que je peux coller dans une demande d'assistance." Cela produit un lot de diagnostic : version de l'application, espace disque libre, tailles des gros fichiers, erreurs et sites déconnectés. Il ne contient ni gains ni données clients.
+
+**Gains et liens**
+
+- "Combien ai-je gagné hier, et quels sont mes meilleurs produits ce mois-ci ?"
+- "Lesquels de mes Butler Links reçoivent le plus de clics ?"
+
+**Ce qui arrive**
+
+- "Qu'est-ce qui est prévu dans les prochaines 24 heures ?"
+- "Quelque chose a-t-il changé pour les marques que je suis ?"
+
+## Comment la configurer
+
+Cela prend environ deux minutes, et cela se passe dans l'application de bureau, pas dans le tableau de bord web.
+
+1. Ouvrez **Paramètres > Connexion d'assistant IA** dans l'application de bureau Influencer Butler.
+1. Activez **Autoriser un assistant IA sur cet ordinateur à se connecter**.
+1. Cliquez sur **Créer une clé**, puis copiez la configuration dans votre application d'IA :
+   - **Claude Desktop et Cursor :** collez-la dans le fichier de paramètres MCP de l'application et redémarrez-la. Elle fonctionne avec l'application Influencer Butler, il n'y a donc rien d'autre à installer.
+   - **Claude Code :** collez la ligne de configuration dans un terminal.
+   - **Tout autre assistant :** ajoutez un serveur MCP avec l'adresse affichée dans la carte, et envoyez la clé comme jeton Bearer dans l'en-tête Authorization.
+
+Laissez l'application Influencer Butler ouverte. La connexion ne fonctionne que tant que l'application est ouverte. Pour les captures d'écran et le détail par assistant, consultez le [tutoriel de la connexion d'assistant IA](/help/tutorials/ai-assistant-connection).
+
+## Ce qu'elle peut et ne peut pas faire
+
+**Elle peut voir :** l'état et la progression des butlers, quels butlers ont échoué et pourquoi, les sites où vous êtes connecté ou déconnecté, les planifications, l'historique et les résultats des exécutions, les totaux de gains (hier, le mois en cours, prévision, série, tendance sur 14 jours et meilleurs produits), le nombre de clics sur les liens, les alertes de campagne, votre niveau de forfait et l'état de l'application (version, espace disque libre et tailles des fichiers de données).
+
+**Elle ne peut pas :** démarrer ou arrêter un butler, publier, envoyer des messages ni modifier un paramètre. Elle est strictement en lecture seule. Elle ne renvoie jamais de mots de passe, de jetons, de texte de messages, de données clients, de destinations de liens ni de balises d'affiliation.
+
+## Votre confidentialité et votre contrôle
+
+Nous l'avons conçue pour qu'elle soit désactivée tant que vous ne dites pas le contraire, et pour qu'elle reste sur votre propre ordinateur.
+
+- **Désactivée par défaut.** Rien n'écoute tant que vous ne l'activez pas.
+- **Locale uniquement.** Elle fonctionne sur votre propre ordinateur, sur une adresse de bouclage (loopback). Elle n'est pas exposée à internet ni aux pages web.
+- **Une clé que vous contrôlez.** La clé est aléatoire, affichée une seule fois et non enregistrée sous forme lisible sur votre ordinateur. **Remplacer la clé** coupe immédiatement tout assistant qui utilise l'ancienne clé. Les tentatives avec une mauvaise clé sont limitées et comptées.
+- **Trois interrupteurs de partage.** Vous choisissez de partager ou non les gains et les meilleurs produits, ce qui est planifié, ainsi que les liens et les alertes de campagne. Désactivez ce que vous ne voulez pas qu'un assistant voie.
+- **Activité de la connexion.** Une vue dans la carte indique si un assistant est connecté et les noms des derniers outils qu'il a appelés. Elle n'affiche jamais vos questions et reste uniquement en mémoire.
+
+**Une réserve honnête.** La connexion elle-même reste sur votre ordinateur, mais tout ce que lit votre assistant IA est envoyé à l'entreprise qui l'exploite, par exemple Anthropic ou Cursor. Ne connectez que des assistants en qui vous avez confiance, et désactivez ce que vous ne voulez pas partager. Pour savoir comment nous traitons les données en général, consultez notre [politique de confidentialité](https://www.influencerbutler.com/legal/privacy.html).
+
+## Questions fréquentes
+
+**Est-ce sûr ?**
+Elle est désactivée par défaut, en lecture seule, locale à votre ordinateur et protégée par une clé que vous pouvez remplacer à tout moment. Il faut seulement garder en tête que l'entreprise de votre assistant IA reçoit ce que l'assistant lit : utilisez les trois interrupteurs pour le limiter.
+
+**Peut-elle modifier mes butlers ?**
+Non. Elle ne peut ni démarrer ou arrêter des butlers, ni publier, ni envoyer de messages, ni modifier des paramètres.
+
+**Quelles applications d'IA fonctionnent ?**
+Claude Desktop, Claude Code, Cursor et toute autre application compatible MCP.
+
+**Et si je perds ma clé ?**
+La clé n'est affichée qu'une seule fois. Ouvrez Paramètres > Connexion d'assistant IA, cliquez sur **Remplacer la clé** et copiez la nouvelle configuration dans votre application d'IA. L'ancienne clé cesse de fonctionner immédiatement.
+
+## Essayez dès aujourd'hui
+
+Ouvrez **Paramètres > Connexion d'assistant IA** dans l'application de bureau, activez-la et demandez à votre assistant "Qu'est-ce qui a besoin de moi aujourd'hui ?" Vérifiez que votre application de bureau est à jour pour voir la carte. Les détails de configuration sont dans le [tutoriel](/help/tutorials/ai-assistant-connection).

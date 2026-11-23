@@ -3170,6 +3170,21 @@
       "imageAlt": "Illustration of a creator carrying sale-weekend momentum forward into December",
       "imagePrompt": "a creator carrying a glowing momentum arrow forward from a sale weekend into a calm December calendar, continuity and calm, no text",
       "order": 245
+    },
+    {
+      "id": "ask-your-ai-assistant-what-your-butlers-are-doing",
+      "title": "Just Ask: Check on Every Butler in Plain English With Your Own AI Assistant",
+      "category": "Growth",
+      "tags": "Desktop App, AI, Settings",
+      "summary": "A new, optional, read-only connection lets Claude, Cursor or any MCP-compatible AI assistant look at what your butlers are doing and earning. Ask \"what needs me today?\" instead of clicking through panels. Here is what you can ask, how to set it up, and exactly what stays private.",
+      "date": "2026-11-23",
+      "author": "The Influencer Butler Team",
+      "readingTime": "7 min read",
+      "keywords": "ai assistant connection, influencer butler mcp, connect claude to influencer butler, claude desktop influencer butler, cursor mcp server, ask ai about my butlers, read-only ai connection, what needs me today, why did my butler do nothing, mcp server desktop app",
+      "image": "/assets/blog/ask-your-ai-assistant-what-your-butlers-are-doing.png",
+      "imageAlt": "Illustration of a laptop with a chat bubble asking what needs attention today, connected by a short local cable to a row of butler panels",
+      "imagePrompt": "a laptop showing a friendly chat bubble asking what needs attention today, linked by a short local cable to a row of small butler panels, calm and private, no text",
+      "order": 246
     }
   ]
 }
