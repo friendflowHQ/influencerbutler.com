@@ -258,9 +258,9 @@ El calentamiento lo comparten todos tus Deal Posting, porque todos publican desd
 
 Facebook limita la frecuencia con la que una cuenta puede publicar, y publicar demasiadas ofertas demasiado rápido (sobre todo en varios espacios de Deals con una sola cuenta de Facebook) puede provocar un bloqueo temporal. Butler incluye protecciones.
 
-- **Un límite diario y espaciado.** En el Panel, en **Límites de publicación en Facebook**, define el **máximo de publicaciones de Facebook por día** (contado en todos tus espacios de Deals) y los **minutos entre publicaciones**. Un buen punto de partida es 25 por día, con 20 minutos de diferencia. Cuando alcanzas el límite, las publicaciones de más esperan al día siguiente en lugar de acumularse.
+- **Un límite diario.** En la pestaña **Programador** del centro **Deal Posting**, escribe un número en **Máximo de publicaciones en Facebook por día (todos los workspaces)**. Cuenta todos tus workspaces de Deals juntos, y cuenta una por cada grupo o página que alcanza una oferta, durante las últimas 24 horas. Si lo dejas vacío no hay límite, que es lo habitual. Al llegar a él, las publicaciones de Facebook de más esperan en la cola y salen después, mientras tus otros destinos siguen publicando. No se pierde nada. Si usas más de un inicio de sesión de Facebook, marca **Dar a cada inicio de sesión de Facebook su propio límite diario** para que cada uno tenga el número completo.
 - **Ve el panorama combinado en el panel principal.** Cuando usas más de un espacio de Deals, la pestaña Scheduler de **Deal Posting** muestra **Carga de publicación en todos tus espacios de Deals**: las publicaciones previstas por día y cuántas han salido hoy, destacando Facebook porque tus espacios comparten una sola cuenta. Te avisa cuando la carga combinada de Facebook parece alta y puedes fijar allí mismo el **máximo de publicaciones de Facebook por día**. Cada espacio conserva su propia programación; esta es la vista completa para que puedas frenar uno antes de que publique demasiado.
-- **Una fase de calentamiento.** Deja activada la opción **Calentar gradualmente**, sobre todo en una cuenta nueva: Butler empieza más despacio y aumenta hasta tu límite durante unas semanas. El Panel muestra la semana actual y cuántas publicaciones se permiten hoy.
+- **Una subida gradual tras un bloqueo.** Cuando un bloqueo de Facebook termina y reanudas, Butler no vuelve de golpe a toda velocidad: sube poco a poco durante las primeras semanas, y solo baja un límite que hayas fijado tú. Verás "Se reanudaron las publicaciones de Facebook. Aumentarán poco a poco." Para un perfil nuevo en publicar ofertas, usa la tarjeta **Calentamiento progresivo** descrita arriba.
 - **Si aun así Facebook bloquea las publicaciones.** Butler detecta el bloqueo, detiene por su cuenta las publicaciones programadas de Facebook para que el bloqueo no dure más, y muestra un aviso además de enviarte un correo. Si tu página de Facebook tiene otra consideración y sigue publicando, solo se pausan tus grupos y tu perfil. No publiques en Facebook a mano mientras el bloqueo esté activo, ya que puede prolongarlo. Facebook no muestra la fecha de finalización en el propio bloqueo, pero el botón **Abrir Estado de la cuenta** del aviso te lleva a la página que sí la muestra. Las publicaciones se reanudan poco a poco cuando pulsas **Reanudar publicaciones de Facebook** o cuando se levanta el límite por su cuenta.
 - **Los bloqueos de comentarios también lo pausan todo.** Facebook puede bloquear solo los comentarios (el mensaje "No puedes usar esta función en este momento"), y eso importa porque el enlace de afiliado vive en el primer comentario. Butler lo detecta al comentar, pausa los comentarios Y las publicaciones de Facebook a la vez, muestra el aviso y te envía un correo. Por defecto el descanso dura 3 días; cámbialo con **Pausa tras un bloqueo de Facebook (días)** en la tarjeta de horas de silencio del Programador, y los bloqueos repetidos descansan más tiempo por su cuenta. Puedes reanudar antes en cualquier momento con el botón **Reanudar comentarios y publicaciones** del aviso. Una advertencia: los bloqueos de comentarios a menudo no aparecen en la página de Estado de la cuenta, así que una página limpia no significa que el bloqueo se haya levantado.
 
@@ -634,6 +634,82 @@ Las ofertas recolectadas viven en la caché preseed; el historial de publicacion
 - **Una oferta de campaña se publica por encima de tu Porcentaje de descuento máximo**: las ofertas que añaden las reglas de **Creator Connections** y **SPCC** del **Piloto automático del Deals Hub** omiten a propósito el **Porcentaje de descuento máximo** (y el porcentaje mínimo), porque se eligen por la campaña, no por la profundidad del descuento. Bajar el límite no las retiene. Si solo quieres ofertas de campaña dentro de tu límite, añádelas como borradores para revisarlas en lugar de programarlas directamente en tu cola de publicación automática.
 - **Tus ofertas se publican en todas tus listas de Benable, no solo en la que querías**: en **Social Destinations**, el cuadro **Benable lists** guarda una URL por línea, y cada línea de ese cuadro es un destino siempre activo, así que una oferta se publica en todas a la vez. No hay ninguna opción para elegir una lista y omitir las demás. Si solo quieres que las ofertas vayan a una lista, abre **Social Destinations**, busca **Benable lists** y borra todas las líneas salvo la URL que quieras. Mantén una lista personal separada de tu lista de publicación no pegándola en ese cuadro.
 
+## Si ves este mensaje
+
+Estos son los mensajes de la pestaña **Ofertas** y de la pestaña **Programador** del centro **Deal Posting**, con las palabras que usa la app. Los mensajes de búsqueda, como "Amazon aún no está conectado", son de cada tienda: consulta el [tutorial de AMZ Deals Finder](/help/tutorials/deals-amazon) y el [tutorial de WAL Deals Finder](/help/tutorials/deals-walmart).
+
+**Etiquetas en una oferta (pestaña Ofertas, Próximas)**
+
+- **"Retenida: precio completo".** Butler solo publica artículos con un descuento, cupón o código promocional reales, y este no mostraba ninguno cuando iba a publicarse. Antes de retenerlo, Butler le pregunta a Amazon el precio actual. Si el artículo está en oferta ahora mismo y la rebaja alcanza tu **Porcentaje mínimo de descuento** del Filter Recipe, se publica con los números de hoy. Por eso un artículo en oferta pero por debajo de tu porcentaje mínimo sigue retenido. Los artículos de Walmart no se vuelven a comprobar así. Haz clic en **Publicar a precio completo** para publicarlo con tu texto de Precio completo, o elimínalo. **Publicar de todos modos** no aparece en estas filas.
+- **"Retenida: por debajo de tu descuento mínimo" y "Retenida: por encima de tu descuento máximo".** El descuento del texto queda fuera de tu **Porcentaje mínimo de descuento** o **Porcentaje máximo de descuento** del Filter Recipe. Cambia el número o haz clic en **Publicar de todos modos**. Las ofertas de las reglas de Creator Connections y SPCC, los productos de Publicar siempre y las ofertas que envías desde la extensión de Chrome se saltan estas dos comprobaciones.
+- **"Retenida: la oferta cambió".** La comprobación en vivo justo antes de publicar encontró un cambio de precio, existencias o descuento, o no pudo confirmarlo. Tu ajuste **Si una oferta cambia antes de publicarse** en el Filter Recipe decide entre retenerla, omitirla sin avisar o publicarla con los números actuales. Haz clic en **Publicar de todos modos** para publicarla tal cual.
+- **"Retenida: fuera de tema".** La palabra clave de la oferta no está en la lista de este workspace. Añade la palabra clave en la pestaña **Palabras clave** de la tienda, o haz clic en **Publicar de todos modos**.
+- **"Necesita una plantilla".** No hay texto guardado para esa tienda. Guarda uno en **Crea tu publicación** y haz clic en **Actualizar texto y comentarios**.
+- **"Guardada para revisar".** La oferta entró como borrador y espera a que la revises. Haz clic en **Programar** para activarla. Las ofertas que añades con **Añadir una oferta** o envías desde la extensión de Chrome llegan como borrador salvo que elijas otra cosa.
+- **"En espera: enlace sin atribuir".** El enlace no te generaría comisión, así que Butler no lo publicó. Configura tu ID de tienda o de seguimiento, o añade el sitio en Deeplink Butler > Configuración > Enlaces permitidos si querías publicarlo, y vuelve a publicar desde aquí.
+- **"En espera: sin página de producto".** La oferta no tiene título, o su enlace apunta a una página de inicio. Elimínala, o añade un enlace de producto real y vuelve a publicar.
+- **"Retenida: revísala".** Uno de tus filtros la retuvo. No hay nada roto. Revisa el Filter Recipe y Crea tu publicación de esa tienda, y haz clic en **Publicar de todos modos** o elimínala.
+- **"Bloqueada por Facebook".** Facebook rechazó esta publicación y no se reintenta sola. Abre Estado de la cuenta y vuelve a publicar desde aquí.
+- **"Sin destinos".** Ningún destino de esta publicación está activado. Actívalos en **Destinos sociales**.
+- **"En pausa: ofertas de Amazon desactivadas"** (o de Walmart). El interruptor de la tienda en el encabezado está apagado. Vuelve a encenderlo.
+- **"Sin enlace de comisión - inicia sesión en Mavely", "Sin enlace de comisión - inicia sesión en Walmart Creator", "Sin proveedor de enlaces", "Usando enlace de Creator".** Son mensajes de enlaces de Walmart. Consulta el [tutorial de WAL Deals Finder](/help/tutorials/deals-walmart).
+- **"El comentario no se publicó" y "Algunos comentarios no se publicaron".** Facebook no aceptó el primer comentario. Haz clic en **Reintentar comentario**. Tras 3 comentarios fallidos seguidos, Butler pausa los comentarios de Facebook durante 24 horas para no seguir provocando a Facebook.
+
+**Avisos sobre la cola**
+
+- **"Publicación automática desactivada".** Nada se publica solo. Activa **Publicar ofertas por mí** o **Publicar automáticamente cuando toque** en la pestaña **Programador**.
+- **"Sin destinos activados".** Activa al menos un destino en **Destinos sociales**.
+- **"Cola en pausa para revisión".** Hay publicaciones que vencieron mientras la app estaba cerrada y podrían estar desactualizadas ("Algunas publicaciones programadas vencieron mientras la app estaba cerrada y podrían estar desactualizadas. Revísalas antes de publicar."). Haz clic en **Revisar publicaciones** y luego en **Publicar de todos modos** si siguen siendo buenas.
+- **"Sesión de Facebook cerrada".** Las publicaciones de Facebook esperan hasta que vuelvas a iniciar sesión. Haz clic en **Inicia sesión manualmente (abre Chrome)**.
+- **"Publicación en Facebook pausada (perfil)"** (o página, o perfil + página). Facebook bloqueó algo y Butler se pausó. Consulta las secciones de límites de Facebook más arriba. Haz clic en **Reanudar publicaciones de Facebook** en el aviso para reanudar antes.
+- **"Ofertas de Amazon desactivadas"** u **"Ofertas de Walmart desactivadas".** El interruptor de la tienda en el encabezado está apagado, así que sus ofertas siguen en pausa.
+- **"Complemento caducado".** El complemento de este workspace adicional de Deal Posting ya no está activo, así que la publicación está bloqueada. Renueva el complemento.
+
+**En la pestaña Programador y en los avisos emergentes**
+
+- **"Next post: ~{time}".** La "~" es a propósito. Cada publicación sale unos minutos desplazada de su hora exacta. Una fecha con "~" en una oferta en cola es una estimación (su lugar en la fila por tu programación), no una retención por un evento.
+- **"Límite diario alcanzado, sigue mañana".** Se agotó el cupo de hoy de tu **Calentamiento progresivo**. El resto de la cola espera a mañana. **Publicar una ahora** nunca tiene límite. En el Registro de consola verás "[post-scheduler] Holding this tick: today's warm-up limit reached (X of Y deals, day D of your ramp), resuming tomorrow."
+- **"Durmiendo hasta ~{time}" y "Durmiendo (horas de silencio)".** **Descanso (horas de silencio)** está activado, así que nada se publica de noche. El Registro de consola dice "[post-scheduler] Holding this tick: sleep window active (quiet hours)." Estas horas cubren toda tu actividad de Facebook, en todos tus workspaces de Deal Posting.
+- **"Se alcanzó el límite de publicaciones de Facebook para hoy, así que esta oferta sigue en la cola y se publicará más tarde. No se pierde nada."** Fijaste **Máximo de publicaciones en Facebook por día (todos los workspaces)** y se agotó. La oferta sale cuando se libera la ventana de 24 horas.
+- **"Las publicaciones se están espaciando para no superar los límites de Facebook. Esta oferta sigue en la cola y se publicará en breve."** Un límite por grupo o **Minutos entre publicaciones en el mismo grupo** retiene esta oferta un momento.
+- **"La publicación en Facebook está en pausa ahora mismo, así que esta oferta sigue en la cola y se publicará cuando se reanude."** Hay un bloqueo de Facebook activo. Mira "Las publicaciones de Facebook están pausadas" más abajo.
+- **"Esta oferta aún no tiene ningún destino configurado. Activa uno en Destinos sociales y se publicará en el próximo envío."** Activa un destino.
+- **"Esta vez no salió nada. La oferta sigue en la cola y se publicará más tarde."** Butler retuvo la publicación por un motivo que no nombra aquí. Abre la etiqueta de la oferta o revisa el Registro de consola.
+- **"Aún no hay dónde publicar".** No hay ningún destino activado. Haz clic en **Añadir un destino →**.
+- **"Aún no hay ofertas recopiladas. Ejecuta una búsqueda en Buscar ofertas primero y vuelve a intentarlo."** La publicación de prueba necesita una oferta. Ejecuta una búsqueda en una de tus tiendas.
+- **"No hay ofertas en cola para publicar. Crea una en la pestaña Crea tu publicación primero."** La cola está vacía, así que **Publicar una ahora** no tiene nada que enviar.
+- **"Activa al menos un destino en Destinos sociales primero."** El selector de **Publicar una ahora** no tiene ningún destino que ofrecer.
+- **"Las publicaciones de Facebook están pausadas".** Facebook limitó la frecuencia con la que puedes publicar, te pidió confirmar tu cuenta, o la pausaste tú. Butler detuvo las publicaciones en Facebook para que el bloqueo no dure más. Abre Estado de la cuenta en el aviso para ver la fecha de fin y luego haz clic en **Reanudar publicaciones de Facebook**. Cuánto dura depende del tipo de bloqueo, los bloqueos repetidos duran más, y **Pausa tras un bloqueo de Facebook (días)** marca la base. Tras reanudar verás "Se reanudaron las publicaciones de Facebook. Aumentarán poco a poco."
+- **"Los comentarios de Facebook están pausados".** Facebook bloqueó los comentarios. Butler pausa comentarios y publicaciones a la vez. Haz clic en **Reanudar comentarios y publicaciones** cuando quieras.
+- **"Could not confirm the Facebook login for 2 profile(s). The scheduler will retry."** No es un cierre de sesión. La comprobación tardó demasiado, normalmente porque el ordenador va justo de memoria. Cierra programas pesados y ventanas de Chrome. Butler reintenta solo.
+- **"Retenidos: 3. Su enlace no te generaría comisión, así que no se publicaron ni se enviaron."** (un aviso con "Publicar de todos modos", "Permitir este sitio" y "Configurar mi ID de seguimiento"). Butler frena un enlace en el que no ganarías. Añade tu ID de seguimiento de Asociados (termina en -20) en Amazon Butler, Ajustes.
+- **"Enviados sin tu etiqueta de afiliado: 2. Esos clics no te generan comisión."** Algunos enlaces salieron sin etiqueta. Configura tu ID de seguimiento y vuelve a publicar.
+- **"Publicación en pausa: tus enlaces abren la página de inicio de Amazon, no el producto. Corrige tu etiqueta de afiliado y luego reanuda."** Falló la comprobación de enlaces. Corrige la etiqueta y reanuda.
+- **"Publicaciones programadas necesitan tu revisión".** La misma comprobación de publicaciones desactualizadas que "Cola en pausa para revisión", como notificación del escritorio.
+- **"Facebook is showing its monthly 'posts with links' limit for this Page; the post cannot go through."** (Registro de consola). Es el límite de Meta de publicaciones con enlace para una Página. Consulta Tropiezos comunes.
+
+## Preguntas frecuentes
+
+**¿Por qué mi oferta está retenida si está en oferta?** Butler juzga el descuento que puede ver justo antes de publicar. Si el artículo no tiene señal de descuento, cupón o código, queda como "Retenida: precio completo". En un artículo de Amazon, Butler comprueba primero el precio actual y lo publica si está en oferta y la rebaja alcanza tu **Porcentaje mínimo de descuento**. Baja ese número o haz clic en **Publicar a precio completo**.
+
+**Envié una oferta desde la extensión de Chrome y no se publicó. ¿Por qué?** Las ofertas de la extensión llegan como borrador por defecto. Elige otra opción en **Cuando la extensión envía una oferta**, en la pestaña **Programador**. El ajuste decide a dónde va una oferta al llegar, así que no mueve las que ya están en tu cola. Una oferta que envías sigue teniendo que pasar la comprobación de precio completo.
+
+**Volví a enviar desde la extensión la misma oferta retenida y salió una segunda fila.** Una oferta retenida ahora cuenta como ya en cola, así que enviarla otra vez no añade una copia. Esta corrección llega con la próxima actualización. Hasta entonces, elimina la fila sobrante.
+
+**¿Qué significa la "~" delante de una fecha?** Es una estimación de la hora de envío según el lugar de la oferta en la fila y tu programación. No es una retención por un evento.
+
+**Puse cada 30 minutos pero publica más a menudo.** Revisa cuatro cosas. **Use a different time for each place** (en la app aparece en inglés) da a cada destino su propio intervalo. Las Campañas de resumen y los productos de Publicar siempre publican con su propia programación y pueden ocupar un hueco. Otro workspace de Deal Posting publica con su propio ritmo en los mismos destinos. **Publicarla ahora mismo** y **Publicar una ahora** publican de inmediato. Además, cada publicación sale unos minutos desplazada de su hora exacta salvo que **Publicar a la hora exacta (sin desfase aleatorio)** esté activado.
+
+**¿Amazon y Walmart tienen programaciones separadas?** No. El centro tiene un solo programador para las dos tiendas. Fijas el ritmo una vez, y **Ofertas para publicar al día** cubre todas las tiendas juntas.
+
+**Mis palabras clave desaparecieron tras una actualización.** Las palabras clave pertenecen a cada workspace. El centro Deal Posting no tiene pestaña Palabras clave, y AMZ Deals Finder y WAL Deals Finder guardan cada uno su lista. Comprueba que estás en la misma tienda de antes.
+
+**No se publica nada y las ofertas dicen "Retenida: la oferta cambió".** Cuando el ordenador va justo de memoria, Chrome puede atascarse o cerrarse a mitad de una publicación. Cierra otros programas pesados, reinicia Butler y mira "Could not confirm the Facebook login" más arriba.
+
+**¿Dónde configuro mis cuentas de Facebook y sus categorías?** En **Conexiones**, en la barra lateral izquierda, bajo **Perfiles de Facebook**. No están en Destinos sociales.
+
+**Mi búsqueda de Walmart guardó borradores en lugar de publicar.** Así funciona ahora la revisión de páginas de ofertas de Walmart: guarda lo que encuentra como borradores para que los revises, según tu Filter Recipe.
+
 ## Clones (de pago)
 
 Puedes añadir más Deal Posting a 24,99 €/mes cada uno. Añade uno si gestionas activamente más de un nicho; en caso contrario, los preajustes en un único Deal Posting cubren la mayoría de casos.
@@ -647,6 +723,8 @@ Los Deal Posting que añadiste antes de este cambio siguen siendo espacios únic
 ## Relacionado
 
 - [Tutorial de Black Friday Butler](/help/tutorials/black-friday) - el mismo tipo de automatización, en versión por tiempo limitado.
+- [Tutorial de AMZ Deals Finder](/help/tutorials/deals-amazon) - la tienda de Amazon: palabras clave, Filter Recipe, búsqueda y herramientas solo de Amazon.
+- [Tutorial de WAL Deals Finder](/help/tutorials/deals-walmart) - la tienda de Walmart: palabras clave, Filter Recipe, búsqueda, proveedores de enlaces y herramientas solo de Walmart.
 
 ## Enlaces por país
 

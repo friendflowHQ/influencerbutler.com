@@ -258,9 +258,9 @@ The ramp is shared by every Deal Posting you have, because they all post from th
 
 Facebook limits how often an account can post, and posting too many deals too fast (especially across several Deals workspaces on one Facebook account) can trigger a temporary block. Butler has built-in safeguards.
 
-- **A daily limit and spacing.** On the Dashboard, under **Facebook posting limits**, set the **max Facebook posts per day** (counted across all your Deals workspaces) and the **minutes between posts**. A safe starting point is 25 per day, 20 minutes apart. When you reach the limit, extra posts wait for the next day instead of piling on.
+- **A daily limit.** On the **Scheduler** tab of the **Deal Posting** hub, type a number in **Max Facebook posts per day (all workspaces)**. It counts every Deals workspace together, and counts one for each group or page a deal reaches, over the last 24 hours. Leave it empty and there is no limit, which is the default. When you reach it, the extra Facebook posts wait in the queue and go out later while your other destinations keep posting. Nothing is lost. If you use more than one Facebook login, tick **Give each Facebook login its own daily limit** so each gets the full number.
 - **See the combined picture on the hub.** When you run more than one Deals workspace, the **Deal Posting** Scheduler tab shows **Posting load across all your Deals workspaces**: the planned posts per day and how many have gone out today, with Facebook called out because your workspaces share one account. It warns you when the combined Facebook load looks high, and you can set the **max Facebook posts per day** right there. Each workspace still keeps its own schedule; this is the full picture so you can slow one down before it posts too much.
-- **A warm-up ramp.** Leave **Warm up gradually** on, especially on a newer account: Butler starts slower and builds up to your limit over a few weeks. The Dashboard shows the current week and how many posts are allowed today.
+- **A gradual build-up after a block.** After a Facebook block clears and you resume posting, Butler does not return to full speed at once: it builds back up over the first weeks, and only ever lowers a limit you set yourself. You see "Facebook posting resumed. It will build back up gradually." For a profile that is new to posting deals, use the **Warm-up ramp** card described above.
 - **If Facebook blocks posting anyway.** Butler notices the block, stops scheduled Facebook posting on its own so the block does not last longer, and shows a banner plus emails you. If your Facebook Page is on a separate standing and still posting, only your groups and profile are paused. Do not post to Facebook by hand while a block is active, as that can extend it. Facebook does not show the end date in the block itself, but the banner's **Open Account Status** button takes you to the page that does. Posting resumes gradually once you click **Resume Facebook posting** or the limit lifts on its own.
 - **Comment blocks pause everything too.** Facebook can block commenting on its own (the "You Can't Use This Feature Right Now" message), which matters because the affiliate link lives in the first comment. Butler detects it while commenting, pauses Facebook commenting AND posting together, shows the banner, and emails you. By default the rest lasts 3 days; change it with **Pause after a Facebook block (days)** in the Scheduler's quiet-hours card, and repeat blocks rest longer on their own. You can resume early any time with the banner's **Resume commenting and posting** button. One caution: comment blocks often do not appear on the Account Status page, so a clean status page does not mean the block has lifted.
 
@@ -634,6 +634,82 @@ Harvested deals live in the preseed cache; posted-deal history lives in `{userDa
 - **A campaign deal posts above your Maximum percent off**: deals added by the **Creator Connections** and **SPCC** rules of **Deals Hub Auto-Pilot** skip **Maximum percent off** (and the minimum percent off) on purpose, because they are picked for the campaign, not the discount depth. Lowering the cap does not hold them. If you only want campaign deals within your cap, add them as drafts you review instead of scheduling them straight into your auto-post queue.
 - **Your deals post to every Benable list, not just the one you meant**: on **Social Destinations**, the **Benable lists** box holds one URL per line, and every line in that box is an always-on destination, so a deal posts to all of them at once. There is no setting that picks one list and skips the rest. If you only want deals going to one list, open **Social Destinations**, find **Benable lists**, and delete every line except the one URL you want. Keep a personal list separate from your posting list by not pasting it into that box at all.
 
+## If you see this message
+
+These are the messages on the **Deals** tab and the **Scheduler** tab of the **Deal Posting** hub, in the words the app uses. Search messages such as "Amazon is not connected yet" belong to each store: see the [AMZ Deals Finder tutorial](/help/tutorials/deals-amazon) and the [WAL Deals Finder tutorial](/help/tutorials/deals-walmart).
+
+**Badges on a deal (Deals tab, Upcoming)**
+
+- **"Held: full price".** Butler only posts items with a real discount, coupon or promo code, and this one showed none when it was about to post. Before holding it, Butler asks Amazon for the live price. If the item is on sale right now and the markdown meets your **Minimum percent off** in the Filter Recipe, it posts with today's numbers. So an item that is on sale but under your Minimum percent off stays held. Walmart items are not re-checked this way. Click **Post at full price** to post it with your Full price posts caption, or delete it. **Post anyway** is not offered on these rows.
+- **"Held: below your min discount" and "Held: above your max discount".** The discount in the caption is outside your **Minimum percent off** or **Maximum percent off** in the Filter Recipe. Change the number, or click **Post anyway**. Deals from Creator Connections and SPCC rules, Always-Post products and deals you send from the Chrome extension skip these two checks.
+- **"Held: deal changed".** The live check just before posting found the price, stock or discount changed, or could not confirm it. Your **If a deal changes before it posts** setting in the Filter Recipe decides between holding it, skipping it quietly, or posting with current numbers. Click **Post anyway** to post it as it is.
+- **"Held: off theme".** The deal's keyword is not in this workspace's keyword list. Add the keyword on the store's **Keywords** tab, or click **Post anyway**.
+- **"Needs a template".** No caption is saved for that store. Save one in **Build Your Post**, then click **Refresh caption & comments**.
+- **"Saved for review".** The deal came in as a draft, so it waits for you. Click **Schedule** to arm it. Deals you add with **Add a Deal** or send from the Chrome extension land as drafts unless you chose otherwise.
+- **"Held: link not attributed".** The link would earn you no commission, so Butler did not post it. Set your storefront ID or tracking ID, or add the site under Deeplink Butler, Settings, Allowed links if you meant to post it, then re-publish from here.
+- **"Held: no product page".** The deal has no title, or its link points at a homepage. Delete it, or add a real product link and re-publish.
+- **"Held: needs a look".** One of your filters held it. Nothing is broken. Check the Filter Recipe and Build Your Post for that store, then click **Post anyway** or delete it.
+- **"Facebook blocked".** Facebook refused this post and it does not retry on its own. Open Account Status, then re-publish from here.
+- **"No destinations".** None of this post's destinations are turned on. Turn them on in **Social Destinations**.
+- **"Paused: Amazon deals off"** (or Walmart). The store's switch in the header is off. Switch it back on.
+- **"No commission link - sign in to Mavely", "No commission link - sign in to Walmart Creator", "No link provider", "Using Creator link".** These are Walmart link messages. See the [WAL Deals Finder tutorial](/help/tutorials/deals-walmart).
+- **"Comment did not post" and "Some comments did not post".** Facebook did not accept the first comment. Click **Retry comment**. After 3 missed comments in a row, Butler pauses Facebook commenting for 24 hours so it does not keep triggering Facebook.
+
+**Banners above the queue**
+
+- **"Auto-posting is off".** Nothing posts on its own. Turn on **Post deals for me** or **Auto-post when due** in the **Scheduler** tab.
+- **"No destinations enabled".** Turn on at least one destination in **Social Destinations**.
+- **"Queue paused for review".** Posts came due while the app was closed and may be stale ("Some scheduled posts were due while the app was closed and may be stale. Review them before posting."). Click **Review posts**, then **Post them anyway** if they are still good.
+- **"Facebook signed out".** Facebook posts wait until you sign back in. Click **Sign in manually (opens Chrome)**.
+- **"Facebook posting paused (profile)"** (or page, or profile + page). Facebook blocked something, so Butler paused. See the Facebook limits sections above. Click **Resume Facebook posting** on the banner to resume early.
+- **"Amazon deals turned off"** or **"Walmart deals turned off".** The store's switch in the header is off, so its deals stay paused.
+- **"Add-on expired".** The add-on for this extra Deal Posting workspace is no longer active, so posting is locked. Renew the add-on.
+
+**On the Scheduler tab and in toasts**
+
+- **"Next post: ~{time}".** The "~" is on purpose. Every post goes out a few minutes off its exact slot. A "~" date on a queued deal is an estimate (its place in line times your schedule), not an event hold.
+- **"Daily limit reached, resumes tomorrow".** Your **Warm-up ramp** allowance for today is used up. The rest of the queue waits for tomorrow. **Post one now** is never limited. In the Console Log you see "[post-scheduler] Holding this tick: today's warm-up limit reached (X of Y deals, day D of your ramp), resuming tomorrow."
+- **"Sleeping until ~7:00 AM" and "Sleeping (quiet hours)".** **Sleep (quiet hours)** is on, so nothing posts overnight. The Console Log says "[post-scheduler] Holding this tick: sleep window active (quiet hours)." These hours cover all your Facebook activity, in every Deal Posting workspace.
+- **"Facebook's post limit for today is reached, so this deal stays in the queue and goes out later. Nothing is lost."** You set **Max Facebook posts per day (all workspaces)** and it is used up. The deal goes out when the 24-hour window clears.
+- **"Posts are being spaced out to stay inside Facebook's limits. This deal stays in the queue and goes out shortly."** A per-group limit or **Minutes between posts to the same group** is holding this deal for a moment.
+- **"Facebook posting is paused right now, so this deal stays in the queue and goes out once it resumes."** A Facebook block is active. See "Facebook posting is paused" below.
+- **"This deal has no destination set up yet. Turn one on in Social Destinations and it goes out on the next post."** Turn on a destination.
+- **"Nothing went out this time. The deal stays in the queue and goes out later."** Butler held the post for a reason it does not name here. Open the deal's badge, or check the Console Log.
+- **"No place to post yet".** No destination is on. Click **Add a destination →**.
+- **"No harvested deals yet. Run a Search Deals harvest first, then try again."** The test post needs a deal to use. Run a search in one of your stores.
+- **"No deals are queued to post. Build one in the Build Your Post tab first."** The queue is empty, so **Post one now** has nothing to send.
+- **"Turn on at least one destination in Social Destinations first."** The **Post one now** picker has no destination to offer.
+- **"Facebook posting is paused".** Facebook limited how often you can post, or asked you to confirm your account, or you paused it yourself. Butler stopped Facebook posting so the block does not last longer. Open Account Status on the banner to see the end date, then click **Resume Facebook posting**. How long it lasts depends on the kind of block, repeat blocks last longer, and **Pause after a Facebook block (days)** sets the base. After you resume, you see "Facebook posting resumed. It will build back up gradually."
+- **"Facebook commenting is paused".** Facebook blocked commenting. Butler pauses commenting and posting together. Click **Resume commenting and posting** when you are ready.
+- **"Could not confirm the Facebook login for 2 profile(s). The scheduler will retry."** This is not a sign-out. The check timed out, usually because the computer is short on memory. Close heavy apps and Chrome windows. Butler retries on its own.
+- **"Held: 3. Their link would earn you nothing, so they were not posted or sent."** (a banner with "Post anyway", "Allow this site" and "Set my tracking ID"). Butler stops a link you would not earn on. Add your Associates tracking ID (it ends in -20) in Amazon Butler, Settings.
+- **"Sent without your affiliate tag: 2. Those clicks earn you nothing."** Some links went out untagged. Set your tracking ID and re-publish.
+- **"Posting paused: your links are opening the Amazon home page, not the product. Fix your affiliate tag, then resume."** The link check failed. Fix the tag, then resume.
+- **"Scheduled posts need your review".** The same stale-post check as "Queue paused for review", as a desktop notification.
+- **"Facebook is showing its monthly 'posts with links' limit for this Page; the post cannot go through."** (Console Log). That is Meta's limit on posts with a link for a Page. See Common gotchas.
+
+## Short FAQ
+
+**Why is my deal held when it is on sale?** Butler judges the discount it can see right before posting. If the item has no discount, coupon or promo signal, it is held as "Held: full price". For an Amazon item, Butler checks the live price first and posts it if it is on sale and the markdown meets your **Minimum percent off**. Lower that number, or click **Post at full price**.
+
+**I sent a deal from the Chrome extension and it did not post. Why?** The extension's deals land as drafts by default. Pick another choice under **When the extension sends a deal** in the **Scheduler** tab. The setting decides where a deal goes when it arrives, so it does not move deals already in your queue. A deal you send still has to clear the full-price check.
+
+**I sent the same held deal from the extension again and got a second row.** A deal on hold now counts as already queued, so sending it again does not add a copy. This fix comes with the next update. Until then, delete the extra row.
+
+**What does the "~" in front of a date mean?** It is an estimate of the send time from the deal's place in line and your schedule. It is not an event hold.
+
+**I set every 30 minutes but it posts more often.** Check four things. **Use a different time for each place** gives each destination its own interval. Roundup Campaigns and Always-Post products post on their own schedules and can take a slot. Another Deal Posting workspace posts on its own cadence into the same destinations. **Post it right now** and **Post one now** post immediately. Each post also goes out a few minutes off its exact slot unless **Post at exact times (no random offset)** is on.
+
+**Do Amazon and Walmart have separate schedules?** No. The hub has one scheduler for both stores. You set the cadence once, and **Deals to post per day** covers every store together.
+
+**My keywords are gone after an update.** Keywords belong to each workspace. The Deal Posting hub has no Keywords tab, and AMZ Deals Finder and WAL Deals Finder each keep their own list. Check you are in the same store as before.
+
+**Nothing posts, and the deals say "Held: deal changed".** When the computer is short on memory, Chrome can stall or be closed mid-post. Close other heavy programs, restart Butler, and see "Could not confirm the Facebook login" above.
+
+**Where do I set up my Facebook accounts and their categories?** In **Connections** in the left sidebar, under **Facebook profiles**. They are not in Social Destinations.
+
+**My Walmart search saved drafts instead of posting.** That is how the Walmart deal-page check works now: it saves what it finds as drafts for you to review, using your Filter Recipe.
+
 ## Clones (paid)
 
 You can add more Deal Posting workspaces at $24.99/mo each. Use one if you actively run more than one niche; otherwise, presets in a single Deal Posting handle most cases.
@@ -647,6 +723,8 @@ Want one of those older Deal Posting workspaces to have its own AMZ Deals Finder
 ## Related
 
 - [Black Friday Butler tutorial](/help/tutorials/black-friday) - same kind of automation, time-limited deal flavor.
+- [AMZ Deals Finder tutorial](/help/tutorials/deals-amazon) - the Amazon store: keywords, Filter Recipe, search and Amazon-only tools.
+- [WAL Deals Finder tutorial](/help/tutorials/deals-walmart) - the Walmart store: keywords, Filter Recipe, search, link providers and Walmart-only tools.
 
 ## Marketplace links
 
