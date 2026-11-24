@@ -472,3 +472,43 @@ Not legal advice; have counsel review. No live legal file was touched. Live priv
 - **Desktop app:** Facebook account walkthrough (`fb-account-wizard.js`, logins stay in the existing local browser profile), Facebook Page comments-off option, Roundup cover template, Walmart repost item search, Instagram "never follow a private account", Foyer promo-code copy, new Christmas scene images: all local; no new off-device flow or vendor found. Note: the hosted `/p/<code>` pilot above is the only new off-device data flow besides the trial summary.
 - **Retention enforcement:** no new cleanup jobs this week. `foyer_invites` has none (see item 1).
 - **Terms:** nothing this week changes obligations beyond the open comp-billing clause.
+
+## Update 2026-11-24: weekly audit (nothing mechanical; nothing auto-published; four items for a human)
+
+Not legal advice; have counsel review. No live legal file was touched. Live privacy.html is "Last Updated: November 22, 2026" (the MCP server and personal access tokens were added in `618db142`); terms.html is dated November 12, 2026. All earlier open items (TikTok Pixel and Google Ads tags, Concierge ticket filing, TestFlight feedback, `product_market_history` retention, Creator stores staff access, comp-to-paid billing clause, Foyer pilot invites, trial posts-summary counts, Appendix D enforcement status) remain open and unchanged.
+
+### New this week
+
+1. **Desktop app now reports required setup steps to your account (desktop `5adb14b`, `5068918`; website `e31c11b5`; route `/api/me/setup-snapshot`; migration `20261124_setup_snapshots.sql`, applied by hand).** Per customer, the app uploads at start and on every setup change which REQUIRED setup steps each butler still lacks, by step name only (code says no keys, emails or links). Stored one row per user in `setup_snapshots` and used to refuse or verify a 1:1 call booking. Support reports also carry the same step names. §2.2 covers walkthrough answers and two milestones, but not this per-butler setup state, and it is also a new use (gating a booking). Not mechanical: a new data category leaving the device and a new use. Proposed bullet for §2.5 (website account) and a mention in §4:
+
+```html
+<li><strong>Setup status</strong>: the desktop app tells your account which required setup steps you have finished for each butler (step names only, never keys, emails, or links). We use it to check your setup before a 1:1 call and to help our team answer support requests. [CONFIRM: that only step names are sent, and the retention period.]</li>
+```
+
+   [CONFIRM: the row is overwritten on each report and deleted with the account (it has `ON DELETE CASCADE`), so a §7 line could say "for the life of your account"; decide whether to promise that. Also confirm the migration is applied before the code deploys.]
+
+2. **AI Concierge for logged-out website visitors (website `9a055619`, route `/api/ai-concierge/public-chat`).** Anyone, with no account, can now chat with the AI; their typed messages (up to 600 characters each, 8 turns) go to our AI provider (Groq, OpenAI fallback), and the IP address is used for rate limiting. The route stores nothing in the database as far as the code shows. §2.6 only describes the AI Assistant "in your dashboard". Not mechanical: first disclosure of a new surface collecting data from non-users. Proposed sentence for §2.6:
+
+```html
+<li><strong>Website chat for visitors</strong>: if you use the chat on our public pages without signing in, what you type is sent to our AI providers to produce a reply. We do not link it to an account, and we use your IP address only to limit abuse. [CONFIRM: that no transcript is kept anywhere, including provider-side logging and our host logs.]</li>
+```
+
+3. **Extension "recent activity" sent to the AI Assistant when you report a problem (website `de2b64f0`; `chat/route.ts`, `extension/src/chat`, `extension/src/background/assistant.ts`).** The extension attaches up to 1,500 characters of recent activity (what it sent to and received from the desktop app) as `diagnostics` so the AI can explain a failure. The extension privacy page (`src/app/extension/privacy/page.tsx` lines 84 to 90) describes the AI Assistant but a grep finds no mention of this attachment. This is extension-page drift, treated as high priority because of the 2026-07-09 takedown. Not mechanical: a new data flow, not text already live elsewhere. Proposed sentence for the AI Assistant section of the extension page, with the same wording suitable for privacy.html §2.6:
+
+```html
+When you use the AI Assistant to report a problem, the extension also attaches a short summary of its recent activity (what it exchanged with your desktop app, up to about 1,500 characters) so the Assistant can find the cause. It is sent only at that moment, with your message, and is not collected otherwise.
+```
+
+   [CONFIRM: the exact trigger ("only when the user reports a problem" per the code comment), that the text carries no page content or product data, and whether it is stored with the session transcript (12-month retention in §7).]
+
+4. **1:1 call policy and booking pre-call checklist (website `84896b45`, `0fddd0d3`, `7387d3bd`, `5c493010`).** From Jan 1, 2027 calls become Power User, Team and Agency only, one per month, and the free Setup call ends. Website bookings now require a per-topic checklist and a free-text "what you already tried" answer, which is appended to the booking topic and shown to the owner. This is not mechanical. Privacy: §2.7 says we collect "any topic you enter", so the free-text answer is likely covered, but counsel should confirm. Terms: terms.html has no clause describing call entitlements (a grep finds no "call" section outside community rules), so there may be nothing to update; the entitlement is a plan benefit stated on the pricing page. [CONFIRM: whether the Jan 1, 2027 change belongs in Terms or the refund policy for annual plans sold as including a Setup call.]
+
+### Checked, no action needed
+
+- **Subprocessors/SDKs:** no new dependency in either repo's `package.json`, `mobile-web/package.json`, or Worker package files this week. Website `b0058490` added two npm packages for the affiliate QR code (client-side rendering, no vendor).
+- **Extension 0.1.37 (Simple view, shortlist tray, keyboard shortcuts, remembered sort and filters per retailer, first-success moments, report button, pause per site, activity card):** stored locally or reads pages the user views; the report button uses the existing feedback flow. No new host or data category beyond item 3.
+- **Phone app / Workers (`mobile-web`, `workers/mobile-hub`, licensing):** no commits this week.
+- **Testimonial ask cap and cooldown, affiliate dashboard (payout history, earnings trend, QR), support admin tools (notes, assignee, bot drafts), Concierge cards/feedback/starters/memory, cold Walmart creator email sequence:** same data already covered by §2.5, §2.8, §2.9; the cold Walmart sequence is the same cold-outreach class as the open Foyer pilot invite item, so decide both together. Concierge feedback (thumbs) is stored with the session; no new category.
+- **Desktop app:** Walmart repost, Close Friends and Like Butler recommended settings, Simple menu, Calm mode, Dashboard cards, Deals fixes, AI-collage caption label: local only; no new off-device flow.
+- **Retention enforcement:** no new cleanup jobs this week (only unrelated test and tooling files match "prune/purge"). Appendix D status unchanged.
+- **Terms:** nothing this week changes obligations beyond item 4 and the open comp-billing clause.
