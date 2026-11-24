@@ -1,4 +1,4 @@
-// Price lock push: send rules (one a day, Nov 26-28 blackout), segment rules,
+// Price lock push: send rules (one a day, no blackout days), segment rules,
 // and the email drafts' house rules (no em dashes, one button, Pacific times).
 import { describe, expect, it } from "vitest";
 import { dailyCapAllows, isBlackoutDay, pacificDate, pacificDayStart, pacificTimeToUtc } from "../send-gates";
@@ -32,11 +32,10 @@ describe("Pacific time helpers", () => {
     expect(pacificDayStart(Date.parse("2026-11-30T20:00:00Z")).toISOString()).toBe("2026-11-30T08:00:00.000Z");
   });
 
-  it("blacks out Nov 26, 27 and 28 Pacific only", () => {
-    expect(isBlackoutDay(Date.parse("2026-11-26T08:00:00Z"))).toBe(true); // Thu 00:00 PT
-    expect(isBlackoutDay(Date.parse("2026-11-29T07:59:00Z"))).toBe(true); // Sat 23:59 PT
-    expect(isBlackoutDay(Date.parse("2026-11-29T08:00:00Z"))).toBe(false); // Sun 00:00 PT
-    expect(isBlackoutDay(Date.parse("2026-11-26T07:59:00Z"))).toBe(false); // Wed 23:59 PT
+  it("has no blackout days: Thanksgiving and Black Friday weekend send daily (owner, 2026-11-24)", () => {
+    for (const iso of ["2026-11-25T20:00:00Z", "2026-11-26T20:00:00Z", "2026-11-27T20:00:00Z", "2026-11-28T20:00:00Z"]) {
+      expect(isBlackoutDay(Date.parse(iso))).toBe(false);
+    }
   });
 
   it("allows one marketing email a day, two only for the Nov 30 exception", () => {
@@ -96,7 +95,14 @@ describe("push email drafts", () => {
       expect(buttons.length, e.key).toBeLessThanOrEqual(e.maxButtons ?? 1);
       expect(all, e.key).not.toMatch(/guarantee|earn \$|make \$|income/i);
       expect(e.date >= "2026-11-12" && e.date <= "2026-11-30", e.key).toBe(true);
-      expect(["2026-11-26", "2026-11-27", "2026-11-28"]).not.toContain(e.date);
+    }
+  });
+
+  it("sends A/D and C every day from Nov 24 to Nov 30, one email per person a day", () => {
+    for (const date of ["2026-11-24", "2026-11-25", "2026-11-26", "2026-11-27", "2026-11-28", "2026-11-29", "2026-11-30"]) {
+      const day = PRICE_LOCK_EMAILS.filter((e) => e.date === date && !e.cold && !e.allowSecondToday);
+      expect(day.some((e) => e.segments.includes("A") && e.segments.includes("D")), date).toBe(true);
+      expect(day.some((e) => e.segments.includes("C")), date).toBe(true);
     }
   });
 

@@ -50,6 +50,13 @@ const pricing = (src: string) => `${SITE}/pricing?src=${src}`;
 const PRICES_TODAY = `- Beginner: $24.99 a month today, $29.99 after Nov 30
 - Power User: $39 a month today, $49 after Nov 30`;
 
+// The risk reversal and the annual math, reused by the short A/D reminders so
+// every send answers "what if it is not for me" and "is a year worth it".
+const TRIAL_LINE =
+  "The trial is free for 14 days. You are not charged until it ends, and you can cancel any time before then.";
+const ANNUAL_PS =
+  "P.S. Rather pay once for the year? Power User is **$390** today ($32.50 a month, versus $588 a year at the new monthly price) and Beginner is **$249**.";
+
 // What Launch Butler does today, in plain words. Every claim is in the shipped
 // desktop app (workspaces/group-launch, live for every plan since v2.1.11).
 const LAUNCH_BUTLER_LINE =
@@ -324,20 +331,26 @@ P.S. Happy staying monthly? You don't need to do a thing. Your price is locked e
     date: "2026-11-24",
     hour: 12,
     segments: ["A", "D"],
-    subject: "6 days left (get set up before Black Friday)",
-    body: `Hi,
+    subject: "🔒 Your price locks in 6 days (free 14-day trial)",
+    body: `Preheader: Beginner $24.99 and Power User $39 stay yours for as long as you stay. Free for 14 days. ☕
 
-Black Friday week is the busiest deal week of the year, and it's a lot easier when your posts go out on schedule without you babysitting them.
+Hi,
 
-If you start now, Launch Butler can have your Page, group and posting schedule set up before the rush.
+Black Friday week is the busiest deal week of the year, and it goes a lot easier when your posts go out on schedule without you babysitting them.
 
-And there are **6 days left** to lock today's price:
+Here's the deal on price: start your free trial by **Nov 30 at 11:59pm Pacific** and you keep today's price for as long as you stay subscribed, even after it goes up for everyone new.
 
 ${PRICES_TODAY}
 
-[Get set up before Black Friday](${pricing("pl-1124-ad")})
+Beginner is about the cost of 4 coffees a month, for deals that get found and posted for you. And Launch Butler sets up your Page, group, branding and posting schedule from a few questions, so you're not starting from a blank screen.
 
-Liz`,
+${TRIAL_LINE}
+
+[Start my free trial and lock today's price](${pricing("pl-1124-ad")})
+
+Liz
+
+${ANNUAL_PS}`,
   },
   {
     key: "pl-1124-c",
@@ -356,22 +369,211 @@ Add a card by Nov 30 at 11:59pm Pacific and your free time still rides out: noth
 Liz`,
   },
 
+  // ------------------------------------------------ Wed Nov 25 - Sat Nov 28, 12pm
+  // Daily sends through Thanksgiving and Black Friday weekend (owner decision
+  // 2026-11-24, replaces the old Nov 26-28 blackout). A/D and C only; cold stays
+  // off. Each day has its own angle so nobody gets the same email twice.
+  {
+    key: "pl-1125-ad",
+    date: "2026-11-25",
+    hour: 12,
+    segments: ["A", "D"],
+    subject: "☕ What 4 coffees a month actually gets you",
+    body: `Preheader: Deals found and posted for you, set up in minutes, free for 14 days. Today's price locks for as long as you stay.
+
+Hi,
+
+Here's the plain version of what Influencer Butler does, so you can decide without guessing:
+
+📦 **Finds deals and posts them** to your Page and group on a schedule
+🧹 Cleans up expired deals so your feed stays fresh
+💌 Messages brands in Creator Connections for you
+💰 Accepts the Creator Connections campaigns that match what you sold
+🛍️ Gives you your own Foyer shop page and branded links
+🎩 Launch Butler sets up your Page, group and branding from a few questions
+
+Beginner is $24.99 a month, about the cost of 4 coffees. Power User is $39 and adds every butler plus 1:1 calls.
+
+${PRICES_TODAY}
+
+Start before **Nov 30 at 11:59pm Pacific** and today's price is yours for as long as you stay. ${TRIAL_LINE}
+
+[Start my free trial and lock today's price](${pricing("pl-1125-ad")})
+
+Liz
+
+P.S. 5 days left. If you have a question first, just reply. It comes straight to us.`,
+  },
+  {
+    key: "pl-1125-c",
+    date: "2026-11-25",
+    hour: 12,
+    segments: ["C"],
+    subject: "5 days left to keep today's price",
+    body: `Hi {{FIRST_NAME}},
+
+Here's exactly what happens if you add a card before **Nov 30 at 11:59pm Pacific**:
+
+🎁 Your free time rides out. Nothing is charged until it ends.
+🔒 Today's price is locked for as long as you stay subscribed.
+📅 That includes switching to annual later, at today's annual price.
+
+Add it after Nov 30 and you can still keep going, just at the new price.
+
+[Keep today's price]({{KEEP_PLAN_URL}})
+
+Liz`,
+  },
+  {
+    key: "pl-1126-ad",
+    date: "2026-11-26",
+    hour: 12,
+    segments: ["A", "D"],
+    subject: "🦃 One thing to be thankful for: your price stays put",
+    body: `Preheader: Happy Thanksgiving! Start free for 14 days and today's price is yours for as long as you stay. 🧡
+
+Hi,
+
+Happy Thanksgiving! 🦃 I'll keep this short so you can get back to the people at your table.
+
+One thing worth knowing today: prices go up after **Nov 30 at 11:59pm Pacific**, and if you start before then, you keep today's price for as long as you stay subscribed.
+
+${PRICES_TODAY}
+
+${TRIAL_LINE}
+
+Whenever you have a quiet minute this weekend, it's there for you.
+
+[Lock today's price](${pricing("pl-1126-ad")})
+
+Thank you for being part of this. 🧡
+
+Liz`,
+  },
+  {
+    key: "pl-1126-c",
+    date: "2026-11-26",
+    hour: 12,
+    segments: ["C"],
+    subject: "🦃 Keep today's price (no charge until your free time ends)",
+    body: `Hi {{FIRST_NAME}},
+
+Happy Thanksgiving! 🦃 Just a quiet reminder, no rush today.
+
+Add a card by **Nov 30 at 11:59pm Pacific** and you keep today's price for as long as you stay. Your free time still rides out, and nothing is charged until it ends.
+
+[Keep today's price]({{KEEP_PLAN_URL}})
+
+Liz`,
+  },
+  {
+    key: "pl-1127-ad",
+    date: "2026-11-27",
+    hour: 12,
+    segments: ["A", "D"],
+    subject: "🛍️ Black Friday: is your Page posting deals without you?",
+    body: `Preheader: 3 days left at today's price. Deals found and posted on schedule while you shop. Free for 14 days.
+
+Hi,
+
+It's Black Friday, the busiest deal day of the year. Every creator in your niche is posting deals today. 🛍️
+
+The question is whether yours are going out on schedule, or whether you're stuck finding them and posting by hand.
+
+**Influencer Butler does the repetitive part for you:** it finds deals from your keywords and posts them to your Page and group at a steady pace, even on the days you're busy.
+
+${PRICES_TODAY}
+
+3 days left to lock today's price, and the trial is free for 14 days. You are not charged until it ends, and you can cancel any time before then.
+
+[Lock today's price](${pricing("pl-1127-ad")})
+
+Liz`,
+  },
+  {
+    key: "pl-1127-c",
+    date: "2026-11-27",
+    hour: 12,
+    segments: ["C"],
+    subject: "3 days left: keep your free time and today's price",
+    body: `Hi {{FIRST_NAME}},
+
+Black Friday is a good day to make sure your butler is posting for you. 🛍️
+
+Add a card by **Nov 30 at 11:59pm Pacific** to keep today's price for as long as you stay. Your free time rides out, and nothing is charged until it ends.
+
+[Keep today's price]({{KEEP_PLAN_URL}})
+
+Liz`,
+  },
+  {
+    key: "pl-1128-ad",
+    date: "2026-11-28",
+    hour: 12,
+    segments: ["A", "D"],
+    subject: "💰 The math on locking in a full year",
+    body: `Preheader: Power User is $390 a year today, versus $588 a year at the new monthly price. 2 days left.
+
+Hi,
+
+If you know you'll stick with it, a full year is the best way to lock in. Here's the math, using real prices:
+
+🔒 **Power User annual: $390** today, which is $32.50 a month
+📅 At the new price, 12 months of Power User monthly is $588
+✨ You keep **$198**, that's 34% off
+
+🔒 **Beginner annual: $249** today, which is $20.75 a month
+📅 At the new price, 12 months of Beginner monthly is about $360
+
+Prefer to stay monthly? That locks too: $24.99 for Beginner, $39 for Power User, for as long as you stay.
+
+Both are free to try for 14 days. You are not charged until the trial ends, and you can cancel any time before then. Prices go up after **Nov 30 at 11:59pm Pacific**, so there are 2 days left.
+
+[Lock in my price](${pricing("pl-1128-ad")})
+
+Liz`,
+  },
+  {
+    key: "pl-1128-c",
+    date: "2026-11-28",
+    hour: 12,
+    segments: ["C"],
+    subject: "2 days left (annual is locked too)",
+    body: `Hi {{FIRST_NAME}},
+
+Two days left to keep today's price.
+
+Add a card by **Nov 30 at 11:59pm Pacific** and your price is locked for as long as you stay, including if you switch to annual later at today's annual price. Your free time rides out first, and nothing is charged until it ends.
+
+[Keep today's price]({{KEEP_PLAN_URL}})
+
+Liz`,
+  },
+
   // ---------------------------------------------------------------- Sun Nov 29, 12pm
   {
     key: "pl-1129-ad",
     date: "2026-11-29",
     hour: 12,
     segments: ["A", "D"],
-    subject: "Tomorrow",
-    body: `Hi,
+    subject: "⏰ Tomorrow is the last day at today's price",
+    body: `Preheader: After tomorrow at 11:59pm Pacific, Beginner is $29.99 and Power User is $49. Lock today's price free for 14 days.
 
-Just a short one: prices go up after **tomorrow, Nov 30 at 11:59pm Pacific**.
+Hi,
 
-Start your free trial before then and you keep today's price for as long as you stay.
+Quick heads up before the weekend wraps: prices go up after **tomorrow, Nov 30 at 11:59pm Pacific**.
+
+${PRICES_TODAY}
+
+Start your free trial before then and today's price is yours for as long as you stay. ${TRIAL_LINE}
+
+If you've been waiting for a calm moment to set it up, Launch Butler does the setup for you: your Page, group, branding and a posting schedule that ramps up on its own.
 
 [Lock today's price](${pricing("pl-1129-ad")})
 
-Liz`,
+Liz
+
+${ANNUAL_PS}`,
   },
   {
     key: "pl-1129-c",
@@ -396,18 +598,24 @@ Liz`,
     date: "2026-11-30",
     hour: 8,
     segments: ["A", "D"],
-    subject: "Last day for today's price",
-    body: `Hi,
+    subject: "🔒 Last day: $24.99 and $39 end tonight",
+    body: `Preheader: Prices go up at 11:59pm Pacific tonight. Start free for 14 days and keep today's price for as long as you stay.
+
+Hi,
 
 Today's the day. Prices go up for new subscriptions **tonight at 11:59pm Pacific**.
 
 ${PRICES_TODAY}
 
-Start your free trial today and you keep today's price for as long as you stay. Launch Butler can take it from there.
+Start your free trial today and you keep today's price for as long as you stay, even after the new prices start. ${TRIAL_LINE}
+
+Launch Butler can take it from there: answer a few questions and it sets up your Page, group, branding and deal schedule while you get on with your day.
 
 [Lock today's price](${pricing("pl-1130am-ad")})
 
-Liz`,
+Liz
+
+${ANNUAL_PS}`,
   },
   {
     key: "pl-1130am-c",
@@ -430,12 +638,18 @@ Liz`,
     date: "2026-11-30",
     hour: 18,
     segments: ["A", "D"],
-    subject: "Final hours",
-    body: `Hi,
+    subject: "Final hours to lock today's price",
+    body: `Preheader: At 11:59pm Pacific tonight the price goes up. Free for 14 days, cancel any time before it ends.
+
+Hi,
 
 A few hours left. At **11:59pm Pacific tonight** prices go up for new subscriptions.
 
-If you've been meaning to try it, this is the moment to lock today's price.
+${PRICES_TODAY}
+
+Starting the trial locks today's price for as long as you stay. ${TRIAL_LINE}
+
+If you've been meaning to try it, this is the moment.
 
 [Lock today's price](${pricing("pl-1130pm-ad")})
 
@@ -550,6 +764,10 @@ Liz`,
 
 Prices go up after **tomorrow, Nov 30 at 11:59pm Pacific**. If you've been meaning to try it, now's a good time to lock today's price.
 
+${PRICES_TODAY}
+
+The trial is free for 14 days.
+
 [Lock today's price](${pricing("pl-e1-1129")})
 
 Liz`,
@@ -564,6 +782,8 @@ Liz`,
     body: `Hi,
 
 Last day. Prices for new subscriptions go up **tonight at 11:59pm Pacific**. The trial is free for 14 days and you keep today's price for as long as you stay.
+
+${PRICES_TODAY}
 
 [Lock today's price](${pricing("pl-e1-1130")})
 
@@ -638,6 +858,8 @@ Liz`,
     body: `Hi,
 
 Last day. Prices go up **tonight at 11:59pm Pacific**. Start the free trial today and you keep today's price for as long as you stay.
+
+${PRICES_TODAY}
 
 [Lock today's price](${pricing("pl-e2-1130")})
 

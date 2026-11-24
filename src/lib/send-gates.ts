@@ -5,8 +5,8 @@
  *
  *   1. One marketing email per person per day (America/Los_Angeles calendar
  *      day). A gated send is DEFERRED, not dropped: the caller retries later.
- *   2. Blackout days: no marketing email on Nov 26, 27 or 28 2026 (Thanksgiving
- *      and Black Friday), Pacific time.
+ *   2. Blackout days (BLACKOUT_DATES, currently none): no marketing email on
+ *      those Pacific dates.
  *   3. Push emails win their day: on a day with a price lock push send, other
  *      marketing to anyone in that day's push audience waits until tomorrow,
  *      and until the push has picked its recipients, other marketing waits.
@@ -18,8 +18,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const SEND_TIMEZONE = "America/Los_Angeles";
 
-/** Pacific calendar dates (YYYY-MM-DD) with no marketing email at all. */
-export const BLACKOUT_DATES: readonly string[] = ["2026-11-26", "2026-11-27", "2026-11-28"];
+/**
+ * Pacific calendar dates (YYYY-MM-DD) with no marketing email at all. Empty
+ * since the owner decided (2026-11-24) to send daily through Thanksgiving and
+ * Black Friday weekend; the mechanism stays so a blackout can be added again.
+ */
+export const BLACKOUT_DATES: readonly string[] = [];
 
 /** Funnels counted toward the one-per-day cap (everything but transactional). */
 const MARKETING_FUNNELS = [

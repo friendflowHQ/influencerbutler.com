@@ -564,7 +564,7 @@ async function sendCampaignRecipients(db: SupabaseClient, summary: Summary): Pro
         }
       }
 
-      // One marketing email per person per Pacific day, no sends Nov 26-28, and
+      // One marketing email per person per Pacific day, and
       // push days reserved for the push. Deferred, not dropped: the recipient
       // stays queued for a later run.
       const gate = await marketingGate(db, email, {
@@ -899,8 +899,8 @@ async function advanceSequences(db: SupabaseClient, summary: Summary): Promise<v
         body = copy.body;
       }
 
-      // Global send rules (one marketing email per Pacific day, Nov 26-28
-      // blackout, push days reserved). Deferred: retried next run.
+      // Global send rules (one marketing email per Pacific day, blackout dates
+      // if any, push days reserved). Deferred: retried next run.
       const gate = await marketingGate(db, enrollment.email);
       if (!gate.ok) {
         summary.sequenceDeferred = (summary.sequenceDeferred ?? 0) + 1;
