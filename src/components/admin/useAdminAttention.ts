@@ -10,8 +10,8 @@ import { useEffect, useState } from "react";
 
 export type AttentionCounts = Record<string, number>; // keyed by admin href
 
-const CACHE_KEY = "ib-admin-attention-v1";
-const TTL_MS = 2 * 60 * 1000;
+const CACHE_KEY = "ib-admin-attention-v2";
+const TTL_MS = 60 * 1000;
 
 type Overview = {
   pendingAffiliates?: number | null;
@@ -34,13 +34,18 @@ function readCache(): AttentionCounts | null {
 
 async function fetchCounts(): Promise<AttentionCounts> {
   const counts: AttentionCounts = {};
-  const [overview, support] = await Promise.allSettled([
+  const [overview, support, live] = await Promise.allSettled([
     fetch("/api/admin/overview", { cache: "no-store" }).then((r) => (r.ok ? (r.json() as Promise<Overview>) : null)),
     fetch("/api/admin/support/counts", { cache: "no-store" }).then((r) =>
       r.ok ? (r.json() as Promise<{ counts?: Record<string, number> }>) : null,
     ),
+    fetch("/api/admin/growth/live", { cache: "no-store" }).then((r) =>
+      r.ok ? (r.json() as Promise<{ live?: number | null }>) : null,
+    ),
   ]);
-  const o = overview.status === "fulfilled" ? overview.value : null;
+  const l = live.status === "fulfilled" ? live.value?.live : null;
+  if (typeof l === "number" && l > 0) counts["/dashboard/admin/growth"] = l;
+  const o =overview.status === "fulfilled" ? overview.value : null;
   if (o) {
     const set = (href: string, n: number | null | undefined) => {
       if (typeof n === "number" && n > 0) counts[href] = n;
