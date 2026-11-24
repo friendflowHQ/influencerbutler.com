@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Influencer Butler for Talent and Creator Agencies | Influencer Butler</title>
-    <meta name="description" content="Run your whole creator roster's Amazon and affiliate busywork on autopilot. Influencer Butler gives talent and influencer agencies one seat per creator for brand outreach, DMs, commission harvesting, and deal posting. Team and Agency plans from $129/mo.">
+    <meta name="description" content="Run your whole creator roster's Amazon and affiliate busywork on autopilot. Influencer Butler gives talent and influencer agencies one seat per creator for brand outreach, DMs, commission harvesting, and deal posting. Team and Agency plans with one seat per creator.">
     <meta name="keywords" content="influencer agency software, talent agency Amazon tools, creator management automation, influencer marketing agency tools, Amazon Creator Connections agency, manage multiple influencers">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://www.influencerbutler.com/for-agencies/influencer-agencies">
@@ -52,7 +52,7 @@
               "name": "How many creators can my agency manage on one plan?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Seats are per device. Pro Team covers up to 10 devices for $129 per month and Pro Agency covers up to 25 devices for $299 per month. In practice that is roughly one seat per creator you manage, so a 10-creator roster fits Team and a larger book fits Agency."
+                "text": "Seats are per device. Pro Team covers up to 10 devices and Pro Agency covers up to 25 devices (current monthly prices are on the pricing page). In practice that is roughly one seat per creator you manage, so a 10-creator roster fits Team and a larger book fits Agency."
               }
             },
             {
@@ -68,7 +68,7 @@
               "name": "What is the design-partner offer with 3 free months?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "We are onboarding a small number of agencies as design partners. Tell us the one feature your agency needs that we do not have yet, and we will build it or add it to our roadmap and give you 3 months free, which is up to $897 in value depending on your plan."
+                "text": "We are onboarding a small number of agencies as design partners. Tell us the one feature your agency needs that we do not have yet, and we will build it or add it to our roadmap and give you 3 months free, on either Pro Team or Pro Agency."
               }
             },
             {
@@ -222,7 +222,7 @@
                         We are onboarding a small number of agencies as design partners. Take a look at
                         the toolkit, then tell us the <strong>one thing your agency needs it to do that it
                         does not already</strong>. We will build it or put it on our roadmap, and give you
-                        <strong>3 months free</strong>, which is up to $897 in value depending on your plan.
+                        <strong>3 months free</strong>, on either Pro Team or Pro Agency.
                     </p>
                     <div class="ag-ctarow">
                         <a class="btn btn-primary btn-lg" href="/go/download?src=for-agencies-influencer-offer">Start free and take a look</a>
@@ -243,7 +243,7 @@
                 <div class="ag-pricing">
                     <div class="ag-plan">
                         <h3>Pro Team</h3>
-                        <div class="ag-price">$129<span>/mo</span></div>
+                        <div class="ag-price"><b class="ag-amt" data-now="129" data-next="155" style="font-weight:inherit">$129</b><span>/mo</span></div>
                         <div class="ag-seats">Up to 10 devices</div>
                         <ul>
                             <li>All 50+ automation tools<small style="display:block;font-size:0.8rem;line-height:1.5;color:#475569;">AI butlers use your own OpenAI key, billed by OpenAI, not us. <a href="/help/tutorials/openai-api-setup" style="color:#c2410c;text-decoration:underline;">How it works</a></small></li>
@@ -256,7 +256,7 @@
                     </div>
                     <div class="ag-plan ag-featured">
                         <h3>Pro Agency</h3>
-                        <div class="ag-price">$299<span>/mo</span></div>
+                        <div class="ag-price"><b class="ag-amt" data-now="299" data-next="359" style="font-weight:inherit">$299</b><span>/mo</span></div>
                         <div class="ag-seats">Up to 25 devices</div>
                         <ul>
                             <li>Everything in Pro Team</li>
@@ -278,7 +278,7 @@
                 <div class="ag-faq">
                     <details class="ag-faq-item">
                         <summary>How many creators can my agency manage on one plan?</summary>
-                        <div class="ag-faq-answer"><p>Seats are per device. Pro Team covers up to 10 devices for $129 per month and Pro Agency covers up to 25 devices for $299 per month. In practice that is roughly one seat per creator, so a 10-creator roster fits Team and a larger book fits Agency.</p></div>
+                        <div class="ag-faq-answer"><p>Seats are per device. Pro Team covers up to 10 devices and Pro Agency covers up to 25 devices (current monthly prices are on the pricing page). In practice that is roughly one seat per creator, so a 10-creator roster fits Team and a larger book fits Agency.</p></div>
                     </details>
                     <details class="ag-faq-item">
                         <summary>Does each creator get their own login and account?</summary>
@@ -286,7 +286,7 @@
                     </details>
                     <details class="ag-faq-item">
                         <summary>What is the design-partner offer with 3 free months?</summary>
-                        <div class="ag-faq-answer"><p>We are onboarding a small number of agencies as design partners. Tell us the one feature your agency needs that we do not have yet, and we will build it or add it to our roadmap and give you 3 months free, which is up to $897 in value depending on your plan.</p></div>
+                        <div class="ag-faq-answer"><p>We are onboarding a small number of agencies as design partners. Tell us the one feature your agency needs that we do not have yet, and we will build it or add it to our roadmap and give you 3 months free, on either Pro Team or Pro Agency.</p></div>
                     </details>
                     <details class="ag-faq-item">
                         <summary>Do our creators need the desktop app, or is the extension enough?</summary>
@@ -366,6 +366,20 @@
         </div>
     </footer>
 
+    <script>
+    // Mirrors PRICE_CHANGE.effectiveAt in src/lib/pricing-constants.ts (Power Team/Agency).
+    // Update both together if the date or prices change.
+    (function () {
+        if (Date.now() < Date.parse('2026-12-01T08:00:00Z')) return;
+        document.querySelectorAll('.ag-amt').forEach(function (el) { el.textContent = '
+    <script src="/js/activity-widget.js" defer></script>
+    <script src="/js/webmcp.js" defer></script>
+  <script src="/js/image-lightbox.js" defer></script>
+  </body>
+</html>
+ + el.getAttribute('data-next'); });
+    })();
+    </script>
     <script src="/js/main.js"></script>
     <script src="/js/activity-widget.js" defer></script>
     <script src="/js/webmcp.js" defer></script>
