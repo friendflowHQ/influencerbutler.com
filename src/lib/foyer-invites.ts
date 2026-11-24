@@ -586,6 +586,51 @@ export const CLEARED_CONTENT = {
 } as const;
 
 /** True for a live paying or trialing account (never invite existing customers). */
+/** How far back another campaign's email counts as "already contacted". */
+export const PRIOR_CONTACT_DAYS = 180;
+
+/**
+ * Why this address is NOT a cold lead, or null when it is. The pilot rule is
+ * "never contact anyone twice", and the first real batch (2026-11-24) showed
+ * the old check (paying or trialing customers only) let through a free account
+ * holder and creators already in other cold sequences. Refuses:
+ *   - any Influencer Butler account (a profile, free included);
+ *   - an open enrollment in any other email sequence;
+ *   - an email from any other campaign or sequence in the last 180 days.
+ * Fails open per check (a query error skips that check, never blocks).
+ */
+export async function priorContactReason(db: SupabaseClient, email: string, now = Date.now()): Promise<string | null> {
+  const addr = email.trim().toLowerCase();
+  try {
+    const { data: prof } = await db.from("profiles").select("id").eq("email", addr).maybeSingle();
+    if ((prof as { id?: string } | null)?.id) return "already has an Influencer Butler account";
+  } catch { /* skip this check */ }
+  try {
+    const { data } = await db
+      .from("email_sequence_enrollments")
+      .select("sequence_id")
+      .eq("email", addr)
+      .is("cancelled_at", null)
+      .is("completed_at", null)
+      .neq("sequence_id", INVITE_SEQUENCE_ID)
+      .limit(1);
+    if (Array.isArray(data) && data.length) return "already in another email sequence";
+  } catch { /* skip this check */ }
+  try {
+    const since = new Date(now - PRIOR_CONTACT_DAYS * 86400000).toISOString();
+    const { data } = await db
+      .from("email_sends")
+      .select("category")
+      .eq("recipient", addr)
+      .gte("created_at", since)
+      .limit(20);
+    const invitePrefix = `seq_${INVITE_SEQUENCE_ID.slice(0, 8)}`;
+    const other = (Array.isArray(data) ? data : []).filter((r) => !String((r as { category?: string }).category || "").startsWith(invitePrefix));
+    if (other.length) return `emailed by another campaign in the last ${PRIOR_CONTACT_DAYS} days`;
+  } catch { /* skip this check */ }
+  return null;
+}
+
 export async function isExistingCustomer(db: SupabaseClient, email: string): Promise<boolean> {
   const { data: prof } = await db.from("profiles").select("id").eq("email", email.trim().toLowerCase()).maybeSingle();
   const userId = (prof as { id?: string } | null)?.id;

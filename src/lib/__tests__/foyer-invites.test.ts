@@ -253,3 +253,30 @@ describe("invite funnel timings and automatic conversion", () => {
     expect(await markInvitesConverted(db as never, {})).toBe(0);
   });
 });
+
+describe("never contact anyone twice (prior contact)", () => {
+  // Minimal Supabase stand-in: each table returns the rows given, whatever the filters.
+  const fakeDb = (tables: Record<string, unknown[]>) => {
+    const chain = (rows: unknown[]) => {
+      const q: Record<string, unknown> = {};
+      for (const m of ["select", "eq", "is", "neq", "gte"]) q[m] = () => q;
+      q.limit = async () => ({ data: rows, error: null });
+      q.maybeSingle = async () => ({ data: rows[0] ?? null, error: null });
+      return q;
+    };
+    return { from: (t: string) => chain(tables[t] ?? []) } as never;
+  };
+
+  it("refuses an account holder, another open sequence, or another campaign's recent email", async () => {
+    const { priorContactReason } = await import("@/lib/foyer-invites");
+    expect(await priorContactReason(fakeDb({ profiles: [{ id: "u1" }] }), "a@b.co")).toMatch(/account/);
+    expect(await priorContactReason(fakeDb({ email_sequence_enrollments: [{ sequence_id: "x" }] }), "a@b.co")).toMatch(/another email sequence/);
+    expect(await priorContactReason(fakeDb({ email_sends: [{ category: "seq_1a5e05b1_s1" }] }), "a@b.co")).toMatch(/another campaign/);
+  });
+
+  it("lets a true cold lead through, and ignores the invite sequence's own sends", async () => {
+    const { priorContactReason } = await import("@/lib/foyer-invites");
+    expect(await priorContactReason(fakeDb({}), "a@b.co")).toBeNull();
+    expect(await priorContactReason(fakeDb({ email_sends: [{ category: "seq_f0e10001_s1" }] }), "a@b.co")).toBeNull();
+  });
+});

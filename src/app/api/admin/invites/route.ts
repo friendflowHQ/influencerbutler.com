@@ -9,7 +9,8 @@
  *          Liz's admin license key, or a signed-in admin session): their posts
  *          on sale or in a campaign (opportunities; v2 sent a score),
  *          the 4 written emails, the draft page. Refuses the do-not-contact
- *          list, existing customers and trial users, and anyone already
+ *          list, existing customers and trial users, anyone with an account,
+ *          in another sequence or emailed by another campaign in 180 days, and anyone already
  *          contacted (by email or handle). With enroll:true, enrolls the
  *          creator in the PAUSED cold sequence.
  *   PATCH  {id, action}: "decline" (stop + suppress), "replied" (stop), "note",
@@ -35,6 +36,7 @@ import {
   normalizeEmailSteps,
   normalizeOpportunities,
   previewUrlFor,
+  priorContactReason,
   stageTimings,
   type InviteRow,
 } from "@/lib/foyer-invites";
@@ -200,6 +202,10 @@ export async function POST(request: Request) {
   if (await isExistingCustomer(db, email)) {
     return NextResponse.json({ error: "This email is already a customer or on a trial." }, { status: 409 });
   }
+  // Never contact anyone twice: an account (free included), another open
+  // sequence, or another campaign's email in the last 180 days all refuse.
+  const prior = await priorContactReason(db, email);
+  if (prior) return NextResponse.json({ error: `Not a cold lead: ${prior}.` }, { status: 409 });
 
   const fields = {
     ig_handle: handle,
