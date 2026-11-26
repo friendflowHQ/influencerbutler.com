@@ -22,6 +22,7 @@ import {
 import { isGoogleConfigured } from "@/lib/google-meet";
 import { freeBusy } from "@/lib/google-calendar";
 import { partnerHoldRanges } from "@/lib/partner-call-slots";
+import { holidayBusyRanges } from "@/lib/holidays";
 
 export type SchedConfig = {
   bookingHorizonDays: number;
@@ -118,8 +119,8 @@ export async function loadConfig(admin: Admin): Promise<SchedConfig> {
 /**
  * Everything that makes the owner busy in [fromMs, toMs], as UTC busy ranges:
  * confirmed bookings, one-off manual blocks, weekly recurring protected blocks,
- * open event-followup offers, scheduled group events (padded 15 min), and (when connected) the owner's Google Calendar
- * free/busy. Google is folded in here so both availability listing and
+ * open event-followup offers, scheduled group events (padded 15 min), holidays
+ * (holidays.ts), and (when connected) the owner's Google Calendar free/busy. Google is folded in here so both availability listing and
  * booking re-validation subtract it.
  *
  * `callType` is the type being scheduled/moved right now (the "requester");
@@ -206,6 +207,9 @@ export async function loadBusy(
   // Partner-reserved Setup-call slots (partner-call-slots.ts) stay off the
   // public calendar; only the partner's referred customers can book them.
   if (!opts?.skipPartnerHolds) busy.push(...partnerHoldRanges(fromMs, toMs));
+
+  // Holidays are never bookable, partner-reserved slots included.
+  busy.push(...holidayBusyRanges(fromMs, toMs));
 
   // Weekly recurring protected blocks, expanded across the window.
   const recurring = await loadRecurringBlocks(admin);
@@ -346,7 +350,7 @@ export async function checkMove(
       busy.push(...g.filter((r) => !(own && near(r.startMs, own.startMs) && near(r.endMs, own.endMs))));
     } catch (e) { console.error("[scheduling] move google busy", e); }
   }
-  if (hasConflict(startMs, endMs, busy)) return { ok: false, reason: "That time overlaps another call, a block or your calendar. Tick Allow overlap to move it anyway." };
+  if (hasConflict(startMs, endMs, busy)) return { ok: false, reason: "That time overlaps another call, a block, a holiday or your calendar. Tick Allow overlap to move it anyway." };
   return { ok: true, endMs, userEndMs };
 }
 
