@@ -18,6 +18,7 @@ import {
   formatInviteDate,
   inviteDb,
   isExpired,
+  isPendingInviteEmail,
   isValidInviteCode,
   type InviteRow,
 } from "@/lib/foyer-invites";
@@ -115,7 +116,7 @@ export default async function InvitePreviewPage({ params }: { params: Promise<{ 
           <>
             <OpportunitiesView op={op} claimed={claimed} />
             <div className="mt-6 max-w-2xl">
-              <ClaimPanel code={code} alreadyClaimed={claimed} />
+              <ClaimPanel code={code} alreadyClaimed={claimed} needsEmail={isPendingInviteEmail(invite.email)} />
             </div>
           </>
         ) : score ? (
@@ -168,7 +169,7 @@ export default async function InvitePreviewPage({ params }: { params: Promise<{ 
               ))}
             </ol>
             <div className="mt-6">
-              <ClaimPanel code={code} alreadyClaimed={claimed} />
+              <ClaimPanel code={code} alreadyClaimed={claimed} needsEmail={isPendingInviteEmail(invite.email)} />
             </div>
           </section>
         </div>

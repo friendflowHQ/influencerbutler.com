@@ -30,9 +30,12 @@ import {
   INVITE_STEP_COUNT,
   advanceInvite,
   cancelInviteEnrollment,
+  INVITE_PREVIEW_DAYS,
   inviteDb,
   isExistingCustomer,
+  isPendingInviteEmail,
   newInviteCode,
+  pendingInviteEmail,
   normalizeEmailSteps,
   normalizeOpportunities,
   previewUrlFor,
@@ -164,8 +167,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const email = str(body.email, 200).toLowerCase();
   const handle = str(body.igHandle, 30).toLowerCase().replace(/^@/, "");
+  // A page for someone who asked for one in public (a Facebook comment): no
+  // email yet, no drip. The claim form collects their email (see claim route).
+  const noEmail = body.noEmail === true;
+  const email = noEmail ? pendingInviteEmail(handle) : str(body.email, 200).toLowerCase();
   const opener = str(body.opener, 600);
   const previewHtml = typeof body.previewHtml === "string" ? body.previewHtml : "";
   const pageDoc = body.pageDoc && typeof body.pageDoc === "object" ? body.pageDoc : null;
@@ -176,10 +182,10 @@ export async function POST(request: Request) {
   if (!EMAIL_RE.test(email)) return NextResponse.json({ error: "Invalid email" }, { status: 400 });
   if (!HANDLE_RE.test(handle)) return NextResponse.json({ error: "Invalid igHandle" }, { status: 400 });
   if (opener.includes(EM_DASH)) return NextResponse.json({ error: "Opener contains an em-dash" }, { status: 400 });
-  if (!emailSteps || emailSteps.length < 4) {
+  if (!noEmail && (!emailSteps || emailSteps.length < 4)) {
     return NextResponse.json({ error: "emailSteps must hold the 4 written emails (no em-dashes)" }, { status: 400 });
   }
-  if (!emailSteps.every((s) => s.body.includes("{{INVITE_PREVIEW_URL}}"))) {
+  if (emailSteps && !emailSteps.every((s) => s.body.includes("{{INVITE_PREVIEW_URL}}"))) {
     return NextResponse.json({ error: "Every email needs the {{INVITE_PREVIEW_URL}} link" }, { status: 400 });
   }
   // v3 invites carry the creator's own posts (opportunities); v2 a score.
@@ -195,17 +201,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "previewHtml missing or too large" }, { status: 400 });
   }
 
-  // Exclusions from the pilot brief, enforced server-side too.
-  if (await isEmailSuppressed(email)) {
-    return NextResponse.json({ error: "This email is on the do-not-contact list." }, { status: 409 });
+  // Exclusions from the pilot brief, enforced server-side too. A pending
+  // (no-email) page is never emailed, so the contact checks do not apply.
+  if (!noEmail) {
+    if (await isEmailSuppressed(email)) {
+      return NextResponse.json({ error: "This email is on the do-not-contact list." }, { status: 409 });
+    }
+    if (await isExistingCustomer(db, email)) {
+      return NextResponse.json({ error: "This email is already a customer or on a trial." }, { status: 409 });
+    }
+    // Never contact anyone twice: an account (free included), another open
+    // sequence, or another campaign's email in the last 180 days all refuse.
+    const prior = await priorContactReason(db, email);
+    if (prior) return NextResponse.json({ error: `Not a cold lead: ${prior}.` }, { status: 409 });
   }
-  if (await isExistingCustomer(db, email)) {
-    return NextResponse.json({ error: "This email is already a customer or on a trial." }, { status: 409 });
-  }
-  // Never contact anyone twice: an account (free included), another open
-  // sequence, or another campaign's email in the last 180 days all refuse.
-  const prior = await priorContactReason(db, email);
-  if (prior) return NextResponse.json({ error: `Not a cold lead: ${prior}.` }, { status: 409 });
 
   const fields = {
     ig_handle: handle,
@@ -220,7 +229,9 @@ export async function POST(request: Request) {
     page_doc: pageDoc,
     preview_html: previewHtml,
     launch_answers: body.launchAnswers && typeof body.launchAnswers === "object" ? body.launchAnswers : {},
-    email_steps: emailSteps,
+    email_steps: emailSteps ?? [],
+    // A pending page has no send to start its 90 days, so it starts now.
+    ...(noEmail ? { expires_at: new Date(Date.now() + INVITE_PREVIEW_DAYS * 24 * 60 * 60 * 1000).toISOString() } : {}),
     score: hasScore ? score : null,
     opportunities,
     storefront_url: storefrontUrl,
@@ -262,7 +273,7 @@ export async function POST(request: Request) {
   }
 
   let enrolled = false;
-  if (body.enroll === true) {
+  if (body.enroll === true && !noEmail) {
     const result = await enrollEmails(db, INVITE_SEQUENCE_ID, [email]);
     enrolled = result.inserted + result.reactivated > 0 || result.skipped > 0;
   }
@@ -306,6 +317,9 @@ export async function PATCH(request: Request) {
   }
   if (action === "enroll") {
     if (row.status !== "drafted") return NextResponse.json({ error: "Only a drafted invite can be enrolled" }, { status: 409 });
+    if (isPendingInviteEmail(row.email)) {
+      return NextResponse.json({ error: "This page was made for a public request and has no email, so it is never enrolled." }, { status: 409 });
+    }
     const result = await enrollEmails(db, INVITE_SEQUENCE_ID, [row.email]);
     return NextResponse.json({ ok: true, ...result });
   }

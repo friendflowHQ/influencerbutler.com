@@ -297,9 +297,21 @@ export function ClaimTopButton({ alreadyClaimed }: { alreadyClaimed: boolean }) 
   );
 }
 
-export default function ClaimPanel({ code, alreadyClaimed }: { code: string; alreadyClaimed: boolean }) {
+export default function ClaimPanel({
+  code,
+  alreadyClaimed,
+  needsEmail = false,
+}: {
+  code: string;
+  alreadyClaimed: boolean;
+  /** A page made for a public request (a Facebook comment): ask for their email to claim. */
+  needsEmail?: boolean;
+}) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [email, setEmail] = useState("");
+  const emailId = useId();
+  const askEmail = needsEmail && !alreadyClaimed;
   const [result, setResult] = useState<ClaimResult | null>(null);
   const [copied, setCopied] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -319,6 +331,11 @@ export default function ClaimPanel({ code, alreadyClaimed }: { code: string; alr
   }, []);
 
   async function claim() {
+    if (askEmail && !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(email.trim())) {
+      setError("Please enter your email so we can send you your free access.");
+      document.getElementById(emailId)?.focus();
+      return;
+    }
     setBusy(true);
     setError("");
     beacon({ code, event: "claim_click" });
@@ -326,7 +343,7 @@ export default function ClaimPanel({ code, alreadyClaimed }: { code: string; alr
       const res = await fetch("/api/invites/claim", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify(askEmail ? { code, email: email.trim() } : { code }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json.ok) setError(json.error || "Something went wrong. Please try again.");
@@ -354,6 +371,26 @@ export default function ClaimPanel({ code, alreadyClaimed }: { code: string; alr
   if (!result) {
     return (
       <div ref={rootRef} className="scroll-mt-6">
+        {askEmail ? (
+          <div className="mb-3 max-w-md">
+            <label htmlFor={emailId} className="block text-sm font-medium text-slate-800">
+              Your email (we send your free access here)
+            </label>
+            <input
+              id={emailId}
+              type="email"
+              autoComplete="email"
+              inputMode="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void claim();
+              }}
+              placeholder="you@example.com"
+              className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-slate-900 focus:outline-none focus-visible:ring-4 focus-visible:ring-orange-300"
+            />
+          </div>
+        ) : null}
         <button
           type="button"
           onClick={claim}

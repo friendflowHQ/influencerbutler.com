@@ -20,6 +20,7 @@ import {
   cancelInviteEnrollment,
   inviteDb,
   isExpired,
+  isPendingInviteEmail,
   isValidInviteCode,
   openInAppUrlFor,
   campaignConnectUrl,
@@ -54,11 +55,15 @@ function links(code: string, invite: InviteRow) {
   };
 }
 
+const CLAIM_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
+
 export async function POST(request: Request) {
   let code = "";
+  let givenEmail = "";
   try {
-    const body = (await request.json()) as { code?: unknown };
+    const body = (await request.json()) as { code?: unknown; email?: unknown };
     code = typeof body.code === "string" ? body.code.trim() : "";
+    givenEmail = typeof body.email === "string" ? body.email.trim().toLowerCase().slice(0, 200) : "";
   } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
@@ -96,8 +101,33 @@ export async function POST(request: Request) {
     });
   }
 
+  // A page made for a public request (a Facebook comment) has no email yet:
+  // the claim form sends theirs, and it replaces the placeholder before the
+  // comp is issued, so the key, the app sign-in and redeem all use it.
+  let claimEmail = invite.email;
+  if (isPendingInviteEmail(invite.email)) {
+    if (!CLAIM_EMAIL_RE.test(givenEmail) || isPendingInviteEmail(givenEmail)) {
+      return NextResponse.json(
+        { error: "Please enter your email so we can send you your free access.", needsEmail: true },
+        { status: 400 },
+      );
+    }
+    const { error: emailErr } = await db
+      .from("foyer_invites")
+      .update({ email: givenEmail, updated_at: new Date().toISOString() })
+      .eq("id", invite.id);
+    if (emailErr) {
+      // The unique email index: we already made a page for this email.
+      return NextResponse.json(
+        { error: "We already made a page for that email. Check your inbox for it, or use a different email." },
+        { status: 409 },
+      );
+    }
+    claimEmail = givenEmail;
+  }
+
   const issued = await issueInHouseComp({
-    email: invite.email,
+    email: claimEmail,
     name: invite.first_name || null,
     months: null,
     days: INVITE_COMP_DAYS,
@@ -109,8 +139,8 @@ export async function POST(request: Request) {
     // They already have a live plan: keep it, and let the app pull the page
     // with their own key (redeem matches the key's owner email to the invite).
     await advanceInvite(db, invite, "claimed", { existing_customer: true });
-    await cancelInviteEnrollment(db, invite.email);
-    return NextResponse.json({ ok: true, key: null, existingCustomer: true, email: invite.email, ...links(code, invite) });
+    await cancelInviteEnrollment(db, claimEmail);
+    return NextResponse.json({ ok: true, key: null, existingCustomer: true, email: claimEmail, ...links(code, invite) });
   }
   if (!issued.ok) {
     console.error("invites/claim: comp issue failed", { code, status: issued.status, error: issued.error });
@@ -118,12 +148,12 @@ export async function POST(request: Request) {
   }
 
   await advanceInvite(db, invite, "claimed", { license_key: issued.key, claim_user_id: issued.userId });
-  await cancelInviteEnrollment(db, invite.email);
+  await cancelInviteEnrollment(db, claimEmail);
   return NextResponse.json({
     ok: true,
     key: issued.key,
     existingCustomer: false,
-    email: invite.email,
+    email: claimEmail,
     expiresAt: issued.expiresAt,
     ...links(code, invite),
   });

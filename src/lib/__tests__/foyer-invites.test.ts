@@ -280,3 +280,15 @@ describe("never contact anyone twice (prior contact)", () => {
     expect(await priorContactReason(fakeDb({ email_sends: [{ category: "seq_f0e10001_s1" }] }), "a@b.co")).toBeNull();
   });
 });
+
+describe("pending (no-email) invites for public requests", () => {
+  it("builds a never-deliverable placeholder per handle and recognises it", async () => {
+    const { pendingInviteEmail, isPendingInviteEmail, PENDING_EMAIL_DOMAIN } = await import("@/lib/foyer-invites");
+    expect(pendingInviteEmail(" Some.Creator ")).toBe(`some.creator@${PENDING_EMAIL_DOMAIN}`);
+    expect(PENDING_EMAIL_DOMAIN.endsWith(".invalid")).toBe(true);
+    expect(isPendingInviteEmail(pendingInviteEmail("abc"))).toBe(true);
+    expect(isPendingInviteEmail("ABC@PENDING.INVITE.INVALID")).toBe(true);
+    expect(isPendingInviteEmail("real@gmail.com")).toBe(false);
+    expect(isPendingInviteEmail(null)).toBe(false);
+  });
+});

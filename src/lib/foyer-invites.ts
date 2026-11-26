@@ -284,6 +284,23 @@ export type InviteRow = {
 export const INVITE_LIST_COLUMNS =
   "id, code, ig_handle, email, first_name, niche, followers, opener, batch, source, status, notes, created_at, sent_at, expires_at, viewed_at, view_count, claimed_at, activated_at, published_at, converted_at, declined_at, license_key, existing_customer, email_steps, score, opportunities, storefront_url, time_on_page_ms, claim_clicked_at, replied_at, removed_at, content_deleted_at";
 
+/**
+ * Pages made for a creator who asked for one in public (they commented on a
+ * Facebook post) have no email until they claim. The email column is NOT NULL
+ * and unique, so they carry a placeholder on a reserved, never-deliverable
+ * domain; the claim form asks for their real email and swaps it in. A pending
+ * invite is never enrolled in an email sequence.
+ */
+export const PENDING_EMAIL_DOMAIN = "pending.invite.invalid";
+
+export function pendingInviteEmail(handle: string): string {
+  return `${handle.trim().toLowerCase()}@${PENDING_EMAIL_DOMAIN}`;
+}
+
+export function isPendingInviteEmail(email: string | null | undefined): boolean {
+  return typeof email === "string" && email.trim().toLowerCase().endsWith(`@${PENDING_EMAIL_DOMAIN}`);
+}
+
 export function inviteDb(): SupabaseClient | null {
   try {
     return createAdminClient() as unknown as SupabaseClient | null;
