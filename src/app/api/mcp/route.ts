@@ -1,12 +1,23 @@
 import { NextResponse } from "next/server";
 import { resolvePrincipal } from "@/lib/mcp/auth";
 import { callTool, listToolDefinitions } from "@/lib/mcp/tools";
+import { rateLimit } from "@/lib/rate-limit";
+import { clientIp } from "@/lib/client-ip";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const PROTOCOL_VERSION = "2025-03-26";
 const SERVER_INFO = { name: "Influencer Butler", version: "0.1.0" };
+
+// Covers both unauthenticated token-guessing (keyed by IP, since an invalid
+// token has no principal yet) and authenticated tool-call spam (keyed by the
+// resolved user, once known). create_affiliate_link has its own tighter cap
+// in src/lib/mcp/tools.ts since it mutates state and burns Lemon Squeezy API
+// calls per attempt.
+const MCP_IP_LIMIT = 60;
+const MCP_USER_LIMIT = 120;
+const MCP_WINDOW_SEC = 600;
 
 type JsonRpcRequest = {
   jsonrpc?: "2.0";
@@ -100,7 +111,21 @@ export async function POST(request: Request) {
       if (!name) {
         return rpcError(id, { code: -32602, message: "params.name is required" });
       }
+
+      const ipLimited = await rateLimit(`mcp:ip:${clientIp(request)}`, MCP_IP_LIMIT, MCP_WINDOW_SEC);
+      if (!ipLimited.allowed) {
+        return rpcError(id, { code: -32000, message: "rate limited, try again later" }, 429);
+      }
+
       const principal = await resolvePrincipal(request);
+
+      if (principal) {
+        const userLimited = await rateLimit(`mcp:user:${principal.userId}`, MCP_USER_LIMIT, MCP_WINDOW_SEC);
+        if (!userLimited.allowed) {
+          return rpcError(id, { code: -32000, message: "rate limited, try again later" }, 429);
+        }
+      }
+
       const result = await callTool(name, args, principal);
       return rpcResult(id, result);
     }
