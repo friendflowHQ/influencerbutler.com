@@ -2,7 +2,7 @@
 // reads data the extension already keeps locally (accept ledger, desktop-app
 // activity log, tool-breakage map); nothing new is recorded or sent anywhere.
 
-import type { DesktopActivityEntry } from "./desktop-activity";
+import { isAutomaticCommand, type DesktopActivityEntry } from "./desktop-activity";
 
 export type LedgerItemLike = { campaignId: string; at: number; source: "auto" | "manual" };
 export type LedgerHistoryLike = { campaignId: string; at: number };
@@ -73,6 +73,10 @@ export function summarizeActivity(input: ActivityInput): ActivitySummary {
   // queued items are not "something done", so they are left out.
   for (const entry of input.desktop) {
     if (entry.at < since || entry.dir === "connection") continue;
+    // Background reports the page sends on its own (nothing the creator asked
+    // for) are not "problems" on this card, e.g. a storefront id push before
+    // pairing was finished. They stay in the full log that support sees.
+    if (entry.outcome === "failed" && isAutomaticCommand(entry.action)) continue;
     const times = Math.max(1, entry.count ?? 1);
     if (entry.dir === "to-app" && entry.outcome === "ok") {
       counts.sentToApp += times;

@@ -53,6 +53,15 @@ describe("summarizeActivity", () => {
     expect(s.events.map((e) => e.kind)).toEqual(["sent", "send-failed"]);
   });
 
+  it("leaves failed background pushes off the card", () => {
+    const s = summarizeActivity({
+      ...base,
+      desktop: [{ at: NOW - H, dir: "to-app", action: "storefront.verify", outcome: "failed", count: 9 }],
+    });
+    expect(s.counts.failures).toBe(0);
+    expect(s.events).toEqual([]);
+  });
+
   it("includes recent tool problems and sorts newest first with a limit", () => {
     const s = summarizeActivity({
       ...base,
