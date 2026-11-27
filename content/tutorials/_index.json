@@ -1021,7 +1021,7 @@
     },
     {
       "id": "api-integrations",
-      "title": "API Integrations: store every API key Butler uses in one place",
+      "title": "AI & Data Keys: store every API key Butler uses in one place",
       "category": "Other",
       "summary": "Central panel for connecting Amazon Creators API, Levanta, Archer, Logie, deeplink providers, OpenAI, YouTube, and more.",
       "order": 300,
