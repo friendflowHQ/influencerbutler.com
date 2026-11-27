@@ -301,6 +301,46 @@ export function isPendingInviteEmail(email: string | null | undefined): boolean 
   return typeof email === "string" && email.trim().toLowerCase().endsWith(`@${PENDING_EMAIL_DOMAIN}`);
 }
 
+/**
+ * Link-preview crawlers and search bots. Facebook fetches every /p/<code> link
+ * the moment it is posted in a comment (facebookexternalhit, Facebot,
+ * meta-externalagent), which made pages nobody opened read 11 to 16 "views".
+ * These still get the full page (so the preview card renders); they just are
+ * not counted as a visit.
+ */
+const CRAWLER_UA_PATTERNS = [
+  "bot", // Googlebot, bingbot, Facebot, Twitterbot, Slackbot, LinkedInBot, Discordbot, Applebot, Pinterestbot...
+  "crawl",
+  "spider",
+  "slurp",
+  "facebookexternalhit",
+  "facebookcatalog",
+  "meta-external", // meta-externalagent, meta-externalfetcher
+  "whatsapp",
+  "telegram",
+  "skypeuripreview",
+  "preview",
+  "embedly",
+  "iframely",
+  "vkshare",
+  "headless",
+  "phantomjs",
+  "lighthouse",
+  "curl/",
+  "wget/",
+  "python-requests",
+  "go-http-client",
+  "node-fetch",
+  "axios/",
+];
+
+/** True when a request should not count as a person opening their invite page. */
+export function isCrawlerUserAgent(ua: string | null | undefined): boolean {
+  const lower = (ua || "").trim().toLowerCase();
+  if (!lower) return true; // every real browser sends one
+  return CRAWLER_UA_PATTERNS.some((p) => lower.includes(p));
+}
+
 export function inviteDb(): SupabaseClient | null {
   try {
     return createAdminClient() as unknown as SupabaseClient | null;

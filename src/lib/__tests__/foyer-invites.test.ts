@@ -4,6 +4,7 @@ import {
   advances,
   hasWrittenStep,
   inviteValuesFor,
+  isCrawlerUserAgent,
   isExpired,
   isValidInviteCode,
   newInviteCode,
@@ -290,5 +291,44 @@ describe("pending (no-email) invites for public requests", () => {
     expect(isPendingInviteEmail("ABC@PENDING.INVITE.INVALID")).toBe(true);
     expect(isPendingInviteEmail("real@gmail.com")).toBe(false);
     expect(isPendingInviteEmail(null)).toBe(false);
+  });
+});
+
+describe("isCrawlerUserAgent", () => {
+  it("skips Facebook's link-preview fetchers and other crawlers", () => {
+    const bots = [
+      "facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)",
+      "facebookexternalhit/1.1;line-poker/1.0",
+      "Facebot",
+      "meta-externalagent/1.1 (+https://developers.facebook.com/docs/sharing/webmasters/crawler)",
+      "meta-externalfetcher/1.1",
+      "Twitterbot/1.0",
+      "Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)",
+      "LinkedInBot/1.0 (compatible; Mozilla/5.0; Apache-HttpClient +http://www.linkedin.com)",
+      "WhatsApp/2.23.20.0",
+      "Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)",
+      "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+      "Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+      "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)",
+      "TelegramBot (like TwitterBot)",
+      "curl/8.4.0",
+      "",
+      null,
+      undefined,
+    ];
+    for (const ua of bots) expect(isCrawlerUserAgent(ua), String(ua)).toBe(true);
+  });
+
+  it("counts real browsers, including Facebook's in-app browser", () => {
+    const people = [
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1",
+      // Facebook app's in-app browser (a person tapping the link in a comment)
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/22B83 [FBAN/FBIOS;FBAV/489.0.0.40.97;FBBV/655000000;FBDV/iPhone15,2;FBMD/iPhone;FBSN/iOS;FBSV/18.1;FBSS/3;FBCR/;FBID/phone;FBLC/en_US;FBOP/80]",
+      "Mozilla/5.0 (Linux; Android 14; SM-S918U Build/UP1A.231005.007; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/131.0.6778.39 Mobile Safari/537.36 [FB_IAB/FB4A;FBAV/490.0.0.48.106;]",
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Safari/605.1.15",
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:133.0) Gecko/20100101 Firefox/133.0",
+    ];
+    for (const ua of people) expect(isCrawlerUserAgent(ua), ua).toBe(false);
   });
 });

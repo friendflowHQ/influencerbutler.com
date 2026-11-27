@@ -226,6 +226,7 @@ export function RemovePageButton({ code }: { code: string }) {
 const CLAIM_EVENT = "ib-invite-claim";
 // ClaimPanel announces a successful claim so the header button can update.
 const CLAIMED_EVENT = "ib-invite-claimed";
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 
 /** Small accessible info tooltip: a focusable "i" button; hover, focus or tap shows the text. */
 function InfoTip({ label, children }: { label: string; children: ReactNode }) {
@@ -261,8 +262,23 @@ function InfoTip({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-/** The prominent claim box at the top right of an invite page. */
-export function ClaimTopButton({ alreadyClaimed }: { alreadyClaimed: boolean }) {
+/**
+ * The claim call-to-action right under the headline, so claiming is the
+ * obvious next step before the deal grid. It drives the one ClaimPanel lower
+ * on the page (scrolls there and claims, or focuses the email field first on
+ * a page made from a Facebook comment).
+ */
+export function ClaimTopButton({
+  alreadyClaimed,
+  deals = false,
+  needsEmail = false,
+}: {
+  alreadyClaimed: boolean;
+  /** An opportunities page (their posts on sale / in campaigns), not a v2 score page. */
+  deals?: boolean;
+  /** The claim form will ask for their email (page made from a public request). */
+  needsEmail?: boolean;
+}) {
   // Flips when the claim succeeds on this visit (ClaimPanel announces it), so
   // the button stops inviting a second claim and points to the next steps.
   const [justClaimed, setJustClaimed] = useState(false);
@@ -271,28 +287,38 @@ export function ClaimTopButton({ alreadyClaimed }: { alreadyClaimed: boolean }) 
     window.addEventListener(CLAIMED_EVENT, onClaimed);
     return () => window.removeEventListener(CLAIMED_EVENT, onClaimed);
   }, []);
-  const label = justClaimed ? "Claimed: see my next steps" : alreadyClaimed ? "Get my app links again" : "Claim my page, free";
+  const label = justClaimed
+    ? "Claimed: see my next steps"
+    : alreadyClaimed
+    ? "Get my app links again"
+    : deals
+    ? "Post these for me, free for 14 days"
+    : "Claim my page, free for 14 days";
+  const asks = needsEmail ? "No card needed, it only takes your email." : "No card needed.";
+  const line = justClaimed
+    ? "Your key is below and in your email."
+    : alreadyClaimed
+    ? null
+    : deals
+    ? `Claim it and the Influencer Butler app posts these deals to your Facebook groups and pages for you. ${asks}`
+    : `Claim it to see your full report and try Influencer Butler free. ${asks}`;
   return (
-    <div className="rounded-2xl border border-orange-200 bg-white p-4 shadow-sm sm:w-72">
-      <div className="flex items-start gap-2">
-        <button
-          type="button"
-          onClick={() => window.dispatchEvent(new Event(CLAIM_EVENT))}
-          className="flex-1 rounded-xl bg-orange-500 px-4 py-3 text-base font-semibold text-slate-950 shadow hover:bg-orange-600 focus:outline-none focus-visible:ring-4 focus-visible:ring-orange-300"
-        >
-          {label}
-        </button>
+    <div className="mt-5 flex max-w-3xl flex-col gap-3 rounded-2xl border border-orange-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center">
+      <button
+        type="button"
+        onClick={() => window.dispatchEvent(new Event(CLAIM_EVENT))}
+        className="rounded-xl bg-orange-500 px-5 py-3 text-base font-semibold text-slate-950 shadow hover:bg-orange-600 focus:outline-none focus-visible:ring-4 focus-visible:ring-orange-300 sm:flex-none"
+      >
+        {label}
+      </button>
+      <div className="flex min-w-0 flex-1 items-start gap-2">
+        {line ? <p className="flex-1 text-sm text-slate-700">{line}</p> : <span className="flex-1" />}
         <InfoTip label="What claiming your page means">
           Claiming gives you this page already set up in Influencer Butler, every open campaign on your posts, and 14
           days of Influencer Butler Power User free, no card. Nothing goes live until you press Publish, and you can
           remove the page anytime.
         </InfoTip>
       </div>
-      {justClaimed ? (
-        <p className="mt-2 text-xs text-slate-600">Your key is below and in your email.</p>
-      ) : !alreadyClaimed ? (
-        <p className="mt-2 text-xs text-slate-600">14 days free, no card. Remove anytime.</p>
-      ) : null}
     </div>
   );
 }
@@ -318,10 +344,17 @@ export default function ClaimPanel({
   const claimRef = useRef<() => void>(() => undefined);
 
   // The header button: scroll here (where the result shows) and claim once.
+  // When the email is still needed, it lands on the email field instead of
+  // showing an error the visitor has not earned yet.
   useEffect(() => {
     claimRef.current = () => {
       rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      if (!busy && !result) void claim();
+      if (busy || result) return;
+      if (askEmail && !EMAIL_RE.test(email.trim())) {
+        document.getElementById(emailId)?.focus({ preventScroll: true });
+        return;
+      }
+      void claim();
     };
   });
   useEffect(() => {
@@ -331,7 +364,7 @@ export default function ClaimPanel({
   }, []);
 
   async function claim() {
-    if (askEmail && !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(email.trim())) {
+    if (askEmail && !EMAIL_RE.test(email.trim())) {
       setError("Please enter your email so we can send you your free access.");
       document.getElementById(emailId)?.focus();
       return;

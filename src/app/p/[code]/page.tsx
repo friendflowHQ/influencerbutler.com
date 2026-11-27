@@ -7,16 +7,20 @@
  * own post thumbnails and links; nothing from Amazon or Walmart's branding.
  * v2 invites (score) keep the older Storefront Score layout. Claiming
  * (ClaimPanel) reveals the full list and starts the trial. "Remove my page"
- * deletes it on the spot. A visit counts as "viewed"; TimeBeacon reports time
- * on page.
+ * deletes it on the spot. A visit counts as "viewed" (link-preview crawlers
+ * excluded, see isCrawlerUserAgent); TimeBeacon reports time on page. The claim
+ * call-to-action sits under the headline (ClaimTopButton) and drives the one
+ * ClaimPanel further down.
  */
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import {
   INVITE_LIST_COLUMNS,
   advanceInvite,
   currentInviteEvent,
   formatInviteDate,
   inviteDb,
+  isCrawlerUserAgent,
   isExpired,
   isPendingInviteEmail,
   isValidInviteCode,
@@ -71,12 +75,15 @@ export default async function InvitePreviewPage({ params }: { params: Promise<{ 
     return <Notice title="This page is no longer available">If you would like it back, just reply to Liz&apos;s email.</Notice>;
   }
 
-  // Count the visit (the admin review route does not, so reviews never inflate this).
-  await db
-    .from("foyer_invites")
-    .update({ view_count: (invite.view_count ?? 0) + 1, viewed_at: invite.viewed_at ?? new Date().toISOString() })
-    .eq("id", invite.id);
-  if (invite.status === "drafted" || invite.status === "sent") await advanceInvite(db, invite, "viewed");
+  // Count the visit (the admin review route does not, so reviews never inflate
+  // this). Link-preview crawlers still get the page, but are not a visit.
+  if (!isCrawlerUserAgent((await headers()).get("user-agent"))) {
+    await db
+      .from("foyer_invites")
+      .update({ view_count: (invite.view_count ?? 0) + 1, viewed_at: invite.viewed_at ?? new Date().toISOString() })
+      .eq("id", invite.id);
+    if (invite.status === "drafted" || invite.status === "sent") await advanceInvite(db, invite, "viewed");
+  }
 
   const score = invite.score;
   const op = invite.opportunities;
@@ -92,24 +99,20 @@ export default async function InvitePreviewPage({ params }: { params: Promise<{ 
     <main id="main-content" className="min-h-screen bg-orange-50 px-4 py-8">
       <TimeBeacon code={code} />
       <div className="mx-auto max-w-5xl">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold uppercase tracking-wide text-orange-800">Made for @{invite.ig_handle}</p>
-            <h1 className="mt-1 text-3xl font-bold text-slate-900">
-              {event
-                ? `${event.count} of your posts have ${event.label} deals`
-                : op
-                ? `${earningCount} of your posts can earn more today`
-                : "Your Storefront Score"}
-            </h1>
-            <p className="mt-2 max-w-2xl text-slate-700">
-              Influencer Butler put this together from your public Amazon storefront only. It is private: only
-              someone with the link from your email can see it.
-            </p>
-          </div>
-          <div className="sm:flex-none">
-            <ClaimTopButton alreadyClaimed={claimed} />
-          </div>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold uppercase tracking-wide text-orange-800">Made for @{invite.ig_handle}</p>
+          <h1 className="mt-1 text-3xl font-bold text-slate-900">
+            {event
+              ? `${event.count} of your posts have ${event.label} deals`
+              : op
+              ? `${earningCount} of your posts can earn more today`
+              : "Your Storefront Score"}
+          </h1>
+          <p className="mt-2 max-w-2xl text-slate-700">
+            Influencer Butler put this together from your public Amazon storefront only. It is private: only
+            someone with the link from your email can see it.
+          </p>
+          <ClaimTopButton alreadyClaimed={claimed} deals={Boolean(op)} needsEmail={isPendingInviteEmail(invite.email)} />
         </div>
 
         {op ? (

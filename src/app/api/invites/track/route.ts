@@ -8,7 +8,7 @@
  * 204, never an error the visitor could see.
  */
 import { rateLimit } from "@/lib/rate-limit";
-import { inviteDb, isValidInviteCode } from "@/lib/foyer-invites";
+import { inviteDb, isCrawlerUserAgent, isValidInviteCode } from "@/lib/foyer-invites";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,6 +28,8 @@ export async function POST(request: Request) {
   }
   const code = typeof body.code === "string" ? body.code : "";
   if (!isValidInviteCode(code)) return noContent();
+  // Crawlers that run scripts (Googlebot renders pages) are not a reader.
+  if (isCrawlerUserAgent(request.headers.get("user-agent"))) return noContent();
   const limited = await rateLimit(`invite-track:code:${code}`, 120, 3600);
   if (!limited.allowed) return noContent();
   const db = inviteDb();
