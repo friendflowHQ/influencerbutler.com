@@ -94,6 +94,7 @@ export default async function InvitePreviewPage({ params }: { params: Promise<{ 
   const shown = claimed ? fixes : fixes.slice(0, 1);
   const locked = claimed ? [] : fixes.slice(1);
   const expires = formatInviteDate(invite.expires_at);
+  const fromComment = isPendingInviteEmail(invite.email);
 
   return (
     <main id="main-content" className="min-h-screen bg-orange-50 px-4 py-8">
@@ -109,17 +110,20 @@ export default async function InvitePreviewPage({ params }: { params: Promise<{ 
               : "Your Storefront Score"}
           </h1>
           <p className="mt-2 max-w-2xl text-slate-700">
-            Influencer Butler put this together from your public Amazon storefront only. It is private: only
-            someone with the link from your email can see it.
+            Influencer Butler put this together from your public Amazon storefront only.{" "}
+            {/* A page made from a Facebook comment went out as a reply link, not an email. */}
+            {fromComment
+              ? "It is not listed anywhere or shown in search: only someone with this link can see it."
+              : "It is private: only someone with the link from your email can see it."}
           </p>
-          <ClaimTopButton alreadyClaimed={claimed} deals={Boolean(op)} needsEmail={isPendingInviteEmail(invite.email)} />
+          <ClaimTopButton alreadyClaimed={claimed} deals={Boolean(op)} needsEmail={fromComment} />
         </div>
 
         {op ? (
           <>
             <OpportunitiesView op={op} claimed={claimed} />
             <div className="mt-6 max-w-2xl">
-              <ClaimPanel code={code} alreadyClaimed={claimed} needsEmail={isPendingInviteEmail(invite.email)} />
+              <ClaimPanel code={code} alreadyClaimed={claimed} needsEmail={fromComment} />
             </div>
           </>
         ) : score ? (
@@ -172,7 +176,7 @@ export default async function InvitePreviewPage({ params }: { params: Promise<{ 
               ))}
             </ol>
             <div className="mt-6">
-              <ClaimPanel code={code} alreadyClaimed={claimed} needsEmail={isPendingInviteEmail(invite.email)} />
+              <ClaimPanel code={code} alreadyClaimed={claimed} needsEmail={fromComment} />
             </div>
           </section>
         </div>
